@@ -28,6 +28,8 @@ public class CreateNickNamePanel : LobbyPanelBase
         var nickName = inputField.text;
         if (nickName.Length >= MAX_CHAR_FOR_NICKNAME)
         {
+            // 🌐 네트워크 관련: 로컬 플레이어의 닉네임을 NetworkRunnerController에 저장
+            // 이 닉네임은 나중에 다른 플레이어들에게 표시될 예정
             GlobalManagers.Instance.NetworkRunnerController.SetPlayerNickname(nickName);
 
             base.ClosePanel();
