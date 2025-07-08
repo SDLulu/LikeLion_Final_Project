@@ -6,11 +6,27 @@ using UnityEngine;
 
 public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    [Header("디버그용")]
+    [SerializeField] private GameMode localGameMode;
+    [SerializeField] private PlayerManage hostPlayerManage;
+
+    private void OnDestroy()
+    {
+        hostPlayerManage = null;
+    }
+
+
+    public PlayerRef LocalPlayer {get; private set;}
+
+    
     /// <summary>
     /// 로비 입장
     /// </summary>
-    public void JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient, string roomName = "TestRoom", string sceneName = "_TestSandBox/LMU/Scenes/DevLobby")
+    public async void JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient,
+                                        string roomName = "TestRoom",
+                                        Action OnEnterLobby = default)
     {
+        localGameMode = mode;
         var netRunner = GetComponent<NetworkRunner>();
 
         if (netRunner == null)
@@ -27,14 +43,59 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
            GameMode = mode,                   
            SessionName = roomName,       
            PlayerCount = 4,           
-           SceneManager = netRunner.GetComponent<INetworkSceneManager>(), 
-           ObjectProvider = netRunner.GetComponent<ObjectPoolingManager>() 
        };
 
-       LM_SceneManager.Inst.LoadScene(sceneName);
-       netRunner.StartGame(startGameArgs);
-       Debug.Log($"방에 입장함{roomName}");
+       var startGameTask = netRunner.StartGame(startGameArgs);
+       await startGameTask;
+       OnEnterLobby?.Invoke();
+       
+       Debug.Log($"방에 입장함 {roomName}");
     }
+
+    /// <summary>
+    /// 네트워크 접속해제
+    /// </summary>
+    public void Shutdown(Action OnShutdown = default)
+    {
+        var netRunner = GetComponent<NetworkRunner>();
+        netRunner.Shutdown();
+        OnShutdown?.Invoke();
+    }
+
+    [SerializeField] private GameObject playerMPrefab;
+    [SerializeField] private GameObject tempNetPlayerPrefab;
+
+    /// <summary>
+    /// 플레이어 입장 및 생성, 호스트 모드인 경우 플레이어 매니저 생성
+    /// </summary>
+    public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
+    {
+        Debug.Log($"플레이어 {player} 입장!");
+        if (runner.IsServer)
+        {
+            LocalPlayer = player;
+            
+            if (localGameMode == GameMode.Host && hostPlayerManage == null)
+            {
+                var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
+                hostPlayerManage = gameManagerObj.GetComponent<PlayerManage>();
+            }
+            
+            runner.Spawn(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player);
+        }
+    }
+
+    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
+    {
+    }
+
+
+
+
+
+
+
+
 
     public void OnConnectedToServer(NetworkRunner runner)
     {
@@ -76,13 +137,6 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     {
     }
 
-    public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
-    {
-    }
-
-    public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
-    {
-    }
 
     public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
     {
