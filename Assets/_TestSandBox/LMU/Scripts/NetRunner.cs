@@ -66,22 +66,30 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     [SerializeField] private GameObject tempNetPlayerPrefab;
 
     /// <summary>
-    /// 플레이어 입장 및 생성, 호스트 모드인 경우 플레이어 매니저 생성
+    /// 플레이어 입장 및 생성
     /// </summary>
-    public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
+    public async void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"플레이어 {player} 입장!");
         if (runner.IsServer)
         {
             LocalPlayer = player;
-            
+
+            // 호스트인경우, 객체 생성후 네트워크 등록까지 대기
             if (localGameMode == GameMode.Host && hostPlayerManage == null)
             {
-                var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
-                hostPlayerManage = gameManagerObj.GetComponent<PlayerManage>();
+                await runner.SpawnAsync(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player,
+                onCompleted: (NetworkSpawnOp obj) =>
+                {
+                    var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
+                    hostPlayerManage = gameManagerObj.GetComponent<PlayerManage>();
+                });
             }
-            
-            runner.Spawn(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player);
+            // 클라이언트인 경우
+            else
+            {
+                runner.Spawn(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player);
+            }
         }
     }
 

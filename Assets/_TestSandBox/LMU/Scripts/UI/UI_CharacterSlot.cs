@@ -71,4 +71,21 @@ public class UI_CharacterSlot : MonoBehaviour
     }
 
 
+
+    
+
+    /// <summary>
+    /// 네트워크 플레이어 데이터를 슬롯에 할당
+    /// </summary>
+    public void SetPlayerData(TempNetPlayer player)
+    {
+        if (player == null) return;
+
+        // 플레이어 데이터에서 정보 추출
+        characterName = player.PlayerData.CharacterName.ToString();
+        
+        // UI 업데이트 (현재는 Holder에서 캐릭터 데이터를 가져오므로 기존 방식 유지)
+        UpdateUI();
+    }
+
 }
