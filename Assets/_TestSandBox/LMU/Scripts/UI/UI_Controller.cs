@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public interface I_UICanvas
@@ -13,6 +14,7 @@ public class UI_Controller : MonoBehaviour
 
     private void Awake()
     {
+        DontDestroyOnLoad(this);
         ActiveTitleUI();
     }
 
@@ -28,4 +30,8 @@ public class UI_Controller : MonoBehaviour
         uiLobby.gameObject.SetActive(true);
     }
 
+    public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
+    {
+        uiLobby.UpdateData(players);
+    }
 }
