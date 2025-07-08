@@ -14,6 +14,7 @@ public class PlayerMovement : NetworkBehaviour
     
     // 🌐 네트워크 동기화
     [Networked] public bool IsDucking { get; private set; }
+    [Networked] public bool IsFacingLeft { get; private set; }
     
     // 참조 컴포넌트들
     private PlayerGroundCheck groundCheck;
@@ -57,13 +58,24 @@ public class PlayerMovement : NetworkBehaviour
     
     private void UpdateSpriteDirection(SpelunkyPlayerData input)
     {
-        if (spriteRenderer != null && input.HorizontalInput != 0)
+        // 네트워크 동기화되는 방향 상태 업데이트
+        if (input.HorizontalInput != 0)
         {
-            spriteRenderer.flipX = input.HorizontalInput < 0;
+            IsFacingLeft = input.HorizontalInput < 0;
+        }
+    }
+    
+    // 실제 스프라이트 렌더링 업데이트 (매 프레임 호출)
+    public void UpdateSpriteRendering()
+    {
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.flipX = IsFacingLeft;
         }
     }
     
     // 다른 컴포넌트에서 참조할 수 있는 속성들
     public float CurrentSpeed => Mathf.Abs(rb.linearVelocity.x);
     public float NormalizedSpeed => CurrentSpeed / moveSpeed;
+    public bool FacingLeft => IsFacingLeft;
 } 
