@@ -75,7 +75,7 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
           if (result.Ok)
           {
               // ✅ 성공시 메인 게임 씬으로 이동
-              const string SCENE_NAME = "MainGame";
+              const string SCENE_NAME = "KYW";
               networkRunnerInstance.LoadScene(SCENE_NAME);
           }
           else
