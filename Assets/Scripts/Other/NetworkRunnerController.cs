@@ -63,7 +63,7 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
            SessionName = roomName,             // 방 이름 (같은 이름끼리 연결)
            PlayerCount = 4,                    // 최대 플레이어 수
            SceneManager = networkRunnerInstance.GetComponent<INetworkSceneManager>(),  // 씬 관리자
-           ObjectProvider = networkRunnerInstance.GetComponent<ObjectPoolingManager>() // 오브젝트 풀링 관리자
+    
        };
 
       // 🚀 실제 게임 시작! (비동기 처리)
@@ -75,7 +75,8 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
           if (result.Ok)
           {
               // ✅ 성공시 메인 게임 씬으로 이동
-              const string SCENE_NAME = "KYW";
+              //const string SCENE_NAME = "MainGame";
+              const string SCENE_NAME = "Main";
               networkRunnerInstance.LoadScene(SCENE_NAME);
           }
           else
