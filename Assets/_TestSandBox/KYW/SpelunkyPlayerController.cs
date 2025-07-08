@@ -70,10 +70,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
     }
     
-    // 렌더링 업데이트 (애니메이션)
+    // 렌더링 업데이트 (애니메이션 + 스프라이트 뒤집기)
     public override void Render()
     {
         playerAnimation?.UpdateAnimations();
+        movement?.UpdateSpriteRendering();
     }
     
     // 입력 데이터 생성 (LocalInputPoller에서 호출)
@@ -96,6 +97,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 📊 상태 접근 프로퍼티들 (다른 시스템에서 사용)
     public bool IsGrounded => groundCheck?.IsGrounded ?? false;
     public bool IsDucking => movement?.IsDucking ?? false;
+    public bool IsFacingLeft => movement?.FacingLeft ?? false;
     public Vector2 Velocity => jump?.Velocity ?? Vector2.zero;
     public float CurrentSpeed => movement?.CurrentSpeed ?? 0f;
 } 
