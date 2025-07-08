@@ -67,6 +67,14 @@ public class ObjectPoolingManager : MonoBehaviour, INetworkObjectProvider
         {
             // 🆕 새로운 오브젝트 인스턴스 생성
             networkObject = CreateObjectInstance(prefabSource);
+            
+            // 🔧 생성 실패 시 처리
+            if (networkObject == null)
+            {
+                Debug.LogError($"Failed to create network object instance for prefab {prefabSource?.Description ?? "Unknown"}");
+                result = null;
+                return NetworkObjectAcquireResult.Failed;
+            }
         }
 
         // 📤 결과 반환
