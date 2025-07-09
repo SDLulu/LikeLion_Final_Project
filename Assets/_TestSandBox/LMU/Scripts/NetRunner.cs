@@ -22,7 +22,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     /// <summary>
     /// 로비 입장
     /// </summary>
-    public async void JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient,
+    public async Awaitable JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient,
                                         string roomName = "TestRoom",
                                         Action OnEnterLobby = default)
     {
