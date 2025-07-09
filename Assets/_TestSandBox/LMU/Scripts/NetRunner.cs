@@ -6,9 +6,15 @@ using UnityEngine;
 
 public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
 {
+    [SerializeField] private GameObject gameStatesPrefab;
+    [SerializeField] private GameObject playerMPrefab;
+    [SerializeField] private GameObject tempNetPlayerPrefab;
+
+
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private PlayerManager hostPlayerManage;
+    [SerializeField] private GameStates gameStates;
 
     private void OnDestroy()
     {
@@ -63,8 +69,6 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
         OnShutdown?.Invoke();
     }
 
-    [SerializeField] private GameObject playerMPrefab;
-    [SerializeField] private GameObject tempNetPlayerPrefab;
 
     /// <summary>
     /// 플레이어 입장 및 생성
@@ -84,6 +88,9 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
                 {
                     var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
                     hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
+
+                    var gameStatesObj = runner.Spawn(gameStatesPrefab, Vector3.zero, Quaternion.identity, player);
+                    gameStates = gameStatesObj.GetComponent<GameStates>();
                 });
             }
             // 클라이언트인 경우
