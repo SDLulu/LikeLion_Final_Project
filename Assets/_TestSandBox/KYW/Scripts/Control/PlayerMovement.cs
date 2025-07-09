@@ -29,7 +29,8 @@ public class PlayerMovement : NetworkBehaviour
             spriteRenderer = GetComponent<SpriteRenderer>();
     }
     
-    public void HandleMovement(SpelunkyPlayerData input)
+    // 이동 관련 모든 처리를 통합한 메서드
+    public void ProcessInput(SpelunkyPlayerData input)
     {
         // 덕킹 처리
         HandleDucking(input);
