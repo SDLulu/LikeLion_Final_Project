@@ -229,12 +229,5 @@ public class DevAutoStarter : MonoBehaviour
         }
     }
     
-    // 📝 에디터에서 도움말 표시
-    private void OnValidate()
-    {
-        if (enableAutoStart)
-        {
-            //Debug.Log("🛠️ [DevAutoStarter] 자동 시작 활성화됨. Play 버튼으로 바로 테스트 가능!");
-        }
-    }
+
 } 

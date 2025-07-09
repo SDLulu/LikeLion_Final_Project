@@ -14,6 +14,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private Vector2 mouseWorldPosition;
     private bool pickupPressed;
     private bool useItemPressed;
+    private bool equipItemPressed;
     
     // 📦 컴포넌트 참조들
     private PlayerGroundCheck groundCheck;
@@ -64,6 +65,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 아이템 관련 입력
             pickupPressed = Input.GetKeyDown(KeyCode.Space) && IsDucking;
             useItemPressed = Input.GetMouseButtonDown(0);
+            equipItemPressed = Input.GetMouseButtonDown(1);
         }
     }
     
@@ -108,6 +110,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, Input.GetKey(KeyCode.Space) && !IsDucking);
             data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItem, useItemPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.EquipItem, equipItemPressed);
         }
         
         return data;
