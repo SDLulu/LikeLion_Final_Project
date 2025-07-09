@@ -19,6 +19,15 @@ public class UI_Title : MonoBehaviour
     [Header("Prevent 패널")]
     [SerializeField] private RectTransform preventPanel;
 
+    private UI_Controller uiController;
+    public UI_Controller UIController
+    {
+        get
+        {
+            return uiController ??= FindAnyObjectByType<UI_Controller>();
+        }
+    }
+
     private void Awake()
     {
         preventPanel.gameObject.SetActive(false);
@@ -81,14 +90,6 @@ public class UI_Title : MonoBehaviour
         ActiveJoinRoomPanel();
     }
 
-    private UI_Controller uiController;
-    public UI_Controller UIController
-    {
-        get
-        {
-            return uiController ??= FindAnyObjectByType<UI_Controller>();
-        }
-    }
 
     // --- 입장 패널
     private void OnClickJoinRoomBtn()

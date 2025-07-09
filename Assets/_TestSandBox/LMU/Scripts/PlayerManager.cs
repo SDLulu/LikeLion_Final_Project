@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Fusion;
 using UnityEngine;
 
@@ -8,6 +9,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 
     [Header("설정")]
     [SerializeField] private float currentPlayerCount = 0;
+    [SerializeField] private int minPlayersToStart = 2; // 게임 시작 최소 인원
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, TempNetPlayer> Players => default;
@@ -49,10 +51,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         }
     }
 
-
-    /// <summary>
-    /// 플레이어 등록 및 데이터 초기화
-    /// </summary>
+    // -- 플레이어 관리
     private void TryAddPlayer(PlayerRef player)
     {
         var tempPlayers = FindObjectsByType<TempNetPlayer>(FindObjectsSortMode.None);
@@ -71,7 +70,6 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
             }
         }
 
-        // 추가실패
         Debug.LogError("플레이어를 추가하는데 실패했습니다.");
     }
 
@@ -92,11 +90,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
             }
         }
 
-        // 제거실패
         Debug.LogError("플레이어를 제거하는데 실패했습니다.");
     }
-
-
 
     // --- 데이터 렌더링 액션
     public Action<NetworkDictionary<int, TempNetPlayer>> OnPlayerDataRendered;
@@ -109,12 +104,73 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         OnPlayerDataRendered -= action;
     }
 
+
+    /// <summary>
+    /// 최소인원수 이상이면서 준비여부를 확인하는 함수 
+    /// </summary>
+    public bool AreAllPlayersReady()
+    {
+        if (Players.Count < minPlayersToStart) 
+            return false;
+        
+        foreach (var kvp in Players)
+        {
+            if (kvp.Value.IsReady == false) 
+                return false;
+        }
+        
+        return true;
+    }
+
     public override void Render()
     {
         if (Players.Count >= 1)
         {
             OnPlayerDataRendered?.Invoke(Players);
         }
+        
+        if (Players.Count >= 2 && Runner.IsServer && isGameSceneLoading == false && isInGame == false)
+        {
+            TryStartGameAsync();
+        }
     }
 
+    private bool isInGame = false;
+    private bool isGameSceneLoading = false;
+    public async void TryStartGameAsync()
+    {
+        bool isStart = AreAllPlayersReady();
+        
+        if (isStart)
+        {
+            isGameSceneLoading = true;
+            Debug.Log("모든 플레이어가 준비되었습니다!");
+
+            await LevelManager.LoadSceneAsync(
+                "DevGame", 
+                UnityEngine.SceneManagement.LoadSceneMode.Additive, 
+                onLoadComplete: () =>
+                {
+                    isGameSceneLoading = false;
+                    isInGame = true;
+                    Debug.Log("게임 씬 로드 완료");
+                    RPC_MoveToGameScene();
+                });
+        }
+        else
+        {
+            Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
+        }
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_MoveToGameScene()
+    {
+        foreach (var obj in this.Players.ToList().Select(x => x.Value.gameObject))
+        {
+            if (obj == null)
+                continue;
+            Runner.MoveGameObjectToSameScene(obj, GameObject.Find("GameScene"));
+        }
+    }
 }
