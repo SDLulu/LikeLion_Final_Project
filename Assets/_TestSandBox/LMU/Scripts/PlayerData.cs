@@ -33,7 +33,7 @@ public struct DynamicCharacterData : INetworkInput
     }
 }
 
-public class TempNetPlayer : NetworkBehaviour
+public class PlayerData : NetworkBehaviour
 {
     public GameMode GameMode {get; set;}
 

@@ -12,7 +12,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     [SerializeField] private int minPlayersToStart = 2; // 게임 시작 최소 인원
 
     [Networked, Capacity(4), UnitySerializeField]
-    public NetworkDictionary<int, TempNetPlayer> Players => default;
+    public NetworkDictionary<int, PlayerData> Players => default;
 
     public override void Spawned()
     {
@@ -54,7 +54,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     // -- 플레이어 관리
     private void TryAddPlayer(PlayerRef player)
     {
-        var tempPlayers = FindObjectsByType<TempNetPlayer>(FindObjectsSortMode.None);
+        var tempPlayers = FindObjectsByType<PlayerData>(FindObjectsSortMode.None);
         if (tempPlayers == null || tempPlayers.Length <= 0)
         {
             Debug.LogError("플레이어를 추가하는데 실패했습니다. 플레이어가 존재하지 않습니다.");
@@ -94,12 +94,12 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     }
 
     // --- 데이터 렌더링 액션
-    public Action<NetworkDictionary<int, TempNetPlayer>> OnPlayerDataRendered;
-    public void AddRenderingAction(Action<NetworkDictionary<int, TempNetPlayer>> action)
+    public Action<NetworkDictionary<int, PlayerData>> OnPlayerDataRendered;
+    public void AddRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
     {
         OnPlayerDataRendered += action;
     }
-    public void RemoveRenderingAction(Action<NetworkDictionary<int, TempNetPlayer>> action)
+    public void RemoveRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
     {
         OnPlayerDataRendered -= action;
     }

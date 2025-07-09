@@ -24,10 +24,10 @@ public class UI_CharacterSlot : MonoBehaviour
 
     [Header("디버그용")]
     [SerializeField] private bool isReady = false;
-    [SerializeField] private TempNetPlayer connectedPlayer;
+    [SerializeField] private PlayerData connectedPlayer;
     
     // 외부에서 접근 가능한 프로퍼티
-    public TempNetPlayer ConnectedPlayer => connectedPlayer;
+    public PlayerData ConnectedPlayer => connectedPlayer;
 
     private void Awake()
     {
@@ -65,7 +65,7 @@ public class UI_CharacterSlot : MonoBehaviour
     /// <summary>
     /// 플레이어 데이터 업데이트 (새로운 구조)
     /// </summary>
-    public void UpdatePlayerData(TempNetPlayer player)
+    public void UpdatePlayerData(PlayerData player)
     {
         connectedPlayer = player;
         if (player != null)
