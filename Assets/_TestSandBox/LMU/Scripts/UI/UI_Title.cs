@@ -36,7 +36,7 @@ public class UI_Title : MonoBehaviour
         nickNameInputField.onValueChanged.AddListener(OnValueChangedNickName);
 
         joinRoomBtn.onClick.AddListener(OnClickJoinRoomBtn);
-        createRoomBtn.onClick.AddListener(OnClickCreateRoomBtn);
+        createRoomBtn.onClick.AddListener(() => _ = OnClickCreateRoomBtn());
         randomJoinRoomBtn.onClick.AddListener(OnClickRandomJoinRoomBtn);
 
         ActiveCreateNickNamePanel();
@@ -92,13 +92,13 @@ public class UI_Title : MonoBehaviour
 
 
     // --- 입장 패널
-    private void OnClickJoinRoomBtn()
+    private async void OnClickJoinRoomBtn()
     {
         // Todo - 방의 세션코드를 맞춰서 입장
         return;
         Debug.Log("입장 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
+        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
             mode: GameMode.Host,
             roomName: "TestRoom",
             OnEnterLobby: () =>
@@ -109,11 +109,11 @@ public class UI_Title : MonoBehaviour
         );
     }
 
-    private void OnClickCreateRoomBtn()
+    public async Awaitable OnClickCreateRoomBtn()
     {
         Debug.Log("방 생성 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
+        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
             mode: GameMode.Host,
             roomName: "TestRoom",
             OnEnterLobby: () =>
@@ -124,11 +124,11 @@ public class UI_Title : MonoBehaviour
         );
     }
 
-    private void OnClickRandomJoinRoomBtn()
+    private async void OnClickRandomJoinRoomBtn()
     {
         Debug.Log("랜덤 입장 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
+        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
             mode: GameMode.Client,
             roomName: "TestRoom",
             OnEnterLobby: () =>

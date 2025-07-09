@@ -131,16 +131,14 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         
         if (Players.Count >= 2 && Runner.IsServer && isGameSceneLoading == false && isInGame == false)
         {
-            TryStartGameAsync();
+            TryStartGameAsync(isStart: AreAllPlayersReady());
         }
     }
 
     private bool isInGame = false;
     private bool isGameSceneLoading = false;
-    public async void TryStartGameAsync()
+    public async void TryStartGameAsync(bool isStart = true)
     {
-        bool isStart = AreAllPlayersReady();
-        
         if (isStart)
         {
             isGameSceneLoading = true;
