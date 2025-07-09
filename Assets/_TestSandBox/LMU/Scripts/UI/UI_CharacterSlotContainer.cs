@@ -52,7 +52,7 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         localPlayerSlot?.OnReadyChange();
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
+    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
         // 정렬 및 슬롯 개수 동기화
         var sortedKeys = players.Select(p => p.Key).OrderBy(x => x).ToArray();

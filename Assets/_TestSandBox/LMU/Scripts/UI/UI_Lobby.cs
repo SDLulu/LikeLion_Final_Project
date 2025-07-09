@@ -34,7 +34,7 @@ public class UI_Lobby : MonoBehaviour
         UIController.ActiveTitleUI();
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
+    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
         _characterSlotContainer?.UpdateData(players);
     }

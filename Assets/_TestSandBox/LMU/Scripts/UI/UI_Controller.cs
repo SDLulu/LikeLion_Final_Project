@@ -30,7 +30,7 @@ public class UI_Controller : MonoBehaviour
         uiLobby.gameObject.SetActive(true);
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
+    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
         uiLobby?.UpdateData(players);
     }
