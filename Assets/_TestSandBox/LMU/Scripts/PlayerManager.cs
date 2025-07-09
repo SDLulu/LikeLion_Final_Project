@@ -1,8 +1,8 @@
-using System.Collections.Generic;
+using System;
 using Fusion;
 using UnityEngine;
 
-public class PlayerManage : NetworkBehaviour, IPlayerJoined, IPlayerLeft
+public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 {
     private const int MAX_PLAYER_COUNT = 4;
 
@@ -12,19 +12,6 @@ public class PlayerManage : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, TempNetPlayer> Players => default;
 
-    private UI_Controller uiController;
-    public UI_Controller UIController
-    {
-        get
-        {
-            uiController ??= FindAnyObjectByType<UI_Controller>();
-            return uiController;
-        }
-    }   
-
-    /// <summary>
-    /// 호스트에의해 한번만 생성 및 호출
-    /// </summary>
     public override void Spawned()
     {
         if(Runner.IsServer)
@@ -32,17 +19,18 @@ public class PlayerManage : NetworkBehaviour, IPlayerJoined, IPlayerLeft
             TryAddPlayer(LobbyManager.Inst.NetRunner.LocalPlayer);
         }
         
+        var uiController = FindAnyObjectByType<UI_Controller>();
+        if (uiController != null)
+        {
+            this.AddRenderingAction(uiController.UpdateData);
+        }
+        
         DontDestroyOnLoad(this.gameObject);
     }
 
-
-    public override void Render()
+    public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        // UI 업데이트
-        if (Players.Count >= 1 && UIController != null)
-        {
-            UIController.UpdateData(Players);
-        }
+        OnPlayerDataRendered = null;
     }
 
     public void PlayerJoined(PlayerRef player)
@@ -108,5 +96,25 @@ public class PlayerManage : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         Debug.LogError("플레이어를 제거하는데 실패했습니다.");
     }
 
+
+
+    // --- 데이터 렌더링 액션
+    public Action<NetworkDictionary<int, TempNetPlayer>> OnPlayerDataRendered;
+    public void AddRenderingAction(Action<NetworkDictionary<int, TempNetPlayer>> action)
+    {
+        OnPlayerDataRendered += action;
+    }
+    public void RemoveRenderingAction(Action<NetworkDictionary<int, TempNetPlayer>> action)
+    {
+        OnPlayerDataRendered -= action;
+    }
+
+    public override void Render()
+    {
+        if (Players.Count >= 1)
+        {
+            OnPlayerDataRendered?.Invoke(Players);
+        }
+    }
 
 }

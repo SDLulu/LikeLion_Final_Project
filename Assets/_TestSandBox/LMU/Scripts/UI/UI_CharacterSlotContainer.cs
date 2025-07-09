@@ -2,12 +2,14 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using static SO_SkinData;
+using Fusion;
 
 public class UI_CharacterSlotContainer : MonoBehaviour
 {
     [Header("설정")]
     [SerializeField] private int maxPlayerCount = 4;
-    [SerializeField] private SO_CharacterData[] characterDatas;
+    [SerializeField] private SO_SkinData[] characterDatas;
     [SerializeField] private Button readyButton;
     [SerializeField] private UI_CharacterSlot slotPrefab;
     [SerializeField] private Transform slotParent;
@@ -23,16 +25,15 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         var slots = GetComponentsInChildren<UI_CharacterSlot>().ToList();
         slots.ForEach(slot => Destroy(slot.gameObject));
         characterSlots.Clear();
-
+        localPlayerSlot = null;
         CurrentCharacterIndex = 0;
-
         readyButton.onClick.AddListener(OnClickReadyButton);
     }
 
     private void OnDestroy()
     {
         readyButton.onClick.RemoveAllListeners();
-
+        localPlayerSlot =  null;
         if (characterSlots != null && characterSlots.Count > 0)
         {
             foreach (var slot in characterSlots)
@@ -48,32 +49,48 @@ public class UI_CharacterSlotContainer : MonoBehaviour
 
     private void OnClickReadyButton()
     {
-        localPlayerSlot.OnReadyChange();
+        localPlayerSlot?.OnReadyChange();
     }
 
     public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
     {
-        // key를 리스트로 수집 후 정렬
+        // 정렬 및 슬롯 개수 동기화
         var sortedKeys = players.Select(p => p.Key).OrderBy(x => x).ToArray();
-
-        // 슬롯 개수 동기화
         SyncCharacterSlotCount(sortedKeys.Length);
+        localPlayerSlot = null;
 
-        // 슬롯에 데이터 할당
+        // 슬롯 데이터 할당
         for (int i = 0; i < characterSlots.Count; i++)
         {
             if (i < sortedKeys.Length)
             {
                 int playerKey = sortedKeys[i];
                 var playerData = players[playerKey];
-                characterSlots[i].SetPlayerData(playerData);
+                
+                characterSlots[i].UpdatePlayerData(playerData.LocalPlayerData, playerData.SkinData);
                 characterSlots[i].gameObject.SetActive(true);
+                
+                if (playerData.Object.HasInputAuthority)
+                {
+                    localPlayerSlot = characterSlots[i];
+                }
             }
             else
             {
+                characterSlots[i].UpdatePlayerData(null, null);
                 characterSlots[i].gameObject.SetActive(false);
             }
         }
+
+        UpdateReadyButtonState();
+    }
+
+    /// <summary>
+    /// 준비 버튼 활성화 상태 업데이트
+    /// </summary>
+    private void UpdateReadyButtonState()
+    {
+        readyButton.interactable = localPlayerSlot != null;
     }
 
     /// <summary>
@@ -81,26 +98,17 @@ public class UI_CharacterSlotContainer : MonoBehaviour
     /// </summary>
     private void SyncCharacterSlotCount(int targetCount)
     {
-        // 최대 개수 제한
         targetCount = Mathf.Clamp(targetCount, 0, maxPlayerCount);
-
         int currentCount = characterSlots.Count;
-
         if (currentCount < targetCount)
         {
-            // 부족하면 생성
             for (int i = currentCount; i < targetCount; i++)
-            {
                 CreateCharacterSlot();
-            }
         }
         else if (currentCount > targetCount)
         {
-            // 많으면 제거
             for (int i = currentCount - 1; i >= targetCount; i--)
-            {
                 RemoveCharacterSlot(i);
-            }
         }
     }
 
@@ -140,6 +148,12 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         var slotToRemove = characterSlots[index];
         if (slotToRemove != null)
         {
+            // 로컬 플레이어 슬롯이었다면 참조 제거
+            if (slotToRemove == localPlayerSlot)
+            {
+                localPlayerSlot = null;
+            }
+            
             slotToRemove.Holder = null;
             Destroy(slotToRemove.gameObject);
         }
@@ -147,9 +161,6 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         characterSlots.RemoveAt(index);
     }
 
-    /// <summary>
-    /// 슬롯 제거함수 (오버로드)
-    /// </summary>
     public void RemoveCharacterSlot()
     {
         if (characterSlots.Count > 0)
@@ -158,22 +169,27 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         }
     }
 
-    public SO_CharacterData GetCurrentData()
-    {
-        var index = Mathf.Clamp(CurrentCharacterIndex, 0, characterDatas.Length - 1);
-        return characterDatas[index];
-    }
 
+    /// <summary>
+    /// 캐릭터 인덱스 증가
+    /// </summary>
     public void AddCurrentCharacterIndex()
     {
+        if (characterDatas == null || characterDatas.Length == 0) return;
+        
         if (CurrentCharacterIndex >= characterDatas.Length - 1)
             CurrentCharacterIndex = 0;
         else
             CurrentCharacterIndex++;
     }
 
+    /// <summary>
+    /// 캐릭터 인덱스 감소
+    /// </summary>
     public void SubCurrentCharacterIndex()
     {
+        if (characterDatas == null || characterDatas.Length == 0) return;
+        
         if (CurrentCharacterIndex <= 0)
             CurrentCharacterIndex = characterDatas.Length - 1;
         else

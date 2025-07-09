@@ -8,7 +8,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
 {
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
-    [SerializeField] private PlayerManage hostPlayerManage;
+    [SerializeField] private PlayerManager hostPlayerManage;
 
     private void OnDestroy()
     {
@@ -82,7 +82,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
                 onCompleted: (NetworkSpawnOp obj) =>
                 {
                     var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
-                    hostPlayerManage = gameManagerObj.GetComponent<PlayerManage>();
+                    hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
                 });
             }
             // 클라이언트인 경우
