@@ -14,7 +14,7 @@ public class SpelunkyLocalInputPoller : NetworkBehaviour, INetworkRunnerCallback
     public override void Spawned()
     {
         // 로컬 플레이어인 경우에만 입력 수집 등록
-        if (Runner.LocalPlayer == Object.InputAuthority)
+        if (Object.HasInputAuthority)
         {
             Runner.AddCallbacks(this);
             

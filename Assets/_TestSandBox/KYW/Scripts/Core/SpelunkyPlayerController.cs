@@ -11,12 +11,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 로컬 변수들
     private float horizontalInput;
     private float verticalInput;
+    private Vector2 mouseWorldPosition;
+    private bool pickupPressed;
+    private bool useItemPressed;
     
     // 📦 컴포넌트 참조들
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerAnimation playerAnimation;
+    private PlayerItemController itemController;
     
     public override void Spawned()
     {
@@ -25,12 +29,13 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         playerAnimation = GetComponent<PlayerAnimation>();
+        itemController = GetComponent<PlayerItemController>();
         
         // 네트워크 물리 설정
         Runner.SetIsSimulated(Object, true);
         
         // 로컬 플레이어 설정
-        if (Utils.IsLocalPlayer(Object))
+        if (Object.HasInputAuthority)
         {
             // 카메라 등 로컬 전용 설정
         }
@@ -46,11 +51,19 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
-        if (Utils.IsLocalPlayer(Object) && IsAlive)
+        if (Object.HasInputAuthority && IsAlive)
         {
             // 방향키 입력
             horizontalInput = Input.GetAxisRaw("Horizontal");
             verticalInput = Input.GetAxisRaw("Vertical");
+            
+            // 마우스 월드 위치 계산
+            Vector3 mouseScreenPos = Input.mousePosition;
+            mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPos);
+            
+            // 아이템 관련 입력
+            pickupPressed = Input.GetKeyDown(KeyCode.Space) && IsDucking;
+            useItemPressed = Input.GetMouseButtonDown(0);
         }
     }
     
@@ -67,6 +80,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             jump?.HandleJump(input);
             jump?.ApplyGravity();
             jump?.ClampVelocity();
+            
+            // 아이템 관련 처리
+            HandleItemInteractions(input);
         }
     }
     
@@ -86,12 +102,21 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         {
             data.HorizontalInput = horizontalInput;
             data.VerticalInput = verticalInput;
+            data.MouseWorldPosition = mouseWorldPosition;
             
-            // 점프 버튼만 설정
-            data.NetworkButtons.Set(SpelunkyInputButtons.Jump, Input.GetKey(KeyCode.Space));
+            // 버튼 입력 설정
+            data.NetworkButtons.Set(SpelunkyInputButtons.Jump, Input.GetKey(KeyCode.Space) && !IsDucking);
+            data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.UseItem, useItemPressed);
         }
         
         return data;
+    }
+    
+    // 🏺 아이템 상호작용 처리 (ItemController에 위임)
+    private void HandleItemInteractions(SpelunkyPlayerData input)
+    {
+        itemController?.HandleItemInteractions(input);
     }
     
     // 📊 상태 접근 프로퍼티들 (다른 시스템에서 사용)
@@ -100,4 +125,5 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public bool IsFacingLeft => movement?.FacingLeft ?? false;
     public Vector2 Velocity => jump?.Velocity ?? Vector2.zero;
     public float CurrentSpeed => movement?.CurrentSpeed ?? 0f;
+    public bool HasItem => itemController?.HasItem ?? false;
 } 
