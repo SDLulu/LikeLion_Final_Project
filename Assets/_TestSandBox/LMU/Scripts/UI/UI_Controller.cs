@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using LMCore;
 using UnityEngine;
 
-public class UI_Controller : MonoBehaviour
+public class UI_Controller : BaseManager<UI_Controller>
 {
     [Header("인스펙터 참조")]
     [SerializeField] private UI_Title uiTitle;

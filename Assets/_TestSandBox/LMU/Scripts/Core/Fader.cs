@@ -3,8 +3,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using LMCore;
 using System;
-using UnityEngine.SceneManagement;
-using System.Collections.Generic;
 
 public class Fader : BaseManager<Fader>
 {
