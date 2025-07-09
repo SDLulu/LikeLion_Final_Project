@@ -9,7 +9,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 
     [Header("설정")]
     [SerializeField] private float currentPlayerCount = 0;
-    [SerializeField] private int minPlayersToStart = 2; // 게임 시작 최소 인원
+    [SerializeField] private int minPlayersToStart = 2;                 // 게임 시작 최소 인원
+    [SerializeField] private float toGameSceneLoadingDelay = 3.0f;      // 게임 씬 로드 최소 딜레이
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
@@ -128,20 +129,51 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         {
             OnPlayerDataRendered?.Invoke(Players);
         }
-        
-        if (Players.Count >= 2 && Runner.IsServer && isGameSceneLoading == false && isInGame == false)
+    }
+
+    private TickTimer loadingDelayTimer = TickTimer.None;
+    public override void FixedUpdateNetwork()
+    {
+        if (Runner.IsServer && Players.Count >= 2 && isGameSceneLoading == false && isInGame == false)
         {
-            TryStartGameAsync(isStart: AreAllPlayersReady());
+            var ret = TryStartGameAsync(isStart: AreAllPlayersReady());
+
+            // 게임씬으로 이동시 최소딜레이시간 타이머 설정
+            if(ret.GetAwaiter().GetResult())
+            {
+                loadingDelayTimer = TickTimer.None;
+            }
+            else
+            {
+                loadingDelayTimer = TickTimer.CreateFromSeconds(Runner, toGameSceneLoadingDelay);
+            }
+        }
+
+        if (Runner.IsServer && isGameSceneLoaded && loadingDelayTimer.Expired(Runner))
+        {
+            var gameStates = FindAnyObjectByType<GameStates>();
+            gameStates.ForceActiveState<GameStagePlayingState>();
+        }
+        else if (Runner.IsServer && isGameSceneLoaded && loadingDelayTimer.Expired(Runner) == false)
+        {
+            Debug.Log($"게임씬로드 중 딜레이 중입니다. 남은 시간: {loadingDelayTimer.RemainingTime(Runner)}");
         }
     }
 
-    private bool isInGame = false;
-    private bool isGameSceneLoading = false;
-    public async void TryStartGameAsync(bool isStart = true)
+    [SerializeField] private bool isInGame = false;
+    [SerializeField] private bool isGameSceneLoading = false;
+    [SerializeField] private bool isGameSceneLoaded = false;
+    public async Awaitable<bool> TryStartGameAsync(bool isStart = true)
     {
         if (isStart)
         {
+
+            var gameStates = FindAnyObjectByType<GameStates>();
+            gameStates.ForceActiveState<GameStageWaitingState>();
+
             isGameSceneLoading = true;
+            isGameSceneLoaded = false;
+
             Debug.Log("모든 플레이어가 준비되었습니다!");
 
             await LevelManager.LoadSceneAsync(
@@ -149,15 +181,18 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
                 UnityEngine.SceneManagement.LoadSceneMode.Additive, 
                 onLoadComplete: () =>
                 {
+                    Debug.Log("게임 씬 로드 완료");
                     isGameSceneLoading = false;
                     isInGame = true;
-                    Debug.Log("게임 씬 로드 완료");
+                    isGameSceneLoaded = true;   
                     RPC_MoveToGameScene();
                 });
+            return true;
         }
         else
         {
             Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
+            return false;
         }
     }
 

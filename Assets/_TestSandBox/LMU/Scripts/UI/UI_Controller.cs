@@ -1,11 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public interface I_UICanvas
-{
-    void Active();
-    void Deactive();
-}
 public class UI_Controller : MonoBehaviour
 {
     [Header("인스펙터 참조")]
@@ -28,6 +23,12 @@ public class UI_Controller : MonoBehaviour
     {
         uiTitle.gameObject.SetActive(false);
         uiLobby.gameObject.SetActive(true);
+    }
+
+    public void DeactiveAllUI()
+    {
+        uiTitle.gameObject.SetActive(false);
+        uiLobby.gameObject.SetActive(false);
     }
 
     public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
