@@ -12,16 +12,20 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private float horizontalInput;
     private float verticalInput;
     private Vector2 mouseWorldPosition;
+    private bool jumpPressed;
     private bool pickupPressed;
     private bool useItemPressed;
     private bool equipItemPressed;
+
     
     // 📦 컴포넌트 참조들
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerAnimation playerAnimation;
-    private PlayerItemController itemController;
+    private PlayerHandController handController;
+    private PlayerItemPickup itemPickup;
+    private PlayerItemUsage itemUsage;
     
     public override void Spawned()
     {
@@ -30,7 +34,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         playerAnimation = GetComponent<PlayerAnimation>();
-        itemController = GetComponent<PlayerItemController>();
+        handController = GetComponent<PlayerHandController>();
+        itemPickup = GetComponent<PlayerItemPickup>();
+        itemUsage = GetComponent<PlayerItemUsage>();
         
         // 네트워크 물리 설정
         Runner.SetIsSimulated(Object, true);
@@ -62,10 +68,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             Vector3 mouseScreenPos = Input.mousePosition;
             mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             
-            // 아이템 관련 입력
-            pickupPressed = Input.GetKeyDown(KeyCode.Space) && IsDucking;
-            useItemPressed = Input.GetMouseButtonDown(0);
-            equipItemPressed = Input.GetMouseButtonDown(1);
+            // 점프 입력 (일관성을 위해 변수로 저장)
+            jumpPressed = Input.GetKey(KeyCode.Space) && !IsDucking;
+            
+            // 아이템 관련 입력 (Fusion 2 공식 권장: GetKey/GetMouseButton 사용)
+            pickupPressed = Input.GetKey(KeyCode.Space) && IsDucking;
+            useItemPressed = Input.GetMouseButton(0);
+            equipItemPressed = Input.GetMouseButton(1);
+            
+
+            
         }
     }
     
@@ -77,14 +89,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         // 입력 데이터 가져오기
         if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
         {
-            // 각 컴포넌트에 처리 위임
-            movement?.HandleMovement(input);
-            jump?.HandleJump(input);
-            jump?.ApplyGravity();
-            jump?.ClampVelocity();
-            
-            // 아이템 관련 처리
-            HandleItemInteractions(input);
+            // 각 컴포넌트를 일관성 있게 ProcessInput 메서드로 처리
+            movement?.ProcessInput(input);
+            jump?.ProcessInput(input);
+            handController?.ProcessInput(input);
+            itemPickup?.ProcessInput(input);
+            itemUsage?.ProcessInput(input);
         }
     }
     
@@ -106,20 +116,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.VerticalInput = verticalInput;
             data.MouseWorldPosition = mouseWorldPosition;
             
-            // 버튼 입력 설정
-            data.NetworkButtons.Set(SpelunkyInputButtons.Jump, Input.GetKey(KeyCode.Space) && !IsDucking);
+            // 버튼 입력 설정 (모든 입력을 일관성 있게 변수로 처리)
+            data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItem, useItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.EquipItem, equipItemPressed);
+
+            
         }
         
         return data;
-    }
-    
-    // 🏺 아이템 상호작용 처리 (ItemController에 위임)
-    private void HandleItemInteractions(SpelunkyPlayerData input)
-    {
-        itemController?.HandleItemInteractions(input);
     }
     
     // 📊 상태 접근 프로퍼티들 (다른 시스템에서 사용)
@@ -128,5 +134,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public bool IsFacingLeft => movement?.FacingLeft ?? false;
     public Vector2 Velocity => jump?.Velocity ?? Vector2.zero;
     public float CurrentSpeed => movement?.CurrentSpeed ?? 0f;
-    public bool HasItem => itemController?.HasItem ?? false;
+    public bool HasWeapon => handController?.HasWeaponEquipped ?? false;
+    public bool IsJumping => jump?.IsCurrentlyJumping ?? false;
+    public float JumpTime => jump?.CurrentJumpTime ?? 0f;
 } 
