@@ -1,9 +1,8 @@
 using System;
+using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static SO_LocalPlayerData;
-using static SO_SkinData;
 
 public class UI_CharacterSlot : MonoBehaviour
 {
@@ -25,8 +24,10 @@ public class UI_CharacterSlot : MonoBehaviour
 
     [Header("디버그용")]
     [SerializeField] private bool isReady = false;
-    [SerializeField] private LocalPlayerInfo currentPlayer;
-    [SerializeField] private SkinInfo currentSkinData;
+    [SerializeField] private TempNetPlayer connectedPlayer;
+    
+    // 외부에서 접근 가능한 프로퍼티
+    public TempNetPlayer ConnectedPlayer => connectedPlayer;
 
     private void Awake()
     {
@@ -42,8 +43,11 @@ public class UI_CharacterSlot : MonoBehaviour
 
     public void OnReadyChange()
     {
-        isReady = !isReady;
-        UpdateUI();
+        // 연결된 플레이어가 있고, 로컬 플레이어인 경우에만 Ready 상태 변경
+        if (connectedPlayer != null && connectedPlayer.Object.HasInputAuthority)
+        {
+            connectedPlayer.ToggleReadyRpc();
+        }
     }
 
     private void OnClickRightArrowButton()
@@ -58,43 +62,49 @@ public class UI_CharacterSlot : MonoBehaviour
         UpdateUI();
     }
 
-    private void UpdateUI()
-    {
-        playerNameText.text = currentPlayer?.NickName;
-        characterImage.sprite = currentSkinData?.SkinImage;
-        readyText.text = isReady ? readyTextStr : notReadyTextStr;
-        readyPanel.color = isReady ? readyColor : notReadyColor;
-    }
-
     /// <summary>
-    /// 네트워크 플레이어 데이터를 슬롯에 할당
+    /// 플레이어 데이터 업데이트 (새로운 구조)
     /// </summary>
-    public void UpdatePlayerData(LocalPlayerInfo localPlayerData, SkinInfo skinData)
+    public void UpdatePlayerData(TempNetPlayer player)
     {
-        if (localPlayerData == null || skinData == null) 
+        connectedPlayer = player;
+        if (player != null)
         {
-            ClearSlotData();
-            return;
+            isReady = player.IsReady;
+            UpdateUI();
         }
-
-        currentSkinData = skinData;
-        currentPlayer = localPlayerData;
-        
-        UpdateUI();
     }
 
     /// <summary>
     /// 슬롯 데이터 초기화
     /// </summary>
-    private void ClearSlotData()
+    public void ClearSlotData()
     {
-        currentPlayer = null;
-        currentSkinData = null;
+        connectedPlayer = null;
         isReady = false;
+        playerNameText.text = "";
         characterImage.sprite = null;
         readyText.text = notReadyTextStr;
         readyPanel.color = notReadyColor;
-        rightArrowButton.gameObject.SetActive(false);
-        leftArrowButton.gameObject.SetActive(false);
+    }
+
+    private void UpdateUI()
+    {
+        if (connectedPlayer != null)
+        {
+            // 새로운 구조에서 데이터 가져오기
+            playerNameText.text = connectedPlayer.NickName;
+            characterImage.sprite = Resources.Load<Sprite>(connectedPlayer.SkinPath);
+            isReady = connectedPlayer.IsReady;
+        }
+        
+        readyText.text = isReady ? readyTextStr : notReadyTextStr;
+        readyPanel.color = isReady ? readyColor : notReadyColor;
+    }
+
+    public void ActiveArrowButtons(bool active)
+    {
+        rightArrowButton.gameObject.SetActive(active);
+        leftArrowButton.gameObject.SetActive(active);
     }
 }
