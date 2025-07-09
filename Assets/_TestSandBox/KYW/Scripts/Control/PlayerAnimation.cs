@@ -9,7 +9,7 @@ public class PlayerAnimation : NetworkBehaviour
     [SerializeField] private Animator animator;
     
     [Header("Debug")]
-    [SerializeField] private bool showDebugLog = true;
+    [SerializeField] private bool showDebugLog = false;
     
     // 참조 컴포넌트들
     private PlayerGroundCheck groundCheck;
