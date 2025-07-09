@@ -36,6 +36,6 @@ public class UI_Lobby : MonoBehaviour
 
     public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
     {
-        _characterSlotContainer.UpdateData(players);
+        _characterSlotContainer?.UpdateData(players);
     }
 }

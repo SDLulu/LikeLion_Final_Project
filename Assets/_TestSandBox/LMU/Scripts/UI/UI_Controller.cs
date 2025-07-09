@@ -32,6 +32,6 @@ public class UI_Controller : MonoBehaviour
 
     public void UpdateData(Fusion.NetworkDictionary<int, TempNetPlayer> players)
     {
-        uiLobby.UpdateData(players);
+        uiLobby?.UpdateData(players);
     }
 }

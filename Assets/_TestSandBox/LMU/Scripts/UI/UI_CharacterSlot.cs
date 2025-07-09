@@ -2,6 +2,8 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using static SO_LocalPlayerData;
+using static SO_SkinData;
 
 public class UI_CharacterSlot : MonoBehaviour
 {
@@ -14,6 +16,7 @@ public class UI_CharacterSlot : MonoBehaviour
 
     [Header("준비상태 - 설정")]
     [SerializeField] private Image readyPanel;
+    [SerializeField] private TextMeshProUGUI playerNameText;
     [SerializeField] private TextMeshProUGUI readyText;
     [SerializeField] private Color readyColor;
     [SerializeField] private Color notReadyColor;
@@ -21,9 +24,9 @@ public class UI_CharacterSlot : MonoBehaviour
     [SerializeField] private string notReadyTextStr;
 
     [Header("디버그용")]
-    [SerializeField] private int characterIndex;
-    [SerializeField] private string characterName;
     [SerializeField] private bool isReady = false;
+    [SerializeField] private LocalPlayerInfo currentPlayer;
+    [SerializeField] private SkinInfo currentSkinData;
 
     private void Awake()
     {
@@ -57,35 +60,41 @@ public class UI_CharacterSlot : MonoBehaviour
 
     private void UpdateUI()
     {
-        var currentData = Holder.GetCurrentData();
-
-        // 캐릭터 UI 업데이트
-        characterImage.sprite = currentData.CharacterImage;
-        characterImage.rectTransform.sizeDelta = currentData.UILayoutSize;
-
-        // 준비상태 UI 업데이트
+        playerNameText.text = currentPlayer?.NickName;
+        characterImage.sprite = currentSkinData?.SkinImage;
         readyText.text = isReady ? readyTextStr : notReadyTextStr;
         readyPanel.color = isReady ? readyColor : notReadyColor;
-
-        // Todo - 변경될때마다 RPC로 알려주기
     }
-
-
-
-    
 
     /// <summary>
     /// 네트워크 플레이어 데이터를 슬롯에 할당
     /// </summary>
-    public void SetPlayerData(TempNetPlayer player)
+    public void UpdatePlayerData(LocalPlayerInfo localPlayerData, SkinInfo skinData)
     {
-        if (player == null) return;
+        if (localPlayerData == null || skinData == null) 
+        {
+            ClearSlotData();
+            return;
+        }
 
-        // 플레이어 데이터에서 정보 추출
-        characterName = player.PlayerData.CharacterName.ToString();
+        currentSkinData = skinData;
+        currentPlayer = localPlayerData;
         
-        // UI 업데이트 (현재는 Holder에서 캐릭터 데이터를 가져오므로 기존 방식 유지)
         UpdateUI();
     }
 
+    /// <summary>
+    /// 슬롯 데이터 초기화
+    /// </summary>
+    private void ClearSlotData()
+    {
+        currentPlayer = null;
+        currentSkinData = null;
+        isReady = false;
+        characterImage.sprite = null;
+        readyText.text = notReadyTextStr;
+        readyPanel.color = notReadyColor;
+        rightArrowButton.gameObject.SetActive(false);
+        leftArrowButton.gameObject.SetActive(false);
+    }
 }

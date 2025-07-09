@@ -1,5 +1,7 @@
 using Fusion;
 using UnityEngine;
+using static SO_LocalPlayerData;
+using static SO_SkinData;
 
 public class TempNetPlayer : NetworkBehaviour
 {
@@ -8,9 +10,19 @@ public class TempNetPlayer : NetworkBehaviour
     [Networked]
     public ref NetPlayerData PlayerData => ref MakeRef<NetPlayerData>();
 
-    public void OnInitData(SO_LocalPlayerData localPlayerData, SO_CharacterData characterData)
-    {   
-        PlayerData.NickName = localPlayerData.NickName;
-        PlayerData.CharacterName = characterData.CharacterName;
+
+    [Header("데이터")]
+    [field: SerializeField] public LocalPlayerInfo LocalPlayerData {get; private set;}   
+    [field: SerializeField] public SkinInfo SkinData {get; private set;}
+
+    private void Awake()
+    {
+        SkinData = SO_SkinData.GetDefaultCharacterData();
+        LocalPlayerData = SO_LocalPlayerData.GetRandomLocalPlayerData();
     }
+
+    public override void Spawned()
+    {
+    }
+
 }
