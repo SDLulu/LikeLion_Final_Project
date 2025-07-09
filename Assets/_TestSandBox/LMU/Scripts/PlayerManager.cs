@@ -131,43 +131,22 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         }
     }
 
-    private TickTimer loadingDelayTimer = TickTimer.None;
     public override void FixedUpdateNetwork()
     {
         if (Runner.IsServer && Players.Count >= 2 && isGameSceneLoading == false && isInGame == false)
         {
-            var ret = TryStartGameAsync(isStart: AreAllPlayersReady());
-
-            // 게임씬으로 이동시 최소딜레이시간 타이머 설정
-            if(ret.GetAwaiter().GetResult())
-            {
-                loadingDelayTimer = TickTimer.None;
-            }
-            else
-            {
-                loadingDelayTimer = TickTimer.CreateFromSeconds(Runner, toGameSceneLoadingDelay);
-            }
-        }
-
-        if (Runner.IsServer && isGameSceneLoaded && loadingDelayTimer.Expired(Runner))
-        {
-            var gameStates = FindAnyObjectByType<GameStates>();
-            gameStates.ForceActiveState<GameStagePlayingState>();
-        }
-        else if (Runner.IsServer && isGameSceneLoaded && loadingDelayTimer.Expired(Runner) == false)
-        {
-            Debug.Log($"게임씬로드 중 딜레이 중입니다. 남은 시간: {loadingDelayTimer.RemainingTime(Runner)}");
+            TryStartGameAsync(isStart: AreAllPlayersReady());
         }
     }
 
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
-    public async Awaitable<bool> TryStartGameAsync(bool isStart = true)
+    public async void TryStartGameAsync(bool isStart = true)
     {
         if (isStart)
         {
-
+            // 게임 상태 StageWating 변경
             var gameStates = FindAnyObjectByType<GameStates>();
             gameStates.ForceActiveState<GameStageWaitingState>();
 
@@ -187,12 +166,10 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
                     isGameSceneLoaded = true;   
                     RPC_MoveToGameScene();
                 });
-            return true;
         }
         else
         {
             Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
-            return false;
         }
     }
 

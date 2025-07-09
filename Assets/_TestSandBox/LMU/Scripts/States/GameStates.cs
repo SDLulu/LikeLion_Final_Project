@@ -29,6 +29,25 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private GameStageTransitionState transitionState;
     [SerializeField] private GameStageFailedState failedState;
 
+    [Header("디버그용")]
+    [SerializeField] private UI_Controller uiController = null;
+    [SerializeField] private Fader fader = null;
+
+    public UI_Controller UIController => uiController ?? UI_Controller.Inst;
+    public Fader Fader => fader ?? Fader.Inst;
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        uiController = null;
+        waitingState.UIController = null;
+        lobbyState.UIController = null;
+        playingState.UIController = null;
+        completedState.UIController = null;
+        transitionState.UIController = null;
+        failedState.UIController = null;
+        base.Despawned(runner, hasState);
+    }
+
     public int GetStateID<TState>() where TState : StateBehaviour
     {
         var state = StateMachine.GetState<TState>();
@@ -45,6 +64,20 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
                         completedState, transitionState, failedState);
 
         stateMachines.Add(StateMachine);
+
+        lobbyState.UIController = UIController;
+        waitingState.UIController = UIController;
+        playingState.UIController = UIController;
+        completedState.UIController = UIController;
+        transitionState.UIController = UIController;
+        failedState.UIController = UIController;
+
+        lobbyState.Fader = Fader;
+        waitingState.Fader = Fader;
+        playingState.Fader = Fader;
+        completedState.Fader = Fader;
+        transitionState.Fader = Fader;
+        failedState.Fader = Fader;
     }
 
 
