@@ -5,25 +5,6 @@ using System.Collections.Generic;
 
 public class LobbyManager : BaseManager<LobbyManager>
 {
-    [Header("인스펙터 할당")]
-    [SerializeField] private List<SO_LocalPlayerData> localPlayerDatas;    // 임시용
-    
-
-    [Header("디버그용")]
-    [SerializeField] private SO_LocalPlayerData curLocalPlayerData;
-    public SO_LocalPlayerData CurLocalPlayerData
-    {
-        get
-        {
-            if(curLocalPlayerData == null)
-            {
-                int randomIndex = UnityEngine.Random.Range(0, localPlayerDatas.Count);
-                curLocalPlayerData = localPlayerDatas[randomIndex];
-            }
-            return curLocalPlayerData;
-        }
-    }
-
     [SerializeField] private NetRunner netRunner;
     public NetRunner NetRunner
     {

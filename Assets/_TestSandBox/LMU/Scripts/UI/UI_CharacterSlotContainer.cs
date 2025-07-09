@@ -17,6 +17,8 @@ public class UI_CharacterSlotContainer : MonoBehaviour
     [SerializeField] private UI_CharacterSlot localPlayerSlot;
     [field: SerializeField] public int CurrentCharacterIndex {get; private set;}
 
+    private PlayerManager playerManager;
+
     private void Awake()
     {
         // 초기화 시점에 슬롯이 존재하는 경우 제거
@@ -185,7 +187,6 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         else
             CurrentCharacterIndex++;
             
-        // 네트워크를 통해 캐릭터 변경 전송
         UpdateLocalPlayerCharacter();
     }
 
@@ -201,7 +202,6 @@ public class UI_CharacterSlotContainer : MonoBehaviour
         else
             CurrentCharacterIndex--;
             
-        // 네트워크를 통해 캐릭터 변경 전송
         UpdateLocalPlayerCharacter();
     }
 

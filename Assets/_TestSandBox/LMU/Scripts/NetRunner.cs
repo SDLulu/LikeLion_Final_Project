@@ -42,7 +42,8 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
        {
            GameMode = mode,                   
            SessionName = roomName,       
-           PlayerCount = 4,           
+           PlayerCount = 4,      
+           SceneManager = LevelManager.Inst,      
        };
 
        var startGameTask = netRunner.StartGame(startGameArgs);
