@@ -2,8 +2,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using static SO_SkinData;
-using Fusion;
 
 public class UI_CharacterSlotContainer : MonoBehaviour
 {
@@ -67,17 +65,22 @@ public class UI_CharacterSlotContainer : MonoBehaviour
                 int playerKey = sortedKeys[i];
                 var playerData = players[playerKey];
                 
-                characterSlots[i].UpdatePlayerData(playerData.LocalPlayerData, playerData.SkinData);
+                characterSlots[i].UpdatePlayerData(playerData);
                 characterSlots[i].gameObject.SetActive(true);
                 
                 if (playerData.Object.HasInputAuthority)
                 {
                     localPlayerSlot = characterSlots[i];
+                    characterSlots[i].ActiveArrowButtons(true);
+                }
+                else
+                {
+                    characterSlots[i].ActiveArrowButtons(false);
                 }
             }
             else
             {
-                characterSlots[i].UpdatePlayerData(null, null);
+                characterSlots[i].ClearSlotData();
                 characterSlots[i].gameObject.SetActive(false);
             }
         }
@@ -181,6 +184,9 @@ public class UI_CharacterSlotContainer : MonoBehaviour
             CurrentCharacterIndex = 0;
         else
             CurrentCharacterIndex++;
+            
+        // 네트워크를 통해 캐릭터 변경 전송
+        UpdateLocalPlayerCharacter();
     }
 
     /// <summary>
@@ -194,5 +200,26 @@ public class UI_CharacterSlotContainer : MonoBehaviour
             CurrentCharacterIndex = characterDatas.Length - 1;
         else
             CurrentCharacterIndex--;
+            
+        // 네트워크를 통해 캐릭터 변경 전송
+        UpdateLocalPlayerCharacter();
+    }
+
+    /// <summary>
+    /// 로컬 플레이어의 캐릭터 선택을 네트워크에 반영
+    /// </summary>
+    private void UpdateLocalPlayerCharacter()
+    {
+        if (localPlayerSlot?.ConnectedPlayer != null && 
+            localPlayerSlot.ConnectedPlayer.Object.HasInputAuthority &&
+            characterDatas != null && 
+            CurrentCharacterIndex >= 0 && CurrentCharacterIndex < characterDatas.Length)
+        {
+            var selectedCharacter = characterDatas[CurrentCharacterIndex].Character_Info;
+            localPlayerSlot.ConnectedPlayer.ChangeCharacterRpc(
+                selectedCharacter.SkinName, 
+                selectedCharacter.SkinPath
+            );
+        }
     }
 }

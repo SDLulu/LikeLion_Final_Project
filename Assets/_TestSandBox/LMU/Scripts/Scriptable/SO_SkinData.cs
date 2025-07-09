@@ -22,6 +22,7 @@ public class SO_SkinData : ScriptableObject
     {
         public string SkinName;
         public Sprite SkinImage;
+        public string SkinPath;
         public Vector2 UILayoutSize;
     }
 }

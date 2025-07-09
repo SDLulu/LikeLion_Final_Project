@@ -234,7 +234,7 @@ public class DevAutoStarter : MonoBehaviour
     {
         if (enableAutoStart)
         {
-            Debug.Log("🛠️ [DevAutoStarter] 자동 시작 활성화됨. Play 버튼으로 바로 테스트 가능!");
+            //Debug.Log("🛠️ [DevAutoStarter] 자동 시작 활성화됨. Play 버튼으로 바로 테스트 가능!");
         }
     }
 } 
