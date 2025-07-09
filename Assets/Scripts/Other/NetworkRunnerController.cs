@@ -22,6 +22,9 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
 
     // 🎯 실제 생성된 NetworkRunner 인스턴스
     private NetworkRunner networkRunnerInstance;
+    
+    // 🛠️ 개발용 설정: 현재 씬에서 바로 테스트할지 여부
+    private bool skipSceneLoading = false;
 
     // 🛑 네트워크 연결 종료 메서드
     public void ShutDownRunner()
@@ -38,7 +41,19 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     // 🚀 게임 시작 메서드 (가장 중요한 메서드!)
     // GameMode: Host, Client, Server 등 어떤 방식으로 게임을 시작할지
     // roomName: 게임 방 이름 (같은 방 이름끼리 연결됨)
-    public async void StartGame(GameMode mode, string roomName)
+    public void StartGame(GameMode mode, string roomName)
+    {
+        StartGameInternal(mode, roomName, false); // 기본적으로 씬 이동 수행
+    }
+    
+    // 🛠️ 개발용 게임 시작 메서드 (씬 이동 건너뛰기 옵션)
+    public void StartGame(GameMode mode, string roomName, bool skipSceneLoad)
+    {
+        StartGameInternal(mode, roomName, skipSceneLoad);
+    }
+    
+    // 🔧 내부 게임 시작 메서드
+    private async void StartGameInternal(GameMode mode, string roomName, bool skipSceneLoad)
     {
         // 🔔 네트워크 연결 시작 이벤트 알림
         OnStartedRunnerConnection?.Invoke();
@@ -63,7 +78,7 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
            SessionName = roomName,             // 방 이름 (같은 이름끼리 연결)
            PlayerCount = 4,                    // 최대 플레이어 수
            SceneManager = networkRunnerInstance.GetComponent<INetworkSceneManager>(),  // 씬 관리자
-           ObjectProvider = networkRunnerInstance.GetComponent<ObjectPoolingManager>() // 오브젝트 풀링 관리자
+    
        };
 
       // 🚀 실제 게임 시작! (비동기 처리)
@@ -74,9 +89,18 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
       {
           if (result.Ok)
           {
-              // ✅ 성공시 메인 게임 씬으로 이동
-              const string SCENE_NAME = "MainGame";
-              networkRunnerInstance.LoadScene(SCENE_NAME);
+              // 🛠️ 개발 모드에서는 씬 이동 건너뛰기
+              if (!skipSceneLoad)
+              {
+                  // ✅ 성공시 메인 게임 씬으로 이동
+                  //const string SCENE_NAME = "MainGame";
+                  const string SCENE_NAME = "Main";
+                  networkRunnerInstance.LoadScene(SCENE_NAME);
+              }
+              else
+              {
+                  Debug.Log("🛠️ [DEV MODE] 씬 이동 건너뜀 - 현재 씬에서 플레이어 소환 가능");
+              }
           }
           else
           {
@@ -114,7 +138,6 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     // 🎮 입력 처리 콜백 (매 프레임마다 호출)
     public void OnInput(NetworkRunner runner, NetworkInput input)
     {
-        Debug.Log("OnInput");
         // 실제 입력 처리는 LocalInputPoller.cs에서 담당
     }
 
