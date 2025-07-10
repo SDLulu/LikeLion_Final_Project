@@ -92,21 +92,21 @@ public class UI_Title : MonoBehaviour
 
 
     // --- 입장 패널
-    private async void OnClickJoinRoomBtn()
+    private void OnClickJoinRoomBtn()
     {
         // Todo - 방의 세션코드를 맞춰서 입장
         return;
-        Debug.Log("입장 패널 활성화");
-        preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
-            mode: GameMode.Host,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                UIController.ActiveLobbyUI();
-                preventPanel.gameObject.SetActive(false);
-            }
-        );
+        // Debug.Log("입장 패널 활성화");
+        // preventPanel.gameObject.SetActive(true);
+        // await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
+        //     mode: GameMode.Host,
+        //     roomName: "TestRoom",
+        //     OnEnterLobby: () =>
+        //     {
+        //         UIController.ActiveLobbyUI();
+        //         preventPanel.gameObject.SetActive(false);
+        //     }
+        // );
     }
 
     public async Awaitable OnClickCreateRoomBtn()

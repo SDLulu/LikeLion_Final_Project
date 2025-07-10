@@ -1,14 +1,12 @@
 using Fusion;
 using UnityEngine;
-using static SO_LocalPlayerData;
-using static SO_SkinData;
 
 [System.Serializable]
 public struct StaticPlayerData : INetworkInput
 {
     public NetworkString<_16> NickName;
     
-    public static StaticPlayerData CreateData(LocalPlayerInfo localPlayerData)
+    public static StaticPlayerData CreateData(FakeClient.Data localPlayerData)
     {
         return new StaticPlayerData()
         {
@@ -23,7 +21,7 @@ public struct DynamicCharacterData : INetworkInput
     public NetworkString<_16> CharacterName;
     public NetworkString<_64> SkinPath;
     
-    public static DynamicCharacterData CreateData(SkinInfo skinData)
+    public static DynamicCharacterData CreateData(Skin.Data skinData)
     {
         return new DynamicCharacterData()
         {
@@ -45,17 +43,17 @@ public class PlayerData : NetworkBehaviour
     [Networked] public bool IsReady {get; private set;} = false;
 
     [Header("로컬 데이터")]
-    [field: SerializeField] public LocalPlayerInfo LocalPlayerData {get; private set;}   
-    [field: SerializeField] public SkinInfo SkinData {get; private set;}
+    [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
+    [field: SerializeField] public Skin.Data SkinData {get; private set;}
 
     public override void Spawned()
     {
         // 데이터 서버에서 생성후 전파
         if (Object.HasStateAuthority)
         {
-            SkinData = SO_SkinData.GetDefaultCharacterData();
-            LocalPlayerData = SO_LocalPlayerData.GetRandomLocalPlayerData();
-            Static_PlayerData = StaticPlayerData.CreateData(LocalPlayerData);
+            SkinData = DataManager.Inst.GetSkinData(10000);
+            FakeClientData = DataManager.Inst.GetRandomFakeClientData();
+            Static_PlayerData = StaticPlayerData.CreateData(FakeClientData);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
         }
     }

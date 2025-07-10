@@ -29,6 +29,10 @@ public class UI_FastTest : MonoBehaviour
         await title.OnClickCreateRoomBtn();
         await Awaitable.NextFrameAsync();
         var playerM = FindAnyObjectByType<PlayerManager>();
-        playerM.TryStartGameAsync(isStart: true);
+        var result = await playerM.TryStartGameAsync(true); 
+        if (result)
+        {
+            GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
+        }
     }
 }

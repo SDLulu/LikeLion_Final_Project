@@ -5,12 +5,8 @@ using UnityEngine;
 
 public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 {
-    private const int MAX_PLAYER_COUNT = 4;
-
     [Header("설정")]
-    [SerializeField] private float currentPlayerCount = 0;
     [SerializeField] private int minPlayersToStart = 2;                 // 게임 시작 최소 인원
-    [SerializeField] private float toGameSceneLoadingDelay = 3.0f;      // 게임 씬 로드 최소 딜레이
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
@@ -23,10 +19,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         }
         
         var uiController = FindAnyObjectByType<UI_Controller>();
-        if (uiController != null)
-        {
-            this.AddRenderingAction(uiController.UpdateData);
-        }
+        this.AddRenderingAction(uiController.UpdateData);
         
         DontDestroyOnLoad(this.gameObject);
     }
@@ -131,27 +124,36 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         }
     }
 
-    public override void FixedUpdateNetwork()
+    public override async void FixedUpdateNetwork()
     {
         if (Runner.IsServer && Players.Count >= 2 && isGameSceneLoading == false && isInGame == false)
         {
-            TryStartGameAsync(isStart: AreAllPlayersReady());
+            var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
+            if (result)
+            {
+                // 게임 상태 StageWating 변경
+                GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
+            }
         }
     }
 
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
-    public async void TryStartGameAsync(bool isStart = true)
+    public async Awaitable<bool> TryStartGameAsync(bool isStart = true)
     {
-        if (isStart)
+        if (isStart == false)
         {
-            // 게임 상태 StageWating 변경
-            var gameStates = FindAnyObjectByType<GameStates>();
-            gameStates.ForceActiveState<GameStageWaitingState>();
+            Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
+            await Awaitable.NextFrameAsync();
+            return false;
+        }
 
+        try
+        {
             isGameSceneLoading = true;
             isGameSceneLoaded = false;
+            isInGame = false;
 
             Debug.Log("모든 플레이어가 준비되었습니다!");
 
@@ -166,13 +168,20 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
                     isGameSceneLoaded = true;   
                     RPC_MoveToGameScene();
                 });
+
+            return true;
         }
-        else
+        catch (Exception e)
         {
-            Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
+            Debug.LogError($"게임 시작 중 오류 발생: {e.Message}");
+            return false;
         }
     }
 
+
+    /// <summary>
+    /// 게임오브젝트를 특정씬으로 이동시키는 함수
+    /// </summary>
     [Rpc(RpcSources.All, RpcTargets.All)]
     public void RPC_MoveToGameScene()
     {
@@ -181,6 +190,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
             if (obj == null)
                 continue;
             Runner.MoveGameObjectToSameScene(obj, GameObject.Find("GameScene"));
+            var teleporter = obj.GetComponent<PlayerStageController>();
+            teleporter.SetPosition(new Vector2(0, 0));
         }
     }
 }

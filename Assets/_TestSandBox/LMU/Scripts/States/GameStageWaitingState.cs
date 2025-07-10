@@ -1,5 +1,6 @@
 using Fusion;
 using Fusion.Addons.FSM;
+using LMCore;
 using UnityEngine;
 
 public class GameStageWaitingState : StateBehaviour
@@ -11,17 +12,13 @@ public class GameStageWaitingState : StateBehaviour
     [SerializeField] private float minWaitingTime = 3.0f;
 
     [Header("디버그용")]
-    private float waitingTime = 0.0f;
     private TickTimer waitingTimer = TickTimer.None;
 
     protected override void OnEnterState()
     {
-        waitingTime = 0.0f;
         waitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
         RPC_FadeInUI();
     }
-
-
 
     protected override void OnFixedUpdate()
     {
@@ -45,14 +42,16 @@ public class GameStageWaitingState : StateBehaviour
     [Rpc(RpcSources.All, RpcTargets.All)]
     public async void RPC_FadeInUI()
     {
+        UIController.ActiveGameUI(false);
         await Fader.BlackFadeOutAsync();
-        UIController.DeactiveAllUI();
+        UIController.DeactiveAllLobbyUI();
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_FadeOutUI()
+    public async void RPC_FadeOutUI()
     {
-        _ = Fader.BlackFadeInAsync();
+        UIController.ActiveGameUI(true);
+        await Fader.BlackFadeInAsync();
     }
 
 } 

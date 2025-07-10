@@ -28,7 +28,7 @@ public class PlayerMovement : NetworkBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
     }
-    
+
     public void HandleMovement(SpelunkyPlayerData input)
     {
         // 덕킹 처리
