@@ -6,238 +6,116 @@ using System.Collections; // Coroutine을 위해 추가
 public class PMK_Tile_Rogic : MonoBehaviour
 {
     [Header("타일 길이")]
-    [SerializeField] private int _MapX = 10; // 맵의 가로 기준 길이
-    [SerializeField] private int _MapY = 10; // 맵의 세로 기준 길이
-    [SerializeField] private int _MaxMapSize = 5; // 맵의 최대 크기 배율
+    [SerializeField] private int _MaxTileX = 3; // 맵의 가로 기준 길이
+    [SerializeField] private int _MaxTileY = 3; // 맵의 세로 기준 길이
+
+    [Header("다음 타일과의 거리")]
+    [SerializeField] private int _NextTile = 16; // 맵의 가로 기준 길이
+    [SerializeField] private Transform _ParentTransform;
 
     [Header("타일 오브젝트")]
-    [SerializeField] private Tilemap _TargetTilemap; // 타일을 배치할 Tilemap 컴포넌트
-    [SerializeField] private TileBase _LandTile;
-
-    private List<Vector3Int>[] _LY_Tiles;
-    private List<Vector3Int>[] _RY_Tiles;
-    private List<Vector3Int>[] _DX_Tiles;
-
-
-    private void Awake()
-    {
-        if (_TargetTilemap == null)
-        {
-            Debug.LogError("Error: Target Tilemap이 할당되지 않았습니다. 인스펙터에서 할당해주세요.");
-            return;
-        }
-        if (_LandTile == null)
-        {
-            Debug.LogError("Error: Land Tile이 할당되지 않았습니다. 인스펙터에서 할당해주세요.");
-            return;
-        }
-
-        _LY_Tiles = new List<Vector3Int>[_MaxMapSize * _MaxMapSize]; // x * y 크기 타일의 리스트를 생성합니다.
-        _RY_Tiles = new List<Vector3Int>[_MaxMapSize * _MaxMapSize]; // x * y 크기 타일의 리스트를 생성합니다.
-        _DX_Tiles = new List<Vector3Int>[_MaxMapSize * _MaxMapSize]; // x * y 크기 타일의 리스트를 생성합니다.
+    [SerializeField] private GameObject[] _Clear_Map_Prefab;        // 0
+    [SerializeField] private GameObject[] _LR_Exit_Map_Prefab;      // 1
+    [SerializeField] private GameObject[] _LRD_Exit_Map_Prefab;     // 2
+    [SerializeField] private GameObject[] _LRDW_Exit_Map_Prefab;    // 3
+    [SerializeField] private GameObject[] _Special_Map_Prefab;      // 4
 
 
-        for (int i = 0; i < _MaxMapSize * _MaxMapSize; i++)
-        {
-            _LY_Tiles[i] = new List<Vector3Int>(); // 각 배열 요소를 List<Vector3Int>로 초기화
-            _RY_Tiles[i] = new List<Vector3Int>(); // 각 배열 요소를 List<Vector3Int>로 초기화
-            _DX_Tiles[i] = new List<Vector3Int>(); // 각 배열 요소를 List<Vector3Int>로 초기화
-        }
-    }
+    private Vector2Int[,] mapXY;
+
 
     private void Start()
     {
-        CreateMap();
+        SaveMapPos();
+        StartMap();
     }
 
-    private void Update()
+    // y0 { 0 16 32 }
+    // y1 { 0 16 32 }
+    // y2 { 0 16 32 }
+
+
+    private void SaveMapPos()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1)) // 맵을 다시 생성하는 키 입력 (1번)
+        // 정한 맵 크기 만큼 타일위치를 mapX에 저장
+
+        mapXY = new Vector2Int[_MaxTileX, _MaxTileY];
+
+        for (int y = 0; y < _MaxTileY; y++)
         {
-            CreateMap();
-            Debug.Log("맵 다시 생성");
-        }
-    }
-
-    private void CreateMap()
-    {
-        _TargetTilemap.ClearAllTiles(); // 기존 타일맵을 초기화합니다.
-
-        // 전체 맵의 최종 크기를 계산합니다.
-        int maxMapX = _MapX * _MaxMapSize;
-        int maxMapY = _MapY * _MaxMapSize;
-
-        for (int i = 0; i < _MaxMapSize; i++)
-        {
-            for (int x = 0; x < maxMapX; x++) // x축을 최종 확장된 크기만큼 만듭니다.
+            for (int x = 0; x < _MaxTileX; x++)
             {
-                for (int y = i * _MapY; y < (i + 1) * _MapY; y++) // 현재 y 확장 단계에 맞는 y 범위
-                {
-                    // 맵의 전체 높이를 넘지 않도록 안전 장치 추가 (필수)
-                    if (y >= maxMapY)
-                    {
-                        continue;
-                    }
-
-                    Vector3Int cellPosition = new Vector3Int(x, y, 0); // x, y 좌표를 사용하여 타일의 위치를 설정합니다.
-                    _TargetTilemap.SetTile(cellPosition, _LandTile); // 위치를 설정한 타일을 타일맵에 배치합니다.
-                }
-            }
-        }
-
-        //StartCoroutine(LY_ExitTile()); // 왼쪽 y축 타일 제거 코루틴 시작
-        //StartCoroutine(RY_ExitTile()); // 오른쪽 y축 타일 제거 코루틴 시작
-        StartCoroutine(DX_ExitTile()); // 아래 X축 타일 제거 코루틴 시작
-    }
-
-    #region 왼쪽 y축 타일 제거 코루틴
-    private IEnumerator LY_ExitTile() // 왼쪽 y축 타일 제거 코루틴
-    {
-        int a = 0;
-
-        for (int i = 0; i < _MaxMapSize; i++)
-        {
-            int targetX = 0; // 첫번째 열을 마무리했다면 0으로 초기화시켜 두번째 열의 첫 칸부터 계산되게 합니다.
-
-
-            for (int x = 0; x < _MaxMapSize; x++)
-            {
-                targetX = x * _MapX; // 각 칸의 첫번째 열의 x 좌표를 지정합니다.
-
-                if (x > 0) // x가 0이 아닐 때만 a를 증가시킵니다. (첫번째 열은 제외)
-                {
-                    a += 1; // a를 증가시켜 _LY_Tiles을 순서대로 저장시킵니다.
-                }
-
-                _LY_Tiles[a].Clear(); // 이전에 저장된 타일 위치를 초기화합니다。
-
-
-                for (int y = i * _MapY; y < (i + 1) * _MapY; y++) // y축이 완료되면 i의 값만큼 곱하여 위에서 부터 생성합니다.
-                {
-                    Vector3Int cellPosition = new Vector3Int(targetX, y, 0); // 첫번째 열의 x 좌표값과 y 좌표값을 저장합니다.
-
-                    if (_TargetTilemap.GetTile(cellPosition) != null) // 타일이 존재하는지 확인합니다.
-                    {
-                        if (a >= 0 && a < _LY_Tiles.Length)
-                        {
-                            _LY_Tiles[a].Add(cellPosition); // 각 칸의 타일 위치를 저장합니다.
-                        }
-                    }
-                }
-
-                if (_LY_Tiles[a].Count > 0)
-                {
-                    int randomY_Tile = Random.Range(0, _LY_Tiles[a].Count); // 저장된 LY_Tiles[a]에서 랜덤한 타일을 선택합니다.
-                    Vector3Int deleteY_Tile1 = _LY_Tiles[a][randomY_Tile];
-                    _TargetTilemap.SetTile(deleteY_Tile1, null); // 랜덤 타일 제거
-                    Debug.Log($"블록에서 랜덤하게 한 타일 제거: {deleteY_Tile1}");
-                }
-
-                yield return null;
+                mapXY[x, y] = new Vector2Int(x * _NextTile, y * -_NextTile);
+                Debug.Log($"x: {x}, y: {y} → pos: {mapXY[x, y]}");
             }
         }
     }
-    #endregion
 
-    #region 오른쪽 y축 타일 제거 코루틴
-    private IEnumerator RY_ExitTile() // 오른쪽 y축 타일 제거 코루틴
+    private void StartMap()
     {
-        int a = 0;
+        //캐릭터 스폰 맵 생성하기
+        int spawnMapX = Random.Range(0, _MaxTileX); // x값 랜덤 생성하여 y0에 시작맵 생성
+        Vector2Int spawnPos = mapXY[spawnMapX, 0];
+        Instantiate_Map_Prefab(0,0,spawnPos.x,spawnPos.y);
+        Debug.Log($"{spawnPos}");
 
-        for (int i = 0; i < _MaxMapSize; i++)
+
+
+        // 스폰 맵을 제외한 y0에 확정 탈출구 생성하기 (2번 맵)
+        List<int> availableX = new List<int>();
+        for (int i = 0; i < _MaxTileX; i++)
         {
-            int targetX = 9; // 첫번째 열을 마무리했다면 0으로 초기화시켜 두번째 열의 첫 칸부터 계산되게 합니다.
-
-
-            for (int x = 0; x < _MaxMapSize; x++)
-            {
-
-                if (x > 0) // x가 0이 아닐 때만 a를 증가시킵니다. (첫번째 열은 제외)
-                {
-                    targetX = (x + 1) * _MapX - 1; // 각 칸의 첫번째 열의 x 좌표를 지정합니다.
-                    a += 1; // a를 증가시켜 _LY_Tiles을 순서대로 저장시킵니다.
-                }
-
-                _RY_Tiles[a].Clear();
-
-
-                for (int y = i * _MapY; y < (i + 1) * _MapY; y++) // y축이 완료되면 i의 값만큼 곱하여 위에서 부터 생성합니다.
-                {
-                    Vector3Int cellPosition = new Vector3Int(targetX, y, 0); // 첫번째 열의 x 좌표값과 y 좌표값을 저장합니다.
-
-                    if (_TargetTilemap.GetTile(cellPosition) != null) // 타일이 존재하는지 확인합니다.
-                    {
-                        if (a >= 0 && a < _RY_Tiles.Length)
-                        {
-                            _RY_Tiles[a].Add(cellPosition); // 각 칸의 타일 위치를 저장합니다.
-                        }
-                    }
-                }
-
-                if (_RY_Tiles[a].Count > 0)
-                {
-                    int randomY_Tile = Random.Range(0, _RY_Tiles[a].Count); // 저장된 LY_Tiles[a]에서 랜덤한 타일을 선택합니다.
-                    Vector3Int deleteY_Tile1 = _RY_Tiles[a][randomY_Tile];
-                    _TargetTilemap.SetTile(deleteY_Tile1, null); // 랜덤 타일 제거
-                    Debug.Log($"RY 블록에서 랜덤하게 한 타일 제거: {deleteY_Tile1}");
-                }
-
-                yield return null;
-            }
+            if (i != spawnMapX)
+                availableX.Add(i);
         }
-    }
-    #endregion
 
-    #region 아래쪽 X축 타일 제거 코루틴
-    private IEnumerator DX_ExitTile() // 아래 X축 타일 제거 코루틴
-    {
-        int a = 0;
+        int y0_DownMapX = availableX[Random.Range(0, availableX.Count)];
+        Vector2Int y0_DownPos = mapXY[y0_DownMapX, 0];
+        Instantiate_Map_Prefab(2, 0, y0_DownPos.x, y0_DownPos.y);
 
-        for (int i = 0; i < _MaxMapSize; i++)
+        // 확정 탈출구 아래에 윗 탈출구와 연결하기 (3번 맵)
+        Instantiate_Map_Prefab(3, 0, y0_DownPos.x, y0_DownPos.y + -_NextTile);
+
+
+
+        // 시작 맵과 확정 출구를 제외한 y0 라인에 맵 생성하기
+        for (int i = 0; i < _MaxTileX; i++)
         {
-            int targetY = 0; // 첫번째 열을 마무리했다면 0으로 초기화시켜 두번째 열의 첫 칸부터 계산되게 합니다.
-
-
-            for (int y = 0; y < _MaxMapSize; y++)
+            if (i == spawnMapX || i == y0_DownMapX)
             {
-                targetY = y * _MapX; // 각 칸의 첫번째 열의 x 좌표를 지정합니다.
-                int targetX = 0;
-
-                if (y > 0) // x가 0이 아닐 때만 a를 증가시킵니다. (첫번째 열은 제외)
-                {
-                    a += 1; // a를 증가시켜 _LY_Tiles을 순서대로 저장시킵니다.
-                }
-
-                _DX_Tiles[a].Clear(); // 이전에 저장된 타일 위치를 초기화합니다。
-
-                for (int u = 0; u < _MaxMapSize; u++)
-                {
-                    targetX = u * _MapX;
-
-                    for (int x = i * _MapY; x < (i + 1) * _MapY; x++) // y축이 완료되면 i의 값만큼 곱하여 위에서 부터 생성합니다.
-                    {
-                        Vector3Int cellPosition = new Vector3Int(x + targetX, targetY, 0); // 첫번째 열의 x 좌표값과 y 좌표값을 저장합니다.
-
-                        if (_TargetTilemap.GetTile(cellPosition) != null) // 타일이 존재하는지 확인합니다.
-                        {
-                            if (a >= 0 && a < _DX_Tiles.Length)
-                            {
-                                _DX_Tiles[a].Add(cellPosition); // 각 칸의 타일 위치를 저장합니다.
-                            }
-                        }
-                    }
-                }
-
-                if (_DX_Tiles[a].Count > 0)
-                {
-                    int randomY_Tile = Random.Range(0, _DX_Tiles[a].Count); // 저장된 LY_Tiles[a]에서 랜덤한 타일을 선택합니다.
-                    Vector3Int deleteY_Tile1 = _DX_Tiles[a][randomY_Tile];
-                    _TargetTilemap.SetTile(deleteY_Tile1, null); // 랜덤 타일 제거
-                    Debug.Log($"블록에서 랜덤하게 한 타일 제거: {deleteY_Tile1}");
-                }
-
-                yield return null;
+                continue; // 시작 맵은 이미 생성했으므로 건너뜀
             }
+
+            Vector2Int spawnY0PosX = mapXY[i, 0];
+            int RadMap = Random.Range(1, 4);
+            Instantiate_Map_Prefab(RadMap, 0, spawnY0PosX.x, spawnY0PosX.y);
+        }
+
+        // y1 라인에 맵 생성하고 y0에 있는 확정 탈출구
+
+    }
+
+
+    #region 랜덤 맵 생성
+    private void Instantiate_Map_Prefab(int chose_map , int random_map , int spawnXpos , int spawnYpos)
+    {
+        switch (chose_map)
+        {
+            case 0:
+                Instantiate(_Clear_Map_Prefab[random_map], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+                break;
+            case 1:
+                Instantiate(_LR_Exit_Map_Prefab[random_map], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+                break;
+            case 2:
+                Instantiate(_LRD_Exit_Map_Prefab[random_map], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+                break;
+            case 3:
+                Instantiate(_LRDW_Exit_Map_Prefab[random_map], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+                break;
+            case 4:
+                Instantiate(_Special_Map_Prefab[random_map], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+                break;
         }
     }
     #endregion
