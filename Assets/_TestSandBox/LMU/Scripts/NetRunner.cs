@@ -8,7 +8,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
 {
     [SerializeField] private GameObject gameStatesPrefab;
     [SerializeField] private GameObject playerMPrefab;
-    [SerializeField] private GameObject tempNetPlayerPrefab;
+    [SerializeField] private GameObject playerPrefab;
 
 
     [Header("디버그용")]
@@ -19,6 +19,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     private void OnDestroy()
     {
         hostPlayerManage = null;
+        OnSceneLoadDoneAction = null;
     }
 
 
@@ -49,7 +50,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
            GameMode = mode,                   
            SessionName = roomName,       
            PlayerCount = 4,      
-           SceneManager = LevelManager.Inst,      
+           SceneManager = LevelManager.Inst,
        };
 
        var startGameTask = netRunner.StartGame(startGameArgs);
@@ -57,6 +58,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
        OnEnterLobby?.Invoke();
        
        Debug.Log($"방에 입장함 {roomName}");
+       await Awaitable.NextFrameAsync();
     }
 
     /// <summary>
@@ -83,7 +85,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
             // 호스트인경우, 객체 생성후 네트워크 등록까지 대기
             if (localGameMode == GameMode.Host && hostPlayerManage == null)
             {
-                await runner.SpawnAsync(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player,
+                await runner.SpawnAsync(playerPrefab, Vector3.zero, Quaternion.identity, player,
                 onCompleted: (NetworkSpawnOp obj) =>
                 {
                     var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
@@ -96,7 +98,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
             // 클라이언트인 경우
             else
             {
-                runner.Spawn(tempNetPlayerPrefab, Vector3.zero, Quaternion.identity, player);
+                runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, player);
             }
         }
     }
@@ -104,14 +106,6 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
     {
     }
-
-
-
-
-
-
-
-
 
     public void OnConnectedToServer(NetworkRunner runner)
     {
@@ -162,8 +156,13 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
     {
     }
 
+    
+
+    public Action<string> OnSceneLoadDoneAction;
     public void OnSceneLoadDone(NetworkRunner runner)
     {
+        var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        OnSceneLoadDoneAction?.Invoke(sceneName);
     }
 
     public void OnSceneLoadStart(NetworkRunner runner)
