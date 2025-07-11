@@ -5,9 +5,9 @@ using UnityEngine;
 public class UI_Controller : BaseManager<UI_Controller>
 {
     [Header("인스펙터 참조")]
-    [SerializeField] private UI_Title uiTitle;
-    [SerializeField] private UI_Lobby uiLobby;
-    [SerializeField] private UI_Game uiGame;
+    [field: SerializeField] public UI_Title uiTitle {get; private set;}
+    [field: SerializeField] public UI_Lobby uiLobby {get; private set;}
+    [field: SerializeField] public UI_Game uiGame {get; private set;}
 
     private void Awake()
     {

@@ -14,6 +14,12 @@ public class UI_GameStateTest : MonoBehaviour
 
     private void Awake()
     {
+        if (GlobalSetting.Inst.IsShowGameUI == false)
+        {
+            _testHolder.gameObject.SetActive(false);
+            return;
+        }
+
 #if UNITY_EDITOR
         _testHolder.gameObject.SetActive(true);
         _nextStageButton.onClick.AddListener(OnClickNextStageButton);

@@ -23,12 +23,34 @@ public class UI_PlayerSlotContainer : MonoBehaviour
             slot.gameObject.SetActive(false);
         }
 
-        var playerM = FindAnyObjectByType<PlayerManager>();
-        playerM.AddRenderingAction(UpdateData);
+        _ = PollingDataAction();
+    }
+
+    /// <summary>
+    /// 플레이어 데이터 구독 Polling 
+    /// </summary>
+    public async Awaitable PollingDataAction()
+    {
+        while (true)
+        {
+             var playerM = FindAnyObjectByType<PlayerManager>();
+            if (playerM != null)
+            {
+                playerM.AddRenderingAction(UpdateData);
+                break;
+            }
+            await Awaitable.WaitForSecondsAsync(0.2f);
+        }
     }
 
     public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
+        if (GlobalSetting.Inst.IsShowGameUI == false)
+        {
+            this.gameObject.SetActive(false);
+            return;
+        }
+        
         // 정렬 및 슬롯 개수 동기화
         var sortedKeys = players.Select(p => p.Key).OrderBy(x => x).ToArray();
         SyncCharacterSlotCount(sortedKeys.Length);

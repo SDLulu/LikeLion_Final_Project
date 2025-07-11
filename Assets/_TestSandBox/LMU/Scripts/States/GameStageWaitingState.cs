@@ -9,7 +9,7 @@ public class GameStageWaitingState : StateBehaviour
     public Fader Fader {get; set;}
 
     [Header("설정")]
-    [SerializeField] private float minWaitingTime = 3.0f;
+    [SerializeField] private float minWaitingTime = 1.5f;
 
     [Header("디버그용")]
     private TickTimer waitingTimer = TickTimer.None;

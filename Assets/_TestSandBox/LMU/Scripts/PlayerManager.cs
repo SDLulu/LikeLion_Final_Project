@@ -7,6 +7,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 {
     [Header("설정")]
     [SerializeField] private int minPlayersToStart = 2;                 // 게임 시작 최소 인원
+    [SerializeField] private bool testMode = false;                     // 테스트 모드 활성화
+    [SerializeField] private int minPlayersForTest = 1;                 // 테스트 모드 최소 인원
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
@@ -34,6 +36,20 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
         if(Runner.IsServer)
         {
             TryAddPlayer(player);
+            
+            // Late Join 처리: 게임이 이미 진행 중이면 바로 게임 씬으로 이동
+            if (isInGame && isGameSceneLoaded)
+            {
+                Debug.Log($"Late Join 플레이어 {player}를 게임 씬으로 이동시킵니다.");
+                
+                // 새로 입장한 플레이어만 게임 씬으로 이동
+                var playerData = GetPlayerData(player);
+                if (playerData != null)
+                {
+                    RPC_MovePlayerToGameScene(player);
+                    RPC_SetLobbyUI(false);
+                }
+            }
         }
     }
 
@@ -104,7 +120,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     /// </summary>
     public bool AreAllPlayersReady()
     {
-        if (Players.Count < minPlayersToStart) 
+        int requiredPlayers = testMode ? minPlayersForTest : minPlayersToStart;
+        if (Players.Count < requiredPlayers) 
             return false;
         
         foreach (var kvp in Players)
@@ -126,7 +143,8 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 
     public override async void FixedUpdateNetwork()
     {
-        if (Runner.IsServer && Players.Count >= 2 && isGameSceneLoading == false && isInGame == false)
+        int requiredPlayers = testMode ? minPlayersForTest : minPlayersToStart;
+        if (Runner.IsServer && Players.Count >= requiredPlayers && isGameSceneLoading == false && isInGame == false)
         {
             var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
             if (result)
@@ -142,6 +160,16 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
     [SerializeField] private bool isGameSceneLoaded = false;
     public async Awaitable<bool> TryStartGameAsync(bool isStart = true)
     {
+        if (Runner.GameMode == GameMode.Client)
+        {
+            Debug.Log("클라이언트 접속완료");
+            isGameSceneLoading = false;
+            isInGame = true;
+            isGameSceneLoaded = true;   
+            RPC_MoveToGameScene();
+            return false;
+        }
+
         if (isStart == false)
         {
             Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
@@ -157,8 +185,9 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
 
             Debug.Log("모든 플레이어가 준비되었습니다!");
 
+            var gameScenePath = GlobalSetting.Inst.GameScenePath;
             await LevelManager.LoadSceneAsync(
-                "DevGame", 
+                gameScenePath, 
                 UnityEngine.SceneManagement.LoadSceneMode.Additive, 
                 onLoadComplete: () =>
                 {
@@ -192,6 +221,71 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined, IPlayerLeft
             Runner.MoveGameObjectToSameScene(obj, GameObject.Find("GameScene"));
             var teleporter = obj.GetComponent<PlayerStageController>();
             teleporter.SetPosition(new Vector2(0, 0));
+        }
+    }
+    
+    /// <summary>
+    /// 특정 플레이어를 게임 씬으로 이동
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_MovePlayerToGameScene(PlayerRef player)
+    {
+        var playerData = GetPlayerData(player);
+        if (playerData != null)
+        {
+            var gameSceneObj = GameObject.Find("GameScene");
+            if (gameSceneObj != null)
+            {
+                Runner.MoveGameObjectToSameScene(playerData.gameObject, gameSceneObj);
+                var teleporter = playerData.GetComponent<PlayerStageController>();
+                if (teleporter != null)
+                {
+                    teleporter.SetPosition(new Vector2(0, 0));
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 플레이어 데이터 가져오기
+    /// </summary>
+    private PlayerData GetPlayerData(PlayerRef player)
+    {
+        if (Players.ContainsKey(player.AsIndex))
+        {
+            return Players[player.AsIndex];
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 테스트 모드 활성화/비활성화
+    /// </summary>
+    public void SetTestMode(bool enabled)
+    {
+        if (Runner.IsServer)
+        {
+            testMode = enabled;
+            Debug.Log($"테스트 모드 {(enabled ? "활성화" : "비활성화")} - 최소 인원: {(enabled ? minPlayersForTest : minPlayersToStart)}");
+        }
+    }
+
+    /// <summary>
+    /// 로비 UI 제어 RPC
+    /// </summary>
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public void RPC_SetLobbyUI(bool active)
+    {
+        try
+        {
+            if (UI_Controller.Inst != null && UI_Controller.Inst.uiLobby != null)
+            {
+                UI_Controller.Inst.uiLobby.gameObject.SetActive(active);
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"RPC_SetLobbyUI 중 오류: {e.Message}");
         }
     }
 }

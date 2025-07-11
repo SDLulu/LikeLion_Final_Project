@@ -109,6 +109,21 @@ public class UI_Title : MonoBehaviour
         // );
     }
 
+    public async Awaitable RunFastMode()
+    {
+        Debug.Log("방 생성 패널 활성화");
+        preventPanel.gameObject.SetActive(true);
+        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
+            mode: GameMode.AutoHostOrClient,
+            roomName: "TestRoom",
+            OnEnterLobby: () =>
+            {
+                UIController.ActiveLobbyUI();
+                preventPanel.gameObject.SetActive(false);
+            }
+        );
+    }
+
     public async Awaitable OnClickCreateRoomBtn()
     {
         Debug.Log("방 생성 패널 활성화");
