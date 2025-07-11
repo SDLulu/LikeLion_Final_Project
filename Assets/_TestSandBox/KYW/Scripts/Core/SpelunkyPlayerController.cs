@@ -25,14 +25,20 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     [Header("Hand References")]
     [SerializeField] private Transform handRoot; // Hand 하위 오브젝트 참조
     
-    // 🎮 로컬 변수들
+    // 🎮 입력 변수들 (Fusion 2 공식 방식 - NetworkButtons로 통합)
     private float horizontalInput;
     private float verticalInput;
     private Vector2 mouseWorldPosition;
-    private bool jumpPressed;
-    private bool pickupPressed;
-    private bool useItemPressed;
-    private bool equipItemPressed;
+    private bool jumpPressed;       // Space + !IsDucking
+    private bool pickupPressed;     // Space + IsDucking  
+    
+    // 🔨 아이템 사용 입력들 (세분화된 클릭 상태)
+    private bool useItemPressStarted;   // 이번 프레임에 클릭 시작
+    private bool useItemHeld;           // 현재 클릭 유지 중
+    private bool useItemReleased;       // 이번 프레임에 클릭 종료
+    private bool previousMouseButton0;  // 이전 프레임 마우스 상태 (상태 변화 감지용)
+    
+    private bool throwItemPressed;  // 우클릭 (MouseButton 1)
 
     
     // 📦 물리/로직 컴포넌트 참조들 (같은 오브젝트에서 찾기)
@@ -168,10 +174,17 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 점프 입력 (일관성을 위해 변수로 저장)
             jumpPressed = Input.GetKey(KeyCode.Space) && !IsDucking;
             
-            // 아이템 관련 입력 (Fusion 2 공식 권장: GetKey/GetMouseButton 사용)
+            // 🔘 아이템 관련 입력 (Fusion 2 공식 권장: GetKey/GetMouseButton 사용)
             pickupPressed = Input.GetKey(KeyCode.Space) && IsDucking;
-            useItemPressed = Input.GetMouseButton(0);
-            equipItemPressed = Input.GetMouseButton(1);
+            
+            // 🔨 마우스 좌클릭 상태 변화 감지
+            bool currentMouseButton0 = Input.GetMouseButton(0);
+            useItemPressStarted = currentMouseButton0 && !previousMouseButton0;  // 클릭 시작
+            useItemHeld = currentMouseButton0;                                   // 클릭 유지
+            useItemReleased = !currentMouseButton0 && previousMouseButton0;     // 클릭 종료
+            previousMouseButton0 = currentMouseButton0;                         // 상태 저장
+            
+            throwItemPressed = Input.GetMouseButton(1);  // 우클릭
         }
     }
     
@@ -216,11 +229,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.VerticalInput = verticalInput;
             data.MouseWorldPosition = mouseWorldPosition;
             
-            // 버튼 입력 설정 (모든 입력을 일관성 있게 변수로 처리)
+            // 🔘 버튼 입력 설정 (Fusion 2 공식 방식 - NetworkButtons로 통합)
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
-            data.NetworkButtons.Set(SpelunkyInputButtons.UseItem, useItemPressed);
-            data.NetworkButtons.Set(SpelunkyInputButtons.EquipItem, equipItemPressed);
+            
+            // 🔨 아이템 사용 입력들 (세분화된 상태)
+            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemPress, useItemPressStarted);
+            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
+            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemRelease, useItemReleased);
+            
+            data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
         }
         
         return data;
