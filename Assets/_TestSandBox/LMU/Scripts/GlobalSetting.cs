@@ -23,7 +23,7 @@ public class GlobalSetting : BaseManager<GlobalSetting>
 
             if (CheckScenePath(_globalSetting.LobbyScenePath) == false)
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 로비 씬 경로가 유효하지 않습니다: {_globalSetting.LobbyScenePath} - {_globalSetting.GlobalSettingName}");
+                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 로비 씬 경로가 유효하지 않습니다: {_globalSetting.LobbyScenePath}");
                 return string.Empty;
             }
 
@@ -43,7 +43,7 @@ public class GlobalSetting : BaseManager<GlobalSetting>
 
             if (!CheckScenePath(_globalSetting.GameScenePath))
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 게임 씬 경로가 유효하지 않습니다: {_globalSetting.GameScenePath}");
+                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 게임 씬 경로가 유효하지 않습니다");
                 return string.Empty;
             }
 
