@@ -2,13 +2,19 @@ using Fusion;
 using UnityEngine;
 
 // 🎮 플레이어 아이템 사용 컨트롤러
-// 아이템 사용(좌클릭) 담당 - 근접무기/원거리무기/소모품/기타잡템 처리
+// Hand 하위 오브젝트에 위치하며, 아이템 사용(좌클릭) 담당
+// 근접무기/원거리무기/소모품/기타잡템 처리
 public class PlayerItemUsage : NetworkBehaviour
 {
     [Header("Usage Settings")]
     [SerializeField] private bool showDebugInfo = true;        // 디버그 정보 표시
     [SerializeField] private float useRange = 2f;              // 사용 범위
     [SerializeField] private LayerMask targetLayerMask = -1;   // 타겟 레이어 마스크
+    
+    [Header("Rotation Settings")]
+    [SerializeField] private bool enableItemRotation = true;   // 아이템 회전 활성화
+    [SerializeField] private float rotationSpeed = 10f;        // 회전 속도 (즉시 회전은 0)
+    [SerializeField] private Vector2 rotationOffset = Vector2.right; // 기본 방향 오프셋
     
     [Header("Effect Settings")]
     [SerializeField] private float effectDuration = 0.5f;     // 이펙트 지속 시간
@@ -19,12 +25,20 @@ public class PlayerItemUsage : NetworkBehaviour
     // 📦 컴포넌트 참조들
     private SpelunkyPlayerController playerController;
     private PlayerItemPickup itemPickup;
+    private PlayerMovement playerMovement;  // 플레이어 방향 정보용
     
     public override void Spawned()
     {
         // 컴포넌트 찾기
         playerController = GetComponent<SpelunkyPlayerController>();
         itemPickup = GetComponent<PlayerItemPickup>();
+        
+        // 부모(Player)에서 PlayerMovement 찾기
+        Transform parentPlayer = transform.parent;
+        if (parentPlayer != null)
+        {
+            playerMovement = parentPlayer.GetComponent<PlayerMovement>();
+        }
         
         Debug.Log($"🎮 PlayerItemUsage 생성 - HasInputAuthority: {Object.HasInputAuthority}");
     }
@@ -37,6 +51,12 @@ public class PlayerItemUsage : NetworkBehaviour
         
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
+        
+        // 🔄 아이템 회전 처리 (매 프레임)
+        if (enableItemRotation && itemPickup?.CurrentItem != null)
+        {
+            RotateItemToMouse(input.MouseWorldPosition);
+        }
         
         // 아이템 사용 (좌클릭)
         if (pressed.IsSet(SpelunkyInputButtons.UseItem))
@@ -231,6 +251,50 @@ public class PlayerItemUsage : NetworkBehaviour
         Debug.Log($"🌟 일반 소모품 사용: {item.name}");
     }
     
+    // 🔄 아이템을 마우스 방향으로 회전 (플레이어 방향 동기화)
+    private void RotateItemToMouse(Vector2 mouseWorldPosition)
+    {
+        GameObject currentItem = itemPickup.CurrentItem;
+        if (currentItem == null || playerMovement == null) return;
+        
+        // 플레이어(Hand) 위치에서 마우스로의 방향 계산
+        Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
+        
+        // 방향 벡터를 각도로 변환
+        float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        
+        // rotationOffset 계산 (기본 방향 오프셋)
+        float offsetAngle = Mathf.Atan2(rotationOffset.y, rotationOffset.x) * Mathf.Rad2Deg;
+        
+        // 플레이어 방향에 따른 각도 및 오프셋 조정
+        if (playerMovement.IsFacingLeft)
+        {
+            // 플레이어가 왼쪽을 보고 있으면 180도 회전하여 왼쪽 기준으로 조정
+            targetAngle += 180f;
+            // 오프셋도 함께 뒤집어줌 (핵심!)
+            offsetAngle += 180f;
+        }
+        
+        // 최종 각도 = 마우스 방향 - 아이템 기본 방향 오프셋
+        targetAngle -= offsetAngle;
+        
+        // 회전 적용 (스케일은 건드리지 않음)
+        if (rotationSpeed <= 0f)
+        {
+            // 즉시 회전
+            currentItem.transform.rotation = Quaternion.Euler(0, 0, targetAngle);
+        }
+        else
+        {
+            // 부드러운 회전
+            currentItem.transform.rotation = Quaternion.Slerp(
+                currentItem.transform.rotation,
+                Quaternion.Euler(0, 0, targetAngle),
+                rotationSpeed * Runner.DeltaTime
+            );
+        }
+    }
+    
     // 📊 상태 확인 프로퍼티들
     public bool CanUseItem => itemPickup?.CurrentItem != null;
     public string CurrentItemType
@@ -252,7 +316,7 @@ public class PlayerItemUsage : NetworkBehaviour
     {
         if (!showDebugInfo || !Object.HasInputAuthority) return;
         
-        GUILayout.BeginArea(new Rect(10, 380, 300, 100));
+        GUILayout.BeginArea(new Rect(10, 400, 300, 100));
         GUILayout.Box("🎮 아이템 사용");
         GUILayout.Label($"사용 가능: {(CanUseItem ? "예" : "아니오")}");
         GUILayout.Label($"아이템 종류: {CurrentItemType}");

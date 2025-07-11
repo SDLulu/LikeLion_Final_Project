@@ -27,7 +27,7 @@ public class PlayerJump : NetworkBehaviour
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
-        groundCheck = GetComponent<PlayerGroundCheck>();
+        groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
     }
     
@@ -116,7 +116,7 @@ public class PlayerJump : NetworkBehaviour
     {
         if (!showDebugInfo || !Object.HasInputAuthority) return;
         
-        GUILayout.BeginArea(new Rect(10, 380, 300, 100));
+        GUILayout.BeginArea(new Rect(10, 510, 300, 100));
         GUILayout.Box("🦘 점프 상태");
         GUILayout.Label($"땅에 있음: {groundCheck?.IsGrounded}");
         GUILayout.Label($"점프 중: {IsJumping}");
