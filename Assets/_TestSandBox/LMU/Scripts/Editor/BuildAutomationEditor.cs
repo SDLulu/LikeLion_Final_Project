@@ -13,12 +13,34 @@ public class BuildAutomationEditor : EditorWindow
     private static int windowHeight = 600;
     private static int playerCount = 4;
     
+    // delayCall 메모리 누수 방지를 위한 정적 델리게이트
+    private static string pendingExecutablePath = "";
+    private static EditorApplication.CallbackFunction launchInstancesCallback;
+    private static EditorApplication.CallbackFunction arrangeWindowsCallback;
+    
     private static Vector2Int[] windowPositions = {
         new Vector2Int(0, 0),      // 왼쪽 위
         new Vector2Int(800, 0),    // 오른쪽 위
         new Vector2Int(0, 600),    // 왼쪽 아래
         new Vector2Int(800, 600)   // 오른쪽 아래
     };
+    
+    // 정적 생성자에서 델리게이트 초기화
+    static BuildAutomationEditor()
+    {
+        launchInstancesCallback = () => {
+            if (!string.IsNullOrEmpty(pendingExecutablePath))
+            {
+                LaunchMultipleInstances(pendingExecutablePath);
+                pendingExecutablePath = "";
+            }
+        };
+        
+        arrangeWindowsCallback = () => {
+            System.Threading.Thread.Sleep(3000); // 3초 대기
+            ArrangeWindows();
+        };
+    }
     
     // 모니터 해상도에 따라 창 위치 자동 계산
     private static Vector2Int[] CalculateWindowPositions()
@@ -189,15 +211,23 @@ public class BuildAutomationEditor : EditorWindow
         {
             UnityEngine.Debug.Log("빌드 성공!");
             
-            // 빌드 완료 후 exe 파일들 실행
-            EditorApplication.delayCall += () => {
-                LaunchMultipleInstances(executablePath);
-            };
+            // 기존 delayCall 제거 후 새로운 실행 요청 등록
+            CleanupDelayedCallbacks();
+            pendingExecutablePath = executablePath;
+            EditorApplication.delayCall += launchInstancesCallback;
         }
         else
         {
             UnityEngine.Debug.LogError("빌드 실패!");
         }
+    }
+    
+    // delayCall 메모리 누수 방지를 위한 정리 메서드
+    private static void CleanupDelayedCallbacks()
+    {
+        EditorApplication.delayCall -= launchInstancesCallback;
+        EditorApplication.delayCall -= arrangeWindowsCallback;
+        pendingExecutablePath = "";
     }
 
     private static void LaunchMultipleInstances(string executablePath)
@@ -217,10 +247,8 @@ public class BuildAutomationEditor : EditorWindow
             LaunchInstance(executablePath, i);
         }
         
-        // 창 위치 조정
-        EditorApplication.delayCall += () => {
-            DelayedWindowArrangement();
-        };
+        // 창 위치 조정을 위한 지연 호출 등록
+        EditorApplication.delayCall += arrangeWindowsCallback;
     }
 
     private static void LaunchInstance(string executablePath, int instanceIndex)
@@ -240,15 +268,6 @@ public class BuildAutomationEditor : EditorWindow
         {
             UnityEngine.Debug.LogError($"인스턴스 {instanceIndex + 1} 실행 실패: {e.Message}");
         }
-    }
-
-    private static void DelayedWindowArrangement()
-    {
-        // 창들이 완전히 로드될 때까지 대기 후 위치 조정
-        EditorApplication.delayCall += () => {
-            System.Threading.Thread.Sleep(3000); // 3초 대기
-            ArrangeWindows();
-        };
     }
 
     private static void ArrangeWindows()

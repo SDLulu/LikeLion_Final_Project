@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Fusion;
 using LMCore;
 using UnityEngine;
@@ -24,6 +23,7 @@ public class LevelManager : NetworkSceneManagerDefault
             await Inst.Runner.LoadScene(sceneName, new LoadSceneParameters(loadSceneMode), setActiveOnLoad);
             await Awaitable.NextFrameAsync();
             onLoadComplete?.Invoke();
+            await Awaitable.NextFrameAsync();
         }
         catch (Exception e)
         {
