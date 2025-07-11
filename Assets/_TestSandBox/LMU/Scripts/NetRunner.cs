@@ -8,8 +8,6 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
 {
     [SerializeField] private GameObject gameStatesPrefab;
     [SerializeField] private GameObject playerMPrefab;
-    [SerializeField] private GameObject playerPrefab;
-
 
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
@@ -33,7 +31,6 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
                                         string roomName = "TestRoom",
                                         Action OnEnterLobby = default)
     {
-        localGameMode = mode;
         var netRunner = GetComponent<NetworkRunner>();
 
         if (netRunner == null)
@@ -53,9 +50,9 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
            SceneManager = LevelManager.Inst,
        };
 
-       var startGameTask = netRunner.StartGame(startGameArgs);
-       await startGameTask;
-       OnEnterLobby?.Invoke();
+        var startGameTask = netRunner.StartGame(startGameArgs);
+        await startGameTask;
+        OnEnterLobby?.Invoke();
        
        Debug.Log($"방에 입장함 {roomName}");
        await Awaitable.NextFrameAsync();
@@ -81,10 +78,18 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
         if (runner.IsServer)
         {
             LocalPlayer = player;
-
+            localGameMode = runner.GameMode;
+            
+            // Late Join 처리: 게임이 이미 시작되었는지 확인
+            bool isGameInProgress = gameStates != null && 
+                                   gameStates.StateMachine != null && 
+                                   gameStates.StateMachine.ActiveState != null &&
+                                   !(gameStates.StateMachine.ActiveState is LobbyState);
+            
             // 호스트인경우, 객체 생성후 네트워크 등록까지 대기
-            if (localGameMode == GameMode.Host && hostPlayerManage == null)
+            if (runner.GameMode == GameMode.Host && hostPlayerManage == null)
             {
+                var playerPrefab = GlobalSetting.Inst.PlayerPrefab;
                 await runner.SpawnAsync(playerPrefab, Vector3.zero, Quaternion.identity, player,
                 onCompleted: (NetworkSpawnOp obj) =>
                 {
@@ -98,9 +103,65 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
             // 클라이언트인 경우
             else
             {
-                runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, player);
+                var playerPrefab = GlobalSetting.Inst.PlayerPrefab;
+                var spawnedPlayer = runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, player);
+                
+                                 // Late Join 처리: 게임이 진행 중이면 현재 게임 상태에 맞춰 플레이어 동기화
+                 if (isGameInProgress)
+                 {
+                     Debug.Log($"Late Join 감지: 플레이어 {player}가 게임 진행 중에 입장했습니다.");
+                     
+                     // 게임 진행 중이면 현재 게임 씬으로 이동
+                     _ = HandleLateJoinPlayer(runner, player, spawnedPlayer);
+                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Late Join 플레이어 처리
+    /// </summary>
+    private async Awaitable HandleLateJoinPlayer(NetworkRunner runner, PlayerRef player, NetworkObject spawnedPlayer)
+    {
+        // 1. 현재 게임 상태 확인
+        var currentState = gameStates.StateMachine.ActiveState;
+        
+        // 2. 게임 씬이 로드되었는지 확인하고 플레이어를 해당 씬으로 이동
+        if (currentState is GameStageWaitingState || 
+            currentState is GameStagePlayingState ||
+            currentState is GameStageTransitionState)
+        {
+            // 게임 씬으로 플레이어 이동
+            var gameSceneObj = GameObject.Find("GameScene");
+            if (gameSceneObj != null)
+            {
+                runner.MoveGameObjectToSameScene(spawnedPlayer.gameObject, gameSceneObj);
+                
+                // 플레이어 위치 설정
+                var teleporter = spawnedPlayer.GetComponent<PlayerStageController>();
+                if (teleporter != null)
+                {
+                    teleporter.SetPosition(new Vector2(0, 0));
+                }
+            }
+        }
+        
+                 // 3. 플레이어 상태를 게임 진행 상태에 맞춰 설정
+         var playerData = spawnedPlayer.GetComponent<PlayerData>();
+         if (playerData != null)
+         {
+             // Late Join 플레이어는 자동으로 준비 상태로 설정 (서버에서만 가능)
+             playerData.SetReadyState(true);
+             
+             // 게임이 이미 시작되었으면 플레이어 상태를 활성화
+             if (currentState is GameStagePlayingState)
+             {
+                 // 플레이어를 게임 플레이 상태로 설정
+                 Debug.Log($"Late Join 플레이어 {player}를 게임 플레이 상태로 설정합니다.");
+             }
+         }
+        
+        Debug.Log($"Late Join 처리 완료: 플레이어 {player}");
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
