@@ -21,7 +21,7 @@ public enum SpelunkyInputButtons
 {
     None = 0,
     Jump = 1,           // 스페이스 - 점프
-    PickupItem = 2,     // 스페이스 (앉은 상태) - 아이템 수집
+    PickupItem = 2,     // 스페이스 (앉은 상태) - 아이템 들기
     UseItem = 3,        // 마우스 좌클릭 - 아이템 사용
-    EquipItem = 4,      // 마우스 우클릭 - 아이템 장착/해제
+    EquipItem = 4,      // 마우스 우클릭 - 아이템 던지기
 } 
