@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 더이상 사용하지 않음
+/// </summary>
 [CreateAssetMenu(fileName = "SO_LocalPlayerData", menuName = "스크립터블/LocalPlayerData")]
 public class SO_LocalPlayerData : ScriptableObject
 {

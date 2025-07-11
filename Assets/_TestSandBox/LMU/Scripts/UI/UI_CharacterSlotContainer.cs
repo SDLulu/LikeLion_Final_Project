@@ -17,8 +17,6 @@ public class UI_CharacterSlotContainer : MonoBehaviour
     [SerializeField] private UI_CharacterSlot localPlayerSlot;
     [field: SerializeField] public int CurrentCharacterIndex {get; private set;}
 
-    private PlayerManager playerManager;
-
     private void Awake()
     {
         // 초기화 시점에 슬롯이 존재하는 경우 제거
