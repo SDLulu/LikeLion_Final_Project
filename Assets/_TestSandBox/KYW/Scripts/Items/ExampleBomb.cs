@@ -39,6 +39,7 @@ public class ExampleBomb : UsableItemBase
         explosionPosition = playerPosition;
         
         // 딜레이 후 폭발
+        // ⚠️ Fusion 2 주의: 실제로는 TickTimer 사용 권장 (NetworkBehaviour 필요)
         Invoke(nameof(Explode), explosionDelay);
         
         // 깜박임 효과 시작

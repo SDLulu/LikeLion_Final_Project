@@ -202,14 +202,22 @@ public class PlayerItemPickup : NetworkBehaviour
         item.transform.localPosition = Vector3.zero;
         item.transform.localRotation = Quaternion.identity;
         
-        // 아이템의 물리 비활성화 (들고 있는 동안)
+        // 아이템의 물리 완전히 비활성화 (들고 있는 동안)
         var rigidbody = item.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
+        {
+            // 물리 완전 정지
             rigidbody.isKinematic = true;
+            rigidbody.linearVelocity = Vector2.zero;
+            rigidbody.angularVelocity = 0f;
+            rigidbody.simulated = false; // 물리 시뮬레이션 완전 비활성화
+        }
         
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.enabled = false;
+        
+        Debug.Log($"🎒 아이템 픽업 완료: {item.name} - 물리 완전 비활성화");
     }
     
     // 🎯 아이템 던지기 처리
@@ -231,12 +239,14 @@ public class PlayerItemPickup : NetworkBehaviour
         // 던지기 속도 계산
         Vector2 throwVelocity = direction * 10f; // 던지기 힘
         
-        // 물리 활성화
+        // 물리 다시 활성화
         var rigidbody = itemToThrow.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
         {
+            rigidbody.simulated = true; // 물리 시뮬레이션 다시 활성화
             rigidbody.isKinematic = false;
             rigidbody.linearVelocity = throwVelocity;
+            rigidbody.angularVelocity = 0f; // 회전 초기화
         }
         
         var collider = itemToThrow.GetComponent<Collider2D>();
