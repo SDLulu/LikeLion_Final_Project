@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9368213e7a6bfcb4a98e55311df80455
+guid: 6b2d6e9e7c16d794c965471df1879464
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -17,9 +17,6 @@ TextureImporter:
   - first:
       213: -6947050608806029328
     second: clouds_shape8_3_4
-  - first:
-      213: 2617465767159688734
-    second: clouds_shape8_3_5
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -111,6 +108,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -118,10 +154,10 @@ TextureImporter:
       name: clouds_shape8_3_0
       rect:
         serializedVersion: 2
-        x: 219
-        y: 124
-        width: 437
-        height: 41
+        x: 0
+        y: 13
+        width: 111
+        height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -140,10 +176,10 @@ TextureImporter:
       name: clouds_shape8_3_1
       rect:
         serializedVersion: 2
-        x: 0
-        y: 84
-        width: 491
-        height: 37
+        x: 43
+        y: 24
+        width: 89
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -162,10 +198,10 @@ TextureImporter:
       name: clouds_shape8_3_2
       rect:
         serializedVersion: 2
-        x: 524
-        y: 94
-        width: 191
-        height: 22
+        x: 104
+        y: 18
+        width: 39
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -184,10 +220,10 @@ TextureImporter:
       name: clouds_shape8_3_3
       rect:
         serializedVersion: 2
-        x: 474
-        y: 69
-        width: 77
-        height: 17
+        x: 32
+        y: 7
+        width: 68
+        height: 7
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -206,10 +242,10 @@ TextureImporter:
       name: clouds_shape8_3_4
       rect:
         serializedVersion: 2
-        x: 164
-        y: 39
-        width: 332
-        height: 27
+        x: 21
+        y: 0
+        width: 71
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -220,28 +256,6 @@ TextureImporter:
       bones: []
       spriteID: 0f79471474e179f90800000000000000
       internalID: -6947050608806029328
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: clouds_shape8_3_5
-      rect:
-        serializedVersion: 2
-        x: 109
-        y: 0
-        width: 347
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e1e6c4f4f3b135420800000000000000
-      internalID: 2617465767159688734
       vertices: []
       indices: 
       edges: []
@@ -265,7 +279,6 @@ TextureImporter:
       clouds_shape8_3_2: -8720208452415560037
       clouds_shape8_3_3: 9014004984296238632
       clouds_shape8_3_4: -6947050608806029328
-      clouds_shape8_3_5: 2617465767159688734
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

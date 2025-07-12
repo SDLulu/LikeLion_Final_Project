@@ -1,25 +1,22 @@
 fileFormatVersion: 2
-guid: a281f25a698aa1d42a02223f3e03c8a9
+guid: 0026eb86a74dd11439a458a075b4b330
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 9170423344267357680
-    second: Map_tile_125_0
+      213: -4695539567907107493
+    second: Fog_05_0
   - first:
-      213: -7675120046629980492
-    second: Map_tile_125_1
+      213: -6804153035569010812
+    second: Fog_05_1
   - first:
-      213: 8751700591273480290
-    second: Map_tile_125_2
+      213: -5981898571238264555
+    second: Fog_05_2
   - first:
-      213: 3991563420758216652
-    second: Map_tile_125_3
+      213: 5337112545077761993
+    second: Fog_05_3
   - first:
-      213: -1196774057490481388
-    second: Map_tile_125_4
-  - first:
-      213: 964863799836244059
-    second: Map_tile_125_5
+      213: -4666323994778757526
+    second: Fog_05_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -111,17 +108,56 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Map_tile_125_0
+      name: Fog_05_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 29
-        width: 86
-        height: 102
+        y: 14
+        width: 17
+        height: 11
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -130,20 +166,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0fd6103d173e34f70800000000000000
-      internalID: 9170423344267357680
+      spriteID: b5d0b1a14a716deb0800000000000000
+      internalID: -4695539567907107493
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Map_tile_125_1
+      name: Fog_05_1
       rect:
         serializedVersion: 2
-        x: 99
-        y: 129
-        width: 12
-        height: 12
+        x: 3
+        y: 25
+        width: 10
+        height: 7
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -152,41 +188,19 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4b6f32c6bfe7c7590800000000000000
-      internalID: -7675120046629980492
+      spriteID: 48763853ddac291a0800000000000000
+      internalID: -6804153035569010812
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Map_tile_125_2
+      name: Fog_05_2
       rect:
         serializedVersion: 2
-        x: 104
-        y: 79
-        width: 42
-        height: 42
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2609e6bb159447970800000000000000
-      internalID: 8751700591273480290
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Map_tile_125_3
-      rect:
-        serializedVersion: 2
-        x: 99
-        y: 34
-        width: 32
+        x: 10
+        y: 0
+        width: 22
         height: 32
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -196,20 +210,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ccf8cb078c1e46730800000000000000
-      internalID: 3991563420758216652
+      spriteID: 5113de261f60cfca0800000000000000
+      internalID: -5981898571238264555
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Map_tile_125_4
+      name: Fog_05_3
       rect:
         serializedVersion: 2
-        x: 139
-        y: 59
-        width: 17
-        height: 17
+        x: 1
+        y: 6
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -218,20 +232,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 41f70e2e554346fe0800000000000000
-      internalID: -1196774057490481388
+      spriteID: 9c714af159b311a40800000000000000
+      internalID: 5337112545077761993
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Map_tile_125_5
+      name: Fog_05_4
       rect:
         serializedVersion: 2
-        x: 99
-        y: 14
-        width: 17
-        height: 17
+        x: 1
+        y: 0
+        width: 11
+        height: 5
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -240,8 +254,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b587fdd8382e36d00800000000000000
-      internalID: 964863799836244059
+      spriteID: a66945ccc03ed3fb0800000000000000
+      internalID: -4666323994778757526
       vertices: []
       indices: 
       edges: []
@@ -260,12 +274,11 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Map_tile_125_0: 9170423344267357680
-      Map_tile_125_1: -7675120046629980492
-      Map_tile_125_2: 8751700591273480290
-      Map_tile_125_3: 3991563420758216652
-      Map_tile_125_4: -1196774057490481388
-      Map_tile_125_5: 964863799836244059
+      Fog_05_0: -4695539567907107493
+      Fog_05_1: -6804153035569010812
+      Fog_05_2: -5981898571238264555
+      Fog_05_3: 5337112545077761993
+      Fog_05_4: -4666323994778757526
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

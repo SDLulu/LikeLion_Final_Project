@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 766b8df4e1a2bf545811339b49a3cde1
+guid: fc2e821fab7b2874a95a141e0b89f9a0
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -23,12 +23,6 @@ TextureImporter:
   - first:
       213: -1718751982555464348
     second: Map_tile_138_6
-  - first:
-      213: -820035488732158897
-    second: Map_tile_138_7
-  - first:
-      213: 7265656493168903340
-    second: Map_tile_138_8
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -120,6 +114,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -127,10 +160,10 @@ TextureImporter:
       name: Map_tile_138_0
       rect:
         serializedVersion: 2
-        x: 29
-        y: 109
-        width: 42
-        height: 42
+        x: 5
+        y: 21
+        width: 10
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -149,10 +182,10 @@ TextureImporter:
       name: Map_tile_138_1
       rect:
         serializedVersion: 2
-        x: 84
-        y: 124
-        width: 32
-        height: 32
+        x: 16
+        y: 24
+        width: 8
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -171,10 +204,10 @@ TextureImporter:
       name: Map_tile_138_2
       rect:
         serializedVersion: 2
-        x: 24
-        y: 74
-        width: 17
-        height: 17
+        x: 19
+        y: 16
+        width: 8
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -193,10 +226,10 @@ TextureImporter:
       name: Map_tile_138_3
       rect:
         serializedVersion: 2
-        x: 59
-        y: 79
-        width: 27
-        height: 27
+        x: 4
+        y: 14
+        width: 14
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -215,10 +248,10 @@ TextureImporter:
       name: Map_tile_138_4
       rect:
         serializedVersion: 2
-        x: 99
-        y: 84
-        width: 32
-        height: 32
+        x: 15
+        y: 7
+        width: 9
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -237,10 +270,10 @@ TextureImporter:
       name: Map_tile_138_5
       rect:
         serializedVersion: 2
-        x: 29
-        y: 4
-        width: 47
-        height: 47
+        x: 5
+        y: 0
+        width: 16
+        height: 11
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -259,10 +292,10 @@ TextureImporter:
       name: Map_tile_138_6
       rect:
         serializedVersion: 2
-        x: 79
-        y: 39
-        width: 37
-        height: 37
+        x: 21
+        y: 2
+        width: 6
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -273,50 +306,6 @@ TextureImporter:
       bones: []
       spriteID: 46d78ce9d24c528e0800000000000000
       internalID: -1718751982555464348
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Map_tile_138_7
-      rect:
-        serializedVersion: 2
-        x: 84
-        y: 0
-        width: 17
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f44e7e65116ae94f0800000000000000
-      internalID: -820035488732158897
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Map_tile_138_8
-      rect:
-        serializedVersion: 2
-        x: 109
-        y: 14
-        width: 22
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: ca4c75fd51cc4d460800000000000000
-      internalID: 7265656493168903340
       vertices: []
       indices: 
       edges: []
@@ -342,8 +331,6 @@ TextureImporter:
       Map_tile_138_4: 641733549924354824
       Map_tile_138_5: -4577771081151314371
       Map_tile_138_6: -1718751982555464348
-      Map_tile_138_7: -820035488732158897
-      Map_tile_138_8: 7265656493168903340
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

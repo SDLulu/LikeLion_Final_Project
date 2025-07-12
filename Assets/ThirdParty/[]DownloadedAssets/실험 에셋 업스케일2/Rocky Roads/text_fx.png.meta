@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 45bbad8c1e4fe3746873aa994a104f81
+guid: bda81a23bbd363c49a05cb711d21e081
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -17,12 +17,6 @@ TextureImporter:
   - first:
       213: 6536920298319722010
     second: text_fx_4
-  - first:
-      213: 5959823446374874193
-    second: text_fx_5
-  - first:
-      213: 2144429874159752477
-    second: text_fx_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -114,6 +108,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -122,9 +155,9 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 89
-        width: 51
-        height: 62
+        y: 17
+        width: 11
+        height: 14
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,10 +176,10 @@ TextureImporter:
       name: text_fx_1
       rect:
         serializedVersion: 2
-        x: 54
-        y: 89
-        width: 297
-        height: 62
+        x: 10
+        y: 17
+        width: 100
+        height: 14
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -165,10 +198,10 @@ TextureImporter:
       name: text_fx_2
       rect:
         serializedVersion: 2
-        x: 349
-        y: 89
-        width: 52
-        height: 62
+        x: 110
+        y: 15
+        width: 13
+        height: 17
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -187,10 +220,10 @@ TextureImporter:
       name: text_fx_3
       rect:
         serializedVersion: 2
-        x: 399
-        y: 89
-        width: 147
-        height: 62
+        x: 0
+        y: 2
+        width: 9
+        height: 13
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -209,10 +242,10 @@ TextureImporter:
       name: text_fx_4
       rect:
         serializedVersion: 2
-        x: 554
-        y: 79
-        width: 57
-        height: 77
+        x: 8
+        y: 2
+        width: 73
+        height: 13
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -223,50 +256,6 @@ TextureImporter:
       bones: []
       spriteID: a163362906ec7ba50800000000000000
       internalID: 6536920298319722010
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: text_fx_5
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 14
-        width: 41
-        height: 57
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 15cf73519db85b250800000000000000
-      internalID: 5959823446374874193
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: text_fx_6
-      rect:
-        serializedVersion: 2
-        x: 44
-        y: 14
-        width: 357
-        height: 57
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d15170fdb9b82cd10800000000000000
-      internalID: 2144429874159752477
       vertices: []
       indices: 
       edges: []
@@ -290,8 +279,6 @@ TextureImporter:
       text_fx_2: 9165653576927171563
       text_fx_3: -3783723630443511844
       text_fx_4: 6536920298319722010
-      text_fx_5: 5959823446374874193
-      text_fx_6: 2144429874159752477
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: c2c2f68993a4b4e44b7b9e2180a85456
+guid: f38506060207d5f4c9746039ba65fb0c
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -11,12 +11,6 @@ TextureImporter:
   - first:
       213: -1312996694308562150
     second: Chest Open 02_2
-  - first:
-      213: 1876653150230141367
-    second: Chest Open 02_3
-  - first:
-      213: 489633492039082479
-    second: Chest Open 02_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -108,6 +102,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -117,8 +150,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 31
-        height: 16
+        width: 15
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,10 +170,10 @@ TextureImporter:
       name: Chest Open 02_1
       rect:
         serializedVersion: 2
-        x: 34
+        x: 16
         y: 0
-        width: 37
-        height: 36
+        width: 34
+        height: 25
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -159,10 +192,10 @@ TextureImporter:
       name: Chest Open 02_2
       rect:
         serializedVersion: 2
-        x: 84
+        x: 49
         y: 0
-        width: 162
-        height: 121
+        width: 15
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -173,50 +206,6 @@ TextureImporter:
       bones: []
       spriteID: a1bd97c867c47cde0800000000000000
       internalID: -1312996694308562150
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Open 02_3
-      rect:
-        serializedVersion: 2
-        x: 249
-        y: 0
-        width: 32
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 7b9d512e8163b0a10800000000000000
-      internalID: 1876653150230141367
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Open 02_4
-      rect:
-        serializedVersion: 2
-        x: 289
-        y: 0
-        width: 31
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: fe1af1b11178bc600800000000000000
-      internalID: 489633492039082479
       vertices: []
       indices: 
       edges: []
@@ -238,8 +227,6 @@ TextureImporter:
       Chest Open 02_0: -2969854465060845443
       Chest Open 02_1: 2612645959678776203
       Chest Open 02_2: -1312996694308562150
-      Chest Open 02_3: 1876653150230141367
-      Chest Open 02_4: 489633492039082479
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 0b1c52f14e29c1240813ffad6d61831c
+guid: eede05ed7ce88544283c501c2f801f9c
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -8,9 +8,6 @@ TextureImporter:
   - first:
       213: -3393664861214162887
     second: cloud_shape5_5_1
-  - first:
-      213: 1741156765943539788
-    second: cloud_shape5_5_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -102,6 +99,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -110,9 +146,9 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 54
-        width: 191
-        height: 87
+        y: 10
+        width: 44
+        height: 19
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,10 +167,10 @@ TextureImporter:
       name: cloud_shape5_5_1
       rect:
         serializedVersion: 2
-        x: 164
-        y: 109
-        width: 56
-        height: 36
+        x: 15
+        y: 0
+        width: 28
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -145,28 +181,6 @@ TextureImporter:
       bones: []
       spriteID: 930ca940ac747e0d0800000000000000
       internalID: -3393664861214162887
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: cloud_shape5_5_2
-      rect:
-        serializedVersion: 2
-        x: 79
-        y: 0
-        width: 132
-        height: 46
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c4825548ad4d92810800000000000000
-      internalID: 1741156765943539788
       vertices: []
       indices: 
       edges: []
@@ -187,7 +201,6 @@ TextureImporter:
     nameFileIdTable:
       cloud_shape5_5_0: 6779585729433660181
       cloud_shape5_5_1: -3393664861214162887
-      cloud_shape5_5_2: 1741156765943539788
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

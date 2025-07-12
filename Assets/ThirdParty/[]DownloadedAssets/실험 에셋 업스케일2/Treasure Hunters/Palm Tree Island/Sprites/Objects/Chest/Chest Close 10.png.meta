@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 6d36db2cf597c2c449804e52b5032338
+guid: e999c388aa3c2e040a7d02513293e0b7
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -11,12 +11,6 @@ TextureImporter:
   - first:
       213: 290249017156469579
     second: Chest Close 10_2
-  - first:
-      213: 6453901512997302920
-    second: Chest Close 10_3
-  - first:
-      213: 3120609717218684574
-    second: Chest Close 10_4
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -108,6 +102,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -117,8 +150,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 31
-        height: 16
+        width: 15
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -137,10 +170,10 @@ TextureImporter:
       name: Chest Close 10_1
       rect:
         serializedVersion: 2
-        x: 34
+        x: 17
         y: 0
-        width: 37
-        height: 36
+        width: 32
+        height: 26
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -159,10 +192,10 @@ TextureImporter:
       name: Chest Close 10_2
       rect:
         serializedVersion: 2
-        x: 89
+        x: 49
         y: 0
-        width: 152
-        height: 126
+        width: 15
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -173,50 +206,6 @@ TextureImporter:
       bones: []
       spriteID: b43840c71fb270400800000000000000
       internalID: 290249017156469579
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Close 10_3
-      rect:
-        serializedVersion: 2
-        x: 249
-        y: 0
-        width: 32
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8827f895b3dd09950800000000000000
-      internalID: 6453901512997302920
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Close 10_4
-      rect:
-        serializedVersion: 2
-        x: 289
-        y: 0
-        width: 31
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e9ea37d0102ae4b20800000000000000
-      internalID: 3120609717218684574
       vertices: []
       indices: 
       edges: []
@@ -238,8 +227,6 @@ TextureImporter:
       Chest Close 10_0: 6823693946342908679
       Chest Close 10_1: -4936384113084389635
       Chest Close 10_2: 290249017156469579
-      Chest Close 10_3: 6453901512997302920
-      Chest Close 10_4: 3120609717218684574
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: ec60b988a62d64f459abb11abd617292
+guid: dbe953377c1637340962fa051ac2dfce
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -17,9 +17,6 @@ TextureImporter:
   - first:
       213: -6888742848066405146
     second: slime_blue_4
-  - first:
-      213: 605233489602513858
-    second: slime_blue_5
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -111,6 +108,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -119,9 +155,9 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 79
-        width: 161
-        height: 52
+        y: 15
+        width: 33
+        height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -140,10 +176,10 @@ TextureImporter:
       name: slime_blue_1
       rect:
         serializedVersion: 2
-        x: 164
-        y: 79
-        width: 72
-        height: 57
+        x: 32
+        y: 15
+        width: 16
+        height: 13
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -162,10 +198,10 @@ TextureImporter:
       name: slime_blue_2
       rect:
         serializedVersion: 2
-        x: 244
-        y: 79
-        width: 72
-        height: 57
+        x: 48
+        y: 15
+        width: 16
+        height: 13
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -184,10 +220,10 @@ TextureImporter:
       name: slime_blue_3
       rect:
         serializedVersion: 2
-        x: 319
-        y: 79
-        width: 81
-        height: 42
+        x: 63
+        y: 15
+        width: 17
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -208,8 +244,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 81
-        height: 41
+        width: 33
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -220,28 +256,6 @@ TextureImporter:
       bones: []
       spriteID: 6ec3df7b0e44660a0800000000000000
       internalID: -6888742848066405146
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: slime_blue_5
-      rect:
-        serializedVersion: 2
-        x: 79
-        y: 0
-        width: 82
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 2cb8de1f6a8366800800000000000000
-      internalID: 605233489602513858
       vertices: []
       indices: 
       edges: []
@@ -265,7 +279,6 @@ TextureImporter:
       slime_blue_2: -3291471299551137877
       slime_blue_3: -3757193110608876193
       slime_blue_4: -6888742848066405146
-      slime_blue_5: 605233489602513858
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

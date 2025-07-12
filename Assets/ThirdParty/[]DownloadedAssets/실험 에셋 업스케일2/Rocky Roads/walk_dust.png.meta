@@ -1,31 +1,28 @@
 fileFormatVersion: 2
-guid: e8e6d29eecd1196428b5e9dc5ab00f82
+guid: ea3e56c97678ff5488cb3ba133b12619
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 1006398939630272687
-    second: walk_dust_0
+      213: -8552978535813556521
+    second: Fog_01_0
   - first:
-      213: 5733599520645749427
-    second: walk_dust_1
+      213: -7520888526155647420
+    second: Fog_01_1
   - first:
-      213: 4729243352196348269
-    second: walk_dust_2
+      213: -3862594882351735745
+    second: Fog_01_2
   - first:
-      213: 61476094866212548
-    second: walk_dust_3
+      213: -2645139548484839375
+    second: Fog_01_3
   - first:
-      213: 8963953113113430760
-    second: walk_dust_4
+      213: 6290101555549904359
+    second: Fog_01_4
   - first:
-      213: -8258328888596653462
-    second: walk_dust_5
+      213: 2055017435891546999
+    second: Fog_01_5
   - first:
-      213: -484534657391343922
-    second: walk_dust_6
-  - first:
-      213: 3771400710869253698
-    second: walk_dust_7
+      213: 8505911529396103899
+    second: Fog_01_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -117,16 +114,55 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: walk_dust_0
+      name: Fog_01_0
       rect:
         serializedVersion: 2
-        x: 524
-        y: 29
-        width: 12
+        x: 1
+        y: 20
+        width: 18
         height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -136,18 +172,18 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fa00ef2e08277fd00800000000000000
-      internalID: 1006398939630272687
+      spriteID: 7d6da495657bd4980800000000000000
+      internalID: -8552978535813556521
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walk_dust_1
+      name: Fog_01_1
       rect:
         serializedVersion: 2
-        x: 614
-        y: 39
+        x: 7
+        y: 13
         width: 7
         height: 7
       alignment: 0
@@ -158,130 +194,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3ba9078d266d19f40800000000000000
-      internalID: 5733599520645749427
+      spriteID: 4467e2b9bbf60a790800000000000000
+      internalID: -7520888526155647420
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: walk_dust_2
-      rect:
-        serializedVersion: 2
-        x: 94
-        y: 0
-        width: 32
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d697a00b5c5a1a140800000000000000
-      internalID: 4729243352196348269
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: walk_dust_3
-      rect:
-        serializedVersion: 2
-        x: 179
-        y: 0
-        width: 32
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 4c6cdacbe286ad000800000000000000
-      internalID: 61476094866212548
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: walk_dust_4
-      rect:
-        serializedVersion: 2
-        x: 264
-        y: 4
-        width: 27
-        height: 27
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8ea02620ddb566c70800000000000000
-      internalID: 8963953113113430760
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: walk_dust_5
-      rect:
-        serializedVersion: 2
-        x: 349
-        y: 9
-        width: 27
-        height: 27
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: a6a99dc51a5846d80800000000000000
-      internalID: -8258328888596653462
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: walk_dust_6
-      rect:
-        serializedVersion: 2
-        x: 444
-        y: 24
-        width: 12
-        height: 12
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: ec6c2d8db469649f0800000000000000
-      internalID: -484534657391343922
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: walk_dust_7
+      name: Fog_01_2
       rect:
         serializedVersion: 2
         x: 14
-        y: 0
-        width: 22
-        height: 11
+        y: 15
+        width: 11
+        height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -290,8 +216,96 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 24e740df6f4b65430800000000000000
-      internalID: 3771400710869253698
+      spriteID: f3cde2e5b6e456ac0800000000000000
+      internalID: -3862594882351735745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_01_3
+      rect:
+        serializedVersion: 2
+        x: 25
+        y: 19
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 138593f58939a4bd0800000000000000
+      internalID: -2645139548484839375
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_01_4
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 6
+        width: 10
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ed1fa3d90eea4750800000000000000
+      internalID: 6290101555549904359
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_01_5
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 0
+        width: 22
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77bbc815873e48c10800000000000000
+      internalID: 2055017435891546999
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_01_6
+      rect:
+        serializedVersion: 2
+        x: 1
+        y: 0
+        width: 11
+        height: 5
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bdaed8048711b0670800000000000000
+      internalID: 8505911529396103899
       vertices: []
       indices: 
       edges: []
@@ -310,14 +324,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      walk_dust_0: 1006398939630272687
-      walk_dust_1: 5733599520645749427
-      walk_dust_2: 4729243352196348269
-      walk_dust_3: 61476094866212548
-      walk_dust_4: 8963953113113430760
-      walk_dust_5: -8258328888596653462
-      walk_dust_6: -484534657391343922
-      walk_dust_7: 3771400710869253698
+      Fog_01_0: -8552978535813556521
+      Fog_01_1: -7520888526155647420
+      Fog_01_2: -3862594882351735745
+      Fog_01_3: -2645139548484839375
+      Fog_01_4: 6290101555549904359
+      Fog_01_5: 2055017435891546999
+      Fog_01_6: 8505911529396103899
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
