@@ -30,6 +30,7 @@ namespace LMCore
 
         public void Awake()
         {
+            DontDestroyOnLoad(this);
             InitializeFader();
         }
 
