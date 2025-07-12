@@ -89,7 +89,7 @@ public class PlayerItemPickup : NetworkBehaviour
         }
         
         // 아이템 던지기 (우클릭)
-        if (pressed.IsSet(SpelunkyInputButtons.EquipItem))
+        if (pressed.IsSet(SpelunkyInputButtons.ThrowItem))
         {
             if (CurrentItem != null)
             {
@@ -202,14 +202,22 @@ public class PlayerItemPickup : NetworkBehaviour
         item.transform.localPosition = Vector3.zero;
         item.transform.localRotation = Quaternion.identity;
         
-        // 아이템의 물리 비활성화 (들고 있는 동안)
+        // 아이템의 물리 완전히 비활성화 (들고 있는 동안)
         var rigidbody = item.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
+        {
+            // 물리 완전 정지
             rigidbody.isKinematic = true;
+            rigidbody.linearVelocity = Vector2.zero;
+            rigidbody.angularVelocity = 0f;
+            rigidbody.simulated = false; // 물리 시뮬레이션 완전 비활성화
+        }
         
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.enabled = false;
+        
+        Debug.Log($"🎒 아이템 픽업 완료: {item.name} - 물리 완전 비활성화");
     }
     
     // 🎯 아이템 던지기 처리
@@ -218,6 +226,7 @@ public class PlayerItemPickup : NetworkBehaviour
         if (CurrentItem == null) return;
         
         GameObject itemToThrow = currentItem;
+        GameObject thrower = transform.parent != null ? transform.parent.gameObject : gameObject;
         currentItem = null;
         
         // 부모 해제
@@ -227,17 +236,34 @@ public class PlayerItemPickup : NetworkBehaviour
         Vector2 playerPosition = transform.parent != null ? transform.parent.position : transform.position;
         itemToThrow.transform.position = playerPosition + direction * 0.5f;
         
-        // 물리 활성화
+        // 던지기 속도 계산
+        Vector2 throwVelocity = direction * 10f; // 던지기 힘
+        
+        // 물리 다시 활성화
         var rigidbody = itemToThrow.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
         {
+            rigidbody.simulated = true; // 물리 시뮬레이션 다시 활성화
             rigidbody.isKinematic = false;
-            rigidbody.linearVelocity = direction * 10f; // 던지기 힘
+            rigidbody.linearVelocity = throwVelocity;
+            rigidbody.angularVelocity = 0f; // 회전 초기화
         }
         
         var collider = itemToThrow.GetComponent<Collider2D>();
         if (collider != null)
             collider.enabled = true;
+        
+        // 🎯 던지기 데미지 시스템 활성화
+        var throwableItem = itemToThrow.GetComponent<IThrowableItem>();
+        if (throwableItem != null)
+        {
+            throwableItem.OnThrown(thrower, throwVelocity);
+            Debug.Log($"🎯 던지기 데미지 시스템 활성화: {itemToThrow.name}");
+        }
+        else
+        {
+            Debug.Log($"🎯 {itemToThrow.name}는 던지기 데미지가 없는 아이템입니다.");
+        }
     }
     
     // 📊 상태 확인 프로퍼티들

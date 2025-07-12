@@ -1,31 +1,28 @@
 fileFormatVersion: 2
-guid: eff25c5310d2e3a4485463fda4b29626
+guid: 3263f06616c7fcf449f9b32eddcd1539
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6673312695985084743
-    second: lava_0
+      213: -6356785321899321303
+    second: Fog_03_0
   - first:
-      213: -7963212025696194793
-    second: lava_1
+      213: 6400218961849156866
+    second: Fog_03_1
   - first:
-      213: -2205451468145830947
-    second: lava_2
+      213: -8332995845349478985
+    second: Fog_03_2
   - first:
-      213: 3422446650199752384
-    second: lava_3
+      213: 3433638159471207660
+    second: Fog_03_3
   - first:
-      213: 7980051161428454188
-    second: lava_4
+      213: 6720269038399873140
+    second: Fog_03_4
   - first:
-      213: -3441515435797462596
-    second: lava_5
+      213: 3460705348512413683
+    second: Fog_03_5
   - first:
-      213: 3038978511664642165
-    second: lava_6
-  - first:
-      213: 768367608597295313
-    second: lava_7
+      213: -7524563379290821998
+    second: Fog_03_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -117,17 +114,56 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: lava_0
+      name: Fog_03_0
       rect:
         serializedVersion: 2
-        x: 234
-        y: 194
-        width: 7
-        height: 7
+        x: 0
+        y: 20
+        width: 5
+        height: 11
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -136,130 +172,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7499b4f4a8e5c9c50800000000000000
-      internalID: 6673312695985084743
+      spriteID: 92816ceed6928c7a0800000000000000
+      internalID: -6356785321899321303
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: lava_1
-      rect:
-        serializedVersion: 2
-        x: 1104
-        y: 199
-        width: 7
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 71f62418adcfc7190800000000000000
-      internalID: -7963212025696194793
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: lava_2
-      rect:
-        serializedVersion: 2
-        x: 259
-        y: 184
-        width: 7
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dd3ddcf1399a461e0800000000000000
-      internalID: -2205451468145830947
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: lava_3
-      rect:
-        serializedVersion: 2
-        x: 359
-        y: 189
-        width: 7
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0ceb1ef6819fe7f20800000000000000
-      internalID: 3422446650199752384
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: lava_4
-      rect:
-        serializedVersion: 2
-        x: 944
-        y: 184
-        width: 7
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: c2be26e4046debe60800000000000000
-      internalID: 7980051161428454188
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: lava_5
-      rect:
-        serializedVersion: 2
-        x: 1074
-        y: 184
-        width: 7
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: cb1c440f1f74d30d0800000000000000
-      internalID: -3441515435797462596
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: lava_6
+      name: Fog_03_1
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1920
-        height: 181
+        width: 19
+        height: 22
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -268,18 +194,40 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 578f0dbeade9c2a20800000000000000
-      internalID: 3038978511664642165
+      spriteID: 2050db96c3522d850800000000000000
+      internalID: 6400218961849156866
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: lava_7
+      name: Fog_03_2
       rect:
         serializedVersion: 2
-        x: 1559
-        y: 179
+        x: 6
+        y: 22
+        width: 13
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7bd6323cd604b5c80800000000000000
+      internalID: -8332995845349478985
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_03_3
+      rect:
+        serializedVersion: 2
+        x: 13
+        y: 18
         width: 7
         height: 7
       alignment: 0
@@ -290,8 +238,74 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1d0bb5fd44ac9aa00800000000000000
-      internalID: 768367608597295313
+      spriteID: ce4e18eb6bbb6af20800000000000000
+      internalID: 3433638159471207660
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_03_4
+      rect:
+        serializedVersion: 2
+        x: 20
+        y: 13
+        width: 12
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 47061ecb511334d50800000000000000
+      internalID: 6720269038399873140
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_03_5
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 7
+        width: 16
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3f7706acd25e60030800000000000000
+      internalID: 3460705348512413683
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Fog_03_6
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 0
+        width: 10
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29a257f2971639790800000000000000
+      internalID: -7524563379290821998
       vertices: []
       indices: 
       edges: []
@@ -310,14 +324,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      lava_0: 6673312695985084743
-      lava_1: -7963212025696194793
-      lava_2: -2205451468145830947
-      lava_3: 3422446650199752384
-      lava_4: 7980051161428454188
-      lava_5: -3441515435797462596
-      lava_6: 3038978511664642165
-      lava_7: 768367608597295313
+      Fog_03_0: -6356785321899321303
+      Fog_03_1: 6400218961849156866
+      Fog_03_2: -8332995845349478985
+      Fog_03_3: 3433638159471207660
+      Fog_03_4: 6720269038399873140
+      Fog_03_5: 3460705348512413683
+      Fog_03_6: -7524563379290821998
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,19 +1,16 @@
 fileFormatVersion: 2
-guid: 61951f890ffee824a936ffdaa3e85f7a
+guid: 189b73da7c43afb4c9e30f110315027e
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3057964194125310589
-    second: rain_particles_0
+      213: 7720647189790038424
+    second: shine_0
   - first:
-      213: -3913093084018095672
-    second: rain_particles_1
+      213: 2067641770476914879
+    second: shine_1
   - first:
-      213: 7204228546867228267
-    second: rain_particles_2
-  - first:
-      213: 2553809317159871699
-    second: rain_particles_3
+      213: -7762402546905152297
+    second: shine_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -105,17 +102,56 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: rain_particles_0
+      name: shine_0
       rect:
         serializedVersion: 2
-        x: 4
-        y: 9
-        width: 7
-        height: 7
+        x: 5
+        y: 3
+        width: 23
+        height: 9
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -124,41 +160,41 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3851c4964cdef85d0800000000000000
-      internalID: -3057964194125310589
+      spriteID: 8999d8f96bf352b60800000000000000
+      internalID: 7720647189790038424
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: rain_particles_1
+      name: shine_1
       rect:
         serializedVersion: 2
-        x: 24
-        y: 4
-        width: 12
-        height: 12
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 8c940129296e1b9c0800000000000000
-      internalID: -3913093084018095672
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: rain_particles_2
-      rect:
-        serializedVersion: 2
-        x: 44
+        x: 33
         y: 0
-        width: 17
+        width: 13
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fb849044c3db1bc10800000000000000
+      internalID: 2067641770476914879
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: shine_2
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 0
+        width: 31
         height: 16
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -168,30 +204,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b6eefb891bf8af360800000000000000
-      internalID: 7204228546867228267
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: rain_particles_3
-      rect:
-        serializedVersion: 2
-        x: 59
-        y: 0
-        width: 21
-        height: 20
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 3d4a5651b04f07320800000000000000
-      internalID: 2553809317159871699
+      spriteID: 7d48124b208664490800000000000000
+      internalID: -7762402546905152297
       vertices: []
       indices: 
       edges: []
@@ -210,10 +224,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      rain_particles_0: -3057964194125310589
-      rain_particles_1: -3913093084018095672
-      rain_particles_2: 7204228546867228267
-      rain_particles_3: 2553809317159871699
+      shine_0: 7720647189790038424
+      shine_1: 2067641770476914879
+      shine_2: -7762402546905152297
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

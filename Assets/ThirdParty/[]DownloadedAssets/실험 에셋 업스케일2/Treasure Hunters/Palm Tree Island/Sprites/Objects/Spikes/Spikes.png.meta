@@ -1,31 +1,28 @@
 fileFormatVersion: 2
-guid: 3e1b2f3d397a1d44aae96dd9e18c2112
+guid: 14ce984cb54416147a9c750997b4fe11
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6723963429988506304
-    second: Spikes_0
+      213: 6991849013916550155
+    second: Death_0
   - first:
-      213: -7010832575621253078
-    second: Spikes_1
+      213: -276728812324164698
+    second: Death_1
   - first:
-      213: 8562923692314260799
-    second: Spikes_2
+      213: 3156895337291164288
+    second: Death_2
   - first:
-      213: -4810244237682102619
-    second: Spikes_3
+      213: 1400002288684528572
+    second: Death_3
   - first:
-      213: -3644641957871353732
-    second: Spikes_4
+      213: -1891625820773287384
+    second: Death_4
   - first:
-      213: 7573331673453511767
-    second: Spikes_5
+      213: -5789737788129074030
+    second: Death_5
   - first:
-      213: -138403667897052782
-    second: Spikes_6
-  - first:
-      213: 3455471295796217898
-    second: Spikes_7
+      213: 3968659893341466949
+    second: Death_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -117,17 +114,56 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Spikes_0
+      name: Death_0
       rect:
         serializedVersion: 2
         x: 9
         y: 0
-        width: 207
-        height: 130
+        width: 23
+        height: 36
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -136,20 +172,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0ca9e2f4d11505d50800000000000000
-      internalID: 6723963429988506304
+      spriteID: b0449ad32a9080160800000000000000
+      internalID: 6991849013916550155
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_1
+      name: Death_1
       rect:
         serializedVersion: 2
-        x: 234
+        x: 56
         y: 0
-        width: 202
-        height: 130
+        width: 25
+        height: 38
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -158,20 +194,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a28bb5edae484be90800000000000000
-      internalID: -7010832575621253078
+      spriteID: 6ab6d428c9cd82cf0800000000000000
+      internalID: -276728812324164698
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_2
+      name: Death_2
       rect:
         serializedVersion: 2
-        x: 464
-        y: 0
-        width: 192
-        height: 130
+        x: 74
+        y: 29
+        width: 9
+        height: 8
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -180,20 +216,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f35fa27dabd95d670800000000000000
-      internalID: 8562923692314260799
+      spriteID: 08aa354559b8fcb20800000000000000
+      internalID: 3156895337291164288
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_3
+      name: Death_3
       rect:
         serializedVersion: 2
-        x: 694
+        x: 103
         y: 0
-        width: 182
-        height: 126
+        width: 30
+        height: 41
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -202,20 +238,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5aea6120a549e3db0800000000000000
-      internalID: -4810244237682102619
+      spriteID: cb376cdf9aecd6310800000000000000
+      internalID: 1400002288684528572
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_4
+      name: Death_4
       rect:
         serializedVersion: 2
-        x: 919
+        x: 151
         y: 0
-        width: 182
-        height: 116
+        width: 33
+        height: 34
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -224,20 +260,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c70089f0371ab6dc0800000000000000
-      internalID: -3644641957871353732
+      spriteID: 82af9d896589fb5e0800000000000000
+      internalID: -1891625820773287384
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_5
+      name: Death_5
       rect:
         serializedVersion: 2
-        x: 1134
+        x: 194
         y: 0
-        width: 177
-        height: 106
+        width: 39
+        height: 14
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -246,20 +282,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 75449622801e91960800000000000000
-      internalID: 7573331673453511767
+      spriteID: 29429e33828b6afa0800000000000000
+      internalID: -5789737788129074030
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Spikes_6
+      name: Death_6
       rect:
         serializedVersion: 2
-        x: 1349
+        x: 242
         y: 0
-        width: 167
-        height: 106
+        width: 39
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -268,30 +304,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 291926be89a441ef0800000000000000
-      internalID: -138403667897052782
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Spikes_7
-      rect:
-        serializedVersion: 2
-        x: 1574
-        y: 0
-        width: 157
-        height: 106
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: a280e7de5dc44ff20800000000000000
-      internalID: 3455471295796217898
+      spriteID: 54135f86523831730800000000000000
+      internalID: 3968659893341466949
       vertices: []
       indices: 
       edges: []
@@ -310,14 +324,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Spikes_0: 6723963429988506304
-      Spikes_1: -7010832575621253078
-      Spikes_2: 8562923692314260799
-      Spikes_3: -4810244237682102619
-      Spikes_4: -3644641957871353732
-      Spikes_5: 7573331673453511767
-      Spikes_6: -138403667897052782
-      Spikes_7: 3455471295796217898
+      Death_0: 6991849013916550155
+      Death_1: -276728812324164698
+      Death_2: 3156895337291164288
+      Death_3: 1400002288684528572
+      Death_4: -1891625820773287384
+      Death_5: -5789737788129074030
+      Death_6: 3968659893341466949
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

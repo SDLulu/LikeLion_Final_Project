@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: efd3737513baefd4ab823dc64dc7a7fd
+guid: f5d2333f672d1d7439431e6ab3ec3a59
 TextureImporter:
   internalIDToNameTable:
   - first:
@@ -14,15 +14,6 @@ TextureImporter:
   - first:
       213: 1616791541321148288
     second: clouds_shape8_4_3
-  - first:
-      213: -8191516028826408136
-    second: clouds_shape8_4_4
-  - first:
-      213: -6147493963923321543
-    second: clouds_shape8_4_5
-  - first:
-      213: 8942726076824767368
-    second: clouds_shape8_4_6
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -114,6 +105,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -121,10 +151,10 @@ TextureImporter:
       name: clouds_shape8_4_0
       rect:
         serializedVersion: 2
-        x: 49
-        y: 69
-        width: 267
-        height: 46
+        x: 9
+        y: 13
+        width: 55
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -143,10 +173,10 @@ TextureImporter:
       name: clouds_shape8_4_1
       rect:
         serializedVersion: 2
-        x: 289
-        y: 69
-        width: 142
-        height: 22
+        x: 57
+        y: 13
+        width: 30
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -165,10 +195,10 @@ TextureImporter:
       name: clouds_shape8_4_2
       rect:
         serializedVersion: 2
-        x: 49
-        y: 29
-        width: 217
-        height: 27
+        x: 58
+        y: 8
+        width: 34
+        height: 6
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -187,10 +217,10 @@ TextureImporter:
       name: clouds_shape8_4_3
       rect:
         serializedVersion: 2
-        x: 294
-        y: 44
-        width: 166
-        height: 22
+        x: 0
+        y: 0
+        width: 75
+        height: 12
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -201,72 +231,6 @@ TextureImporter:
       bones: []
       spriteID: 087ad48375fff6610800000000000000
       internalID: 1616791541321148288
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: clouds_shape8_4_4
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 4
-        width: 106
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 83b22e18293e15e80800000000000000
-      internalID: -8191516028826408136
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: clouds_shape8_4_5
-      rect:
-        serializedVersion: 2
-        x: 179
-        y: 14
-        width: 97
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 93d0e758fc6bfaaa0800000000000000
-      internalID: -6147493963923321543
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: clouds_shape8_4_6
-      rect:
-        serializedVersion: 2
-        x: 274
-        y: 0
-        width: 97
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 88b43cc7cf1fa1c70800000000000000
-      internalID: 8942726076824767368
       vertices: []
       indices: 
       edges: []
@@ -289,9 +253,6 @@ TextureImporter:
       clouds_shape8_4_1: 8741502526600090389
       clouds_shape8_4_2: 7431930672792179515
       clouds_shape8_4_3: 1616791541321148288
-      clouds_shape8_4_4: -8191516028826408136
-      clouds_shape8_4_5: -6147493963923321543
-      clouds_shape8_4_6: 8942726076824767368
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

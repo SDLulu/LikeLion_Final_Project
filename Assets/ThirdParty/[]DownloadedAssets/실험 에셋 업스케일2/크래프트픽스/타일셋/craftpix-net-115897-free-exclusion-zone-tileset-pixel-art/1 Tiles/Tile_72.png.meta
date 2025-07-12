@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: 5dfa5d4519e41394e8ea754f6672f630
+guid: f9dbeb71c443592439da6df776ffd308
 TextureImporter:
   internalIDToNameTable:
   - first:
       213: 5126791746391721714
     second: Tile_72_0
-  - first:
-      213: 5322438031593918669
-    second: Tile_72_1
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -99,6 +96,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -108,8 +144,8 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 136
-        height: 151
+        width: 32
+        height: 31
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -120,28 +156,6 @@ TextureImporter:
       bones: []
       spriteID: 2f645113ee5062740800000000000000
       internalID: 5126791746391721714
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_72_1
-      rect:
-        serializedVersion: 2
-        x: 139
-        y: 0
-        width: 17
-        height: 11
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dc05f24b0391dd940800000000000000
-      internalID: 5322438031593918669
       vertices: []
       indices: 
       edges: []
@@ -161,7 +175,6 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Tile_72_0: 5126791746391721714
-      Tile_72_1: 5322438031593918669
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

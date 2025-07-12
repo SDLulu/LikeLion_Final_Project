@@ -1,16 +1,10 @@
 fileFormatVersion: 2
-guid: 4f2e82ac661d82142af7ff8b127e64c2
+guid: 7285413959b5c7845a9fe09d2812e1c5
 TextureImporter:
   internalIDToNameTable:
   - first:
       213: 3927061797139952699
     second: Jump 05_0
-  - first:
-      213: 954096028448588063
-    second: Jump 05_1
-  - first:
-      213: -4445658287651955586
-    second: Jump 05_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -102,6 +96,45 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
@@ -109,10 +142,10 @@ TextureImporter:
       name: Jump 05_0
       rect:
         serializedVersion: 2
-        x: 99
-        y: 84
-        width: 17
-        height: 16
+        x: 0
+        y: 0
+        width: 52
+        height: 20
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -123,50 +156,6 @@ TextureImporter:
       bones: []
       spriteID: b34b885e5e9bf7630800000000000000
       internalID: 3927061797139952699
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Jump 05_1
-      rect:
-        serializedVersion: 2
-        x: 159
-        y: 54
-        width: 12
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f110a496841ad3d00800000000000000
-      internalID: 954096028448588063
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Jump 05_2
-      rect:
-        serializedVersion: 2
-        x: 84
-        y: 44
-        width: 12
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e7cdbbb6759dd42c0800000000000000
-      internalID: -4445658287651955586
       vertices: []
       indices: 
       edges: []
@@ -186,8 +175,6 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Jump 05_0: 3927061797139952699
-      Jump 05_1: 954096028448588063
-      Jump 05_2: -4445658287651955586
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

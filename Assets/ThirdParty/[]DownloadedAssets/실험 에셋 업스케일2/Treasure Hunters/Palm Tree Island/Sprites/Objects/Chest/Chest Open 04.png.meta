@@ -1,28 +1,25 @@
 fileFormatVersion: 2
-guid: 59b3d2801fb7e204a9b425c2135d7bd2
+guid: 721943edaf7ea6344b8b3d57717d356a
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3173898241544783900
-    second: Chest Open 04_0
+      213: 4723107735738678597
+    second: Idle_0
   - first:
-      213: -564153420819859907
-    second: Chest Open 04_1
+      213: -7385789195546760866
+    second: Idle_1
   - first:
-      213: -7070204651454254080
-    second: Chest Open 04_2
+      213: 3234629978573100161
+    second: Idle_2
   - first:
-      213: 4383943959206696347
-    second: Chest Open 04_3
+      213: 6373048116405451881
+    second: Idle_3
   - first:
-      213: 4770701510560645154
-    second: Chest Open 04_4
+      213: 7264182050183361747
+    second: Idle_4
   - first:
-      213: -1779139310055217194
-    second: Chest Open 04_5
-  - first:
-      213: -4031117790025242237
-    second: Chest Open 04_6
+      213: -2834552850196481573
+    second: Idle_5
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -114,17 +111,56 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WindowsStoreApps
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Chest Open 04_0
+      name: Idle_0
       rect:
         serializedVersion: 2
-        x: 34
-        y: 29
-        width: 32
-        height: 17
+        x: 10
+        y: 26
+        width: 6
+        height: 10
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -133,20 +169,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4e77c778d5c04f3d0800000000000000
-      internalID: -3173898241544783900
+      spriteID: 54d7a982679db8140800000000000000
+      internalID: 4723107735738678597
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chest Open 04_1
+      name: Idle_1
       rect:
         serializedVersion: 2
-        x: 84
+        x: 12
         y: 0
-        width: 162
-        height: 151
+        width: 23
+        height: 37
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -155,20 +191,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d36f539e379bb28f0800000000000000
-      internalID: -564153420819859907
+      spriteID: e596485bbd7608990800000000000000
+      internalID: -7385789195546760866
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chest Open 04_2
+      name: Idle_2
       rect:
         serializedVersion: 2
-        x: 249
-        y: 19
-        width: 32
-        height: 17
+        x: 56
+        y: 0
+        width: 26
+        height: 39
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -177,20 +213,42 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 00431cc345691ed90800000000000000
-      internalID: -7070204651454254080
+      spriteID: 184dda4e3d6b3ec20800000000000000
+      internalID: 3234629978573100161
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chest Open 04_3
+      name: Idle_3
       rect:
         serializedVersion: 2
-        x: 0
-        y: 4
+        x: 77
+        y: 33
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96cb1dafe7d917850800000000000000
+      internalID: 6373048116405451881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Idle_4
+      rect:
+        serializedVersion: 2
+        x: 102
+        y: 0
         width: 31
-        height: 17
+        height: 40
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -199,20 +257,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b951cb3cdc5e6dc30800000000000000
-      internalID: 4383943959206696347
+      spriteID: 3d4b2fc561f8fc460800000000000000
+      internalID: 7264182050183361747
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chest Open 04_4
+      name: Idle_5
       rect:
         serializedVersion: 2
-        x: 39
+        x: 155
         y: 0
-        width: 32
-        height: 26
+        width: 25
+        height: 37
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -221,52 +279,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 22003626fbfe43240800000000000000
-      internalID: 4770701510560645154
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Open 04_5
-      rect:
-        serializedVersion: 2
-        x: 249
-        y: 0
-        width: 32
-        height: 16
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 6d7a93a493a3f47e0800000000000000
-      internalID: -1779139310055217194
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Chest Open 04_6
-      rect:
-        serializedVersion: 2
-        x: 289
-        y: 4
-        width: 31
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 389a9cd4ab79e08c0800000000000000
-      internalID: -4031117790025242237
+      spriteID: bd9b7fa6335a9a8d0800000000000000
+      internalID: -2834552850196481573
       vertices: []
       indices: 
       edges: []
@@ -285,13 +299,12 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Chest Open 04_0: -3173898241544783900
-      Chest Open 04_1: -564153420819859907
-      Chest Open 04_2: -7070204651454254080
-      Chest Open 04_3: 4383943959206696347
-      Chest Open 04_4: 4770701510560645154
-      Chest Open 04_5: -1779139310055217194
-      Chest Open 04_6: -4031117790025242237
+      Idle_0: 4723107735738678597
+      Idle_1: -7385789195546760866
+      Idle_2: 3234629978573100161
+      Idle_3: 6373048116405451881
+      Idle_4: 7264182050183361747
+      Idle_5: -2834552850196481573
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
