@@ -106,7 +106,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
                 var playerPrefab = GlobalSetting.Inst.PlayerPrefab;
                 var spawnedPlayer = runner.Spawn(playerPrefab, Vector3.zero, Quaternion.identity, player);
                 
-                                 // Late Join 처리: 게임이 진행 중이면 현재 게임 상태에 맞춰 플레이어 동기화
+                // Late Join 처리: 게임이 진행 중이면 현재 게임 상태에 맞춰 플레이어 동기화
                  if (isGameInProgress)
                  {
                      Debug.Log($"Late Join 감지: 플레이어 {player}가 게임 진행 중에 입장했습니다.");
@@ -146,7 +146,7 @@ public class NetRunner : MonoBehaviour, INetworkRunnerCallbacks
             }
         }
         
-                 // 3. 플레이어 상태를 게임 진행 상태에 맞춰 설정
+        // 3. 플레이어 상태를 게임 진행 상태에 맞춰 설정
          var playerData = spawnedPlayer.GetComponent<PlayerData>();
          if (playerData != null)
          {
