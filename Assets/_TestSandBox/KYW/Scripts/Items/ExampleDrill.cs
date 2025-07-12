@@ -18,6 +18,12 @@ public class ExampleDrill : UsableItemBase
     protected override void Awake()
     {
         base.Awake();
+        
+        // 🔧 드릴 이미지 방향 설정 
+        // 드릴 끝이 오른쪽을 향한다면 Vector2.right
+        // 드릴 끝이 위쪽을 향한다면 Vector2.up
+        defaultDirection = Vector2.right; // 보통 드릴은 오른쪽을 향함
+        
         // 던지기 설정은 베이스 클래스 기본값 사용 (데미지: 1, 최소속도: 3)
     }
     
@@ -38,6 +44,7 @@ public class ExampleDrill : UsableItemBase
         if (!isDrilling) return;
         
         // 틱 레이트에 따른 드릴링
+        // ⚠️ Fusion 2 주의: 실제로는 Runner.SimulationTime 사용 권장
         if (Time.time - lastDrillTime >= drillTickRate)
         {
             lastDrillTime = Time.time;

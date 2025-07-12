@@ -18,6 +18,12 @@ public class ExampleBow : UsableItemBase
     protected override void Awake()
     {
         base.Awake();
+        
+        // 🏹 활 이미지 방향 설정
+        // 위쪽을 향하는 활 이미지라면 Vector2.up
+        // 오른쪽을 향하는 활 이미지라면 Vector2.right
+        defaultDirection = Vector2.up; // 일반적으로 활은 위쪽을 향함
+        
         // 던지기 설정은 베이스 클래스 기본값 사용 (데미지: 1, 최소속도: 3)
     }
     
@@ -27,6 +33,7 @@ public class ExampleBow : UsableItemBase
         Debug.Log($"🏹 {name} 차징 시작!");
         
         isCharging = true;
+        // ⚠️ Fusion 2 주의: 실제로는 Runner.SimulationTime 사용 권장
         chargeStartTime = Time.time;
         aimDirection = (mouseWorldPosition - playerPosition).normalized;
         

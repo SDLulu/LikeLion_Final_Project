@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7915689339103206597
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5379392386026322634}
+  m_Layer: 11
+  m_Name: Fire point
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5379392386026322634
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7915689339103206597}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.64, y: 0.59, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4282210590286573500}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9041850547379748121
 GameObject:
   m_ObjectHideFlags: 0
@@ -12,6 +43,7 @@ GameObject:
   - component: {fileID: 6518284481941058065}
   - component: {fileID: 2525006913111405626}
   - component: {fileID: 4117293797694780650}
+  - component: {fileID: 1153614395945064657}
   m_Layer: 11
   m_Name: "\uB3CC\uACA9\uC18C\uCD1D"
   m_TagString: Untagged
@@ -31,7 +63,8 @@ Transform:
   m_LocalPosition: {x: -7.68, y: 1.95, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 5379392386026322634}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &6518284481941058065
@@ -152,3 +185,35 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &1153614395945064657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9041850547379748121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9eea07e92eb3000498d3913ff946ffd0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canUse: 1
+  throwDamage: 1
+  minDamageSpeed: 3
+  damageableLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  bulletPrefab: {fileID: 1614702581054560036, guid: 3d68f5edbae40f5468d3436153fbadd9, type: 3}
+  firePoint: {fileID: 5379392386026322634}
+  fireRate: 0.1
+  bulletSpeed: 15
+  bulletDamage: 10
+  bulletLifetime: 3
+  maxAmmo: 30
+  reloadTime: 2
+  muzzleFlash: {fileID: 0}
+  fireSound: {fileID: 0}
+  currentAmmo: 0
+  isFiring: 0
+  isReloading: 0
+  lastFireTime: 0
