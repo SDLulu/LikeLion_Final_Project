@@ -11,7 +11,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
     [SerializeField] private int _MaxTileY = 3; // 맵의 세로 기준 길이
 
     [Header("다음 타일과의 거리")]
-    [SerializeField] private float _NextTile = 17.6f; // 맵의 가로 기준 길이
+    [SerializeField] private float _NextTile = 10; // 맵의 가로 기준 길이
     [SerializeField] private Transform _ParentTransform;
 
     [Header("타일 오브젝트")]
@@ -29,6 +29,8 @@ public class PMK_Tile_Rogic : MonoBehaviour
     private int _removeMapX; // 정하고 싶지 않는 맵의 X위치를 저장합니다.
     private List<int> _LR_Choose = new List<int>(); // 왼쪽, 오른쪽 맵 위치를 저장하는 리스트 입니다.
 
+    public Tilemap mainTilemap; // 병합할 타일맵 (씬에 존재하는 타일맵)
+
 
     private void Awake()
     {
@@ -44,11 +46,13 @@ public class PMK_Tile_Rogic : MonoBehaviour
 
     private void Start()
     {
-        SaveMapPos();
+        SaveMapPos(); // 전체 맵 위치 저장하기
 
         SpawnMap_Instantiate(); // 스폰 맵 생성하기
 
         DownExit_Map_Instantiate(_removeMapX); // 시작맵을 제외한 y0 라인에 있는 맵 중 하나를 선택하여 확정 탈출구 생성하기
+
+        Create_Special_Map(0 , 10); // 빈 공간에 특별한 맵 생성하기 (10% 확률로 1개 생성)
 
     }
 
@@ -75,9 +79,10 @@ public class PMK_Tile_Rogic : MonoBehaviour
         }
 
         // 맵 다시 생성
+        SaveMapPos();
         SpawnMap_Instantiate();
-        LR_RandomChoose(_removeMapX);
         DownExit_Map_Instantiate(_removeMapX);
+        Create_Special_Map(0, 10);
     }
     #endregion
 
@@ -108,9 +113,43 @@ public class PMK_Tile_Rogic : MonoBehaviour
     {
         if (_mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            Instantiate(prefabs[randomIndex], new Vector3(spawnXpos, spawnYpos, 0), Quaternion.identity, _ParentTransform);
+            // 프리팹을 임시로 생성 (위치는 0,0으로)
+            GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity);
 
+            // 프리팹 내의 모든 Tilemap 컴포넌트를 가져오기
+            Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>();
 
+            // 병합할 위치 오프셋 (타일맵 셀 좌표 기준)
+            Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0);
+
+            foreach (Tilemap sourceTilemap in tilemaps)
+            {
+                BoundsInt bounds = sourceTilemap.cellBounds;
+                TileBase[] allTiles = sourceTilemap.GetTilesBlock(bounds);
+
+                for (int x = 0; x < bounds.size.x; x++)
+                {
+                    for (int y = 0; y < bounds.size.y; y++)
+                    {
+                        TileBase tile = allTiles[x + y * bounds.size.x];
+                        if (tile != null)
+                        {
+                            Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
+                            Vector3Int targetPos = sourcePos + offset;
+
+                            mainTilemap.SetTile(targetPos, tile);
+                        }
+                    }
+                }
+            }
+
+            // 병합 후 임시 프리팹 제거
+            Destroy(temp);
+
+            // 병합된 타일맵 갱신
+            mainTilemap.RefreshAllTiles();
+
+            // 맵 좌표 기록
             Vector2 pos = new Vector2(spawnXpos, spawnYpos);
             for (int y = 0; y < _MaxTileY; y++)
             {
@@ -126,12 +165,15 @@ public class PMK_Tile_Rogic : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"MapType '{mapType}'입력된 이름이 아님!");
+            Debug.LogWarning($"MapType '{mapType}' 입력된 이름이 아님!");
         }
     }
+
+
     #endregion
 
-    // 빈 공간에 랜덤 맵 채우기
+
+    #region 빈 공간에 랜덤 맵 채우기
     private void Create_EmptyMap()
     {
         for (int y = 0; y < _MaxTileY; y++)
@@ -141,11 +183,35 @@ public class PMK_Tile_Rogic : MonoBehaviour
                 if (!_UseMapXy[x, y]) // 해당 위치에 맵이 생성되지 않았다면
                 {
                     Vector2 emptyPos = _MapXY[x, y];
-                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // 좌우가 확정인 맵 생성
+                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // 좌우가 확정인 맵 생성 (나중에 올 랜덤으로 바꾸기)
                 }
             }
         }
     }
+    #endregion
+
+
+    #region 빈 공간에 특별한 맵 생성
+    private void Create_Special_Map(int Map_Number , int Percent)
+    {
+        if (Random.Range(0, 100) < Percent)
+        {
+            const int maxAttempts = 100; // 극악의 확률이지만 모든 맵이 차면 오류가 나기에 최대 100번 시도합니다.
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                int x = Random.Range(0, _MaxTileX);
+                int y = Random.Range(0, _MaxTileY);
+
+                if (!_UseMapXy[x, y])
+                {
+                    Vector2 emptyPos = _MapXY[x, y];
+                    Create_Map("S", Map_Number, emptyPos.x, emptyPos.y);
+                    break; // 빈 공간에 성공적으로 생성했으니 반복 종료
+                }
+            }
+        }
+    }
+    #endregion
 
 
     #region 스폰맵 생성
