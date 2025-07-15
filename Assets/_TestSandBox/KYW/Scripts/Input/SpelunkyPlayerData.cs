@@ -12,7 +12,7 @@ public struct SpelunkyPlayerData : INetworkInput
     // 🖱️ 마우스 입력
     public Vector2 MouseWorldPosition; // 마우스 월드 좌표 (아이템 던지기 방향용)
     
-    // 🔘 버튼 입력들
+    // 🔘 버튼 입력들 (Fusion 2 공식 방식 - NetworkButtons로 통합)
     public NetworkButtons NetworkButtons;
 }
 
@@ -22,6 +22,11 @@ public enum SpelunkyInputButtons
     None = 0,
     Jump = 1,           // 스페이스 - 점프
     PickupItem = 2,     // 스페이스 (앉은 상태) - 아이템 들기
-    UseItem = 3,        // 마우스 좌클릭 - 아이템 사용
-    EquipItem = 4,      // 마우스 우클릭 - 아이템 던지기
+    
+    // 🔨 아이템 사용 관련 (3가지 입력 상태)
+    UseItemPress = 3,   // 마우스 좌클릭 시작
+    UseItemHold = 4,    // 마우스 좌클릭 유지
+    UseItemRelease = 5, // 마우스 좌클릭 종료
+    
+    ThrowItem = 6,      // 마우스 우클릭 - 아이템 던지기
 } 
