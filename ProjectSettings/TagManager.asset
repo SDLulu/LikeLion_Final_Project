@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - PlayerBody
+  - PlayerHand
+  - PlayerFoot
   layers:
   - Default
   - TransparentFX
@@ -12,11 +15,11 @@ TagManager:
   - Water
   - UI
   - Ground
-  - PlayerHitBox
   - Player
-  - DeathGround
-  - 
-  - 
+  - Object
+  - Item
+  - Ladder
+  - Enemy
   - 
   - 
   - 
@@ -38,23 +41,41 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: BackGround
+    uniqueID: 2227233595
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Bg
-    uniqueID: 2227233595
-    locked: 0
-  - name: Platform
+  - name: Environment
     uniqueID: 1402703129
     locked: 0
-  - name: WorldUI
-    uniqueID: 450881263
+  - name: Object
+    uniqueID: 2391158793
+    locked: 0
+  - name: Enemy/Npc
+    uniqueID: 4020433347
     locked: 0
   - name: Player
     uniqueID: 3258996165
     locked: 0
-  - name: Projectiles
+  - name: HandedObject
     uniqueID: 2206817813
+    locked: 0
+  - name: Ground
+    uniqueID: 4145136221
+    locked: 0
+  - name: GroundedObject
+    uniqueID: 3783167919
+    locked: 0
+  - name: FrontGround
+    uniqueID: 1161365389
+    locked: 0
+  - name: Effects
+    uniqueID: 639334947
+    locked: 0
+  - name: UI
+    uniqueID: 450881263
     locked: 0
   m_RenderingLayers:
   - Default

@@ -11,8 +11,6 @@ public class GlobalManagers : MonoBehaviour
     
     // 🌐 네트워크 관련: 게임 내 네트워크 객체들을 관리하는 매니저들
     public PlayerSpawnerController PlayerSpawnerController { get; set; }    // 플레이어 스폰 관리
-    public ObjectPoolingManager ObjectPoolingManager { get; set; }          // 네트워크 오브젝트 풀링
-    public GameManager GameManager { get; set; }                            // 게임 상태 관리
 
     private void Awake()
     {
