@@ -190,49 +190,21 @@ public class PlayerItemUsage : NetworkBehaviour
     {
         GameObject currentItem = itemPickup.CurrentItem;
         if (currentItem == null || playerMovement == null) return;
-        
-        // 아이템의 기본 방향 가져오기
+
         IUsableItem usableItem = currentItem.GetComponent<IUsableItem>();
         if (usableItem == null) return;
-        
-        Vector2 itemDefaultDirection = usableItem.DefaultDirection;
-        
-        // 플레이어(Hand) 위치에서 마우스로의 방향 계산
+
+        float itemDirectionAngle = 0f;
+        if (usableItem is UsableItemBase baseItem)
+            itemDirectionAngle = baseItem.DefaultAngle;
+
         Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
-        
-        // 방향 벡터를 각도로 변환
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        
-        // 아이템 기본 방향 오프셋 계산
-        float offsetAngle = Mathf.Atan2(itemDefaultDirection.y, itemDefaultDirection.x) * Mathf.Rad2Deg;
-        
-        // 플레이어 방향에 따른 각도 및 오프셋 조정
-        if (playerMovement.IsFacingLeft)
-        {
-            // 플레이어가 왼쪽을 보고 있으면 180도 회전하여 왼쪽 기준으로 조정
-            targetAngle += 180f;
-            // 오프셋도 함께 뒤집어줌 (핵심!)
-            offsetAngle += 180f;
-        }
-        
-        // 최종 각도 = 마우스 방향 - 아이템 기본 방향 오프셋
-        targetAngle -= offsetAngle;
-        
-        // 회전 적용 (스케일은 건드리지 않음)
-        if (rotationSpeed <= 0f)
-        {
-            // 즉시 회전
-            currentItem.transform.rotation = Quaternion.Euler(0, 0, targetAngle);
-        }
-        else
-        {
-            // 부드러운 회전
-            currentItem.transform.rotation = Quaternion.Slerp(
-                currentItem.transform.rotation,
-                Quaternion.Euler(0, 0, targetAngle),
-                rotationSpeed * Runner.DeltaTime
-            );
-        }
+        float angleDiff = itemDirectionAngle;
+        targetAngle -= angleDiff;
+
+        // 반전 없이 z축 회전만 적용
+        currentItem.transform.localEulerAngles = new Vector3(0, 0, targetAngle);
     }
     
     // ===============================================
