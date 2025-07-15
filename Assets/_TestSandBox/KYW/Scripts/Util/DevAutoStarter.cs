@@ -1,233 +1,376 @@
 using System.Collections;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
+using Cinemachine;
 
-// 🛠️ 개발용 자동 시작 클래스
-// Unity Play 버튼만 누르면 바로 테스트 가능하게 해주는 편의 도구
+// 🛠️ 개발용 자동 네트워크 시작 클래스
+// NetworkRunner를 관리하여 현재 씬에서 바로 테스트 가능한 환경 제공
+// 
+// 📋 책임 분리:
+// - DevAutoStarter: 네트워크 시작 및 플레이어 소환만 담당
+// - SpelunkyPlayerController: 소환 후 모든 설정 (카메라, 네트워크 등) 담당
+//
+// 🎯 동작 방식:
+// 1. 클라이언트 모드로 기존 방 참여 시도
+// 2. 실패하면 호스트 모드로 새 방 생성
+// 3. 플레이어 소환 (호스트만 권한 보유)
+// 4. 각 플레이어는 SpelunkyPlayerController에서 자동 초기화
 public class DevAutoStarter : MonoBehaviour
 {
-    [Header("🛠️ Development Settings")]
-    [SerializeField] private bool enableAutoStart = true; // 자동 시작 활성화/비활성화
-    [SerializeField] private GameMode gameMode = GameMode.Host; // Host, Client, Server 선택
+    [Header("🛠️ 자동 테스트 설정")]
+    [SerializeField] private bool enableAutoStart = true; // 자동 시작 활성화
     [SerializeField] private string roomName = "DevTestRoom"; // 테스트용 방 이름
     [SerializeField] private string playerNickname = "DevPlayer"; // 테스트용 닉네임
     
-    [Header("🎮 Network Components")]
-    [SerializeField] private NetworkRunnerController networkRunnerControllerPrefab; // NetworkRunner 프리팹
-    [SerializeField] private GameObject globalManagersPrefab; // GlobalManagers 프리팹 (필요한 경우)
+    [Header("🌐 네트워크 설정")]
+    [SerializeField] private NetworkRunner networkRunnerPrefab; // NetworkRunner 프리팹 (필수 컴포넌트들 포함)
     
-    [Header("👤 Player Settings")]
-    [SerializeField] private NetworkObject playerPrefab; // 소환할 플레이어 프리팹
+    [Header("👤 플레이어 설정")]
+    [SerializeField] private NetworkPrefabRef playerNetworkPrefab = NetworkPrefabRef.Empty; // 소환할 플레이어 프리팹 (표준 패턴)
     [SerializeField] private Vector3 spawnPosition = Vector3.zero; // 플레이어 소환 위치
     [SerializeField] private bool autoSpawnPlayer = true; // 플레이어 자동 소환 여부
     
-    [Header("⏰ Timing")]
-    [SerializeField] private float startDelay = 1f; // 시작 전 대기 시간 (초)
-    [SerializeField] private float playerSpawnDelay = 2f; // 플레이어 소환 대기 시간 (초)
+    [Header("📷 카메라 설정")]
+    [SerializeField] private bool attachCameraToPlayer = true; // 플레이어에게 카메라 붙이기 (SpelunkyPlayerController에서 처리)
     
-    private NetworkRunnerController networkController;
+    [Header("⏰ 타이밍")]
+    [SerializeField] private float startDelay = 1f; // 시작 전 대기 시간
+    [SerializeField] private float playerSpawnDelay = 1f; // 플레이어 소환 대기 시간
+    
+    private NetworkRunner networkRunner;
     private bool hasStarted = false;
+    private bool isPlayerSpawned = false;
+    private GameMode currentGameMode = GameMode.Client;
 
     private void Start()
     {
-        // 자동 시작이 활성화되어 있으면 게임 시작
         if (enableAutoStart && !hasStarted)
         {
-            StartCoroutine(AutoStartGame());
+            StartCoroutine(AutoStartNetwork());
         }
     }
     
-    // 🚀 자동 게임 시작 코루틴
-    private IEnumerator AutoStartGame()
+    private void Update()
+    {
+        // 네트워크 연결 상태 확인 및 플레이어 자동 소환
+        if (networkRunner != null && networkRunner.IsRunning && autoSpawnPlayer)
+        {
+            // 호스트 모드에서 모든 플레이어 소환
+            if (currentGameMode == GameMode.Host)
+            {
+                SpawnAllPlayers();
+            }
+            // 클라이언트 모드에서 서버에 연결되었으면 서버에서 소환 (이미 서버에서 처리됨)
+            else if (currentGameMode == GameMode.Client && networkRunner.IsConnectedToServer)
+            {
+                // 클라이언트는 서버에서 자동으로 소환되므로 여기서는 확인만
+                CheckIfPlayerSpawned();
+            }
+        }
+    }
+    
+    // 플레이어가 소환되었는지 확인 (클라이언트용)
+    private void CheckIfPlayerSpawned()
+    {
+        if (networkRunner != null && networkRunner.LocalPlayer != null)
+        {
+            if (networkRunner.TryGetPlayerObject(networkRunner.LocalPlayer, out var playerObject))
+            {
+                if (playerObject != null && !isPlayerSpawned)
+                {
+                    isPlayerSpawned = true;
+                    
+                    // 카메라 설정은 이제 SpelunkyPlayerController에서 자동으로 처리됨
+                    
+                    Debug.Log($"🛠️ [DevAutoStarter] 클라이언트 플레이어 확인 완료! 위치: {playerObject.transform.position}, HasInputAuthority: {playerObject.HasInputAuthority}");
+                }
+            }
+        }
+    }
+    
+    private void OnDestroy()
+    {
+        // 안전한 정리
+        if (networkRunner != null && networkRunner.IsRunning)
+        {
+            networkRunner.Shutdown();
+        }
+    }
+    
+    // 🚀 자동 네트워크 시작 코루틴
+    private IEnumerator AutoStartNetwork()
     {
         hasStarted = true;
         
-        Debug.Log($"🛠️ [DevAutoStarter] {startDelay}초 후 자동 시작...");
+        Debug.Log($"🛠️ [DevAutoStarter] {startDelay}초 후 자동 네트워크 시작...");
         yield return new WaitForSeconds(startDelay);
         
-        // GlobalManagers가 없으면 생성
-        SetupGlobalManagers();
+        // NetworkRunner 생성 및 설정
+        SetupNetworkRunner();
         
-        // NetworkRunnerController 설정
-        SetupNetworkController();
+        // 먼저 클라이언트 모드로 기존 방 참여 시도
+        Debug.Log($"🛠️ [DevAutoStarter] 기존 방 '{roomName}' 참여 시도...");
+        bool joinSuccess = false;
+        yield return StartCoroutine(TryJoinRoom((success) => joinSuccess = success));
         
-        // 게임 시작 (현재 씬에서 바로 테스트하도록 씬 이동 건너뛰기)
-        Debug.Log($"🛠️ [DevAutoStarter] {gameMode} 모드로 방 '{roomName}' 시작! (현재 씬에서 테스트)");
-        networkController.SetPlayerNickname(playerNickname);
-        networkController.StartGame(gameMode, roomName, true); // 씬 이동 건너뛰기
-        
-        // 플레이어 자동 소환이 활성화되어 있으면 플레이어 소환
-        if (autoSpawnPlayer && playerPrefab != null)
+        if (!joinSuccess)
         {
-            StartCoroutine(AutoSpawnPlayer());
+            // 방 참여 실패시 호스트 모드로 새 방 생성
+            Debug.Log($"🛠️ [DevAutoStarter] 방 참여 실패, 호스트 모드로 새 방 생성...");
+            yield return StartCoroutine(StartHostMode());
+        }
+        else
+        {
+            Debug.Log($"🛠️ [DevAutoStarter] 클라이언트 모드로 연결 완료! 서버에서 플레이어 소환 대기 중...");
         }
     }
     
-    // 👤 자동 플레이어 소환 코루틴
-    private IEnumerator AutoSpawnPlayer()
+    // 🎮 NetworkRunner 설정 (프리팹 사용으로 모든 필수 컴포넌트 포함)
+    private void SetupNetworkRunner()
     {
-        Debug.Log($"🛠️ [DevAutoStarter] {playerSpawnDelay}초 후 플레이어 소환...");
-        yield return new WaitForSeconds(playerSpawnDelay);
-        
-        // NetworkRunner가 활성화되고 플레이어가 준비될 때까지 대기
-        NetworkRunner runner = null;
-        int waitCount = 0;
-        while (runner == null || (!runner.IsServer && !runner.IsConnectedToServer) || runner.LocalPlayer == null)
+        // 🎯 Inspector에서 설정되지 않은 경우 Resources에서 자동 로드
+        if (networkRunnerPrefab == null)
         {
-            runner = FindObjectOfType<NetworkRunner>();
-            waitCount++;
-            
-            if (runner == null)
+            networkRunnerPrefab = Resources.Load<NetworkRunner>("Prefabs/NetworkRunner");
+            if (networkRunnerPrefab == null)
             {
-                Debug.Log($"🛠️ [DevAutoStarter] NetworkRunner 찾는 중... ({waitCount})");
+                Debug.LogError("🛠️ [DevAutoStarter] NetworkRunner 프리팹을 찾을 수 없습니다! (Resources/Prefabs/NetworkRunner)");
+                return;
             }
-            else
-            {
-                bool isReady = (runner.IsServer || runner.IsConnectedToServer) && runner.LocalPlayer != null;
-                Debug.Log($"🛠️ [DevAutoStarter] 네트워크 준비 대기 중... IsServer: {runner.IsServer}, IsConnected: {runner.IsConnectedToServer}, LocalPlayer: {runner.LocalPlayer}, Ready: {isReady} ({waitCount})");
-            }
-            
+            Debug.Log("🛠️ [DevAutoStarter] Resources에서 NetworkRunner 프리팹 자동 로드 완료");
+        }
+        
+        // 🎯 프리팹 인스턴스화 (NetworkSceneManager, NetworkObjectProvider 등 필수 컴포넌트 포함)
+        var runnerGO = Instantiate(networkRunnerPrefab.gameObject);
+        networkRunner = runnerGO.GetComponent<NetworkRunner>();
+        runnerGO.transform.SetParent(transform);
+        
+        Debug.Log("🛠️ [DevAutoStarter] NetworkRunner 프리팹 인스턴스화 완료 (모든 필수 컴포넌트 포함)");
+        Debug.Log($"🔧 [DevAutoStarter] 포함된 컴포넌트: NetworkRunner, NetworkSceneManager, NetworkObjectProvider");
+    }
+    
+    // 🔍 기존 방 참여 시도
+    private IEnumerator TryJoinRoom(System.Action<bool> onComplete)
+    {
+        currentGameMode = GameMode.Client;
+        
+        var startGameArgs = new StartGameArgs()
+        {
+            GameMode = GameMode.Client,
+            SessionName = roomName,
+            Scene = null, // 현재 씬 사용
+            PlayerCount = 4 // 최대 플레이어 수
+        };
+        
+        var startTask = networkRunner.StartGame(startGameArgs);
+        
+        // 연결 시도 대기 (최대 5초)
+        float waitTime = 0f;
+        while (!startTask.IsCompleted && waitTime < 5f)
+        {
             yield return new WaitForSeconds(0.1f);
-            
-            // 무한 대기 방지 (30초 후 포기)
-            if (waitCount > 300)
+            waitTime += 0.1f;
+        }
+        
+        if (startTask.IsCompleted && startTask.Result.Ok)
+        {
+            Debug.Log($"🛠️ [DevAutoStarter] 클라이언트 모드로 방 '{roomName}' 참여 성공!");
+            onComplete?.Invoke(true);
+        }
+        else
+        {
+            Debug.Log($"🛠️ [DevAutoStarter] 클라이언트 모드 방 참여 실패");
+            onComplete?.Invoke(false);
+        }
+    }
+    
+    // 🏠 호스트 모드로 방 생성
+    private IEnumerator StartHostMode()
+    {
+        currentGameMode = GameMode.Host;
+        
+        // 이전 NetworkRunner 정리 및 새로운 NetworkRunner 생성
+        if (networkRunner != null)
+        {
+            if (networkRunner.IsRunning)
             {
-                Debug.LogError("🛠️ [DevAutoStarter] NetworkRunner 연결 대기 시간 초과!");
-                yield break;
+                networkRunner.Shutdown();
+                yield return new WaitForSeconds(0.5f); // 정리 대기
+            }
+            
+            // 기존 NetworkRunner 제거
+            if (networkRunner.gameObject != null)
+            {
+                DestroyImmediate(networkRunner.gameObject);
             }
         }
         
-        Debug.Log($"🛠️ [DevAutoStarter] NetworkRunner 연결 완료! 플레이어 소환 시작...");
+        // 새로운 NetworkRunner 생성
+        SetupNetworkRunner();
         
-        // 플레이어 소환
-        SpawnPlayer(runner);
+        var startGameArgs = new StartGameArgs()
+        {
+            GameMode = GameMode.Host,
+            SessionName = roomName,
+            Scene = null, // 현재 씬 사용
+            PlayerCount = 4
+        };
+        
+        var startTask = networkRunner.StartGame(startGameArgs);
+        
+        // 연결 완료 대기
+        yield return new WaitUntil(() => startTask.IsCompleted);
+        
+        if (startTask.Result.Ok)
+        {
+            Debug.Log($"🛠️ [DevAutoStarter] 호스트 모드로 방 '{roomName}' 생성 성공!");
+            yield return new WaitForSeconds(playerSpawnDelay);
+            // SpawnAllPlayers는 Update에서 지속적으로 호출되므로 여기서는 제거
+        }
+        else
+        {
+            Debug.LogError($"🛠️ [DevAutoStarter] 호스트 모드 시작 실패");
+        }
     }
     
-    // 👤 플레이어 소환 메서드
-    private void SpawnPlayer(NetworkRunner runner)
+    // 👤 플레이어 소환 요청 (클라이언트용) - 제거됨
+    // 클라이언트는 직접 소환할 수 없으므로 서버에서 자동으로 처리
+    
+    // 👤 호스트 모드에서 모든 플레이어 소환
+    private void SpawnAllPlayers()
     {
-        Debug.Log($"🛠️ [DevAutoStarter] SpawnPlayer 메서드 시작");
-        Debug.Log($"🛠️ [DevAutoStarter] runner: {runner}, playerPrefab: {playerPrefab}");
-        
-        if (runner == null)
-        {
-            Debug.LogError("🛠️ [DevAutoStarter] 플레이어 소환 실패: NetworkRunner가 null");
+        if (!autoSpawnPlayer || playerNetworkPrefab == NetworkPrefabRef.Empty || networkRunner == null)
             return;
-        }
-        
-        if (playerPrefab == null)
-        {
-            Debug.LogError("🛠️ [DevAutoStarter] 플레이어 소환 실패: PlayerPrefab이 null - Inspector에서 Player Prefab을 설정해주세요!");
+            
+        // 호스트 모드에서만 플레이어 소환
+        if (currentGameMode != GameMode.Host)
             return;
-        }
-        
-        Debug.Log($"🛠️ [DevAutoStarter] NetworkRunner 상태 - IsServer: {runner.IsServer}, IsClient: {runner.IsClient}, LocalPlayer: {runner.LocalPlayer}");
-        
-        // Host 모드거나 Server에서만 플레이어 소환 가능
-        // 참고: Host 모드에서는 IsServer가 false일 수도 있지만 HasStateAuthority로 권한 확인 가능
-        bool canSpawn = runner.IsServer || (gameMode == GameMode.Host);
-        
-        if (!canSpawn)
+            
+        // 모든 플레이어 확인하고 소환되지 않은 플레이어 소환
+        foreach (var player in networkRunner.ActivePlayers)
         {
-            Debug.LogWarning($"🛠️ [DevAutoStarter] 플레이어 소환 실패: 서버 권한 없음 (GameMode: {gameMode}, IsServer: {runner.IsServer})");
-            return;
+            if (!networkRunner.TryGetPlayerObject(player, out var playerObject) || playerObject == null)
+            {
+                SpawnPlayerForRef(player);
+            }
         }
-        
-        Debug.Log($"🛠️ [DevAutoStarter] 플레이어 소환 권한 확인됨 (GameMode: {gameMode})");
+    }
+    
+    // 특정 PlayerRef에 대한 플레이어 소환 (표준 Fusion 패턴 적용)
+    private void SpawnPlayerForRef(PlayerRef playerRef)
+    {
+        if (playerNetworkPrefab == NetworkPrefabRef.Empty || networkRunner == null)
+            return;
+            
+        Debug.Log($"🛠️ [DevAutoStarter] 플레이어 소환 시작... PlayerRef: {playerRef}, IsLocalPlayer: {playerRef == networkRunner.LocalPlayer}");
         
         try
         {
-            // 스폰 위치 설정 (기본값이 Vector3.zero면 원점에서 소환)
-            Vector3 finalSpawnPosition = spawnPosition;
-            
-            Debug.Log($"🛠️ [DevAutoStarter] 플레이어 소환 중... 위치: {finalSpawnPosition}, LocalPlayer: {runner.LocalPlayer}");
-            
-            // 플레이어 소환
-            var player = runner.Spawn(
-                playerPrefab, 
-                finalSpawnPosition, 
+            // 🎯 핵심: NetworkPrefabRef 사용으로 Fusion 최적화 적용
+            var player = networkRunner.Spawn(
+                playerNetworkPrefab, 
+                spawnPosition, 
                 Quaternion.identity, 
-                runner.LocalPlayer
+                playerRef
             );
             
             if (player != null)
             {
-                // 플레이어 객체와 PlayerRef 연결
-                runner.SetPlayerObject(runner.LocalPlayer, player);
+                // 🔥 중요: SetPlayerObject로 권한 연결 (표준 패턴)
+                networkRunner.SetPlayerObject(playerRef, player);
                 
-                Debug.Log($"🛠️ [DevAutoStarter] 플레이어 소환 완료! ID: {player.Id}, 이름: {player.name}, 위치: {player.transform.position}");
-                Debug.Log($"🛠️ [DevAutoStarter] 하이어라키에서 '{player.name}' 오브젝트를 확인해보세요!");
+                // Input Authority 상태 확인
+                bool hasInputAuthority = player.HasInputAuthority;
+                bool isLocalPlayer = playerRef == networkRunner.LocalPlayer;
+                
+                Debug.Log($"🛠️ [DevAutoStarter] 플레이어 소환 완료! PlayerRef: {playerRef}, 위치: {player.transform.position}");
+                Debug.Log($"🛠️ [DevAutoStarter] Input Authority: {hasInputAuthority}, IsLocalPlayer: {isLocalPlayer}");
+                Debug.Log($"🎯 [DevAutoStarter] NetworkPrefabRef 사용으로 Fusion 최적화 적용됨");
+                
+                // 로컬 플레이어인 경우 소환 상태 업데이트
+                if (isLocalPlayer)
+                {
+                    isPlayerSpawned = true;
+                }
             }
             else
             {
-                Debug.LogError("🛠️ [DevAutoStarter] runner.Spawn()이 null을 반환했습니다!");
+                Debug.LogError($"🛠️ [DevAutoStarter] 플레이어 소환 실패: Spawn이 null 반환 (PlayerRef: {playerRef})");
             }
         }
         catch (System.Exception e)
         {
             Debug.LogError($"🛠️ [DevAutoStarter] 플레이어 소환 오류: {e.Message}");
-            Debug.LogError($"🛠️ [DevAutoStarter] 스택 트레이스: {e.StackTrace}");
         }
     }
     
-    // 🌐 GlobalManagers 설정
-    private void SetupGlobalManagers()
-    {
-        // GlobalManagers가 이미 있는지 확인
-        if (GlobalManagers.Instance == null && globalManagersPrefab != null)
-        {
-            Debug.Log("🛠️ [DevAutoStarter] GlobalManagers 생성 중...");
-            Instantiate(globalManagersPrefab);
-        }
-        else if (GlobalManagers.Instance != null)
-        {
-            Debug.Log("🛠️ [DevAutoStarter] 기존 GlobalManagers 사용");
-        }
-    }
+    // 📷 플레이어에게 시네머신 카메라 설정 (제거됨 - SpelunkyPlayerController에서 처리)
+    // 카메라 설정은 이제 SpelunkyPlayerController.SetupCameraForLocalPlayer()에서 처리됩니다.
     
-    // 🎮 NetworkRunnerController 설정
-    private void SetupNetworkController()
-    {
-        // 기존 NetworkRunnerController 찾기
-        networkController = FindObjectOfType<NetworkRunnerController>();
-        
-        // 없으면 새로 생성
-        if (networkController == null && networkRunnerControllerPrefab != null)
-        {
-            Debug.Log("🛠️ [DevAutoStarter] NetworkRunnerController 생성 중...");
-            var instance = Instantiate(networkRunnerControllerPrefab);
-            networkController = instance.GetComponent<NetworkRunnerController>();
-        }
-        
-        // GlobalManagers에 등록
-        if (GlobalManagers.Instance != null && networkController != null)
-        {
-            // 리플렉션을 통해 NetworkRunnerController 설정 (private set 우회)
-            var field = typeof(GlobalManagers).GetField("<NetworkRunnerController>k__BackingField", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            field?.SetValue(GlobalManagers.Instance, networkController);
-        }
-    }
-    
-    // 🎛️ 에디터 버튼: Inspector에서 수동으로 시작
-    [ContextMenu("🚀 Start Game Now")]
-    private void StartGameNow()
+    // 🎛️ 에디터 컨텍스트 메뉴: 수동 시작
+    [ContextMenu("🚀 Start Network Now")]
+    private void StartNetworkNow()
     {
         if (!hasStarted && Application.isPlaying)
         {
-            StartCoroutine(AutoStartGame());
+            StartCoroutine(AutoStartNetwork());
         }
     }
     
-    // 🛑 에디터 버튼: 게임 정지
-    [ContextMenu("🛑 Stop Game")]
-    private void StopGame()
+    // 🛑 에디터 컨텍스트 메뉴: 네트워크 정지
+    [ContextMenu("🛑 Stop Network")]
+    private void StopNetwork()
     {
-        if (networkController != null)
+        if (networkRunner != null)
         {
-            networkController.ShutDownRunner();
+            if (networkRunner.IsRunning)
+            {
+                networkRunner.Shutdown();
+            }
+            
+            // NetworkRunner GameObject 제거
+            if (networkRunner.gameObject != null)
+            {
+                DestroyImmediate(networkRunner.gameObject);
+            }
+            
+            networkRunner = null;
+        }
+        
+        // 상태 초기화
+        hasStarted = false;
+        isPlayerSpawned = false;
+        
+        Debug.Log("🛠️ [DevAutoStarter] 네트워크 정지 완료");
+    }
+    
+    // 🔄 에디터 컨텍스트 메뉴: 플레이어 재소환
+    [ContextMenu("👤 Respawn Player")]
+    private void RespawnPlayer()
+    {
+        if (Application.isPlaying && networkRunner != null)
+        {
+            // 기존 플레이어 제거
+            if (networkRunner.TryGetPlayerObject(networkRunner.LocalPlayer, out var playerObject))
+            {
+                networkRunner.Despawn(playerObject);
+            }
+            
+            isPlayerSpawned = false;
+            
+            // 호스트 모드에서만 재소환
+            if (currentGameMode == GameMode.Host)
+            {
+                SpawnAllPlayers();
+            }
+            else
+            {
+                Debug.Log("🛠️ [DevAutoStarter] 클라이언트 모드에서는 서버에서 자동으로 재소환됩니다.");
+            }
         }
     }
     
-
+    // 📷 에디터 컨텍스트 메뉴: 카메라 재설정 (제거됨)
+    // 카메라 설정은 이제 SpelunkyPlayerController에서 자동으로 처리됩니다.
 } 

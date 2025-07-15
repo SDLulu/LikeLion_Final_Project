@@ -32,10 +32,7 @@ public class ExampleMachineGun : UsableItemBase
         base.Awake();
         currentAmmo = maxAmmo;
         playerCamera = Camera.main;
-        
-        // 🔫 기관총 이미지가 오른쪽을 향하고 있다면 Vector2.right
-        // 만약 위쪽을 향한다면 Vector2.up, 왼쪽이면 Vector2.left 로 변경
-        defaultDirection = Vector2.right;
+
         
         // 발사 지점이 없으면 자신의 위치 사용
         if (firePoint == null)
