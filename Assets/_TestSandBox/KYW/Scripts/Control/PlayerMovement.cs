@@ -2,15 +2,13 @@ using Fusion;
 using UnityEngine;
 
 // 🏃 플레이어 이동 컴포넌트
-// 좌우 이동, 덕킹, 스프라이트 방향 전환 담당
+// 좌우 이동, 덕킹 담당 (순수 로직만)
+// 스프라이트 렌더링은 SpelunkyPlayerController에서 처리
 public class PlayerMovement : NetworkBehaviour
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float duckMoveSpeed = 2.5f;
-    
-    [Header("References")]
-    [SerializeField] private SpriteRenderer spriteRenderer;
     
     // 🌐 네트워크 동기화
     [Networked] public bool IsDucking { get; private set; }
@@ -19,14 +17,13 @@ public class PlayerMovement : NetworkBehaviour
     // 참조 컴포넌트들
     private PlayerGroundCheck groundCheck;
     private Rigidbody2D rb;
+    private PlayerClimbing climbing;
     
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
-        groundCheck = GetComponent<PlayerGroundCheck>();
-        
-        if (spriteRenderer == null)
-            spriteRenderer = GetComponent<SpriteRenderer>();
+        groundCheck = GetComponentInChildren<PlayerGroundCheck>();
+        climbing = GetComponent<PlayerClimbing>();
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
@@ -38,8 +35,8 @@ public class PlayerMovement : NetworkBehaviour
         // 이동 처리
         ProcessMovement(input);
         
-        // 스프라이트 방향 전환
-        UpdateSpriteDirection(input);
+        // 스프라이트 방향 전환 (네트워크 상태만)
+        UpdateFacingDirection(input);
     }
     
     private void HandleDucking(SpelunkyPlayerData input)
@@ -50,6 +47,12 @@ public class PlayerMovement : NetworkBehaviour
     
     private void ProcessMovement(SpelunkyPlayerData input)
     {
+        // 사다리 오르는 중에는 수평 이동 금지
+        if (climbing != null && climbing.IsCurrentlyClimbing)
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            return;
+        }
         // 웅크린 상태에 따라 속도 조절
         float currentMoveSpeed = IsDucking ? duckMoveSpeed : moveSpeed;
         float targetSpeed = input.HorizontalInput * currentMoveSpeed;
@@ -57,7 +60,7 @@ public class PlayerMovement : NetworkBehaviour
         rb.linearVelocity = new Vector2(targetSpeed, rb.linearVelocity.y);
     }
     
-    private void UpdateSpriteDirection(SpelunkyPlayerData input)
+    private void UpdateFacingDirection(SpelunkyPlayerData input)
     {
         // 네트워크 동기화되는 방향 상태 업데이트
         if (input.HorizontalInput != 0)
@@ -66,17 +69,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
     
-    // 실제 스프라이트 렌더링 업데이트 (매 프레임 호출)
-    public void UpdateSpriteRendering()
-    {
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.flipX = IsFacingLeft;
-        }
-    }
-    
     // 다른 컴포넌트에서 참조할 수 있는 속성들
     public float CurrentSpeed => Mathf.Abs(rb.linearVelocity.x);
     public float NormalizedSpeed => CurrentSpeed / moveSpeed;
-    public bool FacingLeft => IsFacingLeft;
 } 

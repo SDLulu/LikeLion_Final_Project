@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - PlayerBody
+  - PlayerHand
+  - PlayerFoot
   layers:
   - Default
   - TransparentFX
@@ -12,12 +15,12 @@ TagManager:
   - Water
   - UI
   - Ground
-  - PlayerHitBox
   - Player
-  - DeathGround
   - Object
   - Item
   - Ladder
+  - Enemy
+  - 
   - 
   - 
   - 
@@ -38,11 +41,11 @@ TagManager:
   - 
   - 
   m_SortingLayers:
-  - name: Default
-    uniqueID: 0
-    locked: 0
   - name: BackGround
     uniqueID: 2227233595
+    locked: 0
+  - name: Default
+    uniqueID: 0
     locked: 0
   - name: Environment
     uniqueID: 1402703129

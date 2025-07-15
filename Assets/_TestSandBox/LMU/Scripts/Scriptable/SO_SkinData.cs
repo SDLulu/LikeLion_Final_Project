@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 더이상 사용하지 않음
+/// </summary>
 [CreateAssetMenu(fileName = "SO_SkinData", menuName = "스크립터블/SkinData")]
 public class SO_SkinData : ScriptableObject
 {
