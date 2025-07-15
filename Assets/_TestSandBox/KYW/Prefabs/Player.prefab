@@ -317,6 +317,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   climbingSpeed: 3
   showDebugInfo: 1
+  climbRegrabCooldownTime: 0.2
   climbingGravityScale: 0
   normalGravityScale: 1
   _IsClimbing: 0
@@ -631,7 +632,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemLayerMask:
     serializedVersion: 2
-    m_Bits: 2048
+    m_Bits: 512
   showDebugInfo: 1
   pickupTrigger: {fileID: 2162887977885498126}
 --- !u!114 &6232199870285927185
