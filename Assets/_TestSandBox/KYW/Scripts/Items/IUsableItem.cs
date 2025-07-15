@@ -1,5 +1,84 @@
 using UnityEngine;
 
+/// <summary>
+/// 🧭 아이템 기본 방향 (룰타일 스타일 8방향)
+/// </summary>
+[System.Serializable]
+public enum ItemDirection
+{
+    Right = 0,        // 오른쪽 →
+    RightUp = 1,      // 오른쪽 위 ↗
+    Up = 2,           // 위 ↑
+    LeftUp = 3,       // 왼쪽 위 ↖
+    Left = 4,         // 왼쪽 ←
+    LeftDown = 5,     // 왼쪽 아래 ↙
+    Down = 6,         // 아래 ↓
+    RightDown = 7     // 오른쪽 아래 ↘
+}
+
+/// <summary>
+/// 🧭 ItemDirection 확장 메서드
+/// </summary>
+public static class ItemDirectionExtensions
+{
+    /// <summary>
+    /// ItemDirection을 Vector2로 변환
+    /// </summary>
+    public static Vector2 ToVector2(this ItemDirection direction)
+    {
+        switch (direction)
+        {
+            case ItemDirection.Right:     return Vector2.right;           // (1, 0)
+            case ItemDirection.RightUp:   return new Vector2(1, 1).normalized;    // (0.707, 0.707)
+            case ItemDirection.Up:        return Vector2.up;              // (0, 1)
+            case ItemDirection.LeftUp:    return new Vector2(-1, 1).normalized;   // (-0.707, 0.707)
+            case ItemDirection.Left:      return Vector2.left;            // (-1, 0)
+            case ItemDirection.LeftDown:  return new Vector2(-1, -1).normalized;  // (-0.707, -0.707)
+            case ItemDirection.Down:      return Vector2.down;            // (0, -1)
+            case ItemDirection.RightDown: return new Vector2(1, -1).normalized;   // (0.707, -0.707)
+            default: return Vector2.right;
+        }
+    }
+    
+    /// <summary>
+    /// ItemDirection을 각도(도)로 변환
+    /// </summary>
+    public static float ToAngle(this ItemDirection direction)
+    {
+        switch (direction)
+        {
+            case ItemDirection.Right:     return 0f;
+            case ItemDirection.RightUp:   return 45f;
+            case ItemDirection.Up:        return 90f;
+            case ItemDirection.LeftUp:    return 135f;
+            case ItemDirection.Left:      return 180f;
+            case ItemDirection.LeftDown:  return 225f;
+            case ItemDirection.Down:      return 270f;
+            case ItemDirection.RightDown: return 315f;
+            default: return 0f;
+        }
+    }
+    
+    /// <summary>
+    /// ItemDirection을 한글 설명으로 변환
+    /// </summary>
+    public static string ToKorean(this ItemDirection direction)
+    {
+        switch (direction)
+        {
+            case ItemDirection.Right:     return "오른쪽 →";
+            case ItemDirection.RightUp:   return "오른쪽 위 ↗";
+            case ItemDirection.Up:        return "위 ↑";
+            case ItemDirection.LeftUp:    return "왼쪽 위 ↖";
+            case ItemDirection.Left:      return "왼쪽 ←";
+            case ItemDirection.LeftDown:  return "왼쪽 아래 ↙";
+            case ItemDirection.Down:      return "아래 ↓";
+            case ItemDirection.RightDown: return "오른쪽 아래 ↘";
+            default: return "오른쪽 →";
+        }
+    }
+}
+
 /*
  * ===============================================
  * 🛠️ 아이템 시스템 사용 가이드 (개발자용)
@@ -18,7 +97,12 @@ using UnityEngine;
  *    - Rigidbody2D 추가 (자동 생성됨)
  *    - 만든 아이템 스크립트 추가
  * 
- * 3️⃣ 레이어 설정:
+ * 3️⃣ 방향 설정:
+ *    - Inspector에서 Item Direction을 룰타일 스타일로 선택
+ *    - 8방향 중 아이템 스프라이트가 향하는 기본 방향 설정
+ *    - 런타임에 SetDirection()으로 동적 변경 가능
+ * 
+ * 4️⃣ 레이어 설정:
  *    - 아이템을 적절한 레이어에 배치
  *    - PlayerItemPickup의 itemLayerMask에 해당 레이어 체크
  * 
@@ -26,6 +110,12 @@ using UnityEngine;
  *    - 즉시 사용: OnUsePress만 구현 (폭탄, 물약 등)
  *    - 연속 사용: OnUsePress + OnUseHold (드릴, 기관총 등)
  *    - 충전 사용: OnUsePress + OnUseHold + OnUseRelease (활, 마법 등)
+ * 
+ * 🧭 방향 활용 예시:
+ *    - 총: 오른쪽 방향, 마우스 방향으로 총알 발사
+ *    - 칼: 위쪽 방향, 휘두르기 애니메이션 적용
+ *    - 드릴: 왼쪽 방향, 회전 이펙트와 함께 사용
+ *    - 방패: 왼쪽 방향, 플레이어 앞쪽 방어
  * 
  * 🎯 던지기 데미지:
  *    - UsableItemBase 상속 시 자동으로 던지기 데미지 지원
@@ -131,8 +221,8 @@ public abstract class UsableItemBase : MonoBehaviour, IUsableItem, IThrowableIte
     [SerializeField] protected bool canUse = true; // 아이템 사용 가능 여부
     
     [Header("Rotation Settings - 아이템 회전 설정")]
-    [Tooltip("아이템 이미지가 기본적으로 향하는 방향 (오른쪽: 1,0 / 위쪽: 0,1 / 왼쪽: -1,0)")]
-    [SerializeField] protected Vector2 defaultDirection = Vector2.right;
+    [Tooltip("아이템 이미지가 기본적으로 향하는 방향 (룰타일 스타일 8방향)")]
+    [SerializeField] protected ItemDirection itemDirection = ItemDirection.Right;
     
     [Header("Throw Damage Settings - 던지기 데미지 설정 (테스트용 간소화)")]
     [Tooltip("던져서 맞았을 때 주는 데미지 (현재 1로 고정)")]
@@ -150,9 +240,28 @@ public abstract class UsableItemBase : MonoBehaviour, IUsableItem, IThrowableIte
     private Rigidbody2D rb;
     
     public virtual bool CanUse => canUse;
-    public virtual Vector2 DefaultDirection => defaultDirection;
+    public virtual Vector2 DefaultDirection => itemDirection.ToVector2();
     public virtual float ThrowDamage => throwDamage;
     public virtual float MinDamageSpeed => minDamageSpeed;
+    
+    /// <summary>
+    /// 🧭 아이템 방향을 각도로 반환 (0~360도)
+    /// </summary>
+    public virtual float DefaultAngle => itemDirection.ToAngle();
+    
+    /// <summary>
+    /// 🧭 아이템 방향을 한글로 반환 (디버그용)
+    /// </summary>
+    public virtual string DirectionDescription => itemDirection.ToKorean();
+    
+    /// <summary>
+    /// 🧭 런타임에 아이템 방향 변경 (스크립트에서 사용)
+    /// </summary>
+    public virtual void SetDirection(ItemDirection newDirection)
+    {
+        itemDirection = newDirection;
+        Debug.Log($"🧭 {name} 방향 변경: {itemDirection.ToKorean()}");
+    }
     
     protected virtual void Awake()
     {
