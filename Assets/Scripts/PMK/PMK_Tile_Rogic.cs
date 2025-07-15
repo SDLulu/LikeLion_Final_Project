@@ -48,11 +48,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
     {
         SaveMapPos(); // 전체 맵 위치 저장하기
 
-        SpawnMap_Instantiate(); // 스폰 맵 생성하기
-
-        DownExit_Map_Instantiate(_removeMapX); // 시작맵을 제외한 y0 라인에 있는 맵 중 하나를 선택하여 확정 탈출구 생성하기
-
-        Create_Special_Map(0 , 10); // 빈 공간에 특별한 맵 생성하기 (10% 확률로 1개 생성)
+        ResetMap();
 
     }
 
@@ -72,9 +68,13 @@ public class PMK_Tile_Rogic : MonoBehaviour
     #region 맵 초기화 및 재생성
     private void ResetMap()
     {
-        // 부모 오브젝트의 자식 오브젝트를 모두 제거합니다.
+        mainTilemap.ClearAllTiles();
+
         foreach (Transform child in _ParentTransform)
         {
+            if (child.GetComponent<PMK_Bricks>() != null)
+                continue;
+
             Destroy(child.gameObject);
         }
 
@@ -83,6 +83,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
         SpawnMap_Instantiate();
         DownExit_Map_Instantiate(_removeMapX);
         Create_Special_Map(0, 10);
+        Create_EmptyMap();
     }
     #endregion
 
@@ -113,15 +114,12 @@ public class PMK_Tile_Rogic : MonoBehaviour
     {
         if (_mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            // 프리팹을 임시로 생성 (위치는 0,0으로)
             GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity);
 
-            // 프리팹 내의 모든 Tilemap 컴포넌트를 가져오기
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>();
-
-            // 병합할 위치 오프셋 (타일맵 셀 좌표 기준)
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0);
 
+            // --- 1. 타일 복사 ---
             foreach (Tilemap sourceTilemap in tilemaps)
             {
                 BoundsInt bounds = sourceTilemap.cellBounds;
@@ -136,20 +134,30 @@ public class PMK_Tile_Rogic : MonoBehaviour
                         {
                             Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
                             Vector3Int targetPos = sourcePos + offset;
-
                             mainTilemap.SetTile(targetPos, tile);
                         }
                     }
                 }
             }
 
-            // 병합 후 임시 프리팹 제거
-            Destroy(temp);
+            // --- 2. 일반 오브젝트 복사 ---
+            foreach (Transform child in temp.transform)
+            {
+                // 타일맵이 아닌 일반 오브젝트만 선택
+                if (child.GetComponent<Tilemap>() == null)
+                {
+                    // 타일맵 기준 좌표계로 병합된 위치 계산
+                    Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
 
-            // 병합된 타일맵 갱신
+                    GameObject clone = Instantiate(child.gameObject, spawnPosition, child.rotation, _ParentTransform);
+                    clone.name = child.name; // 이름 유지 (디버깅 편의)
+                }
+            }
+
+            Destroy(temp); // 임시 프리팹 제거
             mainTilemap.RefreshAllTiles();
 
-            // 맵 좌표 기록
+            // 좌표 기록
             Vector2 pos = new Vector2(spawnXpos, spawnYpos);
             for (int y = 0; y < _MaxTileY; y++)
             {
@@ -168,6 +176,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
             Debug.LogWarning($"MapType '{mapType}' 입력된 이름이 아님!");
         }
     }
+
 
 
     #endregion
