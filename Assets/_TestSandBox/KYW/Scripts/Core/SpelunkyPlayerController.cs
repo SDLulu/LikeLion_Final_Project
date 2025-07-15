@@ -45,6 +45,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
+    private PlayerClimbing climbing; // 🪜 사다리 시스템 (나중에 추가)
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -53,32 +54,26 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerItemPickup itemPickup;
     private PlayerItemUsage itemUsage;
-    
+
     public override void Spawned()
     {
         // 물리/로직 컴포넌트들 (같은 오브젝트에서 찾기)
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
+        climbing = GetComponent<PlayerClimbing>(); // 🪜 사다리 시스템 (나중에 추가)
         
         // 하위 오브젝트들 설정 (Visual, Hand)
         SetupChildObjects();
         
-        // 네트워크 물리 설정
-        Runner.SetIsSimulated(Object, true);
-        
-        // 로컬 플레이어 설정
-        if (Object.HasInputAuthority)
-        {
-            // 카메라 등 로컬 전용 설정
-        }
-        else
-        {
-            // 원격 플레이어 설정
-            Object.RenderSource = RenderSource.Interpolated;
-        }
+        // 네트워크 설정 분리
+        SpelunkyNetworkInitializer.InitializeNetworkSettings(this);
+        SpelunkyNetworkInitializer.InitializePlayerType(this);
         
         IsAlive = true;
+        
+        Debug.Log($"🎮 플레이어 소환 완료! InputAuthority: {Object.HasInputAuthority}, " +
+                 $"IsLocalPlayer: {Object.InputAuthority == Runner.LocalPlayer}");
     }
     
     // 📦 하위 오브젝트들 설정 (Visual, Hand)
@@ -199,7 +194,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 각 컴포넌트를 일관성 있게 ProcessInput 메서드로 처리
             movement?.ProcessInput(input);
             jump?.ProcessInput(input);
-            
+            climbing?.ProcessInput(input);
             // Hand 컴포넌트들 처리
             ProcessHandInput(input);
         }
@@ -243,6 +238,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         
         return data;
     }
+    
+    // 🎮 플레이어 타입별 초기화
+    // 기존 InitializePlayerType, InitializeLocalPlayer, InitializeRemotePlayer, SetupCameraForLocalPlayer, InitializeLocalPlayerUI 메서드 삭제
     
     #region 📊 상태 접근 프로퍼티들
     
