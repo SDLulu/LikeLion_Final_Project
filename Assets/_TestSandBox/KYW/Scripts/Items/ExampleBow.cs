@@ -18,13 +18,7 @@ public class ExampleBow : UsableItemBase
     protected override void Awake()
     {
         base.Awake();
-        
-        // 🏹 활 이미지 방향 설정
-        // 위쪽을 향하는 활 이미지라면 Vector2.up
-        // 오른쪽을 향하는 활 이미지라면 Vector2.right
-        defaultDirection = Vector2.up; // 일반적으로 활은 위쪽을 향함
-        
-        // 던지기 설정은 베이스 클래스 기본값 사용 (데미지: 1, 최소속도: 3)
+
     }
     
     // 🔨 클릭 시작 - 차징 시작
