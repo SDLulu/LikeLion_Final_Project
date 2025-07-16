@@ -6,18 +6,6 @@ public class PNK_Tile_Wall : MonoBehaviour
 {
     public LayerMask whatisPlatform;
 
-    //private void Update()
-    //{
-    //    if (Input.GetMouseButtonDown(0))
-    //    {
-    //        MousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-    //        Collider2D overCollider2d = Physics2D.OverlapCircle(MousePosition, 0.01f, whatisPlatform);
-    //        if (overCollider2d != null)
-    //        {
-    //            overCollider2d.transform.GetComponent<PMK_Bricks>().MakeDot(MousePosition);
-    //        }
-    //    }
-    //}
     private void Update()
     {
         Destroy(gameObject, 0.1f); // 0.1초 후에 오브젝트 제거
