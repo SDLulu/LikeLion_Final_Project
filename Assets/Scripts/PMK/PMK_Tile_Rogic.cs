@@ -6,12 +6,13 @@ using System.Runtime.CompilerServices; // Coroutine을 위해 추가
 
 public class PMK_Tile_Rogic : MonoBehaviour
 {
-    [Header("타일 길이")]
-    [SerializeField] private int _MaxTileX = 3; // 맵의 가로 기준 길이
-    [SerializeField] private int _MaxTileY = 3; // 맵의 세로 기준 길이
+    [Header("생성할 타일 개수")]
+    [SerializeField] private int _MaxTileX = 3; // 맵의 가로 기준
+    [SerializeField] private int _MaxTileY = 3; // 맵의 세로 기준
 
     [Header("다음 타일과의 거리")]
-    [SerializeField] private float _NextTile = 10; // 맵의 가로 기준 길이
+    [SerializeField] private float _NextTileX = 10; // 맵의 가로 기준 길이
+    [SerializeField] private float _NextTileY = 10; // 맵의 가로 기준 길이
     [SerializeField] private Transform _ParentTransform;
 
     [Header("타일 오브젝트")]
@@ -100,7 +101,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
         {
             for (int x = 0; x < _MaxTileX; x++)
             {
-                _MapXY[x, y] = new Vector2(x * _NextTile, y * -_NextTile);
+                _MapXY[x, y] = new Vector2(x * _NextTileX, y * -_NextTileY);
                 _UseMapXy[x, y] = false;
                 Debug.Log($"x: {x}, y: {y} → pos: {_MapXY[x, y]}");
             }
@@ -119,7 +120,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>();
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0);
 
-            // --- 1. 타일 복사 ---
+            // --- 타일 복붙 ---
             foreach (Tilemap sourceTilemap in tilemaps)
             {
                 BoundsInt bounds = sourceTilemap.cellBounds;
@@ -140,7 +141,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
                 }
             }
 
-            // --- 2. 일반 오브젝트 복사 ---
+            // --- 오브젝트 복붙 ---
             foreach (Transform child in temp.transform)
             {
                 // 타일맵이 아닌 일반 오브젝트만 선택
@@ -155,7 +156,7 @@ public class PMK_Tile_Rogic : MonoBehaviour
             }
 
             Destroy(temp); // 임시 프리팹 제거
-            mainTilemap.RefreshAllTiles();
+            mainTilemap.RefreshAllTiles(); // 타일맵 최신화
 
             // 좌표 기록
             Vector2 pos = new Vector2(spawnXpos, spawnYpos);
@@ -179,47 +180,6 @@ public class PMK_Tile_Rogic : MonoBehaviour
 
 
 
-    #endregion
-
-
-    #region 빈 공간에 랜덤 맵 채우기
-    private void Create_EmptyMap()
-    {
-        for (int y = 0; y < _MaxTileY; y++)
-        {
-            for (int x = 0; x < _MaxTileX; x++)
-            {
-                if (!_UseMapXy[x, y]) // 해당 위치에 맵이 생성되지 않았다면
-                {
-                    Vector2 emptyPos = _MapXY[x, y];
-                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // 좌우가 확정인 맵 생성 (나중에 올 랜덤으로 바꾸기)
-                }
-            }
-        }
-    }
-    #endregion
-
-
-    #region 빈 공간에 특별한 맵 생성
-    private void Create_Special_Map(int Map_Number , int Percent)
-    {
-        if (Random.Range(0, 100) < Percent)
-        {
-            const int maxAttempts = 100; // 극악의 확률이지만 모든 맵이 차면 오류가 나기에 최대 100번 시도합니다.
-            for (int attempt = 0; attempt < maxAttempts; attempt++)
-            {
-                int x = Random.Range(0, _MaxTileX);
-                int y = Random.Range(0, _MaxTileY);
-
-                if (!_UseMapXy[x, y])
-                {
-                    Vector2 emptyPos = _MapXY[x, y];
-                    Create_Map("S", Map_Number, emptyPos.x, emptyPos.y);
-                    break; // 빈 공간에 성공적으로 생성했으니 반복 종료
-                }
-            }
-        }
-    }
     #endregion
 
 
@@ -324,6 +284,47 @@ public class PMK_Tile_Rogic : MonoBehaviour
                 }
             }
 
+        }
+    }
+    #endregion
+
+
+    #region 빈 공간에 특별한 맵 생성
+    private void Create_Special_Map(int Map_Number, int Percent)
+    {
+        if (Random.Range(0, 100) < Percent)
+        {
+            const int maxAttempts = 100; // 극악의 확률이지만 모든 맵이 차면 오류가 나기에 최대 100번 시도합니다.
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                int x = Random.Range(0, _MaxTileX);
+                int y = Random.Range(0, _MaxTileY);
+
+                if (!_UseMapXy[x, y])
+                {
+                    Vector2 emptyPos = _MapXY[x, y];
+                    Create_Map("S", Map_Number, emptyPos.x, emptyPos.y);
+                    break; // 빈 공간에 성공적으로 생성했으니 반복 종료
+                }
+            }
+        }
+    }
+    #endregion
+
+
+    #region 빈 공간에 랜덤 맵 채우기
+    private void Create_EmptyMap()
+    {
+        for (int y = 0; y < _MaxTileY; y++)
+        {
+            for (int x = 0; x < _MaxTileX; x++)
+            {
+                if (!_UseMapXy[x, y]) // 해당 위치에 맵이 생성되지 않았다면
+                {
+                    Vector2 emptyPos = _MapXY[x, y];
+                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // 좌우가 확정인 맵 생성 (나중에 올 랜덤으로 바꾸기)
+                }
+            }
         }
     }
     #endregion
