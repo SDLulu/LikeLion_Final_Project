@@ -326,25 +326,25 @@ Tilemap:
   m_TileMatrixArray:
   - m_RefCount: 0
     m_Data:
-      e00: 1.4958221e-34
+      e00: 2.35e-43
       e01: 0
       e02: 1e-45
       e03: 4.7331702e-29
-      e10: 4.5916e-41
+      e10: 0
       e11: 0
       e12: 0
       e13: 5.45e-43
       e20: 1.452169e-34
       e21: 4.7331702e-29
-      e22: -2.670976e-29
-      e23: -2.7298234e-18
+      e22: -2.532723e-29
+      e23: -2.6237391e-18
       e30: 4.5916e-41
       e31: 5.45e-43
       e32: 5.48e-43
       e33: 5.45e-43
   m_TileColorArray:
   - m_RefCount: 0
-    m_Data: {r: 7.5219e-41, g: 7.5219e-41, b: 7.5219e-41, a: 7.5219e-41}
+    m_Data: {r: 8.3618e-41, g: 8.3618e-41, b: 8.3618e-41, a: 8.3618e-41}
   m_TileObjectToInstantiateArray:
   - m_RefCount: 0
     m_Data: {fileID: 0}
@@ -568,7 +568,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 360caa83fbb11af42b6e07b638a9cd5c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _TileMap: {fileID: 1265822341}
+  tileMap: {fileID: 1265822341}
 --- !u!1 &1383749193
 GameObject:
   m_ObjectHideFlags: 0
@@ -598,22 +598,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f9ddabbd41407774bafd58d92cba590b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _MaxTileX: 5
-  _MaxTileY: 5
-  _NextTileX: 18
-  _NextTileY: 12
-  _ParentTransform: {fileID: 2573652354886158813}
-  _Clear_Map_Prefab:
+  maxTileX: 5
+  maxTileY: 5
+  nextTileX: 17
+  nextTileY: 11
+  parentTrans: {fileID: 1265822346}
+  Clear_Map_Prefab:
   - {fileID: 2777085221984976620, guid: 3ab09186f9d338b498b7d538397f74bf, type: 3}
   - {fileID: 4675249073432161324, guid: 28f9115fd6c3519488e9806a403483d1, type: 3}
-  _LR_Exit_Map_Prefab:
+  LR_Exit_Map_Prefab:
   - {fileID: 7977107586126641711, guid: 1e85d83a7a36ca249865f786e12195a4, type: 3}
-  _D_Exit_Map_Prefab:
+  D_Exit_Map_Prefab:
   - {fileID: 806208410943904702, guid: 6d4956d9c9a83eb48b71b0e1d0e20b6e, type: 3}
-  _WD_Exit_Map_Prefab:
+  WD_Exit_Map_Prefab:
   - {fileID: 3710340501844651436, guid: 14ca8e19f217f20429556c31378db9af, type: 3}
-  _Special_Map_Prefab:
+  Special_Map_Prefab:
   - {fileID: 7374161544316796849, guid: 88f855dd6b176264faaa09ce63b6ca81, type: 3}
+  wallItem: {fileID: 1117513070839161631, guid: e7fac068bae6d6d409076e3b17a52461, type: 3}
   mainTilemap: {fileID: 1265822341}
 --- !u!4 &1383749195
 Transform:
