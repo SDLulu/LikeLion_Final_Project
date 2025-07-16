@@ -203,7 +203,13 @@ public class PlayerItemUsage : NetworkBehaviour
         float angleDiff = itemDirectionAngle;
         targetAngle -= angleDiff;
 
-        // 반전 없이 z축 회전만 적용
+        // flipY 적용
+        var spriteRenderer = currentItem.GetComponentInChildren<SpriteRenderer>();
+        bool isLeft = (mouseWorldPosition.x < transform.position.x);
+        if (spriteRenderer != null)
+            spriteRenderer.flipY = isLeft;
+
+        // z축 회전 적용
         currentItem.transform.localEulerAngles = new Vector3(0, 0, targetAngle);
     }
     
