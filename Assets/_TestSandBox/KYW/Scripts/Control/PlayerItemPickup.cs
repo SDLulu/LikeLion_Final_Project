@@ -16,7 +16,11 @@ public class PlayerItemPickup : NetworkBehaviour
     
     // 🎒 현재 들고 있는 아이템
     private GameObject currentItem = null;
-    public GameObject CurrentItem => currentItem;
+    public GameObject CurrentItem
+    {
+        get => currentItem;
+        set => currentItem = value;
+    }
     
     // 📋 감지된 아이템 목록 (Trigger 방식)
     private HashSet<GameObject> nearbyItems = new HashSet<GameObject>();
@@ -253,17 +257,9 @@ public class PlayerItemPickup : NetworkBehaviour
         if (collider != null)
             collider.enabled = true;
         
-        // 🎯 던지기 데미지 시스템 활성화
-        var throwableItem = itemToThrow.GetComponent<IThrowableItem>();
-        if (throwableItem != null)
-        {
-            throwableItem.OnThrown(thrower, throwVelocity);
-            Debug.Log($"🎯 던지기 데미지 시스템 활성화: {itemToThrow.name}");
-        }
-        else
-        {
-            Debug.Log($"🎯 {itemToThrow.name}는 던지기 데미지가 없는 아이템입니다.");
-        }
+        // 던지기 데미지 시스템 활성화 부분 제거
+        // (던지기 데미지 인터페이스 없음)
+        Debug.Log($"🎯 {itemToThrow.name}를 던졌습니다.");
     }
     
     // 📊 상태 확인 프로퍼티들
