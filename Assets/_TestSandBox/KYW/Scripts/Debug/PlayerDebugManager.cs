@@ -10,6 +10,7 @@ public class PlayerDebugManager : NetworkBehaviour
     [SerializeField] private bool showMovementInfo = true;
     [SerializeField] private bool showJumpInfo = true;
     [SerializeField] private bool showClimbingInfo = true;
+    [SerializeField] private bool showAnimationInfo = true;
     
     // 참조 컴포넌트들
     private PlayerItemPickup itemPickup;
@@ -19,6 +20,7 @@ public class PlayerDebugManager : NetworkBehaviour
     private PlayerGroundCheck groundCheck;
     private PlayerClimbing climbing;
     private PlayerLadderCheck ladderCheck;
+    private PlayerAnimation playerAnimation;
     
     private void Awake()
     {
@@ -33,6 +35,13 @@ public class PlayerDebugManager : NetworkBehaviour
         {
             itemPickup = handObject.GetComponent<PlayerItemPickup>();
             itemUsage = handObject.GetComponent<PlayerItemUsage>();
+        }
+        
+        // Visual 오브젝트에서 애니메이션 컴포넌트 찾기
+        Transform visualObject = transform.Find("Visual");
+        if (visualObject != null)
+        {
+            playerAnimation = visualObject.GetComponent<PlayerAnimation>();
         }
         
         // 이동/점프 관련 컴포넌트 찾기
@@ -65,6 +74,11 @@ public class PlayerDebugManager : NetworkBehaviour
         if (showClimbingInfo)
         {
             DrawClimbingDebugInfo();
+        }
+
+        if (showAnimationInfo)
+        {
+            DrawAnimationDebugInfo();
         }
     }
     
@@ -130,6 +144,16 @@ public class PlayerDebugManager : NetworkBehaviour
         GUILayout.Label("");
         GUILayout.Label("조작법: 사다리 근처에서 위키(W) 유지");
         GUILayout.Label("점프키로 탈출");
+        GUILayout.EndArea();
+    }
+
+    private void DrawAnimationDebugInfo()
+    {
+        GUILayout.BeginArea(new Rect(10, 760, 300, 100));
+        GUILayout.Box("🎭 애니메이션 상태");
+        GUILayout.Label($"속도: {movement?.NormalizedSpeed:F2}");
+        GUILayout.Label($"수직속도: {jump?.VelocityY:F2}");
+        GUILayout.Label($"상태: {(groundCheck?.IsGrounded == true ? "지상" : "공중")}");
         GUILayout.EndArea();
     }
 } 

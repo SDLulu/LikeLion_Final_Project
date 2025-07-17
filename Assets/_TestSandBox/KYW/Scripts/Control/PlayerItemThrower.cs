@@ -47,22 +47,29 @@ public class PlayerItemThrower : NetworkBehaviour
     {
         GameObject itemToThrow = itemPickup.CurrentItem;
         if (itemToThrow == null) return;
-        
-        // 아이템 상태 초기화
-        itemPickup.ClearItem();
-        
-        // 던지기 위치 설정
+
+        // 1. 위치/velocity 적용
         Vector2 playerPosition = transform.parent != null ? transform.parent.position : transform.position;
         itemToThrow.transform.SetParent(null);
         itemToThrow.transform.position = playerPosition + direction * throwOffset;
-        
         EnableItemPhysics(itemToThrow, direction);
+
+        // 2. 소유권을 호스트(월드)로 넘김 (호스트가 StateAuthority를 갖도록)
+        var netObj = itemToThrow.GetComponent<NetworkObject>();
+        if (netObj != null && netObj.HasStateAuthority && !Runner.IsServer)
+        {
+            netObj.RequestStateAuthority(); // 호스트가 StateAuthority를 갖도록 요청
+        }
+
+        // 3. 참조 해제
+        itemPickup.ClearItem();
     }
     
     private void EnableItemPhysics(GameObject item, Vector2 throwDirection)
     {
         var rigidbody = item.GetComponent<Rigidbody2D>();
-        if (rigidbody != null)
+        var netObj = item.GetComponent<NetworkObject>();
+        if (rigidbody != null && netObj != null && netObj.HasStateAuthority)
         {
             rigidbody.simulated = true;
             rigidbody.isKinematic = false;
