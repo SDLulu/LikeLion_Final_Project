@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
-using System.Collections;
-using System.Runtime.CompilerServices; // Coroutine을 위해 추가
+using System.Linq;
 
 public class PMK_TileRogic : MonoBehaviour
 {
+    public static PMK_TileRogic Instance { get; private set; }
+
     [Header("생성할 타일 개수")]
     [SerializeField] private int maxTileX = 5; // 맵의 가로 기준
     [SerializeField] private int maxTileY = 5; // 맵의 세로 기준
@@ -24,7 +25,15 @@ public class PMK_TileRogic : MonoBehaviour
     [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // 위,아래 출구가 확정인 맵 생성 (좌,우 랜덤)
     [SerializeField] private GameObject[] Special_Map_Prefab;      // 상점이나 특별한 맵 생성 (좌,우 확정)
 
-    [SerializeField] private GameObject wallItem; // 타일 안에 생성될 아이템 오브젝트 (돈 아이템 등)
+
+    [Header("타일 아이템 오브젝트")]
+
+    [SerializeField] private int itemSpawnChance = 35; // 아이템 생성 확률 (0.0f ~ 1.0f) - 50% 확률로 아이템 생성
+    [SerializeField] private List<PMK_TileTable> tileItems;
+
+
+
+
 
     private Vector2[,] mapXY; // 맵 타일 위치 저장용 2차원 배열
     private bool[,] useMapXY; // 맵 타일이 생성되었는지 여부를 저장하는 2차원 배열
@@ -37,6 +46,8 @@ public class PMK_TileRogic : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+
         mapPrefabDict = new Dictionary<string, GameObject[]>
         {
             { "C", Clear_Map_Prefab },
@@ -139,7 +150,9 @@ public class PMK_TileRogic : MonoBehaviour
                             Vector3Int targetPos = sourcePos + offset;
                             mainTilemap.SetTile(targetPos, tile);
 
-                            Instantiate(wallItem, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, parentTrans); // 타일 안에 타일아이템 오브젝트 생성
+
+                            // 타일 아이템 생성
+                            Create_TileItem(targetPos);
                         }
                     }
                 }
@@ -181,9 +194,48 @@ public class PMK_TileRogic : MonoBehaviour
             Debug.LogWarning($"MapType '{mapType}' 입력된 이름이 아님!");
         }
     }
+    #endregion
 
 
+    #region 타일에 아이템 생성
+    public void Create_TileItem(Vector3Int targetPos)
+    {
+        // 타일에 아이템 생성
+        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos);
 
+        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f);
+        bool hasSameTag = false;
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Tileitem")) // 프리팹에 이 태그 설정 필수
+            {
+                hasSameTag = true;
+                break;
+            }
+        }
+
+        // 아이템 생성이 확정된다면 랜덤확률로 아이템 생성
+        if (!hasSameTag)
+        {
+            if (Random.Range(0, 100) > itemSpawnChance) return;
+
+            int totalChance = tileItems.Sum(t => t.spawnChance);
+            int roll = Random.Range(0, totalChance);
+
+            int current = 0;
+            foreach (var item in tileItems)
+            {
+                current += item.spawnChance;
+                if (roll < current)
+                {
+                    Instantiate(item.prefab, worldPos, Quaternion.identity, parentTrans);
+                    break;
+                }
+            }
+        }
+
+    }
     #endregion
 
 

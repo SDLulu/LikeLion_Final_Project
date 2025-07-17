@@ -614,7 +614,9 @@ MonoBehaviour:
   - {fileID: 3710340501844651436, guid: 14ca8e19f217f20429556c31378db9af, type: 3}
   Special_Map_Prefab:
   - {fileID: 7374161544316796849, guid: 88f855dd6b176264faaa09ce63b6ca81, type: 3}
-  wallItem: {fileID: 1117513070839161631, guid: e7fac068bae6d6d409076e3b17a52461, type: 3}
+  itemSpawnChance: 15
+  tileItems:
+  - {fileID: 11400000, guid: 1777164a16c2af946b715a3b1db80a9a, type: 2}
   mainTilemap: {fileID: 1265822341}
 --- !u!4 &1383749195
 Transform:
@@ -625,7 +627,7 @@ Transform:
   m_GameObject: {fileID: 1383749193}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.1952935, y: -2.6168609, z: -0.014452613}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
