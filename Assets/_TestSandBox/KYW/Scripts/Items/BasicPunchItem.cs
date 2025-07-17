@@ -9,6 +9,7 @@ public class BasicPunchItem : UsableItemBase
     public LayerMask targetLayers = -1;
 
     private float lastPunchTime;
+    private bool isPunching;
     private Collider2D punchCollider;
     private Vector3 originalLocalPosition;
     private Quaternion originalLocalRotation;
@@ -21,12 +22,17 @@ public class BasicPunchItem : UsableItemBase
         cachedTransform = transform;
         originalLocalPosition = cachedTransform.localPosition;
         originalLocalRotation = cachedTransform.localRotation;
-        gameObject.SetActive(false); // 기본적으로 비활성화
+        gameObject.SetActive(false);
     }
+
+    public override bool CanUse => !isPunching && Time.time >= lastPunchTime + punchCooldown;
 
     public override void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        base.OnUsePress(mouseWorldPosition, playerPosition);
+        if (!CanUse) return;
+        lastPunchTime = Time.time;
+        isPunching = true;
+        StartUse(mouseWorldPosition, playerPosition);
     }
 
     protected override void StartUse(Vector2 mouseWorldPosition, Vector2 playerPosition)
@@ -73,10 +79,10 @@ public class BasicPunchItem : UsableItemBase
         cachedTransform.localRotation = originalLocalRotation;
 
         gameObject.SetActive(false);
+        isPunching = false;
         EndUse(mouseWorldPosition, playerPosition);
     }
 
-    // OnTriggerEnter2D에서 피격 처리
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (((1 << other.gameObject.layer) & targetLayers) == 0) return;
@@ -90,4 +96,13 @@ public class BasicPunchItem : UsableItemBase
 
     public override void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
     public override void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
+
+    private void OnDisable()
+    {
+        // 비활성화될 때 상태 초기화
+        isPunching = false;
+        if (punchCollider != null) punchCollider.enabled = false;
+        cachedTransform.localPosition = originalLocalPosition;
+        cachedTransform.localRotation = originalLocalRotation;
+    }
 } 
