@@ -6,6 +6,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
 {
     [SerializeField] private GameObject destroyArea;
     [SerializeField] private LayerMask whatisPlatform;
+    [SerializeField] private LayerMask whatisTileitem;
     [SerializeField] private CircleCollider2D deleteCollider2D;
 
     [Header("폭발 범위")]
@@ -44,8 +45,18 @@ public class PMK_TileDestroyItem : MonoBehaviour
                     {
                         overCollider2d.transform.GetComponent<PMK_Bricks>().MakeDot(checkCellPos);
                     }
-                }
 
+
+                    // 타일 아이템 제거
+                    Collider2D[] hitObjects = Physics2D.OverlapCircleAll(checkCellPos, 0.01f, whatisTileitem);
+                    foreach (var col in hitObjects)
+                    {
+                        if (col.CompareTag("Tileitem"))
+                        {
+                            col.GetComponent<PMK_TileItem>().DestroyItem();
+                        }
+                    }
+                }
             }
         }
     }

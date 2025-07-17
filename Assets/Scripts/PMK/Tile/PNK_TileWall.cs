@@ -31,23 +31,27 @@ public class PNK_TileWall : MonoBehaviour
     {
         Vector2 pos = transform.position;
 
-        Collider2D hit = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
-        if (hit == null && !placedTile)
+        Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
+        if (hits == null && !placedTile)
         {
             Vector3Int cellPos = tilemap.WorldToCell(pos);
 
             if (tilemap.GetTile(cellPos) == null)
             {
+                // 타일 설치
                 tilemap.SetTile(cellPos, ruleTile);
-                //Instantiate(wallItem , tilemap.GetCellCenterWorld(cellPos), Quaternion.identity);
-                Physics2D.SyncTransforms();
+                Physics2D.SyncTransforms(); // 물리 최신화
                 placedTile = true;
-                Destroy(gameObject);
+
+                PMK_TileRogic.Instance.Create_TileItem(cellPos);
+
+                Destroy(gameObject); // 현재 아이템 제거
             }
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+
+    private void OnTriggerStay2D(Collider2D collision)
     {
         // 실제 충돌 지점 계산
         Vector2 contactPoint = collision.ClosestPoint(transform.position);
@@ -60,6 +64,11 @@ public class PNK_TileWall : MonoBehaviour
             if (bricks != null)
             {
                 bricks.MakeDot(contactPoint); // 올바른 월드 위치 전달
+
+                if (collision.CompareTag("Tileitem"))
+                {
+                    Destroy(collision.gameObject);
+                }
                 Destroy(gameObject); // 벽 제거
             }
         }
