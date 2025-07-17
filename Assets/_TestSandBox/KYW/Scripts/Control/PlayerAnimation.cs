@@ -2,17 +2,19 @@ using Fusion;
 using UnityEngine;
 
 // 🎭 플레이어 애니메이션 컴포넌트
-// 애니메이션 파라미터 관리만 담당
-// Visual 하위 오브젝트에 위치하며, 부모의 로직 컴포넌트들을 참조
+// 애니메이션과 시각적 요소(스프라이트 뒤집기 등) 관리
+// Visual 하위 오브젝트에 위치
 public class PlayerAnimation : NetworkBehaviour
 {
-    [Header("Animation")]
+    [Header("Visual Components")]
     [SerializeField] private Animator animator;
+    [SerializeField] private SpriteRenderer spriteRenderer;
     
     [Header("Debug")]
     [SerializeField] private bool showDebugLog = false;
     
-    // 참조 컴포넌트들 (부모 오브젝트에서 찾기)
+    // 참조 컴포넌트들 (Player 오브젝트에서 찾기)
+    private SpelunkyPlayerController playerController;
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
@@ -20,26 +22,37 @@ public class PlayerAnimation : NetworkBehaviour
     
     public override void Spawned()
     {
+        // 필수 컴포넌트 찾기
         if (animator == null)
             animator = GetComponent<Animator>();
+        if (spriteRenderer == null)
+            spriteRenderer = GetComponent<SpriteRenderer>();
             
-        // 부모 오브젝트에서 로직 컴포넌트들 찾기
-        Transform parent = transform.parent;
-        if (parent != null)
+        // Player 오브젝트 찾기
+        Transform playerObject = transform.parent;
+        if (playerObject != null)
         {
-            groundCheck = parent.GetComponentInChildren<PlayerGroundCheck>();
-            movement = parent.GetComponent<PlayerMovement>();
-            jump = parent.GetComponent<PlayerJump>();
-            climbing = parent.GetComponent<PlayerClimbing>();
+            playerController = playerObject.GetComponent<SpelunkyPlayerController>();
+            groundCheck = playerObject.GetComponentInChildren<PlayerGroundCheck>();
+            movement = playerObject.GetComponent<PlayerMovement>();
+            jump = playerObject.GetComponent<PlayerJump>();
+            climbing = playerObject.GetComponent<PlayerClimbing>();
         }
         else
         {
-            Debug.LogWarning($"[{name}] PlayerAnimation이 부모 오브젝트 없이 있습니다. " +
-                           "Player 오브젝트의 하위에 배치해주세요.");
+            Debug.LogWarning($"[{name}] PlayerAnimation이 Player 오브젝트의 하위에 없습니다. " +
+                           "Player/Visual 하위에 배치해주세요.");
         }
     }
     
-    public void UpdateAnimations()
+    // 다른 컴포넌트들과 일관성을 위해 ProcessInput 추가
+    public void ProcessInput(SpelunkyPlayerData input)
+    {
+        UpdateAnimations();
+        UpdateSpriteDirection();
+    }
+    
+    private void UpdateAnimations()
     {
         if (animator == null) return;
         
@@ -48,18 +61,33 @@ public class PlayerAnimation : NetworkBehaviour
         float velocityY = jump?.VelocityY ?? 0f;
         bool isGrounded = groundCheck?.IsGrounded ?? false;
         bool isDucking = movement?.IsDucking ?? false;
-        bool isClimbing = climbing?.IsCurrentlyClimbing ?? false;
+        bool isClimbing = climbing?.IsClimbing ?? false;
         
         animator.SetFloat("Speed", speed);
         animator.SetFloat("VelocityY", velocityY);
         animator.SetBool("IsGrounded", isGrounded);
         animator.SetBool("IsDucking", isDucking);
         animator.SetBool("IsClimbing", isClimbing);
-        
-        // 🐛 디버그 로그 (점프 상태일 때만)
-        if (showDebugLog && !isGrounded)
+    }
+    
+    private void UpdateSpriteDirection()
+    {
+        if (spriteRenderer != null && movement != null)
         {
-            Debug.Log($"[점프 애니메이션] Speed: {speed:F2}, VelocityY: {velocityY:F2}, IsGrounded: {isGrounded}, IsDucking: {isDucking}");
+            spriteRenderer.flipX = movement.IsFacingLeft;
         }
+    }
+    
+    // 🔍 디버그 정보 표시 (일관된 위치에 표시)
+    private void OnGUI()
+    {
+        if (!showDebugLog || !Object.HasInputAuthority) return;
+        
+        GUILayout.BeginArea(new Rect(10, 700, 300, 100));
+        GUILayout.Box("🎭 애니메이션 상태");
+        GUILayout.Label($"속도: {movement?.NormalizedSpeed:F2}");
+        GUILayout.Label($"수직속도: {jump?.VelocityY:F2}");
+        GUILayout.Label($"상태: {(groundCheck?.IsGrounded == true ? "지상" : "공중")}");
+        GUILayout.EndArea();
     }
 } 

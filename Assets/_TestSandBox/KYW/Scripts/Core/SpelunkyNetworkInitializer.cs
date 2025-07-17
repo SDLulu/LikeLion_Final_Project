@@ -8,7 +8,7 @@ public static class SpelunkyNetworkInitializer
     public static void InitializeNetworkSettings(SpelunkyPlayerController player)
     {
         player.Runner.SetIsSimulated(player.Object, true);
-        ConfigureNetworkPhysics(player);
+        // ConfigureNetworkPhysics(player);
         if (player.Object.HasInputAuthority)
         {
             Debug.Log("🌐 로컬 플레이어 - Input Authority 설정 완료");
@@ -86,23 +86,5 @@ public static class SpelunkyNetworkInitializer
     public static void InitializeLocalPlayerUI(SpelunkyPlayerController player)
     {
         Debug.Log("🎨 로컬 플레이어 UI 초기화 완료");
-    }
-
-    // 네트워크 물리 설정 (떨림 방지)
-    private static void ConfigureNetworkPhysics(SpelunkyPlayerController player)
-    {
-        var rigidbody = player.GetComponent<Rigidbody2D>();
-        if (rigidbody != null)
-        {
-            rigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
-            if (player.Object.HasInputAuthority)
-                Debug.Log("🎯 로컬 플레이어 Rigidbody2D를 Interpolate로 설정 (떨림 방지)");
-            else
-                Debug.Log("🎯 원격 플레이어 Rigidbody2D를 Interpolate로 설정");
-        }
-        Debug.Log("⚠️ 떨림 방지를 위한 프리팹 설정 확인:");
-        Debug.Log("   1. NetworkObject의 'Is Master Client Only' 체크 해제");
-        Debug.Log("   2. NetworkRigidbody2D의 'Interpolation Target'을 'Render'로 설정");
-        Debug.Log("   3. Transform의 'Interpolation Data Source'를 'Predicted'로 설정");
     }
 } 

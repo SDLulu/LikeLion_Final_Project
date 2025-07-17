@@ -45,7 +45,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
-    private PlayerClimbing climbing; // 🪜 사다리 시스템 (나중에 추가)
+    private PlayerClimbing climbing;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -61,7 +61,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
-        climbing = GetComponent<PlayerClimbing>(); // 🪜 사다리 시스템 (나중에 추가)
+        climbing = GetComponent<PlayerClimbing>();
         
         // 하위 오브젝트들 설정 (Visual, Hand)
         SetupChildObjects();
@@ -195,21 +195,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             movement?.ProcessInput(input);
             jump?.ProcessInput(input);
             climbing?.ProcessInput(input);
-            // Hand 컴포넌트들 처리
-            ProcessHandInput(input);
-        }
-    }
-    
-    // 🎨 렌더링 업데이트 (애니메이션 + 스프라이트 뒤집기)
-    public override void Render()
-    {
-        // 시각적 업데이트들 (저장된 참조 사용)
-        playerAnimation?.UpdateAnimations();
-        
-        // 스프라이트 뒤집기 처리
-        if (movement != null && spriteRenderer != null)
-        {
-            spriteRenderer.flipX = movement.IsFacingLeft;
+            playerAnimation?.ProcessInput(input);
+            itemPickup?.ProcessInput(input);
+            itemUsage?.ProcessInput(input);
         }
     }
     
@@ -239,57 +227,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         return data;
     }
     
-    // 🎮 플레이어 타입별 초기화
-    // 기존 InitializePlayerType, InitializeLocalPlayer, InitializeRemotePlayer, SetupCameraForLocalPlayer, InitializeLocalPlayerUI 메서드 삭제
-    
-    #region 📊 상태 접근 프로퍼티들
-    
-    // 🏃 이동 관련 프로퍼티들
-    public bool IsGrounded => groundCheck?.IsGrounded ?? false;
-    public bool IsDucking => movement?.IsDucking ?? false;
-    public bool IsFacingLeft => movement?.IsFacingLeft ?? false;
-    public float CurrentSpeed => movement?.CurrentSpeed ?? 0f;
-    
-    // 🦘 점프 관련 프로퍼티들
-    public Vector2 Velocity => jump?.Velocity ?? Vector2.zero;
-    public bool IsJumping => jump?.IsCurrentlyJumping ?? false;
-    public float JumpTime => jump?.CurrentJumpTime ?? 0f;
-    
-    // 🎒 아이템 관련 프로퍼티들
-    public bool HasItem => itemPickup?.HasItem ?? false;
-    public string CurrentItemName => itemPickup?.CurrentItemName ?? "없음";
-    public int NearbyItemsCount => itemPickup?.NearbyItemsCount ?? 0;
-    
-    // ⚔️ 무기 관련 프로퍼티들
-    public bool HasWeapon => false; // PlayerHandController 제거됨
-    
-    // 📍 Transform 접근 프로퍼티들
-    public Transform VisualRoot => visualRoot;
-    public Transform HandRoot => handRoot;
-    
-    #endregion
-    
-    #region 🔧 헬퍼 메서드들
-    
-    // 🤲 Hand 컴포넌트들 입력 처리
-    private void ProcessHandInput(SpelunkyPlayerData input)
-    {
-        // 저장된 참조 사용 (매번 GetComponent 하지 않음)
-        itemPickup?.ProcessInput(input);
-        itemUsage?.ProcessInput(input);
-    }
-    
-    // 🎒 PlayerItemPickup 컴포넌트 접근
-    private PlayerItemPickup GetItemPickup()
-    {
-        return itemPickup;
-    }
-    
-    // 🎮 PlayerItemUsage 컴포넌트 접근
-    private PlayerItemUsage GetItemUsage()
-    {
-        return itemUsage;
-    }
-    
-    #endregion
+    // 필수 프로퍼티 (BeforeUpdate에서 사용)
+    private bool IsDucking { get { return movement?.IsDucking ?? false; } }
 } 

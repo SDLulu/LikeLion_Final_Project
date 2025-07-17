@@ -316,7 +316,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   climbingSpeed: 3
-  showDebugInfo: 1
   climbRegrabCooldownTime: 0.2
   climbingGravityScale: 0
   normalGravityScale: 1
@@ -396,8 +395,8 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1035971131
+  m_SortingLayer: 4
   m_SortingOrder: 0
   m_Sprite: {fileID: 2163702195395301466, guid: 2870ec05b1ca4584095a851e4ee9ed19, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -445,6 +444,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 0}
+  spriteRenderer: {fileID: 0}
   showDebugLog: 0
 --- !u!1 &5737908087997688088
 GameObject:
@@ -488,13 +488,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5737908087997688088}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c625e2d2b14aafb4ca54d6bfd2f8b329, type: 3}
+  m_Script: {fileID: 11500000, guid: 8edce3776b788954485ec5b2869d611e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  groundCheckSize: {x: 0.5, y: 0.1}
+  groundCheckSize: {x: 0.8, y: 0.1}
   _IsGrounded: 0
 --- !u!114 &2593034312216474950
 MonoBehaviour:
@@ -557,13 +557,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 5775727855415154366}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bba447f5a20ec5f4e8b293412e0c7fa2, type: 3}
+  m_Script: {fileID: 11500000, guid: f1ac862ce736d1143a188b8d85b01bb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ladderLayer:
     serializedVersion: 2
-    m_Bits: 4096
-  ladderCheckSize: {x: 0.15, y: 1}
+    m_Bits: 1024
+  ladderCheckSize: {x: 0.8, y: 1.5}
   _IsNearLadder: 0
 --- !u!114 &599824403376188830
 MonoBehaviour:
@@ -599,7 +599,7 @@ GameObject:
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
-  m_Icon: {fileID: 5132851093641282708, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 1206586993520771344, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -634,8 +634,8 @@ MonoBehaviour:
   itemLayerMask:
     serializedVersion: 2
     m_Bits: 512
-  showDebugInfo: 1
   pickupTrigger: {fileID: 2162887977885498126}
+  defaultTriggerRadius: 1.5
 --- !u!114 &6232199870285927185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -648,7 +648,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f543649f9dc98040bf70b1869f01dda, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showDebugInfo: 1
   enableItemRotation: 1
   rotationSpeed: 10
   basicPunchItem: {fileID: 7351558282718365556}
