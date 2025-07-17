@@ -10,9 +10,6 @@ public class PlayerAnimation : NetworkBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private SpriteRenderer spriteRenderer;
     
-    [Header("Debug")]
-    [SerializeField] private bool showDebugLog = false;
-    
     // 참조 컴포넌트들 (Player 오브젝트에서 찾기)
     private SpelunkyPlayerController playerController;
     private PlayerGroundCheck groundCheck;
@@ -76,18 +73,5 @@ public class PlayerAnimation : NetworkBehaviour
         {
             spriteRenderer.flipX = movement.IsFacingLeft;
         }
-    }
-    
-    // 🔍 디버그 정보 표시 (일관된 위치에 표시)
-    private void OnGUI()
-    {
-        if (!showDebugLog || !Object.HasInputAuthority) return;
-        
-        GUILayout.BeginArea(new Rect(10, 700, 300, 100));
-        GUILayout.Box("🎭 애니메이션 상태");
-        GUILayout.Label($"속도: {movement?.NormalizedSpeed:F2}");
-        GUILayout.Label($"수직속도: {jump?.VelocityY:F2}");
-        GUILayout.Label($"상태: {(groundCheck?.IsGrounded == true ? "지상" : "공중")}");
-        GUILayout.EndArea();
     }
 } 

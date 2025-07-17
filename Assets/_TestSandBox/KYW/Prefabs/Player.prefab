@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 7871896623240946892}
   - component: {fileID: 1902411314593182668}
   - component: {fileID: 8347467253753751339}
+  - component: {fileID: 6548359404163673551}
   m_Layer: 7
   m_Name: Player
   m_TagString: Untagged
@@ -147,8 +148,10 @@ MonoBehaviour:
   - {fileID: 7871896623240946892}
   - {fileID: 1902411314593182668}
   - {fileID: 8347467253753751339}
+  - {fileID: 6548359404163673551}
   - {fileID: 7368080279004501370}
   - {fileID: 1811931750023111762}
+  - {fileID: 1019999502762045486}
   - {fileID: 6232199870285927185}
   - {fileID: 8468457249827184339}
   - {fileID: 400892960013748399}
@@ -320,6 +323,23 @@ MonoBehaviour:
   climbingGravityScale: 0
   normalGravityScale: 1
   _IsClimbing: 0
+--- !u!114 &6548359404163673551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 908821303918873339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e138c2aca925e0b40a6f1b77a641c90c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  showItemInfo: 1
+  showMovementInfo: 1
+  showJumpInfo: 1
+  showClimbingInfo: 1
+  showAnimationInfo: 1
 --- !u!1 &4476438534513202936
 GameObject:
   m_ObjectHideFlags: 0
@@ -445,7 +465,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   animator: {fileID: 0}
   spriteRenderer: {fileID: 0}
-  showDebugLog: 0
 --- !u!1 &5737908087997688088
 GameObject:
   m_ObjectHideFlags: 0
@@ -594,6 +613,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6193883160231370673}
   - component: {fileID: 1811931750023111762}
+  - component: {fileID: 1019999502762045486}
   - component: {fileID: 6232199870285927185}
   - component: {fileID: 2162887977885498126}
   m_Layer: 0
@@ -636,6 +656,20 @@ MonoBehaviour:
     m_Bits: 512
   pickupTrigger: {fileID: 2162887977885498126}
   defaultTriggerRadius: 1.5
+--- !u!114 &1019999502762045486
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7979680091807745510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d70a446d96d748b4684b3f9bde52f9c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  throwForce: 10
+  throwOffset: 0.5
 --- !u!114 &6232199870285927185
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -649,7 +683,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enableItemRotation: 1
-  rotationSpeed: 10
+  rotationSpeed: 25
   basicPunchItem: {fileID: 7351558282718365556}
 --- !u!58 &2162887977885498126
 CircleCollider2D:
@@ -732,7 +766,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3908651508869614236, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6772698792791021298, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_LocalScale.x

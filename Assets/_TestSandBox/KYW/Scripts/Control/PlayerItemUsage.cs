@@ -5,13 +5,19 @@ using UnityEngine;
 // Hand 하위 오브젝트에 위치하며, 아이템 사용과 회전을 담당
 public class PlayerItemUsage : NetworkBehaviour
 {
-    [Header("Usage Settings")]
-    [SerializeField] private bool enableItemRotation = true;
-    [SerializeField] private float rotationSpeed = 10f;
-    [SerializeField] private BasicPunchItem basicPunchItem; // 기본 펀치 아이템
+    [Header("Rotation Settings")]
+    [SerializeField] private bool enableItemRotation = true;  // 회전 기능 켜기/끄기
+    [SerializeField] private float rotationSpeed = 10f;       // 회전 속도 (0 = 즉시)
+    
+    [Header("Basic Punch")]
+    [SerializeField] private BasicPunchItem basicPunchItem;   // 기본 펀치 아이템
     
     // 🌐 네트워크 동기화 상태
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }
+    [Networked] private NetworkBool WasHoldingButton { get; set; }
+    [Networked] private NetworkBool ButtonLatched { get; set; }
+    [Networked] private float NetworkedRotationAngle { get; set; }
+    [Networked] private NetworkBool NetworkedFlipY { get; set; }
     
     // 참조 컴포넌트들
     private SpelunkyPlayerController playerController;
@@ -21,7 +27,6 @@ public class PlayerItemUsage : NetworkBehaviour
     public override void Spawned()
     {
         SetupReferences();
-        InitializeBasicPunch();
     }
     
     private void SetupReferences()
@@ -36,40 +41,38 @@ public class PlayerItemUsage : NetworkBehaviour
         }
     }
     
-    private void InitializeBasicPunch()
-    {
-        if (basicPunchItem != null)
-        {
-            basicPunchItem.gameObject.SetActive(false);
-        }
-    }
     
     public void ProcessInput(SpelunkyPlayerData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
         
-        // 아이템 회전 처리
+        // 현재 사용 중인 오브젝트 결정 (아이템 또는 기본 펀치)
+        GameObject activeObject = itemPickup?.CurrentItem;
+        bool useBasicPunch = (activeObject == null && basicPunchItem != null);
+        
+        // 회전 처리
         if (enableItemRotation)
         {
-            if (itemPickup?.CurrentItem != null)
+            if (activeObject != null)
             {
-                RotateItemToMouse(input.MouseWorldPosition);
+                RotateObjectToMouse(activeObject, input.MouseWorldPosition);
             }
-            else if (basicPunchItem != null && basicPunchItem.gameObject.activeSelf)
+            else if (useBasicPunch && basicPunchItem.gameObject.activeSelf)
             {
-                RotatePunchToMouse(input.MouseWorldPosition);
+                RotateObjectToMouse(basicPunchItem.gameObject, input.MouseWorldPosition);
             }
         }
-
-        // 아이템이 있을 때 사용 처리
-        if (itemPickup?.CurrentItem != null)
+        
+        // 사용 처리
+        if (activeObject != null)
         {
+            // 아이템 사용
             HandleItemUse(input, pressed);
         }
-        // 아이템이 없을 때는 기본 주먹 사용
-        else
+        else if (useBasicPunch)
         {
+            // 기본 펀치 사용 (아이템과 동일한 방식)
             HandleBasicPunchUse(input, pressed);
         }
     }
@@ -77,43 +80,70 @@ public class PlayerItemUsage : NetworkBehaviour
     private void HandleItemUse(SpelunkyPlayerData input, NetworkButtons pressed)
     {
         IUsableItem usableItem = itemPickup.CurrentItem.GetComponent<IUsableItem>();
-        if (usableItem == null || !usableItem.CanUse) return;
+        if (usableItem == null) return;
         
         Vector2 playerPos = transform.position;
         
-        if (pressed.IsSet(SpelunkyInputButtons.UseItemPress))
+        // 현재 프레임의 버튼 상태
+        bool isHoldingButton = input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemPress) ||
+                              input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold);
+
+        // Press 처리 (래치되지 않은 상태에서만)
+        if (!ButtonLatched && isHoldingButton)
         {
             UseItemRpc(UsageType.Press, input.MouseWorldPosition, playerPos);
+            ButtonLatched = true;
         }
+
+        // Hold 처리 (연사 등을 위해 계속 전달)
         if (input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold))
         {
             UseItemRpc(UsageType.Hold, input.MouseWorldPosition, playerPos);
         }
-        if (pressed.IsSet(SpelunkyInputButtons.UseItemRelease))
+
+        // Release 처리 - 버튼을 떼면 래치 해제
+        if (WasHoldingButton && !isHoldingButton)
         {
             UseItemRpc(UsageType.Release, input.MouseWorldPosition, playerPos);
+            ButtonLatched = false;
         }
+
+        // 상태 업데이트
+        WasHoldingButton = isHoldingButton;
     }
     
     private void HandleBasicPunchUse(SpelunkyPlayerData input, NetworkButtons pressed)
     {
         if (basicPunchItem == null) return;
-        
+
         Vector2 playerPos = transform.position;
         
-        if (pressed.IsSet(SpelunkyInputButtons.UseItemPress))
+        // 현재 프레임의 버튼 상태
+        bool isHoldingButton = input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemPress) ||
+                              input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold);
+
+        // Press 처리 (래치되지 않은 상태에서만)
+        if (!ButtonLatched && isHoldingButton)
         {
-            basicPunchItem.gameObject.SetActive(true);
-            basicPunchItem.OnUsePress(input.MouseWorldPosition, playerPos);
+            UseBasicPunchRpc(UsageType.Press, input.MouseWorldPosition, playerPos);
+            ButtonLatched = true;
         }
+
+        // Hold 처리 (연사 등을 위해 계속 전달)
         if (input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold))
         {
-            basicPunchItem.OnUseHold(input.MouseWorldPosition, playerPos);
+            UseBasicPunchRpc(UsageType.Hold, input.MouseWorldPosition, playerPos);
         }
-        if (pressed.IsSet(SpelunkyInputButtons.UseItemRelease))
+
+        // Release 처리 - 버튼을 떼면 래치 해제
+        if (WasHoldingButton && !isHoldingButton)
         {
-            basicPunchItem.OnUseRelease(input.MouseWorldPosition, playerPos);
+            UseBasicPunchRpc(UsageType.Release, input.MouseWorldPosition, playerPos);
+            ButtonLatched = false;
         }
+
+        // 상태 업데이트
+        WasHoldingButton = isHoldingButton;
     }
     
     private enum UsageType
@@ -145,38 +175,73 @@ public class PlayerItemUsage : NetworkBehaviour
         }
     }
     
-    private void RotateItemToMouse(Vector2 mouseWorldPosition)
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void UseBasicPunchRpc(UsageType usageType, Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        GameObject currentItem = itemPickup.CurrentItem;
-        if (currentItem == null || playerMovement == null) return;
-
-        IUsableItem usableItem = currentItem.GetComponent<IUsableItem>();
-        if (usableItem == null) return;
-
-        Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
-        float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
-        var spriteRenderer = currentItem.GetComponentInChildren<SpriteRenderer>();
-        bool isLeft = (mouseWorldPosition.x < transform.position.x);
-        if (spriteRenderer != null)
-            spriteRenderer.flipY = isLeft;
-
-        currentItem.transform.localEulerAngles = new Vector3(0, 0, targetAngle);
+        Debug.Log($"[펀치] UseBasicPunchRpc 호출: {usageType}");
+        if (basicPunchItem == null) return;
+        
+        switch (usageType)
+        {
+            case UsageType.Press:
+                basicPunchItem.OnUsePress(mouseWorldPosition, playerPosition);
+                break;
+            case UsageType.Hold:
+                basicPunchItem.OnUseHold(mouseWorldPosition, playerPosition);
+                break;
+            case UsageType.Release:
+                basicPunchItem.OnUseRelease(mouseWorldPosition, playerPosition);
+                break;
+        }
     }
     
-    private void RotatePunchToMouse(Vector2 mouseWorldPosition)
+    // 오브젝트를 마우스 방향으로 회전
+    private void RotateObjectToMouse(GameObject targetObject, Vector2 mouseWorldPosition)
     {
-        GameObject punchObj = basicPunchItem.gameObject;
-        if (punchObj == null) return;
+        if (targetObject == null || playerMovement == null || !Object.HasStateAuthority) return;
 
+        // 회전 각도 계산
         Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+        
+        // 스프라이트 좌우 반전 상태 계산
+        bool isLeft = mouseWorldPosition.x < transform.position.x;
+        
+        // 네트워크 상태 업데이트
+        NetworkedFlipY = isLeft;
+        
+        // 회전 적용 (즉시 또는 보간)
+        if (rotationSpeed <= 0)
+        {
+            NetworkedRotationAngle = targetAngle;
+        }
+        else
+        {
+            float currentAngle = NetworkedRotationAngle;
+            NetworkedRotationAngle = Mathf.LerpAngle(currentAngle, targetAngle, Time.deltaTime * rotationSpeed);
+        }
+    }
 
-        var spriteRenderer = punchObj.GetComponentInChildren<SpriteRenderer>();
-        bool isLeft = (mouseWorldPosition.x < transform.position.x);
-        if (spriteRenderer != null)
-            spriteRenderer.flipY = isLeft;
-
-        punchObj.transform.localEulerAngles = new Vector3(0, 0, targetAngle);
+    public override void Render()
+    {
+        base.Render();
+        
+        // 현재 사용 중인 오브젝트 결정
+        GameObject activeObject = itemPickup?.CurrentItem;
+        bool useBasicPunch = (activeObject == null && basicPunchItem != null);
+        
+        GameObject targetObject = useBasicPunch ? basicPunchItem.gameObject : activeObject;
+        if (targetObject != null)
+        {
+            // 회전 적용
+            targetObject.transform.localEulerAngles = new Vector3(0, 0, NetworkedRotationAngle);
+            
+            // 스프라이트 반전 적용
+            var spriteRenderer = targetObject.GetComponentInChildren<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.flipY = NetworkedFlipY;
+            }
+        }
     }
 } 
