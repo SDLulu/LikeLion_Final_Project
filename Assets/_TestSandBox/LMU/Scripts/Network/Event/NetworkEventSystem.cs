@@ -52,6 +52,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
+        Debug.Log($"OnDisconnectedFromServer - 갑자기 연결해제됨 : {reason}");
     }
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)

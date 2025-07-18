@@ -51,35 +51,35 @@ public static class SpelunkyNetworkInitializer
     // 로컬 플레이어용 카메라 설정
     public static void SetupCameraForLocalPlayer(SpelunkyPlayerController player)
     {
-        var existingCamera = Object.FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
-        if (existingCamera != null)
-        {
-            existingCamera.Follow = player.transform;
-            existingCamera.LookAt = player.transform;
-            Debug.Log("📷 기존 시네머신 카메라를 로컬 플레이어에게 연결");
-        }
-        else
-        {
-            var cameraGO = new GameObject("Player Virtual Camera");
-            var virtualCamera = cameraGO.AddComponent<Cinemachine.CinemachineVirtualCamera>();
-            virtualCamera.Follow = player.transform;
-            virtualCamera.LookAt = player.transform;
-            try
-            {
-                var transposer = virtualCamera.GetCinemachineComponent<Cinemachine.CinemachineTransposer>();
-                if (transposer != null)
-                {
-                    transposer.m_FollowOffset = new Vector3(0, 2, -10);
-                }
-                virtualCamera.m_Lens.FieldOfView = 60f;
-                virtualCamera.m_Lens.OrthographicSize = 5f;
-                Debug.Log("📷 새 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"📷 카메라 설정 실패: {e.Message}");
-            }
-        }
+        // var existingCamera = Object.FindObjectOfType<>();
+        // if (existingCamera != null)
+        // {
+        //     existingCamera.Follow = player.transform;
+        //     existingCamera.LookAt = player.transform;
+        //     Debug.Log("📷 기존 시네머신 카메라를 로컬 플레이어에게 연결");
+        // }
+        // else
+        // {
+        //     var cameraGO = new GameObject("Player Virtual Camera");
+        //     var virtualCamera = cameraGO.AddComponent<Cinemachine.CinemachineVirtualCamera>();
+        //     virtualCamera.Follow = player.transform;
+        //     virtualCamera.LookAt = player.transform;
+        //     try
+        //     {
+        //         var transposer = virtualCamera.GetCinemachineComponent<Cinemachine.CinemachineTransposer>();
+        //         if (transposer != null)
+        //         {
+        //             transposer.m_FollowOffset = new Vector3(0, 2, -10);
+        //         }
+        //         virtualCamera.m_Lens.FieldOfView = 60f;
+        //         virtualCamera.m_Lens.OrthographicSize = 5f;
+        //         Debug.Log("📷 새 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
+        //     }
+        //     catch (System.Exception e)
+        //     {
+        //         Debug.LogWarning($"📷 카메라 설정 실패: {e.Message}");
+        //     }
+        // }
     }
 
     // 로컬 플레이어 UI 초기화

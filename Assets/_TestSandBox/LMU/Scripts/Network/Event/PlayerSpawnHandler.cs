@@ -16,14 +16,13 @@ public class PlayerSpawnHandler : MonoBehaviour
     {
         Debug.Log($"플레이어 {player} 입장");
 
+        localGameMode = runner.GameMode;
         if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null) 
         {
-            localGameMode = runner.GameMode;
             await OnHostPlayerJoinAsync(runner, player);
         }
-        else 
+        else if(runner.IsServer)
         {
-            localGameMode = runner.GameMode;
             await OnClientPlayerJoinAsync(runner, player);
         }
     }

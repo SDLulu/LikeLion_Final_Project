@@ -43,6 +43,13 @@ public class PlayerManager : NetworkBehaviour
         return _alivePlayers;
     }
 
+    public bool IsValidPlayer(PlayerRef player)
+    {
+        if (Players.ContainsKey(player.AsIndex))
+            return true;
+        return false;
+    }
+
     [SerializeField] public bool IsSpawned = false;
     public async Awaitable<bool> IsPollingSpawned()
     {
@@ -59,8 +66,12 @@ public class PlayerManager : NetworkBehaviour
         
         var uiController = FindAnyObjectByType<UI_Controller>();
         this.AddRenderingAction(uiController.UpdateData);
-        
         DontDestroyOnLoad(this.gameObject);
+
+        if (Runner.IsServer)
+        {
+            NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>  MoveToGameScene(sceneName);
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -245,7 +256,6 @@ public class PlayerManager : NetworkBehaviour
                     isGameSceneLoading = false;
                     isInGame = true;
                     isGameSceneLoaded = true;   
-                    RPC_MoveToGameScene();
                 });
 
             return true;
@@ -257,11 +267,19 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
+    public void MoveToGameScene(string sceneName)
+    {
+        if (sceneName == GlobalSetting.Inst.GameScenePath)
+        {
+            RPC_MoveToGameScene();
+        }
+    }
+
 
     /// <summary>
     /// 게임오브젝트를 특정씬으로 이동시키는 함수
     /// </summary>
-    [Rpc(RpcSources.All, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_MoveToGameScene()
     {
         foreach (var obj in this.Players.ToList().Select(x => x.Value.gameObject))
