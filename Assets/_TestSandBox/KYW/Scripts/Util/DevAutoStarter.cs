@@ -213,7 +213,6 @@ public class DevAutoStarter : MonoBehaviour
         {
             GameMode = GameMode.Host,
             SessionName = roomName,
-            Scene = null, // 현재 씬 사용
             PlayerCount = 4
         };
         
@@ -225,6 +224,10 @@ public class DevAutoStarter : MonoBehaviour
         if (startTask.Result.Ok)
         {
             Debug.Log($"🛠️ [DevAutoStarter] 호스트 모드로 방 '{roomName}' 생성 성공!");
+            
+            // NetworkRunner 시작 후 수동으로 씬 로드
+            networkRunner.LoadScene(SceneRef.FromIndex(4)); // DebugRoom.unity 로드
+            
             yield return new WaitForSeconds(playerSpawnDelay);
             // SpawnAllPlayers는 Update에서 지속적으로 호출되므로 여기서는 제거
         }

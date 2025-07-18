@@ -1,35 +1,53 @@
 using UnityEngine;
+using Fusion;
 
 // 예제 총알 (간단 버전)
-public class Bullet : MonoBehaviour
+public class Bullet : NetworkBehaviour
 {
-    private float damage;
-    private Vector2 direction;
-    private float speed;
-    private float lifetime;
-    private GameObject shooter;
+    [Networked] private float damage { get; set; }
+    [Networked] private Vector2 direction { get; set; }
+    [Networked] private float speed { get; set; }
+    [Networked] private float lifetime { get; set; }
+    [Networked] private NetworkId shooterId { get; set; }
     private Rigidbody2D rb;
 
-    private void Awake()
+    public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
+        // StateAuthority(서버/호스트 권한자)에서만 물리값(속도) 설정
+        if (Object.HasStateAuthority)
+            rb.linearVelocity = direction * speed;
+        // StateAuthority(서버/호스트 권한자)에서만 파괴 예약
+        if (Object.HasStateAuthority)
+            Invoke(nameof(DespawnSelf), lifetime);
     }
-    public void Initialize(Vector2 dir, float spd, float dmg, float life, GameObject shooterObj)
+    public void Initialize(Vector2 dir, float spd, float dmg, float life, NetworkBehaviour shooter)
     {
+        // StateAuthority(서버/호스트 권한자)에서만 총알 정보 초기화
+        if (!Object.HasStateAuthority) return;
         direction = dir.normalized;
         speed = spd;
         damage = dmg;
         lifetime = life;
-        shooter = shooterObj;
+        shooterId = shooter.Object.Id;
         rb.linearVelocity = direction * speed;
-        Destroy(gameObject, lifetime);
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.gameObject == shooter) return;
+        // StateAuthority(서버/호스트 권한자)에서만 충돌/파괴 처리
+        if (!Object.HasStateAuthority) return;
+        var shooterObj = Runner.FindObject(shooterId);
+        if (other.gameObject == shooterObj?.gameObject) return;
         Debug.Log($"총알 명중: {other.name}에게 {damage} 데미지!");
-        Destroy(gameObject);
+        Runner.Despawn(Object);
+    }
+
+    private void DespawnSelf()
+    {
+        // StateAuthority(서버/호스트 권한자)에서만 파괴
+        if (Object != null && Object.HasStateAuthority)
+            Runner.Despawn(Object);
     }
 } 

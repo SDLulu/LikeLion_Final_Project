@@ -194,17 +194,21 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     {
         if (!IsAlive) return;
         
-        // 입력 데이터 가져오기
+        // 입력이 필요한 것들 (InputAuthority에서만)
         if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
         {
-            // 각 컴포넌트를 일관성 있게 ProcessInput 메서드로 처리
             movement?.ProcessInput(input);
             jump?.ProcessInput(input);
             climbing?.ProcessInput(input);
-            playerAnimation?.ProcessInput(input);
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
+        }
+        
+        // 🎭 애니메이션은 모든 클라이언트에서 실행
+        if (playerAnimation != null)
+        {
+            playerAnimation?.ProcessInput(input);
         }
     }
     

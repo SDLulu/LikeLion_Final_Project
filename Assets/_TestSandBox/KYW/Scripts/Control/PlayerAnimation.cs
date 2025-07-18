@@ -45,10 +45,14 @@ public class PlayerAnimation : NetworkBehaviour
     // 다른 컴포넌트들과 일관성을 위해 ProcessInput 추가
     public void ProcessInput(SpelunkyPlayerData input)
     {
+
+    }
+    // 애니메이션 동기화
+    public override void Render()
+    {
         UpdateAnimations();
         UpdateSpriteDirection();
     }
-    
     private void UpdateAnimations()
     {
         if (animator == null) return;
