@@ -3,8 +3,7 @@ using Fusion.Addons.FSM;
 using LMCore;
 using UnityEngine;
 
-public class GameStagePlayingState : StateBehaviour
+public class GameStagePlayingState : BaseStateBehaviour
 {
-    public UI_Controller UIController {get; set;}
-    public Fader Fader {get; set;}
+
 } 

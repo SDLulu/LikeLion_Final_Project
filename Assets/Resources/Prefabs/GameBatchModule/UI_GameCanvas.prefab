@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5079236935058253730}
   - component: {fileID: 7950933177191688244}
   m_Layer: 5
-  m_Name: Top
+  m_Name: Top_PlayerSlotContainer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -463,6 +463,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 952212045301d6349a6fd94c7ab80e29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _playerSlotContainer: {fileID: 7950933177191688244}
 --- !u!114 &3594275917928773948
 MonoBehaviour:
   m_ObjectHideFlags: 0
