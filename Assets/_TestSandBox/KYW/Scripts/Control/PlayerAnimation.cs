@@ -16,6 +16,7 @@ public class PlayerAnimation : NetworkBehaviour
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
+    private PlayerClimbing climbing;
     
     public override void Spawned()
     {
@@ -29,6 +30,7 @@ public class PlayerAnimation : NetworkBehaviour
             groundCheck = parent.GetComponentInChildren<PlayerGroundCheck>();
             movement = parent.GetComponent<PlayerMovement>();
             jump = parent.GetComponent<PlayerJump>();
+            climbing = parent.GetComponent<PlayerClimbing>();
         }
         else
         {
@@ -46,11 +48,13 @@ public class PlayerAnimation : NetworkBehaviour
         float velocityY = jump?.VelocityY ?? 0f;
         bool isGrounded = groundCheck?.IsGrounded ?? false;
         bool isDucking = movement?.IsDucking ?? false;
+        bool isClimbing = climbing?.IsCurrentlyClimbing ?? false;
         
         animator.SetFloat("Speed", speed);
         animator.SetFloat("VelocityY", velocityY);
         animator.SetBool("IsGrounded", isGrounded);
         animator.SetBool("IsDucking", isDucking);
+        animator.SetBool("IsClimbing", isClimbing);
         
         // 🐛 디버그 로그 (점프 상태일 때만)
         if (showDebugLog && !isGrounded)

@@ -17,11 +17,13 @@ public class PlayerMovement : NetworkBehaviour
     // 참조 컴포넌트들
     private PlayerGroundCheck groundCheck;
     private Rigidbody2D rb;
+    private PlayerClimbing climbing;
     
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
+        climbing = GetComponent<PlayerClimbing>();
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
@@ -45,6 +47,12 @@ public class PlayerMovement : NetworkBehaviour
     
     private void ProcessMovement(SpelunkyPlayerData input)
     {
+        // 사다리 오르는 중에는 수평 이동 금지
+        if (climbing != null && climbing.IsCurrentlyClimbing)
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+            return;
+        }
         // 웅크린 상태에 따라 속도 조절
         float currentMoveSpeed = IsDucking ? duckMoveSpeed : moveSpeed;
         float targetSpeed = input.HorizontalInput * currentMoveSpeed;

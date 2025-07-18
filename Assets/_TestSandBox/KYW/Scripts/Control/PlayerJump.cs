@@ -38,6 +38,19 @@ public class PlayerJump : NetworkBehaviour
         ApplyGravity();
         ClampVelocity();
     }
+
+    // 사다리에서 강제 점프 진입용 (Climbing에서 호출)
+    public void SetJumpFromClimb()
+    {
+        if (!IsJumping)
+        {
+            IsJumping = true;
+            JumpTime = 0f;
+            if (rb != null)
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
+            Debug.Log("🦘 사다리에서 점프!");
+        }
+    }
     
     private void HandleJump(SpelunkyPlayerData input)
     {
