@@ -13,19 +13,6 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     // 서버 - 플레이어 컷신완료 대기
     private Dictionary<PlayerRef, AwaitableCompletionSource> _waitingTCS;
-
-    public bool IsAllCompleted()
-    {
-        if (_waitingTCS == null)
-            return false;
-
-        foreach (var tcs in _waitingTCS)
-        {
-            if (tcs.Value.Awaitable.IsCompleted == false)
-                return false;
-        }
-        return true;
-    }
     private TickTimer minWaitingTimer = TickTimer.None;
 
     protected override void OnEnterState()
@@ -53,7 +40,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             Debug.Log("모든 플레이어가 컷신을 완료했습니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
         }
-        if (Runner.IsServer && minWaitingTimer.Expired(Runner))
+        else if (Runner.IsServer && minWaitingTimer.Expired(Runner))
         {
             Debug.Log($"최대 대기시간 {minWaitingTime}초가 초과되었습니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
@@ -66,8 +53,34 @@ public class GameStageCompletedState : BaseStateBehaviour
         _waitingTCS?.Clear();
         _waitingTCS = null;
         Debug.Log("대기 상태 종료");
-
         RPC_FadeInUI();
+    }
+
+    /// <summary>
+    /// 모든 플레이어의 컷신 완료여부 확인
+    /// </summary>
+    public bool IsAllCompleted()
+    {
+        if (_waitingTCS == null)
+            return false;
+
+        // 중간에 플레이어가 나간경우 완료처리
+        foreach (var tcs in _waitingTCS)
+        {
+            PlayerRef @ref = tcs.Key;
+             if (PlayerM.IsValidPlayer(@ref) == false)
+            {
+                if (_waitingTCS.TryGetValue(@ref, out var t))
+                    t.TrySetResult();
+            }
+        }
+
+        foreach (var tcs in _waitingTCS)
+        {
+            if (tcs.Value.Awaitable.IsCompleted == false)
+                return false;
+        }
+        return true;
     }
 
 

@@ -215,7 +215,7 @@ public class UI_CharacterSlotContainer : MonoBehaviour
             CurrentCharacterIndex >= 0 && CurrentCharacterIndex < characterDatas.Length)
         {
             var selectedCharacter = characterDatas[CurrentCharacterIndex].Character_Info;
-            localPlayerSlot.ConnectedPlayer.ChangeCharacterRpc(
+            localPlayerSlot.ConnectedPlayer.RPC_ChangeCharacter(
                 selectedCharacter.SkinName, 
                 selectedCharacter.SkinPath
             );

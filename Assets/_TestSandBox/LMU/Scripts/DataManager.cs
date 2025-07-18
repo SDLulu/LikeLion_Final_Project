@@ -9,18 +9,11 @@ public class DataManager : BaseManager<DataManager>
     public Dictionary<int, Skin.Data> SkinData;
     public Dictionary<int, FakeClient.Data> FakeClientData;
 
-    [Header("현재 플레이어 데이터")]
-    [SerializeField] private string currentPlayerNickName;
-    [field: SerializeField] public FakeClient.Data CurrentPlayerData {get; private set;}
-
     public void Awake()
     {
         StageData = Stage.Data.GetDictionary();
         SkinData = Skin.Data.GetDictionary();
         FakeClientData = FakeClient.Data.GetDictionary();
-
-        CurrentPlayerData = GetRandomFakeClientData();
-        currentPlayerNickName = CurrentPlayerData.NickName;
     }
 
     // --- 클라이언트 관련
