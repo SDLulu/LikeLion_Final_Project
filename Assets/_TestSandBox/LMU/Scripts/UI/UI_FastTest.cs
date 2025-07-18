@@ -25,7 +25,7 @@ public class UI_FastTest : MonoBehaviour
     {
         try
         {
-            var title = UI_Controller.Inst.uiTitle;
+            var title = UI_Controller.Inst.UIEnterOnline;
             if (title == null)
             {
                 Debug.LogError("UI_Title 컴포넌트를 찾을 수 없습니다.");
@@ -81,6 +81,11 @@ public class UI_FastTest : MonoBehaviour
         var result = await playerM.TryStartGameAsync(true);
         if (result)
         {
+            // 현재 씬이 DevGame 씬으로 전환될때까지 대기
+            while(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name != "DevGame")
+            {
+                await Awaitable.WaitForSecondsAsync(0.1f);
+            }
             GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
         }
     }
@@ -119,9 +124,9 @@ public class UI_FastTest : MonoBehaviour
     {
         try
         {
-            if (UI_Controller.Inst != null && UI_Controller.Inst.uiLobby != null)
+            if (UI_Controller.Inst != null && UI_Controller.Inst.UILobby != null)
             {
-                UI_Controller.Inst.uiLobby.gameObject.SetActive(active);
+                UI_Controller.Inst.UILobby.gameObject.SetActive(active);
                 Debug.Log($"로컬 UI 제어: 로비 UI {(active ? "활성화" : "비활성화")}");
             }
             else

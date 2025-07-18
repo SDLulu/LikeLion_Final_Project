@@ -5,21 +5,35 @@ using System;
 
 namespace LMCore
 {
+    public static class FaderUtil
+    {
+        public static Vector2 GetUIPosition(Canvas canvas, Vector2 worldPos)
+        {
+            var screenPos = Camera.main.WorldToScreenPoint(worldPos);
+            var canvasRect = canvas.GetComponent<RectTransform>();
+            Vector2 localPoint;
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                canvasRect, 
+                screenPos, 
+                canvas.worldCamera, 
+                out localPoint);
+            return localPoint;
+        }
+
+    }
     public class Fader : BaseManager<Fader>
     {
         [Header("아이콘 팽창 페이드")]
         [SerializeField] private RectTransform  _contentsRoot;
 
-        [Header("단순 검은화면")]
-        [SerializeField] private RectTransform _blackRoot;
-        [SerializeField] private Image _blackImage;
+        [Header("화면 이미지")]
+        [SerializeField] private RectTransform _imageRoot;
+        [SerializeField] private Image _whiteImage;
 
 
         [Header("페이드 설정")]
         [SerializeField] private Vector2 _startSize = new Vector2(10000, 10000);
         [SerializeField] private Vector2 _endSize = new Vector2(0, 0);
-        [SerializeField] private float _fadeInTime = 1f;
-        [SerializeField] private float _fadeOutTime = 1f;
         [SerializeField] private Ease _fadeInEase = Ease.InOutSine;
         [SerializeField] private Ease _fadeOutEase = Ease.InOutSine;
 
@@ -42,14 +56,14 @@ namespace LMCore
             if (_contentsRoot != null)
                 _contentsRoot.gameObject.SetActive(false);
             
-            if (_blackRoot != null)
-                _blackRoot.gameObject.SetActive(false);
+            if (_imageRoot != null)
+                _imageRoot.gameObject.SetActive(false);
 
-            if (_blackImage != null)
+            if (_whiteImage != null)
             {
-                Color startColor = _blackImage.color;
+                Color startColor = _whiteImage.color;
                 startColor.a = 0f;
-                _blackImage.color = startColor;
+                _whiteImage.color = startColor;
             }
 
             _isInitialized = true;
@@ -61,194 +75,119 @@ namespace LMCore
                 InitializeFader();
         }
 
-        #if UNITY_EDITOR
-        [ContextMenu("페이드인")]
-        private void FadeInTest()
-        {
-            _ = FadeInAsync();
-        }
-
-        [ContextMenu("페이드아웃")]
-        private void FadeOutTest()
-        {
-            _ = FadeOutAsync();
-        }
-        #endif
-
-                
-        public async Awaitable FadeInAsync()
+        // Note - AsyncWaitForCompletion / Task 사용중
+        public async Awaitable FadeInExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
             CheckAndInitialize();
-            if (_contentsRoot == null)
+            if (_contentsRoot == null || IsFading)
                 return;
-            Debug.Log("FadeInAsync");
+            Debug.Log("FadeInExpandAsync");
 
             _isFading = true;
+            _whiteImage.color = color;
             _contentsRoot.sizeDelta = _endSize;
-            await _contentsRoot.DOSizeDelta(_startSize, _fadeInTime)
+            await _contentsRoot.DOSizeDelta(_startSize, seconds)
                 .SetEase(_fadeInEase)
                 .SetUpdate(true)
-                .AsyncWaitForCompletion();
+                .AsyncWaitForCompletion();     
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
+            await Awaitable.NextFrameAsync();
         }
         
-        public async Awaitable FadeOutAsync()
+        // Note - AsyncWaitForCompletion / Task 사용중
+        public async Awaitable FadeOutExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
+            try
+            {
+                
+
             CheckAndInitialize();
-            if (_contentsRoot == null)
+            if (_contentsRoot == null || IsFading)
                 return;
 
-            Debug.Log("FadeOutAsync");
+            Debug.Log("FadeOutExpandAsync");
             _isFading = true;
             _contentsRoot.sizeDelta = _startSize;
+            
+            var canvas = this.GetComponent<Canvas>();
+            _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+            _whiteImage.color = color;
             _contentsRoot.gameObject.SetActive(true);
             await _contentsRoot
-                .DOSizeDelta(_endSize, _fadeOutTime)
+                .DOSizeDelta(_endSize, seconds)
                 .SetEase(_fadeOutEase)
                 .SetUpdate(true)
                 .AsyncWaitForCompletion();
             _isFading = false;
+            await Awaitable.NextFrameAsync();
+                        }
+            catch (System.Exception E)
+            {
+                Debug.LogError("FadeOutExpandAsync 오류");
+                Debug.LogError(E.Message);
+            }
         }
         
-        public async Awaitable BlackFadeInAsync()
+
+        // Note - AsyncWaitForCompletion / Task 사용중
+        public async Awaitable FadeInAsync(float seconds = 1f)
         {
             CheckAndInitialize();
-            if (_blackRoot == null || _contentsRoot == null)
+            if (_imageRoot == null || _contentsRoot == null || IsFading)
                 return;
 
             _isFading = true;
             _contentsRoot.gameObject.SetActive(false);
             
-            Color startColor = _blackImage.color;
+            Color startColor = _whiteImage.color;
             startColor.a = 1f;
-            _blackImage.color = startColor;
+            _whiteImage.color = startColor;
             
-            _blackRoot.gameObject.SetActive(true);
-            await _blackImage.DOFade(0f, _fadeInTime)
+            _imageRoot.gameObject.SetActive(true);
+            await _whiteImage.DOFade(0f, seconds)
                 .SetEase(_fadeInEase)
                 .SetUpdate(true)
                 .AsyncWaitForCompletion();
                 
-            _blackRoot.gameObject.SetActive(false);
+            _imageRoot.gameObject.SetActive(false);
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
+            await Awaitable.NextFrameAsync();
         }
         
-        public async Awaitable BlackFadeOutAsync()
+        // Note - AsyncWaitForCompletion / Task 사용중
+        public async Awaitable FadeOutAsync(Color color = default, float seconds = 1f)
         {
             CheckAndInitialize();
-            if (_blackRoot == null || _contentsRoot == null)
+            if (_imageRoot == null || _contentsRoot == null || IsFading)
                 return;
 
             _isFading = true;
             _contentsRoot.gameObject.SetActive(false);
 
-            Color startColor = _blackImage.color;
-            startColor = Color.black;
+            Color startColor = _whiteImage.color;
+            startColor = color;
             startColor.a = 0.0f; 
-            _blackImage.color = startColor;
+            _whiteImage.color = startColor;
             
-            _blackRoot.gameObject.SetActive(true);
-            await _blackImage.DOFade(1f, _fadeOutTime)
+            _imageRoot.gameObject.SetActive(true);
+            await _whiteImage.DOFade(1f, seconds)
                 .SetEase(_fadeOutEase)
                 .SetUpdate(true)
                 .AsyncWaitForCompletion();
             _isFading = false;
+            await Awaitable.NextFrameAsync();
         }
 
-        public async Awaitable BlackFadeImageToColorAsync(Color blackImageEndColor, float fadeTime)
-        {
-            CheckAndInitialize();
-            if (_blackRoot == null || _contentsRoot == null)
-                return;
-
-            _isFading = true;
-            _contentsRoot.gameObject.SetActive(false);
-
-            Color startColor = _blackImage.color;
-            startColor = Color.black;
-            startColor.a = 1f;
-            _blackImage.color = startColor;
-
-            _blackRoot.gameObject.SetActive(true);
-            await _blackImage.DOColor(blackImageEndColor, fadeTime)
-                .SetEase(_fadeInEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-            _isFading = false;
-        }
-
-        public async Awaitable DeactiveAllChildrenAsync()
+        public void DeactiveAllChildren()
         {
             CheckAndInitialize();
             if (_contentsRoot == null)
                 return;
 
-            _blackRoot.gameObject.SetActive(false);
+            _imageRoot.gameObject.SetActive(false);
             _contentsRoot.gameObject.SetActive(false);
-            _isFading = false;
-            await Awaitable.NextFrameAsync();
-        }
-
-        public async Awaitable WhiteFadeIn(Action onCenter = null, float whiteDelayTime = 1.0f, float whiteFadeInTime = 3.0f)
-        {
-            CheckAndInitialize();
-            if (_blackRoot == null || _blackImage == null)
-                return;
-
-            _isFading = true;
-            _contentsRoot.gameObject.SetActive(false);
-            Color startColor = _blackImage.color;
-            startColor = Color.white;
-            startColor.a = 1f;
-            _blackImage.color = startColor;
-            _blackRoot.gameObject.SetActive(true);
-            await Awaitable.NextFrameAsync();
-            
-            onCenter?.Invoke();
-
-            await _blackImage.DOFade(0.0f, whiteFadeInTime)
-                .SetEase(_fadeInEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-
-            _blackRoot.gameObject.SetActive(false);
-            _isFading = false;
-        }
-
-        internal async Awaitable WhiteFadeOutAndFadeInAsync(Action onCenter = null)
-        {
-            CheckAndInitialize();
-            if (_blackRoot == null || _blackImage == null)
-                return;
-
-            _isFading = true;
-            _contentsRoot.gameObject.SetActive(false);
-
-            Color startColor = _blackImage.color;
-            startColor = Color.white;
-            startColor.a = 0f;
-            _blackImage.color = startColor;
-            _blackRoot.gameObject.SetActive(true);
-
-            await _blackImage.DOFade(1f, _fadeOutTime)
-                .SetEase(_fadeOutEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-
-            startColor = Color.white;
-            startColor.a = 1f;
-            _blackImage.color = startColor;
-
-            onCenter?.Invoke();
-
-            await _blackImage.DOFade(0f, _fadeInTime)
-                .SetEase(_fadeInEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-
-            _blackRoot.gameObject.SetActive(false);
             _isFading = false;
         }
     }

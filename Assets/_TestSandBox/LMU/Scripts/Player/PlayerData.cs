@@ -46,16 +46,22 @@ public class PlayerData : NetworkBehaviour
     [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
     [field: SerializeField] public Skin.Data SkinData {get; private set;}
 
+    private void Awake()
+    {
+        FakeClientData = DataManager.Inst.CurrentPlayerData;
+    }
+
     public override void Spawned()
     {
         // 데이터 서버에서 생성후 전파
         if (Object.HasStateAuthority)
         {
             SkinData = DataManager.Inst.GetSkinData(10000);
-            FakeClientData = DataManager.Inst.GetRandomFakeClientData();
             Static_PlayerData = StaticPlayerData.CreateData(FakeClientData);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
         }
+
+        FakeClientData = null;
     }
 
     /// <summary>

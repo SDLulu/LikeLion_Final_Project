@@ -3,93 +3,66 @@ using Fusion;
 using Fusion.Addons.FSM;
 using LMCore;
 using UnityEngine;
+using System.Reflection;
+
 
 public class GameStates : NetworkBehaviour, IStateMachineOwner
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
 
-    private void OnValidate()
+    public void Collect()
     {
-        if(lobbyState == null)
-            lobbyState = GetComponentInChildren<LobbyState>();
-        if(waitingState == null)
-            waitingState = GetComponentInChildren<GameStageWaitingState>();
-        if(playingState == null)
-            playingState = GetComponentInChildren<GameStagePlayingState>();
-        if(completedState == null)
-            completedState = GetComponentInChildren<GameStageCompletedState>();
-        if(transitionState == null)
-            transitionState = GetComponentInChildren<GameStageTransitionState>();
-        if(failedState == null)
-            failedState = GetComponentInChildren<GameStageFailedState>();
+        if (allStates == null || allStates.Length <= 0)
+            allStates = GetComponentsInChildren<StateBehaviour>();
     }
-    
-    [Header("인스펙터 참조")]
-    [SerializeField] private LobbyState lobbyState;
-    [SerializeField] private GameStageWaitingState waitingState;
-    [SerializeField] private GameStagePlayingState playingState;
-    [SerializeField] private GameStageCompletedState completedState;
-    [SerializeField] private GameStageTransitionState transitionState;
-    [SerializeField] private GameStageFailedState failedState;
+
+    private void OnValidate() => Collect();
+    private void Reset() => Collect();
+
 
     [Header("디버그용")]
     [SerializeField] private UI_Controller uiController = null;
     [SerializeField] private Fader fader = null;
+    [SerializeField] private CutSceneController cutSceneController = null;
+    [SerializeField] private PlayerManager playerManager = null;
+    [SerializeField] private StateBehaviour[] allStates;
+    [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
+    public UI_Controller UIController => uiController ?? (uiController = UI_Controller.Inst);
+    public Fader Fader => fader ?? (fader = Fader.Inst);
+    public PlayerManager PlayerManager => playerManager ?? (playerManager = PlayerManager.Inst);
+    public CutSceneController CutSceneController => cutSceneController ?? (cutSceneController = this.FindObjectByTypeAtCurScene<CutSceneController>());
 
-    public UI_Controller UIController => uiController ?? UI_Controller.Inst;
-    public Fader Fader => fader ?? Fader.Inst;
+    public override void Spawned()
+    {
+        base.Spawned();
+        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
+    }
+
+    // Note - CutSceneController가 GameScene에 존재해서 게임씬 로드시점까지 대기후 Inject 처리
+    public void OnSceneLoadDone()
+    {
+        ApplyInject();
+    }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        uiController = null;
-        waitingState.UIController = null;
-        lobbyState.UIController = null;
-        playingState.UIController = null;
-        completedState.UIController = null;
-        transitionState.UIController = null;
-        failedState.UIController = null;
-        fader = null;
-        waitingState.Fader = null;
-        lobbyState.Fader = null;
-        playingState.Fader = null;
-        completedState.Fader = null;
-        transitionState.Fader = null;
-        failedState.Fader = null;
+        delayedState = null;
+        ClearInject();
         base.Despawned(runner, hasState);
+    }
+
+    public void CollectStateMachines(List<IStateMachine> stateMachines)
+    {
+        Collect();
+        StateMachine = new StateMachine<StateBehaviour>("GameState", allStates);
+        stateMachines.Add(StateMachine);
     }
 
     public int GetStateID<TState>() where TState : StateBehaviour
     {
         var state = StateMachine.GetState<TState>();
-        var stateID = state.StateId;
-        return stateID;
+        return state.StateId;
     }
-
-    [field: SerializeField] public StateMachine<StateBehaviour> StateMachine {get; private set;}
-    
-    public void CollectStateMachines(List<IStateMachine> stateMachines)
-    {
-        StateMachine = new StateMachine<StateBehaviour>("GameState",
-                        lobbyState, waitingState, playingState,
-                        completedState, transitionState, failedState);
-
-        stateMachines.Add(StateMachine);
-
-        lobbyState.UIController = UIController;
-        waitingState.UIController = UIController;
-        playingState.UIController = UIController;
-        completedState.UIController = UIController;
-        transitionState.UIController = UIController;
-        failedState.UIController = UIController;
-
-        lobbyState.Fader = Fader;
-        waitingState.Fader = Fader;
-        playingState.Fader = Fader;
-        completedState.Fader = Fader;
-        transitionState.Fader = Fader;
-        failedState.Fader = Fader;
-    }
-
 
     public void ForceActiveState<TState>() where TState : StateBehaviour
     {
@@ -97,11 +70,10 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         StateMachine.ForceActivateState(stateID);
     }
 
+
+    // --- 딜레이 상태
     private System.Tuple<int, StateBehaviour> delayedState;
-    
-    /// <summary>
-    /// 네트워크신호(FixedUpdateNwtork)에 맞춰서 상태를 활성화
-    /// </summary>
+
     public void DelayForceActiveState<TState>() where TState : StateBehaviour
     {
         if (delayedState != null)
@@ -121,4 +93,63 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
             delayedState = null;
         }
     }
-}
+
+
+    // --- 인젝트
+    private Dictionary<System.Type, object> refs;
+
+    private void ApplyInject()
+    {
+        refs = new Dictionary<System.Type, object>
+        {
+            { typeof(UI_Controller), UIController },
+            { typeof(Fader), Fader },
+            { typeof(PlayerManager), PlayerManager },
+            { typeof(CutSceneController), CutSceneController }
+        };
+
+        foreach (var state in allStates)
+        {
+            if (state == null) 
+            {
+                Debug.LogError($"Inject 할수 없어요 .{state.GetType().Name}");
+                continue;
+            }
+
+            var stateType = state.GetType();
+            var properties = stateType.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            foreach (var property in properties)
+            {
+                if (property.CanWrite && refs.ContainsKey(property.PropertyType))
+                {
+                    var dependency = refs[property.PropertyType];
+                    property.SetValue(state, dependency);
+                }
+            }
+        }
+    }
+
+    private void ClearInject()
+    {
+        if (refs == null || refs.Count <= 0) 
+            return;
+
+        foreach (var state in allStates)
+        {
+            if (state == null) 
+                continue;
+
+            var stateType = state.GetType();
+            var properties = stateType.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
+            
+            foreach (var property in properties)
+            {
+                if (property.CanWrite && refs.ContainsKey(property.PropertyType))
+                    property.SetValue(state, null);
+            }
+        }
+
+        refs.Clear();
+    }
+} 
