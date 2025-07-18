@@ -5,7 +5,7 @@ using System.Linq;
 
 public class PMK_TileRogic : MonoBehaviour
 {
-    public static PMK_TileRogic Instance { get; private set; }
+    [field: SerializeField] public static PMK_TileRogic Instance { get; private set; }
 
     [Header("생성할 타일 개수")]
     [SerializeField] private int maxTileX = 5; // 맵의 가로 기준
@@ -14,7 +14,7 @@ public class PMK_TileRogic : MonoBehaviour
     [Header("다음 타일과의 거리")]
     [SerializeField] private float nextTileX = 17; // 맵의 가로 기준 길이
     [SerializeField] private float nextTileY = 11; // 맵의 가로 기준 길이
-    [SerializeField] private Transform parentTrans;
+    [field: SerializeField] public Transform parentTrans { get; private set; }
 
     [Header("타일 오브젝트")]
     private Dictionary<string, GameObject[]> mapPrefabDict; //타일 이름 저장
@@ -22,6 +22,7 @@ public class PMK_TileRogic : MonoBehaviour
     [SerializeField] private GameObject[] Clear_Map_Prefab;        // 스폰지점 or 클리어 맵 생성 (스폰지점 : 좌,우 확정) (클리어 : 좌,우,위 확정)
     [SerializeField] private GameObject[] LR_Exit_Map_Prefab;      // 좌,우 출구가 확정인 맵 생성 (위,아래 랜덤)
     [SerializeField] private GameObject[] D_Exit_Map_Prefab;       // 아래 출구가 확정인 맵 생성 (좌,우,위 랜덤)
+    [SerializeField] private GameObject[] W_Exit_Map_Prefab;       // 아래 출구가 확정인 맵 생성 (좌,우,위 랜덤)
     [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // 위,아래 출구가 확정인 맵 생성 (좌,우 랜덤)
     [SerializeField] private GameObject[] Special_Map_Prefab;      // 상점이나 특별한 맵 생성 (좌,우 확정)
 
@@ -41,7 +42,7 @@ public class PMK_TileRogic : MonoBehaviour
     private int removeMapX; // 정하고 싶지 않는 맵의 X위치를 저장합니다.
     private List<int> LR_Choose = new List<int>(); // 왼쪽, 오른쪽 맵 위치를 저장하는 리스트 입니다.
 
-    [SerializeField] private Tilemap mainTilemap; // 병합할 타일맵 (씬에 존재하는 타일맵)
+    [field:SerializeField] public Tilemap mainTilemap { get; private set; } // 병합할 타일맵 (씬에 존재하는 타일맵)
 
 
     private void Awake()
@@ -53,6 +54,7 @@ public class PMK_TileRogic : MonoBehaviour
             { "C", Clear_Map_Prefab },
             { "LR", LR_Exit_Map_Prefab },
             { "D", D_Exit_Map_Prefab },
+            { "W", W_Exit_Map_Prefab },
             { "WD", WD_Exit_Map_Prefab },
             { "S", Special_Map_Prefab }
         };
@@ -128,6 +130,10 @@ public class PMK_TileRogic : MonoBehaviour
     {
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
+            if (mapType != "C") //클리어맵이 아니라면 모두 랜덤 돌리기
+            {
+                randomIndex = Random.Range(0, prefabs.Length);
+            }
             GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity);
 
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>();
@@ -322,7 +328,7 @@ public class PMK_TileRogic : MonoBehaviour
 
                 if (exitDownMap != Random.Range(0, maxTileX)) // 랜덤값이 현재 탈출 맵과 같지 않다면 좌,우 탈출구가 확정인 맵 생성
                 {
-                    Create_Map("LR", 0, nextExit_Pos.x, nextExit_Pos.y);
+                    Create_Map("W", 0, nextExit_Pos.x, nextExit_Pos.y);
                     removeTile = exitDownMap;
                 }
                 else
@@ -333,7 +339,7 @@ public class PMK_TileRogic : MonoBehaviour
                     if (y + 2 < maxTileY) // 이 안에서 또 다음 타일 확인
                     {
                         Vector2 deeperExit_Pos = mapXY[exitDownMap, y + 2];
-                        Create_Map("LR", 0, deeperExit_Pos.x, deeperExit_Pos.y); // 다음 타일에 dkfo 탈출구가 확정인 맵 생성
+                        Create_Map("W", 0, deeperExit_Pos.x, deeperExit_Pos.y); // 다음 타일에 dkfo 탈출구가 확정인 맵 생성
                         removeTile = exitDownMap;
                         y++;
                     }
