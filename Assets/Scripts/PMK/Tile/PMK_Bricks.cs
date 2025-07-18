@@ -1,13 +1,14 @@
+using GoogleSheet.Type;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class PMK_Bricks : MonoBehaviour
 {
-    [SerializeField] private Tilemap tileMap;
+    private Tilemap tileMap;
 
     private void Start()
     {
-        tileMap = GetComponent<Tilemap>();
+        tileMap = PMK_TileRogic.Instance.mainTilemap;
     }
 
     public void MakeDot(Vector3 Pos)

@@ -7,16 +7,13 @@ public class PNK_TileWall : MonoBehaviour
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
-    [SerializeField] private GameObject wallItem; // 타일 안에 생성될 아이템 오브젝트 (돈 아이템 등)
-
     private Tilemap tilemap;
-    private bool placedTile = false;
 
 
 
     private void OnEnable()
     {
-        tilemap = GameObject.Find("RockMap")?.GetComponent<Tilemap>();
+        tilemap = PMK_TileRogic.Instance.mainTilemap;
         StartCoroutine(DelayedTilePlacement());
     }
 
@@ -32,7 +29,7 @@ public class PNK_TileWall : MonoBehaviour
         Vector2 pos = transform.position;
 
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
-        if (hits == null && !placedTile)
+        if (hits == null)
         {
             Vector3Int cellPos = tilemap.WorldToCell(pos);
 
@@ -41,9 +38,8 @@ public class PNK_TileWall : MonoBehaviour
                 // 타일 설치
                 tilemap.SetTile(cellPos, ruleTile);
                 Physics2D.SyncTransforms(); // 물리 최신화
-                placedTile = true;
 
-                PMK_TileRogic.Instance.Create_TileItem(cellPos);
+                PMK_TileRogic.Instance.Create_TileItem(cellPos); // 아이템 랜덤 생성
 
                 Destroy(gameObject); // 현재 아이템 제거
             }
@@ -51,6 +47,7 @@ public class PNK_TileWall : MonoBehaviour
     }
 
 
+    // 벽이 있을경우 벽 삭제
     private void OnTriggerStay2D(Collider2D collision)
     {
         // 실제 충돌 지점 계산
@@ -65,7 +62,7 @@ public class PNK_TileWall : MonoBehaviour
             {
                 bricks.MakeDot(contactPoint); // 올바른 월드 위치 전달
 
-                if (collision.CompareTag("Tileitem"))
+                if (collision.CompareTag("Tileitem")) // 벽안에 아이템이 있을경우 아이템 삭제
                 {
                     Destroy(collision.gameObject);
                 }
