@@ -90,8 +90,9 @@ public class PlayerDebugManager : NetworkBehaviour
         // 픽업 정보
         if (itemPickup != null)
         {
-            GUILayout.Label($"현재 아이템: {itemPickup.CurrentItemName}");
-            GUILayout.Label($"감지된 아이템: {itemPickup.NearbyItemsCount}개");
+            string currentItemName = itemPickup.CurrentItem?.name ?? "없음";
+            GUILayout.Label($"현재 아이템: {currentItemName}");
+            GUILayout.Label($"아이템 보유: {(itemPickup.HasItem ? "예" : "아니오")}");
         }
         
         // 사용 정보

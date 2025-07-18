@@ -3085,17 +3085,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &298215541 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6548359404163673551, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e138c2aca925e0b40a6f1b77a641c90c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &313863404 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6216462292317205660, guid: 7a9a3c90c8a084045aa8e39557fbf0bd, type: 3}
@@ -8709,38 +8698,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4797837134993590493, guid: 5662a42422936754abeafa6510472456, type: 3}
+      propertyPath: SortKey
+      value: 4077022638
+      objectReference: {fileID: 0}
     - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
       propertyPath: SortKey
       value: 124788888
       objectReference: {fileID: 0}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: NetworkedBehaviours.Array.size
-      value: 13
-      objectReference: {fileID: 0}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[6]'
-      value: 
-      objectReference: {fileID: 298215541}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[7]'
-      value: 
-      objectReference: {fileID: 1980900348}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[8]'
-      value: 
-      objectReference: {fileID: 1421182019}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[9]'
-      value: 
-      objectReference: {fileID: 1421182018}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[10]'
-      value: 
-      objectReference: {fileID: 1421182017}
-    - target: {fileID: 8184683026101553609, guid: 5662a42422936754abeafa6510472456, type: 3}
-      propertyPath: 'NetworkedBehaviours.Array.data[11]'
-      value: 
-      objectReference: {fileID: 1582605919}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -10832,39 +10797,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1421182017 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6232199870285927185, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f543649f9dc98040bf70b1869f01dda, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1421182018 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1019999502762045486, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d70a446d96d748b4684b3f9bde52f9c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1421182019 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 1811931750023111762, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2be059828c5767041b71dfa18340df2d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1430725837
 GameObject:
   m_ObjectHideFlags: 0
@@ -12083,17 +12015,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &1582605919 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8468457249827184339, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8edce3776b788954485ec5b2869d611e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1583218817
 GameObject:
   m_ObjectHideFlags: 0
@@ -13966,19 +13887,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 49962c6bef4d2dc4393c3fd7d61a3a50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
-  currentHealth: 0
-  spriteRenderer: {fileID: 0}
-  normalColor:
-    r: 1
-    g: 1
-    b: 1
-    a: 1
-  damageColor:
-    r: 1
-    g: 0
-    b: 0
-    a: 1
 --- !u!1 &1826219896
 GameObject:
   m_ObjectHideFlags: 0
@@ -21749,17 +21657,6 @@ TilemapCollider2D:
   m_MaximumTileChangeCount: 1000
   m_ExtrusionFactor: 0
   m_UseDelaunayMesh: 0
---- !u!114 &1980900348 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7368080279004501370, guid: 5662a42422936754abeafa6510472456, type: 3}
-  m_PrefabInstance: {fileID: 1056319556}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d8c1ab412fe05b947aea0e1fe183777f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1989785187
 GameObject:
   m_ObjectHideFlags: 0
@@ -23212,6 +23109,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 846164998}
     m_Modifications:
+    - target: {fileID: 1304687429922751934, guid: 7a9a3c90c8a084045aa8e39557fbf0bd, type: 3}
+      propertyPath: Flags
+      value: 262145
+      objectReference: {fileID: 0}
     - target: {fileID: 1304687429922751934, guid: 7a9a3c90c8a084045aa8e39557fbf0bd, type: 3}
       propertyPath: SortKey
       value: 811864651

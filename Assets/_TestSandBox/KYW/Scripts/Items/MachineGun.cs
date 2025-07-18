@@ -1,7 +1,8 @@
 using UnityEngine;
+using Fusion;
 
 // 기관단총
-public class MachineGun : MonoBehaviour, IUsableItem
+public class MachineGun : NetworkBehaviour, IUsableItem
 {
     [SerializeField] private GameObject bulletPrefab; // 총알 프리팹
     [SerializeField] private Transform firePoint;     // 총알 발사 위치
@@ -10,9 +11,9 @@ public class MachineGun : MonoBehaviour, IUsableItem
     [SerializeField] private int maxAmmo = 30;        // 최대 탄약
     [SerializeField] private float reloadTime = 2f;   // 재장전 시간(초)
 
-    private int currentAmmo;      // 현재 탄약
-    private float lastFireTime;   // 마지막 발사 시각
-    private bool isReloading;     // 재장전 중 여부
+    [Networked] private int currentAmmo { get; set; }
+    [Networked] private bool isReloading { get; set; }
+    private float lastFireTime;
 
     private void Start()
     {
@@ -22,44 +23,63 @@ public class MachineGun : MonoBehaviour, IUsableItem
 
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
+        // 입력 권한자(InputAuthority, 보통 로컬 플레이어)만 발사 가능
+        if (!Object.HasInputAuthority) return; // 내 입력이 아니면 무시
         if (isReloading || currentAmmo <= 0) 
         { 
-            StartReload(); 
+            StartReloadRpc(); 
             return; 
         }
-        FireBullet(mouseWorldPosition);
+        FireBulletRpc(mouseWorldPosition);
     }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
+        // 입력 권한자(InputAuthority, 보통 로컬 플레이어)만 연사 가능
+        if (!Object.HasInputAuthority) return; // 내 입력이 아니면 무시
         if (isReloading || currentAmmo <= 0) 
         { 
-            StartReload(); 
+            StartReloadRpc(); 
             return; 
         }
         if (Time.time - lastFireTime >= fireRate)
         {
-            FireBullet(mouseWorldPosition);
+            FireBulletRpc(mouseWorldPosition);
         }
     }
 
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void FireBulletRpc(Vector2 mouseWorldPosition)
+    {
+        // StateAuthority(호스트)에서 실제 총알 발사 처리
+        FireBullet(mouseWorldPosition);
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    private void StartReloadRpc()
+    {
+        // StateAuthority(호스트)에서 재장전 처리
+        StartReload();
+    }
+
     private void FireBullet(Vector2 mouseWorldPosition)
     {
+        // StateAuthority(서버/호스트 권한자)에서만 총알 생성/스폰 가능
+        if (!Object.HasStateAuthority) return; // 권한 없으면 무시
         Vector2 dir = (mouseWorldPosition - (Vector2)firePoint.position).normalized;
         if (bulletPrefab != null)
         {
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, Quaternion.identity);
+            var bullet = Runner.Spawn(
+                bulletPrefab, 
+                firePoint.position, 
+                Quaternion.identity, 
+                Object.InputAuthority
+            );
             var bulletScript = bullet.GetComponent<Bullet>();
             if (bulletScript != null)
-                bulletScript.Initialize(dir, bulletSpeed, 10f, 3f, gameObject);
-            else
-            {
-                var rb = bullet.GetComponent<Rigidbody2D>();
-                if (rb != null) rb.linearVelocity = dir * bulletSpeed;
-                Destroy(bullet, 3f);
-            }
+                bulletScript.Initialize(dir, bulletSpeed, 10f, 3f, this);
         }
         currentAmmo--;
         lastFireTime = Time.time;
@@ -67,13 +87,16 @@ public class MachineGun : MonoBehaviour, IUsableItem
 
     private void StartReload()
     {
-        if (isReloading) return;
+        // StateAuthority에서만 재장전 상태 변경
+        if (!Object.HasStateAuthority || isReloading) return;
         isReloading = true;
         Invoke(nameof(FinishReload), reloadTime);
     }
     
     private void FinishReload()
     {
+        // StateAuthority에서만 탄약 및 재장전 상태 변경
+        if (!Object.HasStateAuthority) return;
         currentAmmo = maxAmmo;
         isReloading = false;
     }

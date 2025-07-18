@@ -8,7 +8,7 @@ public class PlayerMovement : NetworkBehaviour
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
     [SerializeField] private float duckMoveSpeed = 2.5f;
-    public float NormalizedSpeed { get; private set; }
+    [Networked] public float NormalizedSpeed { get; private set; }
     
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsDucking { get; private set; }
@@ -45,7 +45,7 @@ public class PlayerMovement : NetworkBehaviour
     private void HandleDucking(SpelunkyPlayerData input)
     {
         // 웅크리기 (아래키 + 땅에 있을 때)
-        IsDucking = input.VerticalInput < -0.5f && groundCheck.IsGrounded;
+        IsDucking = input.VerticalInput < 0f && groundCheck.IsGrounded;
     }
     
     private void ProcessMovement(SpelunkyPlayerData input)
