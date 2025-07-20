@@ -2,12 +2,30 @@ using System;
 using Fusion;
 using LMCore;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LobbyManager : BaseManager<LobbyManager>
 {
-    public Action OnExitButtonClicked;
+    [Header("디버그용")]
+    [SerializeField] private GameMode localGameMode;
+    [SerializeField] private PlayerManager hostPlayerManage;
+    [SerializeField] private GameStates gameStates;
+    public PlayerRef LocalPlayer { get; private set; }
+
+    private byte[] connectionToken;
+    private void Awake()
+    {
+        connectionToken = ConnectionTokens.NewToken();
+    }
+
+    private void OnDestroy()
+    {
+        hostPlayerManage = null;
+    }
+
+
     [SerializeField] private NetworkRunner netRunner;
-    public NetworkRunner NetRunner 
+    public NetworkRunner NetRunner
     {
         get
         {
@@ -25,7 +43,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             return netRunner;
         }
     }
-    
+
     /// <summary>
     /// 외부에서 강제로 Runner 설정
     /// </summary>
@@ -40,43 +58,108 @@ public class LobbyManager : BaseManager<LobbyManager>
         return runner;
     }
 
-    [SerializeField] private NetCallbacks netCallbacks;
-    public NetCallbacks NetCallbacks 
+    /// <summary>
+    /// 게임 시작
+    /// </summary>
+    private async Awaitable StartGameAsync(NetworkRunner runner,
+                                            GameMode mode,
+                                            string roomName,
+                                            byte[] connectionToken = default,
+                                            Action<NetworkRunner> migrationAction = default,
+                                            HostMigrationToken token = default)
     {
-        get
+        var startGameArgs = new StartGameArgs()
         {
-            if (netCallbacks == null)
+            GameMode = mode,
+            SessionName = roomName,
+            PlayerCount = 4,
+            SceneManager = LevelManager.Inst,
+            ObjectProvider = NetObjProvider.Inst,
+            ConnectionToken = connectionToken,
+            HostMigrationToken = token,
+            HostMigrationResume = migrationAction,
+        };
+
+        await runner.StartGame(startGameArgs);
+        await Awaitable.NextFrameAsync();
+    }
+
+    /// <summary>
+    /// 로비 입장
+    /// </summary>
+    public async Awaitable JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient,
+                                            string roomName = "TestRoom",
+                                            Action OnEnterLobby = default)
+    {
+        try
+        {
+            await Fader.Inst.FadeOutAsync(Color.black, 1.0f);
+            if (NetRunner == null)
             {
-                netCallbacks ??= this.GetComponent<NetCallbacks>();
-                netCallbacks ??= this.gameObject.AddComponent<NetCallbacks>();
-                AddAction();
+                Debug.LogError("네트워크 러너가 존재하지 않습니다.");
+                return;
             }
 
-            void AddAction()
+            NetRunner.AddCallbacks(NetworkEventSystem.Inst);
+            NetRunner.ProvideInput = true;
+            await LocalSceneManager.Inst.LoadSceneAsync("DevLobby", LoadSceneMode.Additive, true);
+            var startGameAwait = StartGameAsync(NetRunner, mode, roomName, this.connectionToken);
+            OnEnterLobby?.Invoke();
+
+            await startGameAwait;
+            Debug.Log($"방에 입장함 {roomName}");
+            await Awaitable.NextFrameAsync();
+            await Fader.Inst.FadeInAsync(Color.black, 1.0f);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError(ex);
+        }
+    }
+
+    /// <summary>
+    /// 게임 종료 / 로비이동
+    /// </summary>
+    public async Awaitable LeaveGame()
+    {
+        try
+        {
+            await Fader.Inst.FadeOutAsync();
+
+            var runner = LobbyManager.Inst.NetRunner;
+            if (runner == null || runner.IsRunning == false)
             {
-                if (netCallbacks != null)
+                Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
+                UI_Controller.Inst.ActiveTitleUI();
+                return;
+            }
+
+            await runner.Shutdown(true);
+
+            // 타이틀씬을 제외한 모든 씬을 UnLoad
+            var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
+            Awaitable waitScene1 = default;
+            Awaitable waitScene2 = default;
+            foreach (var scene in scenes)
+            {
+                if (scene.name == "DevLobby")
                 {
-                    OnExitButtonClicked -= netCallbacks.OnPlayerLeftAction;
-                    OnExitButtonClicked += netCallbacks.OnPlayerLeftAction;
+                    waitScene1 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
+                }
+                else if (scene.name == "DevGame")
+                {
+                    waitScene2 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
+            UI_Controller.Inst.ActiveTitleUI();
 
-            return netCallbacks;
+            await waitScene1;
+            await waitScene2;
+            await Fader.Inst.FadeInAsync();
         }
-    }
-
-    public void RemoveAction()
-    {
-        if (netCallbacks != null)
+        catch (Exception e)
         {
-            OnExitButtonClicked -= netCallbacks.OnPlayerLeftAction;
+            Debug.LogError(e);
         }
     }
-
-    private void OnDestroy()
-    {
-        OnExitButtonClicked = null;
-    }
-
-
 }

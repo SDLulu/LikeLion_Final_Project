@@ -1,32 +1,33 @@
 using Fusion;
 using Fusion.Addons.Physics;
 using UnityEngine;
-using UnityEngine.InputSystem;
-using System.Reflection;
 using System.Collections.Generic;
-using LMCore;
 
 /// <summary>
 /// 스테이지에 의해 통제되는 컴포넌트
 /// </summary>
 public class PlayerStageController : NetworkBehaviour
 {
-    private PlayerInput _input;
     private ILogHandler originalLogHandler;
     private HashSet<string> playerComponentTypes = new HashSet<string>();
+
+    private void Awake()
+    {
+        ApplyLoggerFilter();
+    }
+
+    private void OnDestroy()
+    {
+        RestoreOriginalLogger();
+    }
 
     public override void Spawned()
     {
         base.Spawned();
-        _input = this.gameObject.AddComponent<PlayerInput>();
-        _input.actions = Resources.Load<InputActionAsset>("Setting/InputSystem_Actions");
-        ApplyLoggerFilter();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        RestoreOriginalLogger();
-        _input = null;
         base.Despawned(runner, hasState);
     }
 
@@ -78,14 +79,6 @@ public class PlayerStageController : NetworkBehaviour
     {
         // Todo
         return true;
-    }
-
-    private void OnESC(InputValue value)
-    {
-        if (value.isPressed)
-        {
-            Debug.Log("ESC 버튼이 눌렸음");
-        }
     }
 }
 
@@ -140,21 +133,29 @@ public class PlayerDebugLogFilter : ILogHandler
         {
             string lowerMessage = message.ToLower();
             
-            // 플레이어 관련 키워드들
-            if (lowerMessage.Contains("🦘") || // 점프 이모지
-                lowerMessage.Contains("🎮") || // 아이템 사용 이모지
-                lowerMessage.Contains("🎒") || // 아이템 픽업 이모지
-                lowerMessage.Contains("⚔️") || // 근접무기 이모지
-                lowerMessage.Contains("🏹") || // 원거리무기 이모지
-                lowerMessage.Contains("💊") || // 소모품 이모지
-                lowerMessage.Contains("📦") || // 기타 아이템 이모지
+            // 핵심 플레이어 관련 키워드들
+            if (lowerMessage.Contains("🎮") || // 플레이어 컨트롤러
+                lowerMessage.Contains("🌐") || // 네트워크 설정
+                lowerMessage.Contains("🏠") || // 로컬 플레이어
+                lowerMessage.Contains("🌍") || // 원격 플레이어
+                lowerMessage.Contains("🎯") || // 물리 설정
+                lowerMessage.Contains("🪜") || // 사다리
+                lowerMessage.Contains("🎒") || // 아이템 픽업
+                lowerMessage.Contains("🎨") || // UI 초기화
+                lowerMessage.Contains("⚠️") || // 설정 확인
+                lowerMessage.Contains("🦘") || // 점프
                 lowerMessage.Contains("점프") ||
-                lowerMessage.Contains("아이템") ||
-                lowerMessage.Contains("픽업") ||
-                lowerMessage.Contains("사용") ||
-                lowerMessage.Contains("던지기") ||
-                lowerMessage.Contains("휘두름") ||
-                lowerMessage.Contains("발사"))
+                lowerMessage.Contains("플레이어") ||
+                lowerMessage.Contains("player") ||
+                lowerMessage.Contains("network") ||
+                lowerMessage.Contains("input authority") ||
+                lowerMessage.Contains("rigidbody") ||
+                lowerMessage.Contains("interpolated") ||
+                lowerMessage.Contains("interpolate") ||
+                lowerMessage.Contains("떨림 방지") ||
+                lowerMessage.Contains("master client") ||
+                lowerMessage.Contains("interpolation target") ||
+                lowerMessage.Contains("interpolation data source"))
             {
                 return true; // 차단
             }

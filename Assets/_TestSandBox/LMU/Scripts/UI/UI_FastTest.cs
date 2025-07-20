@@ -63,7 +63,6 @@ public class UI_FastTest : MonoBehaviour
             {
                 await WaitForGameStart();
                 await Awaitable.WaitForSecondsAsync(0.5f);
-                playerM.RPC_SetLobbyUI(false);
             }
         }
         catch (System.Exception e)
@@ -77,7 +76,6 @@ public class UI_FastTest : MonoBehaviour
     /// </summary>
     private async Awaitable StartGameAsHost(PlayerManager playerM)
     {
-        playerM.SetTestMode(true);
         var result = await playerM.TryStartGameAsync(true);
         if (result)
         {

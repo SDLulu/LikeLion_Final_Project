@@ -27,14 +27,10 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private PlayerManager playerManager = null;
     [SerializeField] private StateBehaviour[] allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
-    public UI_Controller UIController => uiController ?? (uiController = UI_Controller.Inst);
-    public Fader Fader => fader ?? (fader = Fader.Inst);
-    public PlayerManager PlayerManager => playerManager ?? (playerManager = PlayerManager.Inst);
-    public CutSceneController CutSceneController => cutSceneController ?? (cutSceneController = this.FindObjectByTypeAtCurScene<CutSceneController>());
-
     public override void Spawned()
     {
         base.Spawned();
+        DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
     }
 
@@ -62,6 +58,15 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     {
         var state = StateMachine.GetState<TState>();
         return state.StateId;
+    }
+
+    public E_StateName GetActiveStateName()
+    {
+        var state = StateMachine.ActiveState as BaseStateBehaviour;
+        if (state == null)
+            return E_StateName.GameStageWaitingState;
+
+        return state.StateName;
     }
 
     public void ForceActiveState<TState>() where TState : StateBehaviour
@@ -94,18 +99,38 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         }
     }
 
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public static void RPC_FadeOutUI(NetworkRunner runner)
+    {
+        _ = Fader.Inst.FadeOutAsync(Color.black, 1.0f);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public static async void RPC_FadeInUI(NetworkRunner runner)
+    {
+        while (Fader.Inst.IsFading)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+
+        UIEventSystem.Inst.TriggerGameUIActive(true);
+        UI_Controller.Inst.DeactiveAllLobbyUI();
+        _ = Fader.Inst.FadeInAsync(Color.black, 1.0f);
+    }
+
 
     // --- 인젝트
     private Dictionary<System.Type, object> refs;
 
     private void ApplyInject()
     {
+        // Note - CutSceneController는 게임씬에 존재
         refs = new Dictionary<System.Type, object>
         {
-            { typeof(UI_Controller), UIController },
-            { typeof(Fader), Fader },
-            { typeof(PlayerManager), PlayerManager },
-            { typeof(CutSceneController), CutSceneController }
+            { typeof(UI_Controller), uiController != null ? uiController : UI_Controller.Inst },
+            { typeof(Fader), fader != null ? fader : Fader.Inst },
+            { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
+            { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() }
         };
 
         foreach (var state in allStates)
