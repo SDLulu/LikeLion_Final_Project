@@ -5,12 +5,14 @@ using UnityEngine;
 
 public class GameStageFailedState : BaseStateBehaviour
 {
+    public override E_StateName StateName => E_StateName.GameStageFailedState;
 
     [Header("설정")]
     [SerializeField] private float minWaitingTime = 3.0f;
 
     [Header("디버그용")]
     private TickTimer waitingTimer = TickTimer.None;
+
 
     protected override void OnEnterState()
     {
@@ -36,7 +38,7 @@ public class GameStageFailedState : BaseStateBehaviour
     [Rpc(RpcSources.All, RpcTargets.All)]
     public async void RPC_FadeOutUI()
     {
-        UIController.ActiveGameUI(false);
+        UIEventSystem.Inst.TriggerGameUIActive(false);
         await Fader.FadeOutAsync();
         UIController.DeactiveAllLobbyUI();
     }
@@ -44,7 +46,7 @@ public class GameStageFailedState : BaseStateBehaviour
     [Rpc(RpcSources.All, RpcTargets.All)]
     public async void RPC_FadeInUI()
     {
-        UIController.ActiveGameUI(true);
+        UIEventSystem.Inst.TriggerGameUIActive(true);
         await Fader.FadeInAsync();
     }
 } 

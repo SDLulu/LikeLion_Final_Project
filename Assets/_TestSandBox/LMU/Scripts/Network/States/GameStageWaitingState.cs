@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GameStageWaitingState : BaseStateBehaviour
 {
-
+    public override E_StateName StateName => E_StateName.GameStageWaitingState;
     [Header("설정")]
     [SerializeField] private float minWaitingTime = 1.5f;
 
@@ -15,7 +15,7 @@ public class GameStageWaitingState : BaseStateBehaviour
     protected override void OnEnterState()
     {
         waitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
-        RPC_FadeOutUI();
+        GameStates.RPC_FadeOutUI(this.Runner);
     }
 
     protected override void OnFixedUpdate()
@@ -30,22 +30,9 @@ public class GameStageWaitingState : BaseStateBehaviour
     protected override void OnExitState()
     {
         Debug.Log("대기 상태 종료");
-        RPC_FadeInUI();
+        GameStates.RPC_FadeInUI(this.Runner);
     }
 
-    [Rpc(RpcSources.All, RpcTargets.All)]
-    public async void RPC_FadeOutUI()
-    {
-        UIController.ActiveGameUI(false);
-        await Fader.FadeOutAsync();
-        UIController.DeactiveAllLobbyUI();
-    }
 
-    [Rpc(RpcSources.All, RpcTargets.All)]
-    public async void RPC_FadeInUI()
-    {
-        UIController.ActiveGameUI(true);
-        await Fader.FadeInAsync();
-    }
 
 } 

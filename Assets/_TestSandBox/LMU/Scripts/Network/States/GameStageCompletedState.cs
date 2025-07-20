@@ -7,6 +7,9 @@ using UnityEngine;
 
 public class GameStageCompletedState : BaseStateBehaviour
 {
+    public override E_StateName StateName => E_StateName.GameStageCompletedState;
+
+
     [Header("설정")]
     [SerializeField, Range(10.0f, 15.0f)] private float minWaitingTime = 15.0f;
     [SerializeField] private float cutDuration = 2.0f;
@@ -84,6 +87,9 @@ public class GameStageCompletedState : BaseStateBehaviour
     }
 
 
+    /// <summary>
+    /// 로컬 플레이어의 월드 좌표 반환
+    /// </summary>
     public Vector2 GetLocalPlayerWorldPos()
     {
         Vector2 playerWorldPos = Vector2.zero;
@@ -101,11 +107,11 @@ public class GameStageCompletedState : BaseStateBehaviour
     {
         try
         {
-            UIController.ActiveGameUI(false);
+            UIEventSystem.Inst.TriggerGameUIActive(false);
 
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
-            _ = UIController.UIGame.FadeOutPlayerSlotsAsync();
+            _ = UIEventSystem.Inst.TriggerPlayerSlotsFadeOutAsync();
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
 
@@ -136,8 +142,8 @@ public class GameStageCompletedState : BaseStateBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_FadeInUI()
     {
-        UIController.ActiveGameUI(true);
-        _ = UIController.UIGame.FadeInPlayerSlotsAsync();
+        UIEventSystem.Inst.TriggerGameUIActive(true);
+        await UIEventSystem.Inst.TriggerPlayerSlotsFadeInAsync();
         await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
     }
 

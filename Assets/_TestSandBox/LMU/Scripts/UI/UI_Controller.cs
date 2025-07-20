@@ -6,33 +6,16 @@ using UnityEngine;
 
 public class UI_Controller : BaseManager<UI_Controller>
 {
-    [Header("인스펙터 참조")]
+    [Header("로비 UI 참조")]
     [field: SerializeField] public UI_EnterOnline UIEnterOnline {get; private set;}
     [field: SerializeField] public UI_Lobby UILobby {get; private set;}
-    [field: SerializeField] public UI_Game UIGame {get; private set;}
     [field: SerializeField] public UI_Title UITitle {get; private set;}
 
     private void Awake()
     {
         DontDestroyOnLoad(this);
         ActiveTitleUI();
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += OnChangedScene;
-    }
-
-    /// <summary>
-    /// 씬변경시 메모리 정리
-    /// Note : Lobby(titleUI / lobbyUI)는 Additive 씬으로 항상 유지
-    /// </summary>
-    private void OnChangedScene(NetworkRunner runner, string sceneName)
-    {
-        if (sceneName == "DevGame")
-        {
-            UIGame = FindAnyObjectByType<UI_Game>();
-        }
-        else 
-        {
-            UIGame = null;
-        }
+        // 게임 UI는 UIEventSystem이 관리하므로 NetworkEventSystem 구독 불필요
     }
 
     public void ActiveTitleUI()
@@ -51,15 +34,6 @@ public class UI_Controller : BaseManager<UI_Controller>
     {
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.gameObject.SetActive(false);
-    }
-
-    public async void ActiveGameUI(bool value)
-    {
-        while (UIGame == null)
-        {
-            await Awaitable.NextFrameAsync();
-        }
-        UIGame.gameObject.SetActive(value);
     }
 
     public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)

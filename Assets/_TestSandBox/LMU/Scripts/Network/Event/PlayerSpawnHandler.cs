@@ -12,7 +12,9 @@ public class PlayerSpawnHandler : MonoBehaviour
     [SerializeField] private PlayerManager hostPlayerManage;
     [SerializeField] private GameStates gameStates;
 
-    public async void HandlePlayerJoined(NetworkRunner runner, PlayerRef player)
+
+#region 플레이어 입장 및 퇴장
+    public async void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"플레이어 {player} 입장");
 
@@ -66,7 +68,6 @@ public class PlayerSpawnHandler : MonoBehaviour
     }
 
 
-
     /// <summary>
     /// 게임이 진행 중인지 확인
     /// </summary>
@@ -82,6 +83,14 @@ public class PlayerSpawnHandler : MonoBehaviour
     {
         Debug.Log($"플레이어 {player} 퇴장");
 
+        if (runner.IsServer)
+        {
+            OnEntityLeftAsync(runner, player);
+        }
+    }
+
+    private void OnEntityLeftAsync(NetworkRunner runner, PlayerRef player)
+    {
         if (runner.IsServer == false)
             return;
 
@@ -96,9 +105,13 @@ public class PlayerSpawnHandler : MonoBehaviour
             return;
         }
 
-        // 네트워크 객체 제거
         runner.Despawn(playerObj);
     }
+#endregion
+
+
+
+
 
 
     public async void OnLateJoin(NetworkRunner runner, PlayerRef player, NetworkObject spawnedPlayer)

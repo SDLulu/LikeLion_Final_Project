@@ -7,24 +7,32 @@ using UnityEngine;
 
 public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunnerCallbacks
 {
-    [Header("이벤트 핸들러들")]
+    [Header("이벤트 핸들러")]
     [SerializeField] private PlayerSpawnHandler spawnHandler;
+    [SerializeField] private HostDisconnectHandler hostDisconnectHandler;
     public event Action<NetworkRunner, PlayerRef> OnPlayerJoinedEvent;
     public event Action<NetworkRunner, PlayerRef> OnPlayerLeftEvent;
     public event Action<NetworkRunner, string> OnSceneLoadDoneEvent;
+    public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
+    public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
 
     private void Awake()
     {
         spawnHandler = this.GetOrAddComponent<PlayerSpawnHandler>();
+        hostDisconnectHandler = this.GetOrAddComponent<HostDisconnectHandler>();
 
-        OnPlayerJoinedEvent += spawnHandler.HandlePlayerJoined;
+        OnPlayerJoinedEvent += spawnHandler.OnPlayerJoined;
         OnPlayerLeftEvent += spawnHandler.OnPlayerLeft;
+        OnDisconnectedFromServerEvent += hostDisconnectHandler.OnDisconnectedFromServer;
+        OnShutdownEvent += hostDisconnectHandler.OnShutdown;
     }
 
     private void OnDestroy()
     {
-        OnPlayerJoinedEvent -= spawnHandler.HandlePlayerJoined;
+        OnPlayerJoinedEvent -= spawnHandler.OnPlayerJoined;
         OnPlayerLeftEvent -= spawnHandler.OnPlayerLeft;
+        OnDisconnectedFromServerEvent -= hostDisconnectHandler.OnDisconnectedFromServer;
+        OnShutdownEvent -= hostDisconnectHandler.OnShutdown;
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
@@ -47,12 +55,12 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnShutdown(NetworkRunner runner, ShutdownReason shutdownReason)
     {
-
+        OnShutdownEvent?.Invoke(runner, shutdownReason);
     }
 
     public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
-        Debug.Log($"OnDisconnectedFromServer - 갑자기 연결해제됨 : {reason}");
+        OnDisconnectedFromServerEvent?.Invoke(runner, reason);
     }
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)

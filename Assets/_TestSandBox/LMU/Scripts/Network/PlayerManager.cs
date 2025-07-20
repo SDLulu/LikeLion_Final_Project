@@ -12,11 +12,39 @@ public class PlayerManager : NetworkBehaviour
     
     [Header("설정")]
     [SerializeField] private int minPlayersToStart = 2;                 // 게임 시작 최소 인원
-    [SerializeField] private bool testMode = false;                     // 테스트 모드 활성화
-    [SerializeField] private int minPlayersForTest = 1;                 // 테스트 모드 최소 인원
+
+    [Header("디버그용")]
+    [SerializeField] private bool isInGame = false;
+    [SerializeField] private bool isGameSceneLoading = false;
+    [SerializeField] private bool isGameSceneLoaded = false;
+    [SerializeField] public bool IsSpawned = false;
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
+
+    public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
+
+    public async Awaitable<bool> IsPollingSpawned()
+    {
+        while (IsSpawned == false)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Note - 중간에 플레이어가 나가는 경우에 대한 예외처리를 하지않음
+    /// </summary>
+    public async Awaitable<bool> WaitForAllPlayerFading()
+    {
+        foreach (var player in playerFadingTCS)
+        {
+            await player.Value.Awaitable;
+        }
+        return true;
+    }
+
 
     public NetworkDictionary<int, PlayerData> GetPlayers()
     {
@@ -50,15 +78,6 @@ public class PlayerManager : NetworkBehaviour
         return false;
     }
 
-    [SerializeField] public bool IsSpawned = false;
-    public async Awaitable<bool> IsPollingSpawned()
-    {
-        while (IsSpawned == false)
-        {
-            await Awaitable.NextFrameAsync();
-        }
-        return true;
-    }
 
     public override void Spawned()
     {
@@ -78,29 +97,10 @@ public class PlayerManager : NetworkBehaviour
     {
         IsSpawned = false;
         OnPlayerDataRendered = null;
+        playerFadingTCS.Clear();
+        Players.Clear();
+        _alivePlayers.Clear();
     }
-
-    // public void PlayerJoined(PlayerRef player)
-    // {
-    //     if(Runner.IsServer)
-    //     {
-    //         AddPlayer(player);
-            
-    //         // Late Join 처리: 게임이 이미 진행 중이면 바로 게임 씬으로 이동
-    //         if (isInGame && isGameSceneLoaded)
-    //         {
-    //             Debug.Log($"Late Join 플레이어 {player}를 게임 씬으로 이동시킵니다.");
-                
-    //             // 새로 입장한 플레이어만 게임 씬으로 이동
-    //             var playerData = GetPlayerData(player);
-    //             if (playerData != null)
-    //             {
-    //                 RPC_MovePlayerToGameScene(player);
-    //                 RPC_SetLobbyUI(false);
-    //             }
-    //         }
-    //     }
-    // }
 
     // -- 플레이어 관리
     public void AddPlayer(PlayerRef player)
@@ -181,7 +181,7 @@ public class PlayerManager : NetworkBehaviour
     /// </summary>
     public bool AreAllPlayersReady()
     {
-        int requiredPlayers = testMode ? minPlayersForTest : minPlayersToStart;
+        int requiredPlayers = minPlayersToStart;
         if (Players.Count < requiredPlayers) 
             return false;
         
@@ -204,23 +204,30 @@ public class PlayerManager : NetworkBehaviour
 
     public override async void FixedUpdateNetwork()
     {
-        int requiredPlayers = testMode ? minPlayersForTest : minPlayersToStart;
+        int requiredPlayers = minPlayersToStart;
         if (Runner.IsServer && Players.Count >= requiredPlayers && isGameSceneLoading == false && isInGame == false)
         {
             var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
             if (result)
             {
-                // 게임 상태 StageWating 변경
-                GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
+                // 게임 상태 StagePlaying 변경
+                GameStates.Inst.DelayForceActiveState<GameStagePlayingState>();
             }
         }
     }
 
-    [SerializeField] private bool isInGame = false;
-    [SerializeField] private bool isGameSceneLoading = false;
-    [SerializeField] private bool isGameSceneLoaded = false;
+
     public async Awaitable<bool> TryStartGameAsync(bool isStart = true)
     {
+        // 준비 되지 않은경우
+        if (isStart == false)
+        {
+            //Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
+            await Awaitable.NextFrameAsync();
+            return false;
+        }
+
+        // 클라이언트인 경우
         if (Runner.GameMode == GameMode.Client)
         {
             Debug.Log("클라이언트 접속완료");
@@ -231,20 +238,25 @@ public class PlayerManager : NetworkBehaviour
             return false;
         }
 
-        if (isStart == false)
-        {
-            //Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
-            await Awaitable.NextFrameAsync();
-            return false;
-        }
-
+        // 서버인 경우
         try
         {
             isGameSceneLoading = true;
             isGameSceneLoaded = false;
             isInGame = false;
 
+            playerFadingTCS.Clear();
+            foreach (var player in Players)
+            {
+                var playerRef = player.Value.Object.InputAuthority;
+                playerFadingTCS.Add(playerRef, new());
+            }
+
             Debug.Log("모든 플레이어가 준비되었습니다!");
+
+            // FadeOut 신호를 보내고 완료될때까지 서버는 대기
+            RPC_FadeOutUI();
+            await WaitForAllPlayerFading();
 
             var gameScenePath = GlobalSetting.Inst.GameScenePath;
             await LevelManager.LoadSceneAsync(
@@ -256,6 +268,7 @@ public class PlayerManager : NetworkBehaviour
                     isGameSceneLoading = false;
                     isInGame = true;
                     isGameSceneLoaded = true;   
+                    RPC_FadeInUI();
                 });
 
             return true;
@@ -333,34 +346,29 @@ public class PlayerManager : NetworkBehaviour
         return null;
     }
 
-    /// <summary>
-    /// 테스트 모드 활성화/비활성화
-    /// </summary>
-    public void SetTestMode(bool enabled)
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public async void RPC_FadeOutUI()
     {
-        if (Runner.IsServer)
-        {
-            testMode = enabled;
-            Debug.Log($"테스트 모드 {(enabled ? "활성화" : "비활성화")} - 최소 인원: {(enabled ? minPlayersForTest : minPlayersToStart)}");
-        }
+        await Fader.Inst.FadeOutAsync(Color.black, 1.0f);
+        RPC_FadeOutCompleted(Runner.LocalPlayer);
     }
 
     /// <summary>
-    /// 로비 UI 제어 RPC
+    /// 클라이언트에서 서버에게 FadeOut 완료 알림
     /// </summary>
-    [Rpc(RpcSources.All, RpcTargets.All)]
-    public void RPC_SetLobbyUI(bool active)
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_FadeOutCompleted(PlayerRef player)
     {
-        try
-        {
-            if (UI_Controller.Inst != null && UI_Controller.Inst.UILobby != null)
-            {
-                UI_Controller.Inst.UILobby.gameObject.SetActive(active);
-            }
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"RPC_SetLobbyUI 중 오류: {e.Message}");
-        }
+        playerFadingTCS[player].SetResult();
+    }
+
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_FadeInUI()
+    {
+        UIEventSystem.Inst.TriggerGameUIActive(true);
+        UI_Controller.Inst.DeactiveAllLobbyUI();
+        _= Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
 }

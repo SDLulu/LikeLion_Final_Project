@@ -69,5 +69,8 @@ public class UI_Title : MonoBehaviour
     private void OnClickExitBtn()
     {
         Application.Quit();
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
     }
 }

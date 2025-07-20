@@ -52,7 +52,7 @@ public class UI_Lobby : MonoBehaviour
     {
         if (_lobbyType == E_LobbyType.Online)
         {
-            LobbyManager.Inst.OnExitButtonClicked?.Invoke();
+            _ = LobbyManager.Inst.LeaveGame();
         }
         else
         {

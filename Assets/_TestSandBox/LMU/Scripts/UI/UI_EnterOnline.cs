@@ -65,7 +65,7 @@ public class UI_EnterOnline : MonoBehaviour
     {
         Debug.Log("방 생성 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetCallbacks.JoinOrCreateLobby(
+        await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.AutoHostOrClient,
             roomName: "TestRoom",
             OnEnterLobby: () =>
@@ -80,7 +80,7 @@ public class UI_EnterOnline : MonoBehaviour
     {
         Debug.Log("방 생성 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetCallbacks.JoinOrCreateLobby(
+        await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.Host,
             roomName: "TestRoom",
             OnEnterLobby: () =>
@@ -95,7 +95,7 @@ public class UI_EnterOnline : MonoBehaviour
     {
         Debug.Log("랜덤 입장 패널 활성화");
         preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetCallbacks.JoinOrCreateLobby(
+        await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.Client,
             roomName: "TestRoom",
             OnEnterLobby: () =>
