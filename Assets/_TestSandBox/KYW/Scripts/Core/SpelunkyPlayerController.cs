@@ -32,13 +32,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private bool jumpPressed;       // Space + !IsDucking
     private bool pickupPressed;     // Space + IsDucking  
     
-    // 🔨 아이템 사용 입력들 (세분화된 클릭 상태)
-    private bool useItemPressStarted;   // 이번 프레임에 클릭 시작
+    // 🔨 아이템 사용 입력
     private bool useItemHeld;           // 현재 클릭 유지 중
-    private bool useItemReleased;       // 이번 프레임에 클릭 종료
-    private bool previousMouseButton0;  // 이전 프레임 마우스 상태 (상태 변화 감지용)
-    
-    private bool throwItemPressed;  // 우클릭 (MouseButton 1)
+    private bool throwItemPressed;      // 우클릭 (MouseButton 1)
+    private bool skillPressed;          // 쉬프트키 (스킬 사용)
 
     
     // 📦 물리/로직 컴포넌트 참조들 (같은 오브젝트에서 찾기)
@@ -175,17 +172,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 점프 입력 (일관성을 위해 변수로 저장)
             jumpPressed = Input.GetKey(KeyCode.Space) && !IsDucking;
             
-            // 🔘 아이템 관련 입력 (Fusion 2 공식 권장: GetKey/GetMouseButton 사용)
+            // 🔘 아이템 관련 입력
             pickupPressed = Input.GetKey(KeyCode.Space) && IsDucking;
-            
-            // 🔨 마우스 좌클릭 상태 변화 감지
-            bool currentMouseButton0 = Input.GetMouseButton(0);
-            useItemPressStarted = currentMouseButton0 && !previousMouseButton0;  // 클릭 시작
-            useItemHeld = currentMouseButton0;                                   // 클릭 유지
-            useItemReleased = !currentMouseButton0 && previousMouseButton0;     // 클릭 종료
-            previousMouseButton0 = currentMouseButton0;                         // 상태 저장
-            
-            throwItemPressed = Input.GetMouseButton(1);  // 우클릭
+            useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
+            throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
+            skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
         }
     }
     
@@ -204,14 +195,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
         }
-        
-        // 🎭 애니메이션은 모든 클라이언트에서 실행
-        if (playerAnimation != null)
-        {
-            playerAnimation?.ProcessInput(input);
-        }
     }
-    
+
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
     public SpelunkyPlayerData GetNetworkInputData()
     {
@@ -223,16 +208,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.VerticalInput = verticalInput;
             data.MouseWorldPosition = mouseWorldPosition;
             
-            // 🔘 버튼 입력 설정 (Fusion 2 공식 방식 - NetworkButtons로 통합)
+            // 🔘 버튼 입력 설정
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
-            
-            // 🔨 아이템 사용 입력들 (세분화된 상태)
-            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemPress, useItemPressStarted);
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
-            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemRelease, useItemReleased);
-            
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
         }
         
         return data;
