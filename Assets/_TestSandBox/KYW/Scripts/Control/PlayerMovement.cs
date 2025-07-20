@@ -16,7 +16,7 @@ public class PlayerMovement : NetworkBehaviour
     
     // 참조 컴포넌트들
     private PlayerGroundCheck groundCheck;
-    private Rigidbody2D rb;
+    private Rigidbody2D rb; // ⚠️ 순간이동 문제의 핵심 원인! 일반 Rigidbody2D 사용 중
     private PlayerClimbing climbing;
 
     public override void Spawned()
@@ -60,7 +60,14 @@ public class PlayerMovement : NetworkBehaviour
         float currentMoveSpeed = IsDucking ? duckMoveSpeed : moveSpeed;
         float targetSpeed = input.HorizontalInput * currentMoveSpeed;
         
-        rb.linearVelocity = new Vector2(targetSpeed, rb.linearVelocity.y);
+        if (input.HorizontalInput != 0)
+        {
+            rb.linearVelocity = new Vector2(targetSpeed, rb.linearVelocity.y);
+        }
+        else
+        {
+            rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
+        }
     }
     
     private void UpdateFacingDirection(SpelunkyPlayerData input)

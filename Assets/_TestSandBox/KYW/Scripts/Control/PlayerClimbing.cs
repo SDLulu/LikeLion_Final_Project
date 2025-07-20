@@ -49,6 +49,7 @@ public class PlayerClimbing : NetworkBehaviour
     private void HandleClimbing(SpelunkyPlayerData input)
     {
         bool nearLadder = ladderCheck != null && ladderCheck.IsNearLadder;
+        bool isGrounded = groundCheck != null && groundCheck.IsGrounded;
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
 
         // 쿨타임 감소
@@ -68,13 +69,21 @@ public class PlayerClimbing : NetworkBehaviour
             return;
         }
 
-        // 2. 사다리 근처에서 위키를 한 번이라도 누르면 climbRequested = true (쿨타임 중엔 무시)
+        // 2. 사다리 상태에서 땅에 닿으면 Climbing 해제
+        if (IsClimbing && isGrounded)
+        {
+            StopClimbing();
+            climbRequested = false;
+            return;
+        }
+
+        // 3. 사다리 근처에서 위키를 한 번이라도 누르면 climbRequested = true (쿨타임 중엔 무시)
         if (nearLadder && input.VerticalInput > 0.5f && climbRegrabCooldown <= 0f)
         {
             climbRequested = true;
         }
 
-        // 3. 사다리에서 벗어나면 climbRequested 해제
+        // 4. 사다리에서 벗어나면 climbRequested 해제
         if (!nearLadder)
         {
             climbRequested = false;
@@ -82,7 +91,7 @@ public class PlayerClimbing : NetworkBehaviour
                 StopClimbing();
         }
 
-        // 4. climbRequested && nearLadder일 때만 매달림
+        // 5. climbRequested && nearLadder일 때만 매달림
         if (climbRequested && nearLadder)
         {
             if (!IsClimbing)
@@ -94,7 +103,7 @@ public class PlayerClimbing : NetworkBehaviour
                 StopClimbing();
         }
 
-        // 5. 사다리 상태에서만 위/아래키로 오르내림, 좌우키 무시
+        // 6. 사다리 상태에서만 위/아래키로 오르내림, 좌우키 무시
         if (IsClimbing)
         {
             rb.linearVelocity = new Vector2(0, input.VerticalInput * climbingSpeed);

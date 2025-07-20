@@ -1,7 +1,9 @@
 using Fusion;
 using UnityEngine;
+using Unity.Cinemachine;
 
 // 플레이어 네트워크 설정 초기화 유틸리티
+// 플레이어 프리팹 Spwaned시 호출해줄것들
 public static class SpelunkyNetworkInitializer
 {
     // 네트워크 설정 초기화
@@ -16,6 +18,7 @@ public static class SpelunkyNetworkInitializer
         else
         {
             player.Object.RenderSource = RenderSource.Interpolated;
+            player.Object.ForceRemoteRenderTimeframe = true;
             Debug.Log("🌐 원격 플레이어 - RenderSource를 Interpolated로 설정");
         }
         Debug.Log($"🌐 네트워크 설정 완료 - HasInputAuthority: {player.Object.HasInputAuthority}");
@@ -51,7 +54,7 @@ public static class SpelunkyNetworkInitializer
     // 로컬 플레이어용 카메라 설정
     public static void SetupCameraForLocalPlayer(SpelunkyPlayerController player)
     {
-        var existingCamera = Object.FindObjectOfType<Cinemachine.CinemachineVirtualCamera>();
+        var existingCamera = Object.FindFirstObjectByType<CinemachineCamera>();
         if (existingCamera != null)
         {
             existingCamera.Follow = player.transform;
@@ -61,18 +64,22 @@ public static class SpelunkyNetworkInitializer
         else
         {
             var cameraGO = new GameObject("Player Virtual Camera");
-            var virtualCamera = cameraGO.AddComponent<Cinemachine.CinemachineVirtualCamera>();
+            var virtualCamera = cameraGO.AddComponent<CinemachineCamera>();
             virtualCamera.Follow = player.transform;
             virtualCamera.LookAt = player.transform;
             try
             {
-                var transposer = virtualCamera.GetCinemachineComponent<Cinemachine.CinemachineTransposer>();
-                if (transposer != null)
+                var follow = virtualCamera.GetCinemachineComponent(CinemachineCore.Stage.Body) as CinemachineFollow;
+                if (follow != null)
                 {
-                    transposer.m_FollowOffset = new Vector3(0, 2, -10);
+                    follow.FollowOffset = new Vector3(0, 2, -10);
                 }
-                virtualCamera.m_Lens.FieldOfView = 60f;
-                virtualCamera.m_Lens.OrthographicSize = 5f;
+                
+                var lens = virtualCamera.Lens;
+                lens.FieldOfView = 60f;
+                lens.OrthographicSize = 5f;
+                virtualCamera.Lens = lens;
+                
                 Debug.Log("📷 새 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
             }
             catch (System.Exception e)

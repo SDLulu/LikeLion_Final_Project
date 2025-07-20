@@ -180,6 +180,13 @@ public class PlayerItemPickup : NetworkBehaviour
             item.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
             item.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
             
+            // 🔑 중요: 아이템의 InputAuthority를 현재 플레이어에게 전송
+            // 👉 이래야 플레이어가 아이템의 RPC를 호출할 수 있음
+            if (networkObject.HasInputAuthority == false)
+            {
+                networkObject.AssignInputAuthority(Object.InputAuthority);
+            }
+            
             DisableItemPhysics(item);  // ⚡ 물리 시뮬레이션 비활성화
         }
     }
@@ -230,8 +237,19 @@ public class PlayerItemPickup : NetworkBehaviour
     public void ClearItem()
     {
         // ⚡ StateAuthority에서만 네트워크 변수 변경
-
+        if (Object.HasStateAuthority)
+        {
+            // 🔑 아이템의 InputAuthority도 제거 (다른 플레이어가 주울 수 있도록)
+            if (CurrentItem != null)
+            {
+                var networkObject = CurrentItem.GetComponent<NetworkObject>();
+                if (networkObject != null && networkObject.HasInputAuthority)
+                {
+                    networkObject.RemoveInputAuthority();
+                }
+            }
+            
             CurrentItem = null;  // 📦 아이템 참조 해제 (네트워크 변수도 자동 업데이트)
-        
+        }
     }
 }

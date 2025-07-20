@@ -73,15 +73,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 836713141727297103}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9eea07e92eb3000498d3913ff946ffd0, type: 3}
+  m_Script: {fileID: 11500000, guid: 18744166307ec0d449e98e7ecfc9e7bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 1614702581054560036, guid: 3d68f5edbae40f5468d3436153fbadd9, type: 3}
+  bulletPrefab: {fileID: 5342592131236500076, guid: 21ad72d257c39fd4983cf26a9b27a956, type: 3}
   firePoint: {fileID: 8934609065822892017}
-  fireRate: 0.1
-  bulletSpeed: 15
-  maxAmmo: 30
-  reloadTime: 2
+  fireRate: 0.8
+  bulletSpeed: 12
+  bulletCount: 5
+  spreadAngle: 30
+  recoilForce: 8
+  recoilDuration: 0.2
+  recoilStunDuration: 0.1
 --- !u!114 &8711163526170814093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119,9 +122,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SortKey: 87250816
   ObjectInterest: 1
-  Flags: 1
+  Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 1384524248691722015}
   - {fileID: 8711163526170814093}
   ForceRemoteRenderTimeframe: 0
 --- !u!61 &172088933724073949

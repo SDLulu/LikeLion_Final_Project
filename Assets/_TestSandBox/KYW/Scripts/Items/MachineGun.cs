@@ -4,48 +4,62 @@ using Fusion;
 // 기관단총
 public class MachineGun : NetworkBehaviour, IUsableItem
 {
+    [Header("References")]
     [SerializeField] private GameObject bulletPrefab; // 총알 프리팹
     [SerializeField] private Transform firePoint;     // 총알 발사 위치
+    
+    [Header("Weapon Settings")]
     [SerializeField] private float fireRate = 0.1f;   // 연사 간격(초)
     [SerializeField] private float bulletSpeed = 15f; // 총알 속도
     [SerializeField] private int maxAmmo = 30;        // 최대 탄약
     [SerializeField] private float reloadTime = 2f;   // 재장전 시간(초)
 
     [Networked] private int currentAmmo { get; set; }
-    [Networked] private bool isReloading { get; set; }
-    private float lastFireTime;
+    [Networked] private TickTimer fireRateTimer { get; set; }
+    [Networked] private TickTimer reloadTimer { get; set; }
 
-    private void Start()
+
+    public override void Spawned()
     {
-        currentAmmo = maxAmmo;
-        if (firePoint == null) firePoint = transform;
+        // StateAuthority에서만 초기값 설정 (Host가 설정 → 모든 클라이언트에 동기화)
+        if (Object.HasStateAuthority)
+        {
+            currentAmmo = maxAmmo;
+        }        
+        // 물리 시뮬레이션 설정
+        Runner.SetIsSimulated(Object, true);
+        // 렌더링 소스 설정 (보간 사용)
+        base.Object.RenderSource = RenderSource.Interpolated;
+        // 원격 렌더링 타임프레임 강제 설정
+        base.Object.ForceRemoteRenderTimeframe = true;
     }
 
-    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    public override void FixedUpdateNetwork()
     {
-        // 입력 권한자(InputAuthority, 보통 로컬 플레이어)만 발사 가능
-        if (!Object.HasInputAuthority) return; // 내 입력이 아니면 무시
-        if (isReloading || currentAmmo <= 0) 
-        { 
-            StartReloadRpc(); 
-            return; 
+        // StateAuthority(호스트)에서만 재장전 완료 처리
+        if (Object.HasStateAuthority)
+        {
+            if (reloadTimer.Expired(Runner))
+            {
+                currentAmmo = maxAmmo;
+                reloadTimer = TickTimer.None; // 타이머 정지
+            }
         }
-        FireBulletRpc(mouseWorldPosition);
     }
+
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        // 입력 권한자(InputAuthority, 보통 로컬 플레이어)만 연사 가능
-        if (!Object.HasInputAuthority) return; // 내 입력이 아니면 무시
-        if (isReloading || currentAmmo <= 0) 
+        if (reloadTimer.IsRunning) return;
+        
+        if (currentAmmo <= 0) 
         { 
             StartReloadRpc(); 
             return; 
         }
-        if (Time.time - lastFireTime >= fireRate)
-        {
-            FireBulletRpc(mouseWorldPosition);
-        }
+
+        FireBulletRpc(mouseWorldPosition);
     }
 
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
@@ -53,51 +67,50 @@ public class MachineGun : NetworkBehaviour, IUsableItem
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void FireBulletRpc(Vector2 mouseWorldPosition)
     {
-        // StateAuthority(호스트)에서 실제 총알 발사 처리
+        // StateAuthority에서만 실행
+        if (!Object.HasStateAuthority) return;
+        
+        // ✅ "타이머가 만료되었거나 시작 전인가?"를 확인해야 합니다.
+        // 이 조건이 false여야 (즉, 타이머가 한창 돌고 있을 때) 차단됩니다.
+        if (!fireRateTimer.ExpiredOrNotRunning(Runner)) return;
+        
         FireBullet(mouseWorldPosition);
+        currentAmmo--;
+        
+        // 발사 후 쿨다운 타이머 시작
+        fireRateTimer = TickTimer.CreateFromSeconds(Runner, fireRate);
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void StartReloadRpc()
     {
-        // StateAuthority(호스트)에서 재장전 처리
-        StartReload();
+        // StateAuthority에서만 실행
+        if (!Object.HasStateAuthority) return;
+        
+        if (reloadTimer.IsRunning) return;
+        
+        reloadTimer = TickTimer.CreateFromSeconds(Runner, reloadTime);
     }
 
     private void FireBullet(Vector2 mouseWorldPosition)
     {
-        // StateAuthority(서버/호스트 권한자)에서만 총알 생성/스폰 가능
-        if (!Object.HasStateAuthority) return; // 권한 없으면 무시
-        Vector2 dir = (mouseWorldPosition - (Vector2)firePoint.position).normalized;
-        if (bulletPrefab != null)
-        {
-            var bullet = Runner.Spawn(
-                bulletPrefab, 
-                firePoint.position, 
-                Quaternion.identity, 
-                Object.InputAuthority
-            );
-            var bulletScript = bullet.GetComponent<Bullet>();
-            if (bulletScript != null)
-                bulletScript.Initialize(dir, bulletSpeed, 10f, 3f, this);
-        }
-        currentAmmo--;
-        lastFireTime = Time.time;
-    }
+        if (bulletPrefab == null || firePoint == null) return;
 
-    private void StartReload()
-    {
-        // StateAuthority에서만 재장전 상태 변경
-        if (!Object.HasStateAuthority || isReloading) return;
-        isReloading = true;
-        Invoke(nameof(FinishReload), reloadTime);
-    }
-    
-    private void FinishReload()
-    {
-        // StateAuthority에서만 탄약 및 재장전 상태 변경
-        if (!Object.HasStateAuthority) return;
-        currentAmmo = maxAmmo;
-        isReloading = false;
+        // 발사 방향 계산 (총구에서 마우스 방향)
+        Vector2 fireDirection = (mouseWorldPosition - (Vector2)this.transform.position).normalized;
+        
+        if (Runner.IsServer)
+        {
+            // 총알 생성
+            var bullet = Runner.Spawn(bulletPrefab, firePoint.position, firePoint.rotation, Object.InputAuthority);
+            
+            // 발사 방향 직접 설정
+            var bulletRb = bullet.GetComponent<Rigidbody2D>();
+            if (bulletRb != null)
+            {
+                bulletRb.linearVelocity = fireDirection * bulletSpeed;
+            }
+            
+        }
     }
 } 

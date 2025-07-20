@@ -21,20 +21,11 @@ public class PlayerItemUsage : NetworkBehaviour
     
  
     // 📎 참조할 다른 컴포넌트들
-    private float currentVisualAngle;
-    private SpelunkyPlayerController playerController;
     private PlayerItemPickup itemPickup;      // 📦 아이템 보유 상태 확인용
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
-        SetupReferences();  // 📎 다른 컴포넌트들 참조 설정
-    }
-    
-    // 📎 필요한 컴포넌트들 찾기 및 참조 설정
-    private void SetupReferences()
-    {
-        playerController = GetComponent<SpelunkyPlayerController>();
         itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
     }
     
@@ -94,18 +85,20 @@ public class PlayerItemUsage : NetworkBehaviour
         // 🎯 Hold 시작 = Press
         if (isCurrentlyHolding && !WasHolding)
         {
+            Debug.Log($"[{name}] 아이템 사용 시작: {usableItem.GetType().Name}");
             usableItem.OnUsePress(mousePos, playerPos);
         }
         
         // 🔄 Hold 중
         if (isCurrentlyHolding)
-        {
+        { 
             usableItem.OnUseHold(mousePos, playerPos);
         }
         
         // 🎯 Hold 끝 = Release
         if (!isCurrentlyHolding && WasHolding)
         {
+            Debug.Log($"[{name}] 아이템 사용 종료: {usableItem.GetType().Name}");
             usableItem.OnUseRelease(mousePos, playerPos);
         }
         
@@ -126,8 +119,20 @@ public class PlayerItemUsage : NetworkBehaviour
         NetworkedFlipY = isLeft;
         NetworkedRotationAngle = targetAngle;
     }
+
+    public override void FixedUpdateNetwork()
+    {
+        base.FixedUpdateNetwork();
+        
+        GameObject currentObject = GetCurrentTargetObject();
+        if (currentObject != null && enableItemRotation)
+        {
+            // 실제 오브젝트의 회전 값은 네트워크 상태를 직접 따름
+            currentObject.transform.localEulerAngles = new Vector3(0, 0, NetworkedRotationAngle);
+        }
+    }
     
-    // 🎨 렌더링 - 각자 자신의 아이템만 조작하므로 안전
+    // 🎨 렌더링 - 시각적 요소만 처리
     public override void Render()
     {
         base.Render();
@@ -135,17 +140,7 @@ public class PlayerItemUsage : NetworkBehaviour
         GameObject currentObject = GetCurrentTargetObject();
         if (currentObject != null && enableItemRotation)
         {
-            if (rotationSpeed > 0)
-            {
-                currentVisualAngle = Mathf.LerpAngle(currentVisualAngle, NetworkedRotationAngle, Time.deltaTime * rotationSpeed * 2f);
-            }
-            else
-            {
-                currentVisualAngle = NetworkedRotationAngle;
-            }
-            
-            currentObject.transform.localEulerAngles = new Vector3(0, 0, currentVisualAngle);
-            
+            // 스프라이트 뒤집기 (순수 시각적 요소)
             var spriteRenderer = currentObject.GetComponentInChildren<SpriteRenderer>();
             if (spriteRenderer != null)
             {
