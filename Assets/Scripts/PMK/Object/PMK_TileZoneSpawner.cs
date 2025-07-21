@@ -1,16 +1,16 @@
 using System.Collections;
-using System.Collections.Generic;
-using GoogleSheet.Type;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using static UnityEditor.Progress;
 
-public class PMK_RandomTile : MonoBehaviour
+public class PMK_TileZoneSpawner : MonoBehaviour
 {
     private Tilemap tilemap;
     [SerializeField] private GameObject trap;
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
+
+    // 타일,함정 생성확률
+    [SerializeField] private int trapSpawnChance = 50;
 
     private void OnEnable()
     {
@@ -32,7 +32,7 @@ public class PMK_RandomTile : MonoBehaviour
             if (tilemap.GetTile(cellPos) == null)
             {
 
-                if (Random.Range(0, 100) > 50)
+                if (Random.Range(0, 100) > trapSpawnChance)
                 {
                     // 타일 설치
                     tilemap.SetTile(cellPos, ruleTile);

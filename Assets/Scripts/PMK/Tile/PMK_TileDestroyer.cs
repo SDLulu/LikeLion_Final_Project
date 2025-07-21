@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class PNK_TileWall : MonoBehaviour
+public class PMK_TileDestroyer : MonoBehaviour
 {
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
@@ -57,10 +57,10 @@ public class PNK_TileWall : MonoBehaviour
         Collider2D hit = Physics2D.OverlapCircle(contactPoint, 0.01f, whatisPlatform);
         if (hit != null)
         {
-            PMK_Bricks bricks = hit.GetComponent<PMK_Bricks>();
-            if (bricks != null)
+            PMK_TileRogic destroyTile = hit.GetComponent<PMK_TileRogic>();
+            if (destroyTile != null)
             {
-                bricks.MakeDot(contactPoint); // 올바른 월드 위치 전달
+                destroyTile.DestoryTile(contactPoint); // 올바른 월드 위치 전달
 
                 if (collision.CompareTag("Tileitem")) // 벽안에 아이템이 있을경우 아이템 삭제
                 {

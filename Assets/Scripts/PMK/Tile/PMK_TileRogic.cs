@@ -2,10 +2,16 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
+using GoogleSheet.Type;
 
 public class PMK_TileRogic : MonoBehaviour
 {
-    [field: SerializeField] public static PMK_TileRogic Instance { get; private set; }
+     public static PMK_TileRogic Instance { get; private set; }
+
+
+    [field: SerializeField] public Transform parentTrans { get; private set; } // 타일 오브젝트를 부모로 설정할 트랜스폼 (씬에 존재하는 타일 오브젝트의 부모 트랜스폼)
+    [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 병합할 타일맵 (씬에 존재하는 타일맵)
+
 
     [Header("생성할 타일 개수")]
     [SerializeField] private int maxTileX = 5; // 맵의 가로 기준
@@ -14,17 +20,16 @@ public class PMK_TileRogic : MonoBehaviour
     [Header("다음 타일과의 거리")]
     [SerializeField] private float nextTileX = 17; // 맵의 가로 기준 길이
     [SerializeField] private float nextTileY = 11; // 맵의 가로 기준 길이
-    [field: SerializeField] public Transform parentTrans { get; private set; }
+
 
     [Header("타일 오브젝트")]
-    private Dictionary<string, GameObject[]> mapPrefabDict; //타일 이름 저장
-
     [SerializeField] private GameObject[] Clear_Map_Prefab;        // 스폰지점 or 클리어 맵 생성 (스폰지점 : 좌,우 확정) (클리어 : 좌,우,위 확정)
     [SerializeField] private GameObject[] LR_Exit_Map_Prefab;      // 좌,우 출구가 확정인 맵 생성 (위,아래 랜덤)
     [SerializeField] private GameObject[] D_Exit_Map_Prefab;       // 아래 출구가 확정인 맵 생성 (좌,우,위 랜덤)
     [SerializeField] private GameObject[] W_Exit_Map_Prefab;       // 아래 출구가 확정인 맵 생성 (좌,우,위 랜덤)
     [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // 위,아래 출구가 확정인 맵 생성 (좌,우 랜덤)
     [SerializeField] private GameObject[] Special_Map_Prefab;      // 상점이나 특별한 맵 생성 (좌,우 확정)
+    private Dictionary<string, GameObject[]> mapPrefabDict; //타일 이름 저장
 
 
     [Header("타일 아이템 오브젝트")]
@@ -41,8 +46,6 @@ public class PMK_TileRogic : MonoBehaviour
 
     private int removeMapX; // 정하고 싶지 않는 맵의 X위치를 저장합니다.
     private List<int> LR_Choose = new List<int>(); // 왼쪽, 오른쪽 맵 위치를 저장하는 리스트 입니다.
-
-    [field:SerializeField] public Tilemap mainTilemap { get; private set; } // 병합할 타일맵 (씬에 존재하는 타일맵)
 
 
     private void Awake()
@@ -88,7 +91,7 @@ public class PMK_TileRogic : MonoBehaviour
 
         foreach (Transform child in parentTrans)
         {
-            if (child.GetComponent<PMK_Bricks>() != null)
+            if (child.GetComponent<PMK_TileRogic>() != null)
                 continue;
 
             Destroy(child.gameObject);
@@ -390,4 +393,18 @@ public class PMK_TileRogic : MonoBehaviour
         }
     }
     #endregion
+
+
+    public void DestoryTile(Vector3 Pos)
+    {
+        Debug.DrawRay(Pos, Vector2.up * 0.2f, Color.red, 1f);
+
+        Vector3Int cellPosition = mainTilemap.WorldToCell(Pos);
+
+        if (mainTilemap.HasTile(cellPosition))
+        {
+            mainTilemap.SetTile(cellPosition, null);  // 타일 제거
+            mainTilemap.RefreshTile(cellPosition);
+        }
+    }
 }

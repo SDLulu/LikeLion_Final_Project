@@ -4,10 +4,6 @@ public class PMK_TileItem : MonoBehaviour
 {
     [SerializeField] private GameObject dropItem;
 
-    private void Start()
-    {
-    }
-
     public void DestroyItem()
     {
 

@@ -43,7 +43,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
                     Collider2D overCollider2d = Physics2D.OverlapCircle(checkCellPos, 0.01f, whatisPlatform);
                     if (overCollider2d != null)
                     {
-                        overCollider2d.transform.GetComponent<PMK_Bricks>().MakeDot(checkCellPos);
+                        overCollider2d.transform.GetComponent<PMK_TileRogic>().DestoryTile(checkCellPos);
                     }
 
 
