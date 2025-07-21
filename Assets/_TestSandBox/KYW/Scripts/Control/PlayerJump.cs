@@ -11,6 +11,7 @@ public class PlayerJump : NetworkBehaviour
     [SerializeField] private float gravity = 20f;
     [SerializeField] private float maxFallSpeed = 15f;
     [SerializeField] private bool showDebugInfo = true;     // 디버그 정보 표시
+    public float VelocityY { get; private set; }
     
     // 🦘 점프 상태 추적
     [Networked] public bool IsJumping { get; private set; }
@@ -37,6 +38,9 @@ public class PlayerJump : NetworkBehaviour
         HandleJump(input);
         ApplyGravity();
         ClampVelocity();
+        
+        // 수직 속도 업데이트
+        VelocityY = rb.linearVelocity.y;
     }
 
     // 사다리에서 강제 점프 진입용 (Climbing에서 호출)
@@ -117,12 +121,6 @@ public class PlayerJump : NetworkBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
         }
     }
-    
-    // 다른 컴포넌트에서 참조할 수 있는 속성들
-    public float VelocityY => rb.linearVelocity.y;
-    public Vector2 Velocity => rb.linearVelocity;
-    public bool IsCurrentlyJumping => IsJumping;
-    public float CurrentJumpTime => JumpTime;
     
     // 🔍 디버그 정보 표시
     private void OnGUI()
