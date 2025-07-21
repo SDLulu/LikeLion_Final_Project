@@ -10,7 +10,7 @@ namespace LMCore
         private static T _instance;
 
         /// <summary> 인스턴스가 존재하는지 확인</summary>
-        public static bool HasInstance => (_instance != null && _instance.gameObject != null) || _shuttingDown;
+        public static bool HasInstance => !_shuttingDown && (_instance != null && _instance.gameObject != null);
 
         /// <summary> Access singleton instance through this propriety. </summary>
         public static T Inst
@@ -58,7 +58,7 @@ namespace LMCore
         private void OnDestroy()
         {
             _instance = null;
-            //_shuttingDown = true;
+            _shuttingDown = true;
         }
     }
 }
