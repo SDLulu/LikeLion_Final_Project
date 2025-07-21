@@ -32,20 +32,17 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private bool jumpPressed;       // Space + !IsDucking
     private bool pickupPressed;     // Space + IsDucking  
     
-    // 🔨 아이템 사용 입력들 (세분화된 클릭 상태)
-    private bool useItemPressStarted;   // 이번 프레임에 클릭 시작
+    // 🔨 아이템 사용 입력
     private bool useItemHeld;           // 현재 클릭 유지 중
-    private bool useItemReleased;       // 이번 프레임에 클릭 종료
-    private bool previousMouseButton0;  // 이전 프레임 마우스 상태 (상태 변화 감지용)
-    
-    private bool throwItemPressed;  // 우클릭 (MouseButton 1)
+    private bool throwItemPressed;      // 우클릭 (MouseButton 1)
+    private bool skillPressed;          // 쉬프트키 (스킬 사용)
 
     
     // 📦 물리/로직 컴포넌트 참조들 (같은 오브젝트에서 찾기)
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private PlayerJump jump;
-    private PlayerClimbing climbing; // 🪜 사다리 시스템 (나중에 추가)
+    private PlayerClimbing climbing;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -54,6 +51,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerItemPickup itemPickup;
     private PlayerItemUsage itemUsage;
+    private PlayerItemThrower itemThrower;
 
     public override void Spawned()
     {
@@ -61,7 +59,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
-        climbing = GetComponent<PlayerClimbing>(); // 🪜 사다리 시스템 (나중에 추가)
+        climbing = GetComponent<PlayerClimbing>();
         
         // 하위 오브젝트들 설정 (Visual, Hand)
         SetupChildObjects();
@@ -142,6 +140,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         // Hand 컴포넌트들 참조 설정
         itemPickup = handRoot.GetComponent<PlayerItemPickup>();
         itemUsage = handRoot.GetComponent<PlayerItemUsage>();
+        itemThrower = handRoot.GetComponent<PlayerItemThrower>();
         
         if (itemPickup == null)
         {
@@ -150,6 +149,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         if (itemUsage == null)
         {
             Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemUsage 컴포넌트가 없습니다.");
+        }
+        if (itemThrower == null)
+        {
+            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemThrower 컴포넌트가 없습니다.");
         }
     }
     
@@ -169,17 +172,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 점프 입력 (일관성을 위해 변수로 저장)
             jumpPressed = Input.GetKey(KeyCode.Space) && !IsDucking;
             
-            // 🔘 아이템 관련 입력 (Fusion 2 공식 권장: GetKey/GetMouseButton 사용)
+            // 🔘 아이템 관련 입력
             pickupPressed = Input.GetKey(KeyCode.Space) && IsDucking;
-            
-            // 🔨 마우스 좌클릭 상태 변화 감지
-            bool currentMouseButton0 = Input.GetMouseButton(0);
-            useItemPressStarted = currentMouseButton0 && !previousMouseButton0;  // 클릭 시작
-            useItemHeld = currentMouseButton0;                                   // 클릭 유지
-            useItemReleased = !currentMouseButton0 && previousMouseButton0;     // 클릭 종료
-            previousMouseButton0 = currentMouseButton0;                         // 상태 저장
-            
-            throwItemPressed = Input.GetMouseButton(1);  // 우클릭
+            useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
+            throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
+            skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
         }
     }
     
@@ -188,31 +185,18 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     {
         if (!IsAlive) return;
         
-        // 입력 데이터 가져오기
+        // 입력이 필요한 것들 (InputAuthority에서만)
         if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
         {
-            // 각 컴포넌트를 일관성 있게 ProcessInput 메서드로 처리
             movement?.ProcessInput(input);
             jump?.ProcessInput(input);
             climbing?.ProcessInput(input);
-            // Hand 컴포넌트들 처리
-            ProcessHandInput(input);
+            itemPickup?.ProcessInput(input);
+            itemUsage?.ProcessInput(input);
+            itemThrower?.ProcessInput(input);
         }
     }
-    
-    // 🎨 렌더링 업데이트 (애니메이션 + 스프라이트 뒤집기)
-    public override void Render()
-    {
-        // 시각적 업데이트들 (저장된 참조 사용)
-        playerAnimation?.UpdateAnimations();
-        
-        // 스프라이트 뒤집기 처리
-        if (movement != null && spriteRenderer != null)
-        {
-            spriteRenderer.flipX = movement.IsFacingLeft;
-        }
-    }
-    
+
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
     public SpelunkyPlayerData GetNetworkInputData()
     {
@@ -224,72 +208,17 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.VerticalInput = verticalInput;
             data.MouseWorldPosition = mouseWorldPosition;
             
-            // 🔘 버튼 입력 설정 (Fusion 2 공식 방식 - NetworkButtons로 통합)
+            // 🔘 버튼 입력 설정
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
-            
-            // 🔨 아이템 사용 입력들 (세분화된 상태)
-            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemPress, useItemPressStarted);
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
-            data.NetworkButtons.Set(SpelunkyInputButtons.UseItemRelease, useItemReleased);
-            
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
         }
         
         return data;
     }
     
-    // 🎮 플레이어 타입별 초기화
-    // 기존 InitializePlayerType, InitializeLocalPlayer, InitializeRemotePlayer, SetupCameraForLocalPlayer, InitializeLocalPlayerUI 메서드 삭제
-    
-    #region 📊 상태 접근 프로퍼티들
-    
-    // 🏃 이동 관련 프로퍼티들
-    public bool IsGrounded => groundCheck?.IsGrounded ?? false;
-    public bool IsDucking => movement?.IsDucking ?? false;
-    public bool IsFacingLeft => movement?.IsFacingLeft ?? false;
-    public float CurrentSpeed => movement?.CurrentSpeed ?? 0f;
-    
-    // 🦘 점프 관련 프로퍼티들
-    public Vector2 Velocity => jump?.Velocity ?? Vector2.zero;
-    public bool IsJumping => jump?.IsCurrentlyJumping ?? false;
-    public float JumpTime => jump?.CurrentJumpTime ?? 0f;
-    
-    // 🎒 아이템 관련 프로퍼티들
-    public bool HasItem => itemPickup?.HasItem ?? false;
-    public string CurrentItemName => itemPickup?.CurrentItemName ?? "없음";
-    public int NearbyItemsCount => itemPickup?.NearbyItemsCount ?? 0;
-    
-    // ⚔️ 무기 관련 프로퍼티들
-    public bool HasWeapon => false; // PlayerHandController 제거됨
-    
-    // 📍 Transform 접근 프로퍼티들
-    public Transform VisualRoot => visualRoot;
-    public Transform HandRoot => handRoot;
-    
-    #endregion
-    
-    #region 🔧 헬퍼 메서드들
-    
-    // 🤲 Hand 컴포넌트들 입력 처리
-    private void ProcessHandInput(SpelunkyPlayerData input)
-    {
-        // 저장된 참조 사용 (매번 GetComponent 하지 않음)
-        itemPickup?.ProcessInput(input);
-        itemUsage?.ProcessInput(input);
-    }
-    
-    // 🎒 PlayerItemPickup 컴포넌트 접근
-    private PlayerItemPickup GetItemPickup()
-    {
-        return itemPickup;
-    }
-    
-    // 🎮 PlayerItemUsage 컴포넌트 접근
-    private PlayerItemUsage GetItemUsage()
-    {
-        return itemUsage;
-    }
-    
-    #endregion
+    // 필수 프로퍼티 (BeforeUpdate에서 사용)
+    private bool IsDucking { get { return movement?.IsDucking ?? false; } }
 } 
