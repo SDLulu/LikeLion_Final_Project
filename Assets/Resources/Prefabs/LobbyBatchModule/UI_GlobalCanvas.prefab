@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6279667418874886029}
   - component: {fileID: 2865671514894744883}
   m_Layer: 5
-  m_Name: Black
+  m_Name: FullScreenImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -267,12 +267,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _contentsRoot: {fileID: 7962751194535323924}
-  _blackRoot: {fileID: 7271702862162658038}
-  _blackImage: {fileID: 2865671514894744883}
+  _imageRoot: {fileID: 7962751194535323924}
+  _fullScreenImage: {fileID: 7271702862162658038}
+  _bgImage: {fileID: 3925903350183866683}
   _startSize: {x: 10000, y: 10000}
   _endSize: {x: 0, y: 0}
-  _fadeInTime: 1
-  _fadeOutTime: 1
   _fadeInEase: 4
   _fadeOutEase: 4
 --- !u!1 &4151136670183034212

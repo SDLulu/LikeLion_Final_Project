@@ -52,6 +52,7 @@ public class UI_CharacterSlotContainer : MonoBehaviour
 
     public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
+        
         // 정렬 및 슬롯 개수 동기화
         var sortedKeys = players.Select(p => p.Key).OrderBy(x => x).ToArray();
         SyncCharacterSlotCount(sortedKeys.Length);
@@ -214,7 +215,7 @@ public class UI_CharacterSlotContainer : MonoBehaviour
             CurrentCharacterIndex >= 0 && CurrentCharacterIndex < characterDatas.Length)
         {
             var selectedCharacter = characterDatas[CurrentCharacterIndex].Character_Info;
-            localPlayerSlot.ConnectedPlayer.ChangeCharacterRpc(
+            localPlayerSlot.ConnectedPlayer.RPC_ChangeCharacter(
                 selectedCharacter.SkinName, 
                 selectedCharacter.SkinPath
             );
