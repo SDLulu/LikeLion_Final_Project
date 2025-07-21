@@ -9,6 +9,8 @@ public interface IInteractable
 
 public class ShopItem : NetworkBehaviour, IInteractable
 {
+    [Networked] public ShopItemData ItemData { get; set; }
+
     [Networked] public ItemType itemType { get; set; }
     [Networked] public int Price { get; set; } // Networked로 변경하여 동기화
 
@@ -18,6 +20,7 @@ public class ShopItem : NetworkBehaviour, IInteractable
 
     public override void Spawned()
     {
+        
         _shopItemVisual = GetComponent<ShopItemVisual>();
         if (_shopItemVisual == null)
         {

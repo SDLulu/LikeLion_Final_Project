@@ -5,11 +5,20 @@ using UnityEngine;
 
 public class ShopManager : NetworkBehaviour
 {
+
+    [Header("Shop References")]
+    [SerializeField] private NetworkPrefabRef shopkeeperPrefab; // 유니티 에디터에서 상점 주인 프리팹을 할당합니다.
+    [SerializeField] private Transform shopkeeperSpawnPoint; // 유니티 에디터에서 상점 주인 스폰 포인트를 할당합니다.
+
+    // 스폰된 상점 주인 NetworkObject를 저장할 변수 (선택 사항)
+    private NetworkObject _spawnedShopkeeper;
+    private Shopkeeper shopkeeper;
+
     [SerializeField] private int maxShopItems = 3;
     [SerializeField] private Transform[] itemSpawnPoints; // 아이템 스폰 위치 배열
     [SerializeField] private List<ItemStaticData> availableItemDataList; // 상점에서 판매될 아이템 데이터 목록
     [SerializeField] private GameObject shopAreaTrigger; // 상점 영역을 나타내는 Collider2D 오브젝트 (Is Trigger)
-    [SerializeField]private Collider2D _shopAreaCollider;
+    [SerializeField] private Collider2D _shopAreaCollider;
 
     // 상점 아이템들을 NetworkArray로 관리
     // NetworkArray의 변경이 감지될 때 'OnShopItemsNetworkedChanged' 함수가 호출되도록 설정
@@ -19,6 +28,17 @@ public class ShopManager : NetworkBehaviour
     // 스폰된 ShopItem 오브젝트들의 참조를 로컬에서 관리
     private Dictionary<int, ShopItem> _spawnedShopItems = new Dictionary<int, ShopItem>();
 
+    private void Awake()
+    {
+        if (shopAreaTrigger != null)
+        {
+            _shopAreaCollider = shopAreaTrigger.GetComponent<Collider2D>();
+            if (_shopAreaCollider == null || !_shopAreaCollider.isTrigger)
+            {
+                Debug.LogError("ShopAreaTrigger must have a Collider2D and be set as Is Trigger.");
+            }
+        }
+    }
     public override void Spawned()
     {
         // 샵 영역 콜라이더 참조
@@ -38,6 +58,7 @@ public class ShopManager : NetworkBehaviour
         if (Object.HasStateAuthority) // Host/Server에서만 상점 아이템 초기화
         {
             InitializeShopItems();
+            SpawnShopkeeper();
         }
 
         // 초기 동기화 시 비주얼 업데이트는 OnShopItemsNetworkedChanged 콜백에 의해 자동으로 처리됩니다.
@@ -47,6 +68,10 @@ public class ShopManager : NetworkBehaviour
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        if (_spawnedShopkeeper != null && _spawnedShopkeeper.IsValid)
+        {
+            runner.Despawn(_spawnedShopkeeper);
+        }
         // 상점 매니저가 Despawn될 때 스폰된 아이템들도 Despawn
         if (Object.HasStateAuthority)
         {
@@ -408,5 +433,88 @@ public class ShopManager : NetworkBehaviour
         }
         return _shopAreaCollider.OverlapPoint(position);
     }
-    
+
+    // 상점 주인을 스폰하는 메서드
+    private void SpawnShopkeeper()
+    {
+        if (Runner == null)
+        {
+            Debug.LogError("NetworkRunner is not assigned or running in ShopManager!");
+            return;
+        }
+
+        if (shopkeeperPrefab.IsValid == false)
+        {
+            Debug.LogError("Shopkeeper Prefab is not assigned in ShopManager!");
+            return;
+        }
+
+        if (shopkeeperSpawnPoint == null)
+        {
+            Debug.LogError("Shopkeeper Spawn Point is not assigned in ShopManager!");
+            return;
+        }
+
+        // Runner.Spawn()을 사용하여 상점 주인을 네트워크상에 스폰합니다.
+        // 스폰된 오브젝트는 자동으로 State Authority를 가집니다.
+        _spawnedShopkeeper = Runner.Spawn(shopkeeperPrefab, shopkeeperSpawnPoint.position, shopkeeperSpawnPoint.rotation);
+        shopkeeper = _spawnedShopkeeper.GetComponent<Shopkeeper>();
+        Debug.Log($"Host: Shopkeeper spawned at {shopkeeperSpawnPoint.position}. NetworkId: {_spawnedShopkeeper.Id}");
+
+        // 스폰된 상점 주인에게 ShopManager 자신을 알려줄 수도 있습니다 (선택 사항).
+        // Shopkeeper shopkeeperComponent = _spawnedShopkeeper.GetComponent<Shopkeeper>();
+        // if (shopkeeperComponent != null)
+        // {
+        //     shopkeeperComponent.SetShopManager(this); // 만약 Shopkeeper에 SetShopManager 메서드가 있다면
+        // }
+    }
+
+    // --- 수정된 NotifyTheftAttempt 메서드 ---
+    // 플레이어가 아이템을 구매하지 않고 상점 영역을 벗어났을 때 호출됩니다.
+    // (Host에서만 호출되어야 함)
+    // 이제 `PlayerRef`는 아이템을 "직접 들고 나간" 특정 플레이어를 지칭하지 않고,
+    // 단순한 도둑질 상황에서는 PlayerRef.None으로 넘어올 수 있습니다.
+    public void NotifyTheftAttempt(PlayerRef potentialAggressor, NetworkObject stolenItemObject)
+    {
+        if (!Object.HasStateAuthority) return; // 호스트만 처리합니다.
+
+        Debug.Log($"Host: Theft attempt detected! Item: {stolenItemObject?.name}. Potential Aggressor: {(Runner.GetPlayerObject(potentialAggressor) ? potentialAggressor.PlayerId.ToString() : "None")}");
+
+        // 1. 상점 주인 상태 변경
+        if (shopkeeper != null)
+        {
+            shopkeeper.SetShopkeeperState(ShopkeeperState.Aggressive);
+
+            // 도둑질을 시도한 특정 플레이어가 있다면 그 플레이어를 _lastAggressor로 설정
+            // 그렇지 않다면 (아이템이 굴러나간 경우 등) _lastAggressor는 PlayerRef.None 상태를 유지하며
+            // 상점 주인은 FixedUpdateNetwork에서 가장 가까운 플레이어를 찾아 공격할 것입니다.
+            if (potentialAggressor.IsNone == false && Runner.GetPlayerObject(potentialAggressor) != null)
+            {
+                shopkeeper.SetLastAggressor(potentialAggressor);
+            }
+            // else { _spawnedShopkeeper._lastAggressor는 PlayerRef.None으로 유지 }
+        }
+
+        // 2. 훔쳐진 아이템 처리
+        if (stolenItemObject != null)
+        {
+            // ShopItems NetworkArray를 순회하며 훔쳐진 아이템의 상태를 업데이트합니다.
+            // 이 아이템은 이제 "구매 불가" 상태로 변경됩니다.
+            for (int i = 0; i < ShopItems.Length; i++)
+            {
+                var itemData = ShopItems.Get(i);
+                if (itemData.ItemNetworkId == stolenItemObject.Id)
+                {
+                    itemData.IsAvailable = false; // 더 이상 판매 가능한 아이템이 아닙니다.
+                    itemData.IsPicked = false;    // 혹시 들고 있는 상태였다면, 내려놓음 처리.
+                    ShopItems.Set(i, itemData);   // NetworkArray 업데이트 반영
+                    Debug.Log($"Host: Item {stolenItemObject.name} (ID: {stolenItemObject.Id}) marked as stolen/unavailable.");
+
+                    // 아이템 오브젝트 자체의 비주얼 변경 또는 파괴 등을 할 수 있습니다.
+                    // stolenItemObject.gameObject.SetActive(false); // 예시: 아이템 숨기기
+                    break;
+                }
+            }
+        }
+    }
 }
