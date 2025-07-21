@@ -50,7 +50,14 @@ public class PMK_TileRogic : MonoBehaviour
 
     private void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
 
         mapPrefabDict = new Dictionary<string, GameObject[]>
         {
