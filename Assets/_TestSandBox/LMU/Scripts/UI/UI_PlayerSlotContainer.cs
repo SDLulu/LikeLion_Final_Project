@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using DG.Tweening;
 using UnityEngine;
 
 public class UI_PlayerSlotContainer : MonoBehaviour
@@ -79,6 +80,35 @@ public class UI_PlayerSlotContainer : MonoBehaviour
             for (int i = currentCount - 1; i >= targetCount; i--)
                 _playerSlots[i].gameObject.SetActive(false);
         }
+    }
+
+
+    private bool _isFadeIn = false;
+    private bool _isFadeOut = false;
+    public async Awaitable FadeInAsync()
+    {
+        if(_isFadeIn)
+            return;
+        _isFadeIn = true;
+        var canvasGroup = GetComponent<CanvasGroup>();
+        canvasGroup.alpha = 0;
+        canvasGroup.DOFade(1, 0.5f);
+        await Awaitable.WaitForSecondsAsync(0.5f);
+        _isFadeIn = false;
+        await Awaitable.NextFrameAsync();
+    }
+
+    public async Awaitable FadeOutAsync()
+    {
+        if(_isFadeOut)
+            return;
+        _isFadeOut = true;
+        var canvasGroup = GetComponent<CanvasGroup>();
+        canvasGroup.alpha = 1;
+        canvasGroup.DOFade(0, 0.5f);
+        await Awaitable.WaitForSecondsAsync(0.5f);
+        _isFadeOut = false;
+        await Awaitable.NextFrameAsync();
     }
 
 }

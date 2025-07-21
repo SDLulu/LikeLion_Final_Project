@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using LMCore;
 using UnityEngine;
 
+[DefaultExecutionOrder(-100)]
 public class DataManager : BaseManager<DataManager>
 {
     public Dictionary<int, Stage.Data> StageData;
     public Dictionary<int, Skin.Data> SkinData;
     public Dictionary<int, FakeClient.Data> FakeClientData;
+
     public void Awake()
     {
         StageData = Stage.Data.GetDictionary();

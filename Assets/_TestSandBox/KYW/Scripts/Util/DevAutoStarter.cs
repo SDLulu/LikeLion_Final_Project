@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
-using Cinemachine;
 
 // 🛠️ 개발용 자동 네트워크 시작 클래스
 // NetworkRunner를 관리하여 현재 씬에서 바로 테스트 가능한 환경 제공
