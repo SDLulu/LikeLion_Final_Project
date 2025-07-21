@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &215599477199036340
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 555993662272195821}
+  m_Layer: 0
+  m_Name: Right
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &555993662272195821
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215599477199036340}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.256, y: -0.01, z: 0.0014565215}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8381690726985112853}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &593010507733109791
 GameObject:
   m_ObjectHideFlags: 0
@@ -123,6 +154,7 @@ Transform:
   - {fileID: 7103338992725111923}
   - {fileID: 4581741826034350835}
   - {fileID: 7465664841770137164}
+  - {fileID: 8381690726985112853}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8184683026101553609
@@ -156,6 +188,7 @@ MonoBehaviour:
   - {fileID: 6232199870285927185}
   - {fileID: 8468457249827184339}
   - {fileID: 400892960013748399}
+  - {fileID: 5433501543160398299}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3832846567861602017
 MonoBehaviour:
@@ -269,7 +302,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7cb2bdec85bb0304a9822b58de0cc1bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _IsAlive: 1
+  _CurrentState: 0
+  _CurrentActions: 0
   visualRoot: {fileID: 4573830555875214864}
   handRoot: {fileID: 6193883160231370673}
 --- !u!114 &7871896623240946892
@@ -324,6 +358,7 @@ MonoBehaviour:
   climbRegrabCooldownTime: 0.2
   climbingGravityScale: 0
   normalGravityScale: 1
+  centerSnapSpeed: 100
   _IsClimbing: 0
 --- !u!114 &6548359404163673551
 MonoBehaviour:
@@ -342,6 +377,37 @@ MonoBehaviour:
   showJumpInfo: 1
   showClimbingInfo: 1
   showAnimationInfo: 1
+--- !u!1 &3798957286774285588
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7589237697918637614}
+  m_Layer: 0
+  m_Name: Left
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7589237697918637614
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3798957286774285588}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.246, y: -0.011, z: 0.0014565215}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8381690726985112853}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4476438534513202936
 GameObject:
   m_ObjectHideFlags: 0
@@ -515,7 +581,7 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  groundCheckSize: {x: 0.8, y: 0.1}
+  groundCheckSize: {x: 0.4, y: 0.1}
   _IsGrounded: 0
 --- !u!114 &2593034312216474950
 MonoBehaviour:
@@ -531,7 +597,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groundCheckComponent: {fileID: 8468457249827184339}
   groundCheck: {fileID: 4581741826034350835}
-  groundCheckSize: {x: 0.5, y: 0.1}
+  groundCheckSize: {x: 0.4, y: 0.1}
   showAlways: 1
   groundedColor: {r: 0, g: 1, b: 0, a: 1}
   airborneColor: {r: 1, g: 0, b: 0, a: 1}
@@ -584,7 +650,7 @@ MonoBehaviour:
   ladderLayer:
     serializedVersion: 2
     m_Bits: 1024
-  ladderCheckSize: {x: 0.8, y: 1.5}
+  ladderCheckSize: {x: 0.15, y: 0.75}
   _IsNearLadder: 0
 --- !u!114 &599824403376188830
 MonoBehaviour:
@@ -600,10 +666,85 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ladderCheckComponent: {fileID: 400892960013748399}
   ladderCheck: {fileID: 7465664841770137164}
-  ladderCheckSize: {x: 0.15, y: 1}
+  ladderCheckSize: {x: 0.15, y: 0.75}
   showAlways: 1
   nearLadderColor: {r: 0, g: 1, b: 1, a: 1}
   notNearLadderColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  defaultColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+--- !u!1 &7935219491024844561
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8381690726985112853}
+  - component: {fileID: 5433501543160398299}
+  - component: {fileID: 5234302456587337960}
+  m_Layer: 0
+  m_Name: WallCheck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8381690726985112853
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7935219491024844561}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.007, y: -0.139, z: 0.09335448}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7589237697918637614}
+  - {fileID: 555993662272195821}
+  m_Father: {fileID: 2893720591995745446}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5433501543160398299
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7935219491024844561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 500c8e5e6036d864e992d9fca8fadc89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wallLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  wallCheckSize: {x: 0.1, y: 0.3}
+  leftCheck: {fileID: 7589237697918637614}
+  rightCheck: {fileID: 555993662272195821}
+  _IsTouchingWallLeft: 0
+  _IsTouchingWallRight: 0
+--- !u!114 &5234302456587337960
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7935219491024844561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 287e1c5b86c51de4c8781a7d8f82354c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  wallCheckComponent: {fileID: 5433501543160398299}
+  leftCheck: {fileID: 7589237697918637614}
+  rightCheck: {fileID: 555993662272195821}
+  wallCheckSize: {x: 0.1, y: 0.3}
+  showAlways: 1
+  touchingColor: {r: 0, g: 1, b: 1, a: 1}
+  notTouchingColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   defaultColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &7979680091807745510
 GameObject:

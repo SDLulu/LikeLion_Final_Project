@@ -112,9 +112,9 @@ if (!PlayerStateHelper.CanMove(playerController.CurrentState)) return;
 ## 🚀 **다음 단계**
 - [x] `PlayerMovement.cs` 순환 의존성 버그 수정 ✅
 - [x] `PlayerClimbing.cs` 상태 패턴 적용 ✅
-- [ ] `PlayerItemPickup.cs` 상태 패턴 적용  
+- [~] `PlayerItemPickup.cs` 상태 패턴 적용 (즉발 액션, 리팩토링 불필요)
 - [ ] `PlayerItemUsage.cs` 상태 패턴 적용
-- [ ] `PlayerItemThrower.cs` 상태 패턴 적용
+- [~] `PlayerItemThrower.cs` 상태 패턴 적용 (즉발 액션, 리팩토링 불필요)
 - [ ] `PlayerShiftSkill.cs` 상태 패턴 적용
 
 ## 💡 **주요 학습사항**

@@ -10,6 +10,7 @@ public class PlayerClimbing : NetworkBehaviour
     [SerializeField] private float climbRegrabCooldownTime = 0.2f; // 사다리 점프 후 재매달림 쿨타임(초)
     [SerializeField] private float climbingGravityScale = 0f; // 사다리 중 중력 (0 = 무중력)
     [SerializeField] private float normalGravityScale = 1f;   // 일반 상태 중력
+    [SerializeField] private float centerSnapSpeed = 10f; // 사다리 중심 흡입 속도
     
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsClimbing { get; private set; }
@@ -111,7 +112,16 @@ public class PlayerClimbing : NetworkBehaviour
         // 6. 사다리 상태에서만 위/아래키로 오르내림, 좌우키 무시
         if (IsClimbing)
         {
-            rb.linearVelocity = new Vector2(0, input.VerticalInput * climbingSpeed);
+            float xVelocity = 0f;
+            // 사다리 중앙으로 X축 속도 보정 (자연스럽게 붙도록)
+            if (ladderCheck.CurrentLadderCenter.HasValue)
+            {
+                float centerX = ladderCheck.CurrentLadderCenter.Value.x;
+                float diff = centerX - rb.position.x;
+                xVelocity = diff * centerSnapSpeed; // 중심 흡입 속도 적용
+            }
+            float yVelocity = input.VerticalInput * climbingSpeed;
+            rb.linearVelocity = new Vector2(xVelocity, yVelocity);
         }
 
         // 버튼 상태 갱신
