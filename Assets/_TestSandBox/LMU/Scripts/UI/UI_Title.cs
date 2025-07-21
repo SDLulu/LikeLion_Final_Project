@@ -1,158 +1,76 @@
-using Fusion;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class UI_Title : MonoBehaviour
 {
-    [Header("닉네임 패널")]
-    [SerializeField] private RectTransform createNickNamePanel;
-    [SerializeField] private Button createNickNameBtn;
-    [SerializeField] private TMP_InputField nickNameInputField;
+    [Header("인스펙터 참조")]
+    [SerializeField] private Button soloPlayBtn;
+    [SerializeField] private Button onlinePlayBtn;
+    [SerializeField] private Button settingBtn;
+    [SerializeField] private Button exitBtn;
+    [SerializeField] private RectTransform _titleButtonPanel;
+    [SerializeField] private RectTransform _enterOnlinePanel;
+    [SerializeField] private RectTransform _fastTestPanel;
+    [SerializeField] private RectTransform _preventPanel;
+    [SerializeField] private UI_CreateNickName _uiCreateNickName;
 
-    [Header("입장 패널")]
-    [SerializeField] private RectTransform joinRoomPanel;
-    [SerializeField] private Button joinRoomBtn;    
-    [SerializeField] private Button createRoomBtn;
-    [SerializeField] private Button randomJoinRoomBtn;
-
-    [Header("Prevent 패널")]
-    [SerializeField] private RectTransform preventPanel;
-
-    private UI_Controller uiController;
-    public UI_Controller UIController
-    {
-        get
-        {
-            return uiController ??= FindAnyObjectByType<UI_Controller>();
-        }
-    }
+    [Header("EnterOnline 패널 뒤로가기")]
+    [SerializeField] private Button _enterOnlineBackBtn;
 
     private void Awake()
     {
-        preventPanel.gameObject.SetActive(false);
-        
-        createNickNameBtn.onClick.AddListener(OnClickCreateNickNameBtn);
-        nickNameInputField.onValueChanged.AddListener(OnValueChangedNickName);
+        soloPlayBtn.onClick.AddListener(OnClickSoloPlayBtn);
+        onlinePlayBtn.onClick.AddListener(OnClickOnlinePlayBtn);
+        settingBtn.onClick.AddListener(OnClickSettingBtn);
+        exitBtn.onClick.AddListener(OnClickExitBtn);
+        _enterOnlineBackBtn.onClick.AddListener(OnClickEnterOnlineBackBtn);
 
-        joinRoomBtn.onClick.AddListener(OnClickJoinRoomBtn);
-        createRoomBtn.onClick.AddListener(() => _ = OnClickCreateRoomBtn());
-        randomJoinRoomBtn.onClick.AddListener(OnClickRandomJoinRoomBtn);
-
-        ActiveCreateNickNamePanel();
+        _uiCreateNickName.gameObject.SetActive(true);
+        _fastTestPanel.gameObject.SetActive(true);
+        _titleButtonPanel.gameObject.SetActive(true);
+        _enterOnlinePanel.gameObject.SetActive(false);
     }
 
     private void OnDestroy()
     {
-        createNickNameBtn.onClick.RemoveAllListeners();
-        nickNameInputField.onValueChanged.RemoveAllListeners();
-
-        joinRoomBtn.onClick.RemoveAllListeners();
-        createRoomBtn.onClick.RemoveAllListeners();
-        randomJoinRoomBtn.onClick.RemoveAllListeners();
+        soloPlayBtn.onClick.RemoveAllListeners();
+        onlinePlayBtn.onClick.RemoveAllListeners();
+        settingBtn.onClick.RemoveAllListeners();
+        exitBtn.onClick.RemoveAllListeners();
+        _enterOnlineBackBtn.onClick.RemoveAllListeners();
     }
 
-    private void ActiveCreateNickNamePanel()
+    private void OnClickSoloPlayBtn()
     {
-        createNickNamePanel.gameObject.SetActive(true);
-        joinRoomPanel.gameObject.SetActive(false);
+        UI_Controller.Inst.UILobby.ActiveSoloPanel();
     }
 
-    private void ActiveJoinRoomPanel()
+    private void OnClickEnterOnlineBackBtn()
     {
-        createNickNamePanel.gameObject.SetActive(false);
-        joinRoomPanel.gameObject.SetActive(true);
+        _fastTestPanel.gameObject.SetActive(true);
+        _uiCreateNickName.gameObject.SetActive(true);
+        _titleButtonPanel.gameObject.SetActive(true);
+        _enterOnlinePanel.gameObject.SetActive(false);
     }
 
-
-    // --- 닉네임 입력 패널
-    private void OnValueChangedNickName(string value)
+    private void OnClickOnlinePlayBtn()
     {
-        if(string.IsNullOrEmpty(value))
-        {
-            createNickNameBtn.interactable = false;
-            return;
-        }
-
-        createNickNameBtn.interactable = true;
-        //Debug.Log($"닉네임 변경 : {_nickNameInputField.text}");
+        _fastTestPanel.gameObject.SetActive(false);
+        _uiCreateNickName.gameObject.SetActive(false);
+        _titleButtonPanel.gameObject.SetActive(false);
+        _enterOnlinePanel.gameObject.SetActive(true);
     }
 
-    private void OnClickCreateNickNameBtn()
+    private void OnClickSettingBtn()
     {
-        if(string.IsNullOrEmpty(nickNameInputField.text))
-        {
-            Debug.LogWarning("닉네임이 비어있습니다.");
-            return;
-        }
 
-        Debug.Log($"닉네임 확정 : {nickNameInputField.text}");
-        ActiveJoinRoomPanel();
     }
 
-
-    // --- 입장 패널
-    private void OnClickJoinRoomBtn()
+    private void OnClickExitBtn()
     {
-        // Todo - 방의 세션코드를 맞춰서 입장
-        return;
-        // Debug.Log("입장 패널 활성화");
-        // preventPanel.gameObject.SetActive(true);
-        // await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
-        //     mode: GameMode.Host,
-        //     roomName: "TestRoom",
-        //     OnEnterLobby: () =>
-        //     {
-        //         UIController.ActiveLobbyUI();
-        //         preventPanel.gameObject.SetActive(false);
-        //     }
-        // );
+        Application.Quit();
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
     }
-
-    public async Awaitable RunFastMode()
-    {
-        Debug.Log("방 생성 패널 활성화");
-        preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
-            mode: GameMode.AutoHostOrClient,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                UIController.ActiveLobbyUI();
-                preventPanel.gameObject.SetActive(false);
-            }
-        );
-    }
-
-    public async Awaitable OnClickCreateRoomBtn()
-    {
-        Debug.Log("방 생성 패널 활성화");
-        preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
-            mode: GameMode.Host,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                UIController.ActiveLobbyUI();
-                preventPanel.gameObject.SetActive(false);
-            }
-        );
-    }
-
-    private async void OnClickRandomJoinRoomBtn()
-    {
-        Debug.Log("랜덤 입장 패널 활성화");
-        preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.NetRunner.JoinOrCreateLobby(
-            mode: GameMode.Client,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                UIController.ActiveLobbyUI();
-                preventPanel.gameObject.SetActive(false);
-            }
-        );
-    }
-
-
 }
