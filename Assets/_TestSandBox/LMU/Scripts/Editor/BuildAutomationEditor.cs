@@ -4,14 +4,93 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class BuildAutomationEditor : EditorWindow
 {
-    private static string buildFolderPath = @"C:\Users\dndej\OneDrive\바탕 화면\Unity_BuildSpace\Spel";
-    private static string executableName = "FusionTutorial";
-    private static int windowWidth = 800;
-    private static int windowHeight = 600;
-    private static int playerCount = 4;
+    // EditorPrefs 키 상수들
+    private const string PREF_BUILD_FOLDER = "BuildAutomation.BuildFolder";
+    private const string PREF_EXECUTABLE_NAME = "BuildAutomation.ExecutableName";
+    private const string PREF_WINDOW_WIDTH = "BuildAutomation.WindowWidth";
+    private const string PREF_WINDOW_HEIGHT = "BuildAutomation.WindowHeight";
+    private const string PREF_PLAYER_COUNT = "BuildAutomation.PlayerCount";
+    
+    // 기본값들
+    private static string _buildFolderPath = @"C:\Users\dndej\OneDrive\바탕 화면\Unity_BuildSpace\Spel";
+    private static string _executableName = "FusionTutorial";
+    private static int _windowWidth = 800;
+    private static int _windowHeight = 600;
+    private static int _playerCount = 4;
+    
+    // 설정값이 로드되었는지 확인하는 플래그
+    private static bool settingsLoaded = false;
+    
+    // 프로퍼티를 통한 lazy loading
+    private static string buildFolderPath
+    {
+        get
+        {
+            if (!settingsLoaded) LoadSettings();
+            return _buildFolderPath;
+        }
+        set
+        {
+            _buildFolderPath = value;
+        }
+    }
+    
+    private static string executableName
+    {
+        get
+        {
+            if (!settingsLoaded) LoadSettings();
+            return _executableName;
+        }
+        set
+        {
+            _executableName = value;
+        }
+    }
+    
+    private static int windowWidth
+    {
+        get
+        {
+            if (!settingsLoaded) LoadSettings();
+            return _windowWidth;
+        }
+        set
+        {
+            _windowWidth = value;
+        }
+    }
+    
+    private static int windowHeight
+    {
+        get
+        {
+            if (!settingsLoaded) LoadSettings();
+            return _windowHeight;
+        }
+        set
+        {
+            _windowHeight = value;
+        }
+    }
+    
+    private static int playerCount
+    {
+        get
+        {
+            if (!settingsLoaded) LoadSettings();
+            return _playerCount;
+        }
+        set
+        {
+            _playerCount = value;
+        }
+    }
     
     // delayCall 메모리 누수 방지를 위한 정적 델리게이트
     private static string pendingExecutablePath = "";
@@ -37,9 +116,32 @@ public class BuildAutomationEditor : EditorWindow
         };
         
         arrangeWindowsCallback = () => {
-            System.Threading.Thread.Sleep(3000); // 3초 대기
-            ArrangeWindows();
+            ArrangeWindowsWithRetry();
         };
+    }
+    
+    // 설정값 저장
+    private static void SaveSettings()
+    {
+        EditorPrefs.SetString(PREF_BUILD_FOLDER, _buildFolderPath);
+        EditorPrefs.SetString(PREF_EXECUTABLE_NAME, _executableName);
+        EditorPrefs.SetInt(PREF_WINDOW_WIDTH, _windowWidth);
+        EditorPrefs.SetInt(PREF_WINDOW_HEIGHT, _windowHeight);
+        EditorPrefs.SetInt(PREF_PLAYER_COUNT, _playerCount);
+    }
+    
+    // 설정값 불러오기
+    private static void LoadSettings()
+    {
+        if (settingsLoaded) return;
+        
+        _buildFolderPath = EditorPrefs.GetString(PREF_BUILD_FOLDER, _buildFolderPath);
+        _executableName = EditorPrefs.GetString(PREF_EXECUTABLE_NAME, _executableName);
+        _windowWidth = EditorPrefs.GetInt(PREF_WINDOW_WIDTH, _windowWidth);
+        _windowHeight = EditorPrefs.GetInt(PREF_WINDOW_HEIGHT, _windowHeight);
+        _playerCount = EditorPrefs.GetInt(PREF_PLAYER_COUNT, _playerCount);
+        
+        settingsLoaded = true;
     }
     
     // 모니터 해상도에 따라 창 위치 자동 계산
@@ -135,8 +237,9 @@ public class BuildAutomationEditor : EditorWindow
         
         EditorGUILayout.Space();
         
-        buildFolderPath = EditorGUILayout.TextField("빌드 폴더 경로", buildFolderPath);
-        executableName = EditorGUILayout.TextField("실행 파일명", executableName);
+        // 값 변경 감지를 위한 임시 변수
+        string newBuildFolderPath = EditorGUILayout.TextField("빌드 폴더 경로", buildFolderPath);
+        string newExecutableName = EditorGUILayout.TextField("실행 파일명", executableName);
         
         EditorGUILayout.Space();
         if (GUILayout.Button("폴더 선택"))
@@ -144,20 +247,34 @@ public class BuildAutomationEditor : EditorWindow
             string selectedPath = EditorUtility.OpenFolderPanel("빌드 폴더 선택", buildFolderPath, "");
             if (!string.IsNullOrEmpty(selectedPath))
             {
-                buildFolderPath = selectedPath;
+                newBuildFolderPath = selectedPath;
             }
         }
         
         EditorGUILayout.Space();
         
-        windowWidth = EditorGUILayout.IntField("창 너비", windowWidth);
-        windowHeight = EditorGUILayout.IntField("창 높이", windowHeight);
-        playerCount = EditorGUILayout.IntSlider("플레이어 수", playerCount, 1, 4);
+        int newWindowWidth = EditorGUILayout.IntField("창 너비", windowWidth);
+        int newWindowHeight = EditorGUILayout.IntField("창 높이", windowHeight);
+        int newPlayerCount = EditorGUILayout.IntSlider("플레이어 수", playerCount, 1, 4);
+        
+        // 값이 변경되었는지 확인하고 저장
+        if (newBuildFolderPath != buildFolderPath || newExecutableName != executableName || 
+            newWindowWidth != windowWidth || newWindowHeight != windowHeight || 
+            newPlayerCount != playerCount)
+        {
+            buildFolderPath = newBuildFolderPath;
+            executableName = newExecutableName;
+            windowWidth = newWindowWidth;
+            windowHeight = newWindowHeight;
+            playerCount = newPlayerCount;
+            SaveSettings();
+        }
         
         EditorGUILayout.Space();
         if (GUILayout.Button("모니터 해상도 맞춤"))
         {
             SetWindowSizeToMonitor();
+            SaveSettings();
         }
         
         // 현재 모니터 해상도 표시
@@ -270,6 +387,57 @@ public class BuildAutomationEditor : EditorWindow
         }
     }
 
+    private static void ArrangeWindowsWithRetry()
+    {
+        Task.Run(async () =>
+        {
+            int maxRetries = 10;
+            int retryDelay = 1000; // 1초
+            
+            for (int attempt = 0; attempt < maxRetries; attempt++)
+            {
+                try
+                {
+                    await Task.Delay(retryDelay);
+                    
+                    // 실행 중인 프로세스들을 찾기
+                    Process[] processes = Process.GetProcessesByName(executableName);
+                    
+                    if (processes.Length == 0)
+                    {
+                        UnityEngine.Debug.Log($"재시도 {attempt + 1}/{maxRetries}: 프로세스를 찾을 수 없음");
+                        continue;
+                    }
+                    
+                    // 모든 프로세스가 MainWindowHandle을 가지는지 확인
+                    int validWindows = 0;
+                    foreach (var process in processes)
+                    {
+                        if (process.MainWindowHandle != IntPtr.Zero)
+                            validWindows++;
+                    }
+                    
+                    if (validWindows < playerCount)
+                    {
+                        UnityEngine.Debug.Log($"재시도 {attempt + 1}/{maxRetries}: 유효한 창 수 {validWindows}/{playerCount}");
+                        continue;
+                    }
+                    
+                    // 창 위치 조정 실행
+                    EditorApplication.delayCall += () => ArrangeWindows();
+                    UnityEngine.Debug.Log($"창 배치 성공 (재시도 {attempt + 1}회)");
+                    return;
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.LogError($"창 배치 재시도 {attempt + 1} 실패: {e.Message}");
+                }
+            }
+            
+            UnityEngine.Debug.LogError($"창 배치 최종 실패: {maxRetries}회 재시도 후 포기");
+        });
+    }
+    
     private static void ArrangeWindows()
     {
         try

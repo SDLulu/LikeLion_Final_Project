@@ -9,10 +9,12 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5166606034776337966}
-  - component: {fileID: 2441958278350586828}
   - component: {fileID: 6656074025417068169}
   - component: {fileID: 8456161062297168181}
   - component: {fileID: 3536248781615259351}
+  - component: {fileID: 7023091008215865856}
+  - component: {fileID: 1282612564580668288}
+  - component: {fileID: 757231200225293466}
   m_Layer: 0
   m_Name: '@NetworkRunner'
   m_TagString: Untagged
@@ -35,24 +37,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2441958278350586828
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7594205007270301120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9952d0c9413145642a651c7dcd80cb5b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gameStatesPrefab: {fileID: 8691710846094561082, guid: b2c43cf05518152429fd3c341ca33492, type: 3}
-  playerMPrefab: {fileID: 9216748042563623557, guid: 2e698a57fdb293f4584a2643b0aacdb4, type: 3}
-  playerPrefab: {fileID: 8396910588344870763, guid: 2eaf6f5f940bac14baf2cba5a27144ce, type: 3}
-  localGameMode: 0
-  hostPlayerManage: {fileID: 0}
-  gameStates: {fileID: 0}
 --- !u!114 &6656074025417068169
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,3 +75,50 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsSceneTakeOverEnabled: 1
   LogSceneLoadErrors: 1
+--- !u!114 &7023091008215865856
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594205007270301120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fe5c7165cc6d2448a85c4f15229a4f4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnHandler: {fileID: 1282612564580668288}
+--- !u!114 &1282612564580668288
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594205007270301120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9948e57267adc7e438bedea5effdf455, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerMPrefab: {fileID: 9216748042563623557, guid: 2e698a57fdb293f4584a2643b0aacdb4, type: 3}
+  gameStatesPrefab: {fileID: 8691710846094561082, guid: b2c43cf05518152429fd3c341ca33492, type: 3}
+  localGameMode: 0
+  hostPlayerManage: {fileID: 0}
+  gameStates: {fileID: 0}
+--- !u!114 &757231200225293466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594205007270301120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9fd79d79a0fb459ababab9a78f00caa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _physicsAuthority: 2
+  _physicsTiming: 3
+  ClientPhysicsSimulation: 3
+  DeltaTimeMultiplier: 1
+  SetUnityFixedTimestep: 0
