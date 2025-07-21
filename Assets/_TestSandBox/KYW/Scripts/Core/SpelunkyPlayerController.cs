@@ -17,7 +17,9 @@ using UnityEngine;
 public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
 {
     [Header("Player State")]
-    [Networked] public bool IsAlive { get; private set; } = true;
+    // 🎮 상태 패턴 관련 필드들
+    [Networked] public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
+    [Networked] public PlayerAction CurrentActions { get; private set; } = PlayerAction.None;
     
     [Header("Visual References")]
     [SerializeField] private Transform visualRoot; // Visual 하위 오브젝트 참조
@@ -68,8 +70,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         SpelunkyNetworkInitializer.InitializeNetworkSettings(this);
         SpelunkyNetworkInitializer.InitializePlayerType(this);
         
-        IsAlive = true;
-        
         Debug.Log($"🎮 플레이어 소환 완료! InputAuthority: {Object.HasInputAuthority}, " +
                  $"IsLocalPlayer: {Object.InputAuthority == Runner.LocalPlayer}");
     }
@@ -89,30 +89,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         {
             visualRoot = transform.Find("Visual");
             
-            // Visual 오브젝트가 없으면 생성
+            // Visual 오브젝트가 없으면 경고만 출력 (자동 생성 제거)
             if (visualRoot == null)
             {
-                GameObject visualObj = new GameObject("Visual");
-                visualObj.transform.SetParent(transform);
-                visualObj.transform.localPosition = Vector3.zero;
-                visualRoot = visualObj.transform;
-                
-                Debug.LogWarning($"[{name}] Visual 하위 오브젝트가 없어서 자동 생성했습니다. " +
-                               "SpriteRenderer와 Animator를 Visual 오브젝트로 이동해주세요.");
+                Debug.LogWarning($"[{name}] Visual 하위 오브젝트를 찾을 수 없습니다. " +
+                               "Inspector에서 Visual Root를 수동으로 설정해주세요.");
             }
-        }
-        
-        // Visual 컴포넌트들 참조 설정
-        playerAnimation = visualRoot.GetComponent<PlayerAnimation>();
-        spriteRenderer = visualRoot.GetComponent<SpriteRenderer>();
-        
-        if (playerAnimation == null)
-        {
-            Debug.LogWarning($"[{name}] Visual 오브젝트에 PlayerAnimation 컴포넌트가 없습니다.");
-        }
-        if (spriteRenderer == null)
-        {
-            Debug.LogWarning($"[{name}] Visual 오브젝트에 SpriteRenderer 컴포넌트가 없습니다.");
         }
     }
     
@@ -124,23 +106,18 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         {
             handRoot = transform.Find("Hand");
             
-            // Hand 오브젝트가 없으면 생성
+            // Hand 오브젝트가 없으면 경고만 출력 (자동 생성 제거)
             if (handRoot == null)
             {
-                GameObject handObj = new GameObject("Hand");
-                handObj.transform.SetParent(transform);
-                handObj.transform.localPosition = Vector3.zero;
-                handRoot = handObj.transform;
-                
-                Debug.LogWarning($"[{name}] Hand 하위 오브젝트가 없어서 자동 생성했습니다. " +
-                               "PlayerItemPickup과 PlayerItemUsage를 Hand 오브젝트로 이동해주세요.");
+                Debug.LogWarning($"[{name}] Hand 하위 오브젝트를 찾을 수 없습니다. " +
+                               "Inspector에서 Hand Root를 수동으로 설정해주세요.");
             }
         }
         
         // Hand 컴포넌트들 참조 설정
-        itemPickup = handRoot.GetComponent<PlayerItemPickup>();
-        itemUsage = handRoot.GetComponent<PlayerItemUsage>();
-        itemThrower = handRoot.GetComponent<PlayerItemThrower>();
+        itemPickup = handRoot?.GetComponent<PlayerItemPickup>();
+        itemUsage = handRoot?.GetComponent<PlayerItemUsage>();
+        itemThrower = handRoot?.GetComponent<PlayerItemThrower>();
         
         if (itemPickup == null)
         {
@@ -159,7 +136,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
-        if (Object.HasInputAuthority && IsAlive)
+        if (Object.HasInputAuthority)
         {
             // 방향키 입력
             horizontalInput = Input.GetAxisRaw("Horizontal");
@@ -170,10 +147,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             
             // 점프 입력 (일관성을 위해 변수로 저장)
-            jumpPressed = Input.GetKey(KeyCode.Space) && !IsDucking;
+            jumpPressed = Input.GetKey(KeyCode.Space) && !(movement?.IsDucking ?? false);
             
             // 🔘 아이템 관련 입력
-            pickupPressed = Input.GetKey(KeyCode.Space) && IsDucking;
+            pickupPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);
             useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
             throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
@@ -183,11 +160,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🌐 네트워크 고정 업데이트
     public override void FixedUpdateNetwork()
     {
-        if (!IsAlive) return;
-        
         // 입력이 필요한 것들 (InputAuthority에서만)
         if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
         {
+            // 기존 컴포넌트들 처리 (그대로 유지)
             movement?.ProcessInput(input);
             jump?.ProcessInput(input);
             climbing?.ProcessInput(input);
@@ -195,6 +171,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
         }
+        
+        // 🎮 상태 업데이트 (새로 추가)
+        UpdateCurrentState();
+        UpdateCurrentActions();
     }
 
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
@@ -202,7 +182,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     {
         SpelunkyPlayerData data = new SpelunkyPlayerData();
         
-        if (IsAlive)
+        if (Object.HasInputAuthority)
         {
             data.HorizontalInput = horizontalInput;
             data.VerticalInput = verticalInput;
@@ -219,6 +199,85 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         return data;
     }
     
-    // 필수 프로퍼티 (BeforeUpdate에서 사용)
-    private bool IsDucking { get { return movement?.IsDucking ?? false; } }
+    // 🎮 현재 상태 업데이트 (기존 컴포넌트들의 상태를 읽어서 결정)
+    private void UpdateCurrentState()
+    {
+        // StateAuthority에서만 상태 변경
+        if (!Object.HasStateAuthority) return;
+        
+        PlayerState newState = DetermineCurrentState();
+        
+        // 상태가 변경된 경우에만 업데이트
+        if (CurrentState != newState)
+        {
+            CurrentState = newState;
+            Debug.Log($"🎮 상태 변경: {CurrentState}");
+        }
+    }
+    
+    // 🎮 현재 액션 업데이트
+    private void UpdateCurrentActions()
+    {
+        // StateAuthority에서만 액션 변경
+        if (!Object.HasStateAuthority) return;
+        
+        PlayerAction newActions = PlayerAction.None;
+        
+        // 아이템 사용 중인지 확인 (간단하게 입력으로 판단)
+        if (useItemHeld)
+        {
+            newActions |= PlayerAction.UsingItem;
+        }
+        
+        // 스킬 사용 중인지 확인 (PlayerShiftSkill이 있다면)
+        var shiftSkill = GetComponent<PlayerShiftSkill>();
+        if (shiftSkill != null && shiftSkill.IsSkillActive)
+        {
+            newActions |= PlayerAction.UsingSkill;
+        }
+        
+        // 액션이 변경된 경우에만 업데이트
+        if (CurrentActions != newActions)
+        {
+            CurrentActions = newActions;
+        }
+    }
+    
+    // 🎮 현재 상태 결정 (기존 컴포넌트들의 상태를 기반으로)
+    private PlayerState DetermineCurrentState()
+    {
+        // 사망 상태 체크
+        if (CurrentState == PlayerState.Dead) return PlayerState.Dead;
+        
+        // 기존 컴포넌트들의 상태를 읽어서 결정
+        bool isGrounded = groundCheck?.IsGrounded ?? false;
+        bool isClimbing = climbing?.IsClimbing ?? false;
+        bool isJumping = jump?.IsJumping ?? false;
+        bool isDucking = movement?.IsDucking ?? false;
+        
+        // 🎯 순환 의존성 방지: 현재 Ducking 상태일 때는 조건을 더 엄격하게 체크
+        if (CurrentState == PlayerState.Ducking)
+        {
+            // Ducking 상태에서 벗어나는 조건들
+            if (!isGrounded) return PlayerState.Falling;
+            if (isClimbing) return PlayerState.Climbing;
+            if (isJumping) return PlayerState.Jumping;
+            if (!isDucking) return PlayerState.Idle; // 웅크리기 해제 시 Idle로
+            return PlayerState.Ducking; // 계속 웅크리기 중
+        }
+        
+        // 일반적인 우선순위에 따라 상태 결정
+        if (isClimbing) return PlayerState.Climbing;
+        if (isJumping) return PlayerState.Jumping;
+        if (isGrounded)
+        {
+            if (isDucking) return PlayerState.Ducking;
+            if (movement?.NormalizedSpeed > 0.1f) return PlayerState.Walking;
+            return PlayerState.Idle;
+        }
+        else
+        {
+            return PlayerState.Falling;
+        }
+    }
 } 

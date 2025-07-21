@@ -24,6 +24,7 @@ public class PlayerJump : NetworkBehaviour
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private Rigidbody2D rb;
+    private SpelunkyPlayerController playerController;
     
     public override void Spawned()
     {
@@ -31,6 +32,7 @@ public class PlayerJump : NetworkBehaviour
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
+        playerController = GetComponent<SpelunkyPlayerController>();
         
         // 필수 컴포넌트 검증
         if (rb == null)
@@ -39,6 +41,8 @@ public class PlayerJump : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
         if (movement == null)
             Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 점프 관련 모든 처리를 통합한 메서드
@@ -66,9 +70,6 @@ public class PlayerJump : NetworkBehaviour
     
     private void HandleJump(SpelunkyPlayerData input)
     {
-        // 웅크린 상태에서는 점프 불가
-        if (movement.IsDucking) return;
-        
         // Fusion 2 공식 패턴: GetPressed로 점프 버튼 눌림 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
@@ -76,9 +77,12 @@ public class PlayerJump : NetworkBehaviour
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 점프 시작 (땅에 있을 때만, 한 번만 감지)
+        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지) - 상태 체크는 시작 시에만
         if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
         {
+            // 점프 시작 시에만 상태 기반 점프 가능 여부 확인
+            if (!PlayerStateHelper.CanJump(playerController.CurrentState)) return;
+            
             // 점프 상태 시작
             IsJumping = true;
             JumpTime = 0f;
