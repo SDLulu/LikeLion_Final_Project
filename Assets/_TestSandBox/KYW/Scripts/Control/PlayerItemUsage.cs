@@ -1,234 +1,151 @@
 using Fusion;
 using UnityEngine;
 
-/*
- * ===============================================
- * 🎮 플레이어 아이템 사용 시스템 (개발자 참고용)
- * ===============================================
- * 
- * 📋 시스템 구조:
- * 1. 이 스크립트는 Hand 오브젝트에 위치
- * 2. 플레이어 입력(마우스 클릭)을 감지
- * 3. 들고 있는 아이템의 사용 메서드 호출
- * 4. 아이템 회전도 자동으로 처리
- * 
- * 🔄 입력 처리 흐름:
- * 플레이어 클릭 → PlayerItemUsage → IUsableItem 메서드 호출
- * 
- * 🎯 주요 기능:
- * - 3가지 사용 패턴 지원 (Press, Hold, Release)
- * - 아이템을 마우스 방향으로 자동 회전
- * - Fusion 2 네트워크 동기화
- * - 플레이어 방향에 따른 아이템 뒤집기
- * 
- * ⚠️ 주의: 아이템 로직은 건드리지 마세요. 새 아이템은 IUsableItem을 구현해주세요.
- */
-
-// 🎮 플레이어 아이템 사용 컨트롤러 (간소화 버전)
-// Hand 하위 오브젝트에 위치하며, 3가지 입력 상태를 아이템에 전달
+// 🎮 플레이어 아이템 사용 컨트롤러
+// 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemUsage)
+// 🎯 목적: 1) 아이템/펀치를 마우스 방향으로 회전 2) 좌클릭으로 아이템/펀치 사용
 public class PlayerItemUsage : NetworkBehaviour
 {
-    [Header("Usage Settings")]
-    [Tooltip("디버그 정보를 화면에 표시할지 여부")]
-    [SerializeField] private bool showDebugInfo = true;
+    [Header("Rotation Settings")]
+    [SerializeField] private bool enableItemRotation = true;  // ⚙️ 회전 기능 켜기/끄기
+    [SerializeField] private float rotationSpeed = 10f;       // 🔄 회전 속도 (0 = 즉시, 양수 = 부드러운 보간)
     
-    [Header("Rotation Settings - 아이템 회전 설정")]
-    [Tooltip("아이템을 마우스 방향으로 자동 회전시킬지 여부")]
-    [SerializeField] private bool enableItemRotation = true;
+    [Header("Basic Punch")]
+    [SerializeField] private BasicPunchItem basicPunchItem;   // 👊 기본 펀치 아이템 (아이템 없을 때 사용)
     
-    [Tooltip("회전 속도 (0이면 즉시 회전, 큰 값일수록 부드럽게 회전)")]
-    [SerializeField] private float rotationSpeed = 10f;
+    // 🌐 네트워크 동기화 변수들 (모든 클라이언트가 동일한 값을 가짐)
+    [Networked] public NetworkButtons ButtonsPrevious { get; set; }    // 🎮 이전 프레임 버튼 상태 (래칭용)
+    [Networked] private float NetworkedRotationAngle { get; set; }     // 🔄 회전 각도 (네트워크 동기화)
+    [Networked] private NetworkBool NetworkedFlipY { get; set; }       // 🔄 스프라이트 Y축 반전 여부
+    [Networked] private bool WasHolding { get; set; }                  // 🎮 이전 프레임 Hold 상태 (상태 변화 감지용)
     
-    // Fusion 2 공식 패턴: 이전 버튼 상태 추적
-    [Networked] public NetworkButtons ButtonsPrevious { get; set; }
+ 
+    // 📎 참조할 다른 컴포넌트들
+    private PlayerItemPickup itemPickup;      // 📦 아이템 보유 상태 확인용
     
-    // 📦 컴포넌트 참조들
-    private SpelunkyPlayerController playerController;
-    private PlayerItemPickup itemPickup;
-    private PlayerMovement playerMovement;  // 플레이어 방향 정보용
-    
+    // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
-        // 컴포넌트 찾기
-        playerController = GetComponent<SpelunkyPlayerController>();
-        itemPickup = GetComponent<PlayerItemPickup>();
-        
-        // 부모(Player)에서 PlayerMovement 찾기
-        Transform parentPlayer = transform.parent;
-        if (parentPlayer != null)
-        {
-            playerMovement = parentPlayer.GetComponent<PlayerMovement>();
-        }
-        
-        Debug.Log($"🎮 PlayerItemUsage 생성 - HasInputAuthority: {Object.HasInputAuthority}");
+        itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
     }
     
-    /// <summary>
-    /// 🎮 아이템 사용 입력 처리 (SpelunkyPlayerController에서 호출)
-    /// 
-    /// 🔄 처리 순서:
-    /// 1. 마우스 입력 상태 감지 (Press, Hold, Release)
-    /// 2. 아이템 회전 처리
-    /// 3. 해당하는 IUsableItem 메서드 호출
-    /// 
-    /// ⚠️ 이 메서드는 건드리지 마세요 - 아이템 로직은 IUsableItem에서 구현
-    /// </summary>
-    /// <param name="input">플레이어 입력 데이터</param>
+// 🎮 입력 처리 - 대폭 간소화
     public void ProcessInput(SpelunkyPlayerData input)
     {
-        // Fusion 2 공식 패턴: GetPressed/GetReleased로 버튼 상태 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
-        var released = input.NetworkButtons.GetReleased(ButtonsPrevious);
-        
-        // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 🔄 아이템 회전 처리 (매 프레임 실행)
-        if (enableItemRotation && itemPickup?.CurrentItem != null)
-        {
-            RotateItemToMouse(input.MouseWorldPosition);
-        }
+        // 🎯 현재 사용할 아이템/펀치 결정
+        IUsableItem usableItem = GetCurrentUsableItem();
+        GameObject targetObject = GetCurrentTargetObject();
         
-        // 아이템이 있을 때만 사용 처리
+        if (usableItem != null && targetObject != null)
+        {
+            // 🔄 회전 처리
+            if (enableItemRotation)
+                RotateObjectToMouse(targetObject, input.MouseWorldPosition);
+            
+            // 🎮 사용 처리 - 하나의 메서드로 통합
+            HandleUsage(usableItem, input, pressed);
+        }
+    }
+    
+    // 🎯 현재 사용할 아이템 결정 (아이템 > 펀치 우선순위)
+    private IUsableItem GetCurrentUsableItem()
+    {
+        // 아이템이 있으면 아이템 우선
         if (itemPickup?.CurrentItem != null)
         {
-            // 아이템에서 IUsableItem 컴포넌트 찾기
-            IUsableItem usableItem = itemPickup.CurrentItem.GetComponent<IUsableItem>();
-            
-            if (usableItem != null && usableItem.CanUse)
-            {
-                Vector2 playerPos = transform.position;
-                
-                // 🔨 3가지 입력 상태를 아이템에 전달
-                // 아이템이 필요한 것만 구현하면 됨 (Press만, 또는 Press+Hold 등)
-                
-                // 클릭 시작 - 즉시 발동 아이템들이 주로 사용
-                if (pressed.IsSet(SpelunkyInputButtons.UseItemPress))
-                {
-                    UseItemRpc(UsageType.Press, input.MouseWorldPosition, playerPos);
-                }
-                
-                // 클릭 유지 - 연속 사용 아이템들이 주로 사용 (매 프레임 호출됨)
-                if (input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold))
-                {
-                    UseItemRpc(UsageType.Hold, input.MouseWorldPosition, playerPos);
-                }
-                
-                // 클릭 종료 - 충전형 아이템들이 주로 사용
-                if (released.IsSet(SpelunkyInputButtons.UseItemRelease))
-                {
-                    UseItemRpc(UsageType.Release, input.MouseWorldPosition, playerPos);
-                }
-            }
-            else if (usableItem == null && pressed.IsSet(SpelunkyInputButtons.UseItemPress))
-            {
-                Debug.Log("🔨 아이템에 IUsableItem 컴포넌트가 없습니다.");
-            }
+            return itemPickup.CurrentItem.GetComponent<IUsableItem>();
         }
-        else if (pressed.IsSet(SpelunkyInputButtons.UseItemPress))
-        {
-            Debug.Log("🎮 사용할 아이템이 없음");
-        }
-    }
-    
-    /// <summary>
-    /// 🔨 아이템 사용 타입 (3가지 패턴)
-    /// 아이템 종류에 따라 필요한 것만 구현하면 됨
-    /// </summary>
-    private enum UsageType
-    {
-        Press,    // 클릭 시작 - 즉시 발동 (폭탄, 물약 등)
-        Hold,     // 클릭 유지 - 연속 사용 (드릴, 기관총 등)  
-        Release   // 클릭 종료 - 충전형 (활, 마법 등)
-    }
-    
-    /// <summary>
-    /// 🌐 아이템 사용 RPC - 네트워크 동기화
-    /// 
-    /// Fusion 2 패턴: InputAuthority가 모든 클라이언트에게 전송
-    /// 실제 아이템 로직은 IUsableItem 메서드에서 실행됨
-    /// 
-    /// ⚠️ 건드리지 마세요 - 아이템 로직은 각 아이템 클래스에서 구현
-    /// </summary>
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-    private void UseItemRpc(UsageType usageType, Vector2 mouseWorldPosition, Vector2 playerPosition)
-    {
-        if (itemPickup?.CurrentItem == null) return;
         
-        IUsableItem usableItem = itemPickup.CurrentItem.GetComponent<IUsableItem>();
-        if (usableItem == null) return;
-        
-        // 사용 타입에 따라 해당하는 아이템 메서드 호출
-        // 아이템에서 구현하지 않은 메서드는 기본 구현(아무것도 안함)이 실행됨
-        switch (usageType)
-        {
-            case UsageType.Press:
-                usableItem.OnUsePress(mouseWorldPosition, playerPosition);
-                break;
-            case UsageType.Hold:
-                usableItem.OnUseHold(mouseWorldPosition, playerPosition);
-                break;
-            case UsageType.Release:
-                usableItem.OnUseRelease(mouseWorldPosition, playerPosition);
-                break;
-        }
+        // 아이템이 없으면 펀치
+        return basicPunchItem;
     }
     
-    /// <summary>
-    /// 🔄 아이템을 마우스 방향으로 자동 회전
-    /// 
-    /// 🎯 기능:
-    /// - 마우스 위치에 따른 아이템 회전
-    /// - 플레이어 방향(좌우)에 따른 자동 뒤집기
-    /// - 부드러운 회전 또는 즉시 회전 지원
-    /// - 아이템별 기본 방향 자동 감지
-    /// 
-    /// ⚠️ 이제 각 아이템의 DefaultDirection이 자동으로 적용됩니다
-    /// </summary>
-    /// <param name="mouseWorldPosition">마우스의 월드 좌표</param>
-    private void RotateItemToMouse(Vector2 mouseWorldPosition)
+    // 🎯 현재 회전시킬 오브젝트 결정
+    private GameObject GetCurrentTargetObject()
     {
-        GameObject currentItem = itemPickup.CurrentItem;
-        if (currentItem == null || playerMovement == null) return;
-
-        IUsableItem usableItem = currentItem.GetComponent<IUsableItem>();
-        if (usableItem == null) return;
-
-        float itemDirectionAngle = 0f;
-        if (usableItem is UsableItemBase baseItem)
-            itemDirectionAngle = baseItem.DefaultAngle;
+        if (itemPickup?.CurrentItem != null)
+        {
+            return itemPickup.CurrentItem;
+        }
+        
+        return basicPunchItem?.gameObject;
+    }
+    
+    // 🎮 Hold 전용 사용 처리 - 상태 변화로 Press/Release 감지
+    private void HandleUsage(IUsableItem usableItem, SpelunkyPlayerData input, NetworkButtons pressed)
+    {
+        Vector2 mousePos = input.MouseWorldPosition;
+        Vector2 playerPos = transform.position;
+        
+        bool isCurrentlyHolding = input.NetworkButtons.IsSet(SpelunkyInputButtons.UseItemHold);
+        
+        // 🎯 Hold 시작 = Press
+        if (isCurrentlyHolding && !WasHolding)
+        {
+            Debug.Log($"[{name}] 아이템 사용 시작: {usableItem.GetType().Name}");
+            usableItem.OnUsePress(mousePos, playerPos);
+        }
+        
+        // 🔄 Hold 중
+        if (isCurrentlyHolding)
+        { 
+            usableItem.OnUseHold(mousePos, playerPos);
+        }
+        
+        // 🎯 Hold 끝 = Release
+        if (!isCurrentlyHolding && WasHolding)
+        {
+            Debug.Log($"[{name}] 아이템 사용 종료: {usableItem.GetType().Name}");
+            usableItem.OnUseRelease(mousePos, playerPos);
+        }
+        
+        // 🔄 상태 저장
+        WasHolding = isCurrentlyHolding;
+    }
+    
+    // 🔄 회전 처리 - 기존과 동일
+    private void RotateObjectToMouse(GameObject targetObject, Vector2 mouseWorldPosition)
+    {
+        if (targetObject == null) return;
 
         Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        float angleDiff = itemDirectionAngle;
-        targetAngle -= angleDiff;
-
-        // flipY 적용
-        var spriteRenderer = currentItem.GetComponentInChildren<SpriteRenderer>();
-        bool isLeft = (mouseWorldPosition.x < transform.position.x);
-        if (spriteRenderer != null)
-            spriteRenderer.flipY = isLeft;
-
-        // z축 회전 적용
-        currentItem.transform.localEulerAngles = new Vector3(0, 0, targetAngle);
-    }
-    
-    // ===============================================
-    // 📊 상태 확인 및 디버그 (다른 스크립트에서 참조 가능)
-    // ===============================================
-    
-    /// <summary>현재 아이템을 사용할 수 있는 상태인지 반환</summary>
-    public bool CanUseItem => itemPickup?.CurrentItem != null;
-    
-    // 🔍 디버그 정보 표시
-    private void OnGUI()
-    {
-        if (!showDebugInfo || !Object.HasInputAuthority) return;
+        bool isLeft = mouseWorldPosition.x < transform.position.x;
         
-        GUILayout.BeginArea(new Rect(10, 400, 300, 100));
-        GUILayout.Box("🎮 아이템 사용 (간소화)");
-        GUILayout.Label($"사용 가능: {(CanUseItem ? "예" : "아니오")}");
-        GUILayout.Label("조작법: 좌클릭 - 사용");
-        GUILayout.EndArea();
+        // InputAuthority는 SpelunkyPlayerController에서 이미 체크됨
+        NetworkedFlipY = isLeft;
+        NetworkedRotationAngle = targetAngle;
     }
-} 
+
+    public override void FixedUpdateNetwork()
+    {
+        base.FixedUpdateNetwork();
+        
+        GameObject currentObject = GetCurrentTargetObject();
+        if (currentObject != null && enableItemRotation)
+        {
+            // 실제 오브젝트의 회전 값은 네트워크 상태를 직접 따름
+            currentObject.transform.localEulerAngles = new Vector3(0, 0, NetworkedRotationAngle);
+        }
+    }
+    
+    // 🎨 렌더링 - 시각적 요소만 처리
+    public override void Render()
+    {
+        base.Render();
+        
+        GameObject currentObject = GetCurrentTargetObject();
+        if (currentObject != null && enableItemRotation)
+        {
+            // 스프라이트 뒤집기 (순수 시각적 요소)
+            var spriteRenderer = currentObject.GetComponentInChildren<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.flipY = NetworkedFlipY;
+            }
+        }
+    }
+}

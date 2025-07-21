@@ -46,6 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  minWaitingTime: 3
 --- !u!1 &4704860501897767613
 GameObject:
   m_ObjectHideFlags: 0
@@ -184,6 +185,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  minWaitingTime: 15
+  cutDuration: 2
 --- !u!1 &6817574703314393902
 GameObject:
   m_ObjectHideFlags: 0
@@ -276,6 +279,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  minWaitingTime: 15
+  cutDuration: 2
 --- !u!1 &8260035772065870977
 GameObject:
   m_ObjectHideFlags: 0
@@ -322,6 +327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  minWaitingTime: 1.5
 --- !u!1 &8691710846094561082
 GameObject:
   m_ObjectHideFlags: 0
@@ -334,7 +340,6 @@ GameObject:
   - component: {fileID: 816728155832290849}
   - component: {fileID: 6680545551392477647}
   - component: {fileID: 1670260254729265304}
-  - component: {fileID: 3625355911014638424}
   m_Layer: 0
   m_Name: GameStates
   m_TagString: Untagged
@@ -416,21 +421,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7387ff0f9e5119342aaa228d735b2361, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lobbyState: {fileID: 209568226087452626}
-  gameStageWaitingState: {fileID: 902514079028123560}
-  gameStagePlayingState: {fileID: 3097246407220455528}
-  gameStageCompletedState: {fileID: 665137752505329659}
-  gameStageTransitionState: {fileID: 8732489379588682194}
-  gameStageFailedState: {fileID: 2245225078627330675}
---- !u!114 &3625355911014638424
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8691710846094561082}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f8ddd359f9fcc4e42b9b4a165b7772ca, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  uiController: {fileID: 0}
+  fader: {fileID: 0}
+  cutSceneController: {fileID: 0}
+  playerManager: {fileID: 0}
+  allStates:
+  - {fileID: 209568226087452626}
+  - {fileID: 665137752505329659}
+  - {fileID: 902514079028123560}
+  - {fileID: 3097246407220455528}
+  - {fileID: 2245225078627330675}
+  - {fileID: 1826773309663941764}
+  - {fileID: 8732489379588682194}

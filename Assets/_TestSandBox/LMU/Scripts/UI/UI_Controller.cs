@@ -1,66 +1,43 @@
+using System;
 using System.Collections.Generic;
+using Fusion;
 using LMCore;
 using UnityEngine;
 
 public class UI_Controller : BaseManager<UI_Controller>
 {
-    [Header("인스펙터 참조")]
-    [field: SerializeField] public UI_Title uiTitle {get; private set;}
-    [field: SerializeField] public UI_Lobby uiLobby {get; private set;}
-    [field: SerializeField] public UI_Game uiGame {get; private set;}
+    [Header("로비 UI 참조")]
+    [field: SerializeField] public UI_EnterOnline UIEnterOnline {get; private set;}
+    [field: SerializeField] public UI_Lobby UILobby {get; private set;}
+    [field: SerializeField] public UI_Title UITitle {get; private set;}
 
     private void Awake()
     {
         DontDestroyOnLoad(this);
         ActiveTitleUI();
-        LobbyManager.Inst.NetRunner.OnSceneLoadDoneAction += OnChangedScene;
-    }
-
-    /// <summary>
-    /// 씬변경시 메모리 정리
-    /// Note : Lobby(titleUI / lobbyUI)는 Additive 씬으로 항상 유지
-    /// </summary>
-    private void OnChangedScene(string sceneName)
-    {
-        if (sceneName == "Game")
-        {
-            uiGame = FindAnyObjectByType<UI_Game>();
-        }
-        else 
-        {
-            uiGame = null;
-        }
+        // 게임 UI는 UIEventSystem이 관리하므로 NetworkEventSystem 구독 불필요
     }
 
     public void ActiveTitleUI()
     {
-        uiTitle.gameObject.SetActive(true);
-        uiLobby.gameObject.SetActive(false);
+        UIEnterOnline.gameObject.SetActive(true);
+        UILobby.gameObject.SetActive(false);
     }
 
-    public void ActiveLobbyUI()
+    public void ActiveLobbyOnLineUI()
     {
-        uiTitle.gameObject.SetActive(false);
-        uiLobby.gameObject.SetActive(true);
+        UIEnterOnline.gameObject.SetActive(false);
+        UILobby.ActiveOnlinePanel();
     }
 
     public void DeactiveAllLobbyUI()
     {
-        uiTitle.gameObject.SetActive(false);
-        uiLobby.gameObject.SetActive(false);
-    }
-
-    public async void ActiveGameUI(bool value)
-    {
-        while (uiGame == null)
-        {
-            await Awaitable.NextFrameAsync();
-        }
-        uiGame.gameObject.SetActive(value);
+        UIEnterOnline.gameObject.SetActive(false);
+        UILobby.gameObject.SetActive(false);
     }
 
     public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
     {
-        uiLobby?.UpdateData(players);
+        UILobby?.UpdateData(players);
     }
 }
