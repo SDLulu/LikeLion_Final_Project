@@ -1,0 +1,126 @@
+# 🎮 LikeLion Final Project - Unity 멀티플레이어 게임 구조 규칙
+
+## 📁 프로젝트 폴더 구조
+
+### 🏗️ 메인 스크립트 구조 (`Assets/Scripts/`)
+- **Lobby/**: 로비 관련 UI 및 관리 스크립트
+  - `LobbyUIManager.cs`: 로비 UI 전체 관리
+  - `CreateNickNamePanel.cs`: 닉네임 생성 패널
+  - `LoadingCavnasController.cs`: 로딩 화면 컨트롤러
+  - `LobbyPanelBase.cs`: 로비 패널 베이스 클래스
+  - `MiddleSectionPanel.cs`: 중앙 섹션 패널
+
+- **MainGame/**: 메인 게임 관련 스크립트
+  - `PlayerSpawnerController.cs`: 플레이어 스폰 관리
+
+- **Other/**: 공통 및 유틸리티 스크립트
+  - `NetworkRunnerController.cs`: 포톤 퓨전 네트워크 러너 관리
+  - `GlobalManagers.cs`: 전역 매니저
+  - `DDOL.cs`: DontDestroyOnLoad 오브젝트
+  - `Utils.cs`: 유틸리티 함수들
+
+- **PMK/**: 타일 및 맵 관련 스크립트
+  - `PMK_Tile_Rogic.cs`: 타일 로직 (11KB, 메인 타일 시스템)
+  - `PMK_Bricks.cs`: 벽돌 관련
+  - `PNK_Tile_Wall.cs`: 벽 타일
+
+- **UGS/**: Unity Gaming Services 관련 데이터
+  - `FakeClient.Data.cs`: 가짜 클라이언트 데이터
+  - `Skin.Data.cs`: 스킨 데이터
+  - `Stage.Data.cs`: 스테이지 데이터
+
+### 🧪 테스트 샌드박스 구조 (`Assets/_TestSandBox/`)
+
+#### KYW (개발자) 폴더 (`Assets/_TestSandBox/KYW/Scripts/`)
+- **Core/**: 핵심 시스템 스크립트
+  - `SpelunkyPlayerController.cs`: 메인 플레이어 컨트롤러 (9.1KB)
+  - `DevAutoStarter.cs`: 개발용 자동 네트워크 시작 (13KB)
+  - `PlayerSpawner.cs`: 플레이어 스폰 전용 (새로 생성됨)
+  - `SpelunkyNetworkInitializer.cs`: 네트워크 초기화
+  - `SpelunkyLocalInputPoller.cs`: 로컬 입력 폴링
+  - `SpelunkyPlayerData.cs`: 플레이어 데이터
+
+- **Control/**: 플레이어 제어 관련
+  - `PlayerMovement.cs`: 플레이어 이동
+  - `PlayerJump.cs`: 플레이어 점프
+  - `PlayerClimbing.cs`: 사다리 등반
+  - `PlayerAnimation.cs`: 애니메이션 제어
+  - `PlayerItemPickup.cs`: 아이템 줍기 (11KB)
+  - `PlayerItemUsage.cs`: 아이템 사용
+  - `PlayerItemThrower.cs`: 아이템 던지기
+  - `PlayerShiftSkill.cs`: 시프트 스킬
+  - `Check/`: 체크 관련 서브 폴더
+
+- **Items/**: 아이템 시스템
+  - `IUsableItem.cs`: 사용 가능한 아이템 인터페이스
+  - `BasicPunchItem.cs`: 기본 펀치 아이템
+  - `Shotgun.cs`: 샷건
+  - `MachineGun.cs`: 머신건
+  - `Pickaxe.cs`: 곡괭이
+  - `Bullets.cs`: 총알
+
+- **Physics/**: 물리 및 충돌 처리
+  - `IHitReaction.cs`: 히트 반응 인터페이스
+  - `PlayerHitReaction.cs`: 플레이어 히트 반응
+  - `ExampleHitReaction.cs`: 예시 히트 반응
+
+- **Util/**: 유틸리티 및 디버그
+  - `GroundCheckVisualizer.cs`: 지면 체크 시각화
+  - `LadderCheckVisualizer.cs`: 사다리 체크 시각화
+
+- **Input/**: 입력 처리 (현재 비어있음)
+- **Data/**: 데이터 관련 (현재 비어있음)
+- **Debug/**: 디버그 관련 (현재 비어있음)
+
+#### LMU (다른 개발자) 폴더 (`Assets/_TestSandBox/LMU/Scripts/`)
+- **Core/**: 핵심 시스템
+- **Player/**: 플레이어 관련
+- **Network/**: 네트워크 관련
+- **UI/**: UI 관련
+- **Input/**: 입력 처리
+- **Editor/**: 에디터 스크립트
+- **Scriptable/**: ScriptableObject 관련
+- `LocalSceneManager.cs`: 로컬 씬 관리
+- `DataManager.cs`: 데이터 관리
+- `GlobalSetting.cs`: 전역 설정
+- `FastRunController.cs`: 빠른 실행 컨트롤러
+
+## 🎯 개발 규칙
+
+### 📝 코드 작성 규칙
+1. **프로퍼티 작성**: 화살표 함수(=>) 대신 `{ get; set; }` 또는 `{ get { return ...; } }` 형식 사용
+2. **주석**: XML 문서 주석(/// <summary>) 대신 기능만 간결하게 설명하는 주석 사용
+3. **언어**: 항상 한글로 답변 및 주석 작성
+
+### 🎮 게임 개발 컨텍스트
+- **엔진**: Unity
+- **멀티플레이**: Photon Fusion 2 최신버전
+- **모드**: 호스트-클라이언트 모드
+- **참고 게임**: 스펠렁키 2
+- **개발자**: 학생 (게임개발 학습 중)
+
+### 🔧 기술적 특징
+- **네트워크**: 포톤 퓨전 2 공식 문서 최신 정보 기반
+- **입력 처리**: Fusion 2 공식 문법 사용 (immediate input handling)
+- **리팩토링**: 일관성 있고 통일된 방식으로 진행
+- **사다리 시스템**: W키로 사다리 등반/매달리기 상태 시작
+
+### 📁 파일 위치 규칙
+- **새 스크립트 생성 시**: 해당 기능에 맞는 폴더에 배치
+  - 플레이어 제어 → `Control/`
+  - 아이템 관련 → `Items/`
+  - 물리/충돌 → `Physics/`
+  - 유틸리티 → `Util/`
+  - 핵심 시스템 → `Core/`
+- **테스트용 스크립트**: `_TestSandBox/KYW/Scripts/` 하위에 배치
+- **메인 게임 스크립트**: `Assets/Scripts/` 하위에 배치
+
+### 🎯 네이밍 규칙
+- **클래스명**: PascalCase (예: `SpelunkyPlayerController`)
+- **변수명**: camelCase (예: `playerMovement`)
+- **상수**: UPPER_SNAKE_CASE (예: `MAX_PLAYER_COUNT`)
+- **프로퍼티**: PascalCase (예: `PlayerHealth`)
+
+### 🔄 업데이트 규칙
+- 프로젝트 구조가 변경되면 이 규칙도 함께 업데이트
+- 새로운 폴더나 주요 스크립트 추가 시 규칙에 반영 
