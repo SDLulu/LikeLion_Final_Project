@@ -45,26 +45,28 @@ public class PlayerItemPickup : NetworkBehaviour
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
-        SetupReferences();     // 📎 다른 컴포넌트 참조 설정
-        SetupTriggerCollider(); // 🔵 트리거 콜라이더 설정
-        
-        // 🌐 CurrentItem getter가 이제 네트워크 ID로부터 실시간으로 찾기 때문에
-        // 👉 별도의 아이템 복원 코드가 불필요함
-    }
-    
-    // 📎 부모 Player에서 필요한 컴포넌트들 찾기
-    private void SetupReferences()
-    {
+        // 모든 컴포넌트 참조를 한 번에 설정
         Transform parentPlayer = transform.parent;  // 🏠 부모 = Player 오브젝트
         if (parentPlayer != null)
         {
             playerController = parentPlayer.GetComponent<SpelunkyPlayerController>();
             playerMovement = parentPlayer.GetComponent<PlayerMovement>();
+            
+            // 필수 컴포넌트 검증
+            if (playerController == null)
+                Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+            if (playerMovement == null)
+                Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
         }
         else
         {
-            Debug.LogWarning($"[{name}] PlayerItemPickup이 Player 오브젝트의 하위가 아닙니다!");
+            Debug.LogError($"[{name}] PlayerItemPickup이 Player 오브젝트의 하위가 아닙니다!");
         }
+        
+        SetupTriggerCollider(); // 🔵 트리거 콜라이더 설정
+        
+        // 🌐 CurrentItem getter가 이제 네트워크 ID로부터 실시간으로 찾기 때문에
+        // 👉 별도의 아이템 복원 코드가 불필요함
     }
     
     // 🔵 아이템 감지용 원형 트리거 설정

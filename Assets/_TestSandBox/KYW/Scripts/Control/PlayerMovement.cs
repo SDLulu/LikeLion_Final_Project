@@ -21,9 +21,18 @@ public class PlayerMovement : NetworkBehaviour
 
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         climbing = GetComponent<PlayerClimbing>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (climbing == null)
+            Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
@@ -51,7 +60,7 @@ public class PlayerMovement : NetworkBehaviour
     private void ProcessMovement(SpelunkyPlayerData input)
     {
         // 사다리 오르는 중에는 수평 이동 금지
-        if (climbing != null && climbing.IsClimbing)
+        if (climbing.IsClimbing)
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
             return;

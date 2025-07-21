@@ -26,7 +26,14 @@ public class PlayerItemUsage : NetworkBehaviour
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
+        
+        // 필수 컴포넌트 검증
+        if (itemPickup == null)
+            Debug.LogError($"[{name}] PlayerItemPickup 컴포넌트를 찾을 수 없습니다!");
+        if (basicPunchItem == null)
+            Debug.LogError($"[{name}] BasicPunchItem이 설정되지 않았습니다!");
     }
     
 // 🎮 입력 처리 - 대폭 간소화
@@ -54,7 +61,7 @@ public class PlayerItemUsage : NetworkBehaviour
     private IUsableItem GetCurrentUsableItem()
     {
         // 아이템이 있으면 아이템 우선
-        if (itemPickup?.CurrentItem != null)
+        if (itemPickup.CurrentItem != null)
         {
             return itemPickup.CurrentItem.GetComponent<IUsableItem>();
         }
@@ -66,12 +73,12 @@ public class PlayerItemUsage : NetworkBehaviour
     // 🎯 현재 회전시킬 오브젝트 결정
     private GameObject GetCurrentTargetObject()
     {
-        if (itemPickup?.CurrentItem != null)
+        if (itemPickup.CurrentItem != null)
         {
             return itemPickup.CurrentItem;
         }
         
-        return basicPunchItem?.gameObject;
+        return basicPunchItem.gameObject;
     }
     
     // 🎮 Hold 전용 사용 처리 - 상태 변화로 Press/Release 감지

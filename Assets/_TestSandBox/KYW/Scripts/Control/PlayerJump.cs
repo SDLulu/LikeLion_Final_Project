@@ -27,9 +27,18 @@ public class PlayerJump : NetworkBehaviour
     
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (movement == null)
+            Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 점프 관련 모든 처리를 통합한 메서드
@@ -50,8 +59,7 @@ public class PlayerJump : NetworkBehaviour
         {
             IsJumping = true;
             JumpTime = 0f;
-            if (rb != null)
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
             Debug.Log("🦘 사다리에서 점프!");
         }
     }

@@ -28,16 +28,24 @@ public class PlayerClimbing : NetworkBehaviour
 
     public override void Spawned()
     {
-        SetupReferences();
-    }
-    
-    private void SetupReferences()
-    {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         ladderCheck = GetComponentInChildren<PlayerLadderCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (ladderCheck == null)
+            Debug.LogError($"[{name}] PlayerLadderCheck 컴포넌트를 찾을 수 없습니다!");
+        if (movement == null)
+            Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+        if (jump == null)
+            Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
     }
 
     public void ProcessInput(SpelunkyPlayerData input)
@@ -48,8 +56,8 @@ public class PlayerClimbing : NetworkBehaviour
 
     private void HandleClimbing(SpelunkyPlayerData input)
     {
-        bool nearLadder = ladderCheck != null && ladderCheck.IsNearLadder;
-        bool isGrounded = groundCheck != null && groundCheck.IsGrounded;
+        bool nearLadder = ladderCheck.IsNearLadder;
+        bool isGrounded = groundCheck.IsGrounded;
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
 
         // 쿨타임 감소
@@ -62,10 +70,7 @@ public class PlayerClimbing : NetworkBehaviour
             StopClimbing();
             climbRequested = false;
             climbRegrabCooldown = climbRegrabCooldownTime; // 쿨타임 시작
-            if (jump != null)
-            {
-                jump.SetJumpFromClimb();
-            }
+            jump.SetJumpFromClimb();
             return;
         }
 
