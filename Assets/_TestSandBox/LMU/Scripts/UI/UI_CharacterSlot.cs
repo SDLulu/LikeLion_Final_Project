@@ -46,7 +46,7 @@ public class UI_CharacterSlot : MonoBehaviour
         // 연결된 플레이어가 있고, 로컬 플레이어인 경우에만 Ready 상태 변경
         if (connectedPlayer != null && connectedPlayer.Object.HasInputAuthority)
         {
-            connectedPlayer.ToggleReadyRpc();
+            connectedPlayer.RPC_ToggleReady();
         }
     }
 

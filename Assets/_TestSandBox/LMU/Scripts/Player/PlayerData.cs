@@ -48,21 +48,37 @@ public class PlayerData : NetworkBehaviour
 
     public override void Spawned()
     {
+        // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
+        if (Object.HasInputAuthority)
+        {
+            FakeClientData = UI_CreateNickName.FakeClientData;
+            RPC_SetNickName(FakeClientData.NickName);
+        }
+
         // 데이터 서버에서 생성후 전파
         if (Object.HasStateAuthority)
         {
             SkinData = DataManager.Inst.GetSkinData(10000);
-            FakeClientData = DataManager.Inst.GetRandomFakeClientData();
-            Static_PlayerData = StaticPlayerData.CreateData(FakeClientData);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
         }
+
+        FakeClientData = null;
+    }
+
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void RPC_SetNickName(NetworkString<_16> nickName)
+    {
+        Static_PlayerData = new StaticPlayerData()
+        {
+            NickName = nickName
+        };
     }
 
     /// <summary>
     /// 캐릭터/스킨 변경
     /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void ChangeCharacterRpc(NetworkString<_16> characterName, NetworkString<_64> skinPath)
+    public void RPC_ChangeCharacter(NetworkString<_16> characterName, NetworkString<_64> skinPath)
     {
         Dynamic_CharacterData = new DynamicCharacterData()
         {
@@ -76,7 +92,7 @@ public class PlayerData : NetworkBehaviour
     /// Ready 상태 토글
     /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void ToggleReadyRpc()
+    public void RPC_ToggleReady()
     {
         IsReady = !IsReady;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
