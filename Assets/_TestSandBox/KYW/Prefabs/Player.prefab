@@ -358,7 +358,7 @@ MonoBehaviour:
   climbRegrabCooldownTime: 0.2
   climbingGravityScale: 0
   normalGravityScale: 1
-  centerSnapSpeed: 100
+  centerSnapSpeed: 30
   _IsClimbing: 0
 --- !u!114 &6548359404163673551
 MonoBehaviour:
@@ -827,6 +827,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableItemRotation: 1
   rotationSpeed: 25
+  handTransform: {fileID: 0}
   basicPunchItem: {fileID: 7351558282718365556}
 --- !u!58 &2162887977885498126
 CircleCollider2D:
