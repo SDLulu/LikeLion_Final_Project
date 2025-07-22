@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class PMK_TileDestroyItem : MonoBehaviour
 {
-    [SerializeField] private GameObject destroyArea;
-    [SerializeField] private LayerMask whatisPlatform;
-    [SerializeField] private LayerMask whatisTileitem;
-    [SerializeField] private CircleCollider2D deleteCollider2D;
+    [SerializeField] private GameObject destroyArea; // 파괴 영역 오브젝트
+    [SerializeField] private LayerMask whatisPlatform; // 파괴할 타일 레이어
+    [SerializeField] private LayerMask whatisTileitem; // 파괴할 타일 아이템 레이어
+    [SerializeField] private CircleCollider2D deleteCollider2D; // 파괴 영역의 원형 콜라이더
 
-    [Header("���� ����")]
-    [SerializeField] private float deleteRadius = 3f;
+    [Header("폭탄의 파괴 반경")]
+    [SerializeField] private float deleteRadius = 3f; // 파괴 반경
 
     private void Start()
     {
@@ -18,7 +18,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
         StartCoroutine(Booooom());
     }
 
-    private IEnumerator Booooom()
+    private IEnumerator Booooom() // 3초뒤 폭발
     {
         yield return new WaitForSeconds(3f);
         destroyArea.SetActive(true);
@@ -40,6 +40,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
 
                 if(distance <= radiusInt)
                 {
+                    // 타일 파괴
                     Collider2D overCollider2d = Physics2D.OverlapCircle(checkCellPos, 0.01f, whatisPlatform);
                     if (overCollider2d != null)
                     {
@@ -47,7 +48,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
                     }
 
 
-                    // Ÿ�� ������ ����
+                    // 타일 아이템 파괴
                     Collider2D[] hitObjects = Physics2D.OverlapCircleAll(checkCellPos, 0.01f, whatisTileitem);
                     foreach (var col in hitObjects)
                     {
