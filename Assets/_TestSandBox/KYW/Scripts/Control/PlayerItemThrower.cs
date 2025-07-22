@@ -71,7 +71,6 @@ public class PlayerItemThrower : NetworkBehaviour
         
         // ⚡ 물리 적용 (StateAuthority에서만 의미 있음)
         EnableItemPhysics(itemToThrow, direction);
-
     }
 
     

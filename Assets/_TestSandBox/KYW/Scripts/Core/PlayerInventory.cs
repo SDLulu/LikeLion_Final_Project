@@ -6,18 +6,16 @@ using System.Collections.Generic;
 public class PlayerInventory : NetworkBehaviour
 {
     [Header("Held Object (손에 든 것)")]
-    [Networked] private NetworkObject currentHeldObject { get; set; } // 손에 들고 있는 오브젝트(아이템 or 캐릭터)
-
-    // 현재 손에 들고 있는 오브젝트
-    public GameObject CurrentHeldObject => currentHeldObject?.gameObject;
-    // 현재 손에 든 것이 아이템이면 반환, 아니면 null
-    public GameObject CurrentHeldItem => (IsHeldItem() ? currentHeldObject?.gameObject : null);
-    // 현재 손에 든 것이 캐릭터면 반환, 아니면 null
-    public GameObject CurrentHeldCharacter => (IsHeldCharacter() ? currentHeldObject?.gameObject : null);
+    [Networked] private NetworkObject currentHeldObject { get; set; } // 손에 들고 있는 오브젝트(아이템/적/NPC/플레이어 등)
+    public GameObject CurrentHeldObject { get { return currentHeldObject?.gameObject; } }
 
     [Header("Inventory Slots (저장 슬롯)")]
     [SerializeField] private int maxInventorySlots = 1; // 현재 슬롯 개수(패시브 등으로 증가 가능)
     [Networked, Capacity(8)] private NetworkArray<NetworkObject> inventorySlots { get; } // 아이템 저장 슬롯(최대 8개)
+
+    // 현재 선택 슬롯 인덱스(로컬)
+    private int selectedSlotIndex = 0;
+    public int SelectedSlotIndex { get { return selectedSlotIndex; } set { selectedSlotIndex = value; } }
 
     // 저장된 아이템들(슬롯)
     public IEnumerable<GameObject> StoredItems
@@ -32,10 +30,29 @@ public class PlayerInventory : NetworkBehaviour
         }
     }
 
-    // 아이템을 슬롯에 저장 (비어있는 슬롯에 추가, 아이템만 가능)
+    // 패시브 아이템 (Networked)
+    [Header("Passive Equipments")]
+    [Networked, Capacity(8)] private NetworkArray<NetworkObject> passiveEquipments { get; }
+    public IEnumerable<GameObject> PassiveEquipments
+    {
+        get
+        {
+            for (int i = 0; i < passiveEquipments.Length; i++)
+            {
+                var obj = passiveEquipments[i];
+                if (obj != null) yield return obj.gameObject;
+            }
+        }
+    }
+
+    // 소지금 (Networked)
+    [Header("Money")]
+    [Networked] private int currentMoney { get; set; }
+    public int CurrentMoney { get { return currentMoney; } set { if (HasStateAuthority) currentMoney = value; } }
+
+    // 슬롯에 아이템 저장 (비어있는 슬롯에 추가, 아이템만 가능)
     public bool StoreItemToSlot(GameObject item)
     {
-        // 아이템 레이어만 저장 가능
         if (item.layer != LayerMask.NameToLayer("Item")) return false;
         for (int i = 0; i < maxInventorySlots; i++)
         {
@@ -45,7 +62,7 @@ public class PlayerInventory : NetworkBehaviour
                 return true;
             }
         }
-        return false; // 슬롯이 가득 찼음
+        return false;
     }
 
     // 슬롯에서 아이템 꺼내 손에 들기
@@ -62,7 +79,7 @@ public class PlayerInventory : NetworkBehaviour
     // 캐릭터 들기
     public bool HoldCharacter(GameObject character)
     {
-        if (currentHeldObject != null) return false; // 이미 들고 있음
+        if (currentHeldObject != null) return false;
         var netObj = character.GetComponent<NetworkObject>();
         if (netObj == null) return false;
         currentHeldObject = netObj;
@@ -75,17 +92,77 @@ public class PlayerInventory : NetworkBehaviour
         currentHeldObject = null;
     }
 
-    // 슬롯 개수 증가(패시브 아이템 등으로 확장)
+    // 슬롯 개수 증가/감소
     public void AddInventorySlot(int amount = 1)
     {
         maxInventorySlots = Mathf.Clamp(maxInventorySlots + amount, 1, inventorySlots.Length);
     }
-
-    // 슬롯 개수 감소(예외 상황)
     public void RemoveInventorySlot(int amount = 1)
     {
         maxInventorySlots = Mathf.Clamp(maxInventorySlots - amount, 1, inventorySlots.Length);
-        // 필요시 초과 슬롯 아이템 정리 로직 추가 가능
+    }
+
+    // 패시브 아이템 추가/제거
+    public bool AddPassiveEquipment(GameObject equipment)
+    {
+        var netObj = equipment.GetComponent<NetworkObject>();
+        if (netObj == null) return false;
+        for (int i = 0; i < passiveEquipments.Length; i++)
+        {
+            if (passiveEquipments[i] == null)
+            {
+                passiveEquipments.Set(i, netObj);
+                return true;
+            }
+        }
+        return false;
+    }
+    public bool RemovePassiveEquipment(GameObject equipment)
+    {
+        var netObj = equipment.GetComponent<NetworkObject>();
+        if (netObj == null) return false;
+        for (int i = 0; i < passiveEquipments.Length; i++)
+        {
+            if (passiveEquipments[i] == netObj)
+            {
+                passiveEquipments.Set(i, null);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 아이템 스왑: 손에 든 것이 null이거나 아이템일 때만 동작
+    public bool SwapHeldItemWithSlot(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= maxInventorySlots) return false;
+        var slotObj = inventorySlots[slotIndex];
+        // 손에 든 것이 null 또는 아이템만 허용
+        if (currentHeldObject == null || IsHeldItem())
+        {
+            // 손에 든 아이템을 슬롯에 넣기
+            if (currentHeldObject != null)
+            {
+                if (StoreItemToSlot(currentHeldObject.gameObject))
+                {
+                    currentHeldObject = null;
+                }
+                else
+                {
+                    // 슬롯이 가득 차면 스왑 불가
+                    return false;
+                }
+            }
+            // 슬롯에서 아이템 꺼내 손에 들기
+            if (slotObj != null)
+            {
+                currentHeldObject = slotObj;
+                inventorySlots.Set(slotIndex, null);
+            }
+            return true;
+        }
+        // 손에 든 것이 아이템이 아니면 스왑 불가
+        return false;
     }
 
     // 현재 손에 든 것이 아이템인지 판별(레이어로 구분)

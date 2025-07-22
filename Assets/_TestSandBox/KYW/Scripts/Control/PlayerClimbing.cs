@@ -10,7 +10,7 @@ public class PlayerClimbing : NetworkBehaviour
     [SerializeField] private float climbRegrabCooldownTime = 0.2f; // 사다리 점프 후 재매달림 쿨타임(초)
     [SerializeField] private float climbingGravityScale = 0f; // 사다리 중 중력 (0 = 무중력)
     [SerializeField] private float normalGravityScale = 1f;   // 일반 상태 중력
-    [SerializeField] private float centerSnapSpeed = 10f; // 사다리 중심 흡입 속도
+    [SerializeField] private float centerSnapSpeed = 30f; // 사다리 중심 흡입 속도
     
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsClimbing { get; private set; }

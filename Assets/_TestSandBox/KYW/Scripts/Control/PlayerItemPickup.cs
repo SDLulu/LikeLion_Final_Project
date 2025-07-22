@@ -118,31 +118,36 @@ public class PlayerItemPickup : NetworkBehaviour
         }
     }
     
-    // 🚪 트리거 진입: 아이템이 감지 범위에 들어왔을 때
-    // 👉 물리 시스템에서 자동 호출, 모든 클라이언트에서 개별 실행
-    private void OnTriggerEnter2D(Collider2D other)
+    // ✅ 유효한 픽업 대상인지 확인 (아이템, 스턴/죽은 적/NPC, 죽은 플레이어, 특정 상황의 플레이어)
+    private bool IsValidPickupTarget(GameObject obj)
     {
-        if (IsValidItem(other.gameObject))
+        if (obj == gameObject) return false; // 자기 자신 제외
+        if (obj == CurrentItem) return false; // 이미 들고 있는 것 제외
+
+        int layer = obj.layer;
+        // 1. 아이템
+        if (layer == LayerMask.NameToLayer("Item"))
+            return true;
+
+        // 2. 적/NPC: 스턴 또는 죽음 상태만
+        if (layer == LayerMask.NameToLayer("Enemy") || layer == LayerMask.NameToLayer("Npc"))
         {
-            nearbyItems.Add(other.gameObject);  // 📝 주변 아이템 목록에 추가
+            // TODO: 스턴 또는 죽음 상태 체크 (예: obj.GetComponent<EnemyStatus>().IsStunned || IsDead)
+            // 예시: var status = obj.GetComponent<EnemyStatus>();
+            // if (status != null && (status.IsStunned || status.IsDead)) return true;
+            return false; // 실제 구현 전까지 false
         }
-    }
-    
-    // 🚪 트리거 이탈: 아이템이 감지 범위에서 나갔을 때
-    private void OnTriggerExit2D(Collider2D other)
-    {
-        if (nearbyItems.Contains(other.gameObject))
+
+        // 3. 플레이어: 죽은 플레이어 or (특정 상황에서) 그냥 플레이어
+        if (layer == LayerMask.NameToLayer("Player"))
         {
-            nearbyItems.Remove(other.gameObject);  // 🗑️ 주변 아이템 목록에서 제거
+            // TODO: 죽음 상태 또는 픽업 가능 상태 체크 (예: obj.GetComponent<PlayerStatus>().IsDead || CanBePickedUp)
+            // 예시: var status = obj.GetComponent<PlayerStatus>();
+            // if (status != null && (status.IsDead || status.CanBePickedUp)) return true;
+            return false; // 실제 구현 전까지 false
         }
-    }
-    
-    // ✅ 유효한 아이템인지 확인
-    private bool IsValidItem(GameObject obj)
-    {
-        return obj != gameObject &&        // 🚫 자기 자신 제외
-               obj != CurrentItem &&       // 🚫 이미 들고 있는 아이템 제외
-               IsInItemLayer(obj);         // ✅ 아이템 레이어인지 확인
+
+        return false;
     }
     
     // 🎭 레이어 마스크 체크

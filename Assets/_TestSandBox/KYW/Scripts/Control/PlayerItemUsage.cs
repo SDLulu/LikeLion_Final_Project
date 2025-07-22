@@ -9,6 +9,7 @@ public class PlayerItemUsage : NetworkBehaviour
     [Header("Rotation Settings")]
     [SerializeField] private bool enableItemRotation = true;  // ⚙️ 회전 기능 켜기/끄기
     [SerializeField] private float rotationSpeed = 10f;       // 🔄 회전 속도 (0 = 즉시, 양수 = 부드러운 보간)
+    [SerializeField] private Transform handTransform;         // Hand 오브젝트(인스펙터에서 할당)
     
     [Header("Basic Punch")]
     [SerializeField] private BasicPunchItem basicPunchItem;   // 👊 기본 펀치 아이템 (아이템 없을 때 사용)
@@ -36,6 +37,11 @@ public class PlayerItemUsage : NetworkBehaviour
             Debug.LogError($"[{name}] BasicPunchItem이 설정되지 않았습니다!");
     }
     
+    private void Awake()
+    {
+        handTransform = this.transform;
+    }
+
 // 🎮 입력 처리 - 대폭 간소화
     public void ProcessInput(SpelunkyPlayerData input)
     {
@@ -113,30 +119,28 @@ public class PlayerItemUsage : NetworkBehaviour
         WasHolding = isCurrentlyHolding;
     }
     
-    // 🔄 회전 처리 - 기존과 동일
+    // 🔄 회전 처리 - Hand 오브젝트를 마우스 방향으로 회전
     private void RotateObjectToMouse(GameObject targetObject, Vector2 mouseWorldPosition)
     {
-        if (targetObject == null) return;
-
-        Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
+        if (handTransform == null) return;
+        Vector2 direction = (mouseWorldPosition - (Vector2)handTransform.position).normalized;
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        bool isLeft = mouseWorldPosition.x < transform.position.x;
-        
+        bool isLeft = mouseWorldPosition.x < handTransform.position.x;
+
         // InputAuthority는 SpelunkyPlayerController에서 이미 체크됨
         NetworkedFlipY = isLeft;
         NetworkedRotationAngle = targetAngle;
+        handTransform.rotation = Quaternion.Euler(0, 0, targetAngle);
     }
 
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-        
-        GameObject currentObject = GetCurrentTargetObject();
-        if (currentObject != null && enableItemRotation)
+        if (handTransform != null && enableItemRotation)
         {
-            // 실제 오브젝트의 회전 값은 네트워크 상태를 직접 따름
-            currentObject.transform.localEulerAngles = new Vector3(0, 0, NetworkedRotationAngle);
+            handTransform.rotation = Quaternion.Euler(0, 0, NetworkedRotationAngle);
         }
+        // 기존 currentObject 회전 코드는 제거
     }
     
     // 🎨 렌더링 - 시각적 요소만 처리

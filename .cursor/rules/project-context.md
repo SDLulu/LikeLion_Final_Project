@@ -20,6 +20,19 @@
 8. **클라이언트 신뢰**: 검증 없는 클라이언트 정보 신뢰 금지
 9. **무거운 함수**: FixedUpdateNetwork에서 GameObject.Find() 등 사용 금지
 
+- 움직임/애니메이션이 있는 모든 NetworkObject(캐릭터, 무기, 아이템 등)는 Spawned()에서 HasInputAuthority가 없는 경우 반드시 다음 코드를 실행해야 한다:
+
+  if (!HasInputAuthority)
+  {
+      Runner.SetIsSimulated(Object, true);
+      base.Object.RenderSource = RenderSource.Interpolated;
+      base.Object.ForceRemoteRenderTimeframe = true;
+  }
+
+이 규칙은 네트워크 보간/시뮬레이션의 일관성을 위해 필수이다.
+
+- 회전 애니메이션(localRotation)을 사용하는 아이템(예: 곡괭이 등)은 FixedUpdateNetwork 등에서 반드시 부모가 있을 때만 localRotation을 변경해야 하며, 부모가 없을 때(던진 상태, 월드에 떨어진 상태)에는 localRotation을 절대 건드리지 않아야 한다. 이 규칙을 지키면 아이템을 던질 때 월드 회전값이 자연스럽게 유지된다.
+
 // 🔄 문서 업데이트 워크플로우 (개발자가 반드시 지켜야 함)
 // 1. 업데이트 시점: 새로운 핵심 기능 추가 또는 기존 중요 로직 크게 변경 시
 // 2. AI 요약 요청: 기능 개발 완료 후, AI에게 "방금 완성된 OOO 기능의 핵심 로직과 규칙을 이 문서에 추가할 수 있도록 마크다운 형식으로 요약해줘" 요청

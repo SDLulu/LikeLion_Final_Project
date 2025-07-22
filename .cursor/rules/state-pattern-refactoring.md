@@ -134,3 +134,53 @@ if (!PlayerStateHelper.CanMove(playerController.CurrentState)) return;
 - ✅ 네트워크 동기화 정상 동작
 - ✅ 웅크리기 애니메이션 깜빡임 버그 수정
 - ✅ 사다리 중 중력 처리 통합 완료 
+
+---
+
+## 🎒 인벤토리/오브젝트 핸들링 상태 패턴 적용 의도 및 구조
+
+### 📦 리팩토링 의도
+
+- **상태 패턴과 인벤토리/오브젝트 핸들링의 결합**
+  - 플레이어가 "손에 들고 있는 것"과 "저장 슬롯"을 명확히 분리하여,  
+    상태별로 아이템/캐릭터/빈손을 일관성 있게 관리
+  - 상태(예: Stunned, Ducking 등)에 따라 아이템 줍기/사용/던지기 등 액션의 허용 여부를 중앙에서 제어
+
+---
+
+### 🏗️ 구조 및 설계
+
+- **PlayerInventory**
+  - `currentHeldObject`: 손에 들고 있는 오브젝트(아이템/캐릭터, 1개만)
+  - `inventorySlots`: 저장 슬롯(아이템만, 기본 1칸, 패시브 등으로 확장 가능)
+  - `maxInventorySlots`: 현재 슬롯 개수(동적 확장)
+  - 오브젝트 타입은 레이어(PlayerNpc, Enemy, Item)로 구분
+
+- **핵심 프로퍼티/메서드**
+  - `CurrentHeldObject`, `CurrentHeldItem`, `CurrentHeldCharacter`
+  - `StoreItemToSlot`, `HoldItemFromSlot`, `HoldCharacter`, `DropHeldObject`
+  - `AddInventorySlot`, `RemoveInventorySlot`
+
+---
+
+### 🔄 3개 스크립트 리팩토링 방향
+
+- **PlayerItemPickup**
+  - 기존 CurrentItem/HasItem 등 직접 관리 → PlayerInventory의 CurrentHeldObject/StoreItemToSlot/HoldCharacter 등으로 일원화
+  - 상태(예: Ducking)와 레이어에 따라 아이템/캐릭터를 들거나 저장
+
+- **PlayerItemThrower**
+  - 던지기 대상도 PlayerInventory의 CurrentHeldObject로 통일
+  - 상태에 따라 던지기 가능 여부 제어
+
+- **PlayerItemUsage**
+  - 아이템/캐릭터/빈손(기본 펀치) 사용 로직을 PlayerInventory의 CurrentHeldObject 기준으로 분기
+  - 상태별로 사용 가능 여부를 중앙에서 제어
+
+---
+
+### 🎯 기대 효과
+
+- **상태 패턴과 인벤토리/오브젝트 핸들링의 결합으로**  
+  코드 일관성, 확장성, 버그 방지, 유지보수성 대폭 향상
+  - 상태별 액션 제한이 명확해지고, 새로운 상태/아이템/캐릭터 추가가 쉬워짐 
