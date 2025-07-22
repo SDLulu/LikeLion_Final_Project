@@ -116,6 +116,7 @@ if (!PlayerStateHelper.CanMove(playerController.CurrentState)) return;
 - [ ] `PlayerItemUsage.cs` 상태 패턴 적용
 - [~] `PlayerItemThrower.cs` 상태 패턴 적용 (즉발 액션, 리팩토링 불필요)
 - [ ] `PlayerShiftSkill.cs` 상태 패턴 적용
+- [보류] PlayerAnimation.cs 상태 패턴 기반 리팩토링 (우선순위: 인벤토리/체력 시스템 추가가 더 시급)
 
 ## 💡 **주요 학습사항**
 1. **상태 패턴은 기존 파라미터를 대체하지 않고 보완**하는 역할
