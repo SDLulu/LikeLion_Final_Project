@@ -85,7 +85,7 @@ public partial class PMK_TileRogic : MonoBehaviour
 
 
     #region 맵 초기화 및 재생성
-    private void ResetMap()
+    public void ResetMap()
     {
         mainTilemap.ClearAllTiles();
 
