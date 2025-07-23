@@ -12,6 +12,10 @@ public class PlayerLadderCheck : NetworkBehaviour
     // 🌐 네트워크 동기화
     [Networked] public bool IsNearLadder { get; private set; }
 
+    // 현재 감지된 사다리 (가장 가까운 것)
+    public GameObject CurrentLadderObject { get; private set; }
+    public Vector2? CurrentLadderCenter => CurrentLadderObject != null ? (Vector2?)CurrentLadderObject.transform.position : null;
+
     public override void FixedUpdateNetwork()
     {
         CheckLadder();
@@ -19,8 +23,20 @@ public class PlayerLadderCheck : NetworkBehaviour
 
     private void CheckLadder()
     {
-        // 자신의 위치에서 사다리 체크 (OverlapBox)
-        IsNearLadder = Physics2D.OverlapBox(transform.position, ladderCheckSize, 0f, ladderLayer);
+        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, ladderCheckSize, 0f, ladderLayer);
+        IsNearLadder = hits.Length > 0;
+        GameObject nearestObj = null;
+        float minDist = float.MaxValue;
+        foreach (var hit in hits)
+        {
+            float dist = Mathf.Abs(transform.position.x - hit.transform.position.x);
+            if (dist < minDist)
+            {
+                minDist = dist;
+                nearestObj = hit.gameObject;
+            }
+        }
+        CurrentLadderObject = nearestObj;
     }
 
     // 🎯 기즈모로 감지 영역 시각화 (GroundCheckVisualizer 스타일)
