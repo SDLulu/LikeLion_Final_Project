@@ -9,6 +9,7 @@ public class PlayerItemUsage : NetworkBehaviour
     [Header("Rotation Settings")]
     [SerializeField] private bool enableItemRotation = true;  // ⚙️ 회전 기능 켜기/끄기
     [SerializeField] private float rotationSpeed = 10f;       // 🔄 회전 속도 (0 = 즉시, 양수 = 부드러운 보간)
+    [SerializeField] private Transform handTransform;         // Hand 오브젝트(인스펙터에서 할당)
     
     [Header("Basic Punch")]
     [SerializeField] private BasicPunchItem basicPunchItem;   // 👊 기본 펀치 아이템 (아이템 없을 때 사용)
@@ -18,61 +19,173 @@ public class PlayerItemUsage : NetworkBehaviour
     [Networked] private float NetworkedRotationAngle { get; set; }     // 🔄 회전 각도 (네트워크 동기화)
     [Networked] private NetworkBool NetworkedFlipY { get; set; }       // 🔄 스프라이트 Y축 반전 여부
     [Networked] private bool WasHolding { get; set; }                  // 🎮 이전 프레임 Hold 상태 (상태 변화 감지용)
+    [Networked] private float PreviousScrollWheel { get; set; }        // 🎮 이전 프레임 휠 스크롤 값 (스왑 감지용)
     
  
     // 📎 참조할 다른 컴포넌트들
     private PlayerItemPickup itemPickup;      // 📦 아이템 보유 상태 확인용
+    private PlayerInventory inventory;        // 인벤토리 참조
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
+        inventory = GetComponentInParent<PlayerInventory>();    // 인벤토리 캐싱 (부모에서 찾음)
+        // 필수 컴포넌트 검증
+        if (itemPickup == null)
+            Debug.LogError($"[{name}] PlayerItemPickup 컴포넌트를 찾을 수 없습니다!");
+        if (basicPunchItem == null)
+            Debug.LogError($"[{name}] BasicPunchItem이 설정되지 않았습니다!");
+        if (inventory == null)
+            Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
     }
     
-// 🎮 입력 처리 - 대폭 간소화
+    private void Awake()
+    {
+        handTransform = this.transform;
+    }
+
+    // 🎮 입력 처리 - 단순화 버전
     public void ProcessInput(SpelunkyPlayerData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
-        
-        // 🎯 현재 사용할 아이템/펀치 결정
-        IUsableItem usableItem = GetCurrentUsableItem();
-        GameObject targetObject = GetCurrentTargetObject();
-        
-        if (usableItem != null && targetObject != null)
+
+        // 🎯 휠 스크롤로 아이템 스왑 처리
+        HandleWheelScroll(input);
+
+        GameObject held = inventory?.CurrentHeldObject;
+        IUsableItem usable = null;
+
+        if (held != null && held.layer == LayerMask.NameToLayer("Item"))
         {
-            // 🔄 회전 처리
+            usable = held.GetComponent<IUsableItem>();
+        }
+
+        if (usable != null)
+        {
             if (enableItemRotation)
-                RotateObjectToMouse(targetObject, input.MouseWorldPosition);
-            
-            // 🎮 사용 처리 - 하나의 메서드로 통합
-            HandleUsage(usableItem, input, pressed);
+                RotateObjectToMouse(held, input.MouseWorldPosition);
+            HandleUsage(usable, input, pressed);
+        }
+        else if (basicPunchItem != null)
+        {
+            if (enableItemRotation)
+                RotateObjectToMouse(basicPunchItem.gameObject, input.MouseWorldPosition);
+            HandleUsage(basicPunchItem, input, pressed);
         }
     }
     
     // 🎯 현재 사용할 아이템 결정 (아이템 > 펀치 우선순위)
     private IUsableItem GetCurrentUsableItem()
     {
-        // 아이템이 있으면 아이템 우선
-        if (itemPickup?.CurrentItem != null)
+        // 손에 든 것이 아이템(레이어 == Item)일 때만 반환
+        if (inventory != null && inventory.CurrentHeldObject != null)
         {
-            return itemPickup.CurrentItem.GetComponent<IUsableItem>();
+            var obj = inventory.CurrentHeldObject;
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+                return obj.GetComponent<IUsableItem>();
         }
-        
-        // 아이템이 없으면 펀치
-        return basicPunchItem;
+        // 아이템이 아니면 null (기본 펀치는 별도 처리)
+        return null;
     }
     
     // 🎯 현재 회전시킬 오브젝트 결정
     private GameObject GetCurrentTargetObject()
     {
-        if (itemPickup?.CurrentItem != null)
+        if (inventory != null && inventory.CurrentHeldObject != null)
         {
-            return itemPickup.CurrentItem;
+            var obj = inventory.CurrentHeldObject;
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+                return obj;
+        }
+        return basicPunchItem.gameObject;
+    }
+    
+    // 🎯 휠 스크롤로 아이템 스왑 처리
+    private void HandleWheelScroll(SpelunkyPlayerData input)
+    {
+        if (inventory == null) return;
+        
+        float currentScroll = input.MouseScrollWheel;
+        float scrollDelta = currentScroll - PreviousScrollWheel;
+        
+        // 스크롤 값이 변경되었을 때만 처리 (임계값 설정)
+        if (Mathf.Abs(scrollDelta) > 0.01f)
+        {
+            // 위로 스크롤 (양수) = 다음 슬롯으로
+            if (scrollDelta > 0)
+            {
+                SwapToNextSlot();
+            }
+            // 아래로 스크롤 (음수) = 이전 슬롯으로
+            else if (scrollDelta < 0)
+            {
+                SwapToPreviousSlot();
+            }
         }
         
-        return basicPunchItem?.gameObject;
+        PreviousScrollWheel = currentScroll;
     }
+    
+    // 🔄 다음 슬롯으로 스왑
+    private void SwapToNextSlot()
+    {
+        if (inventory == null) return;
+        
+        int currentSlot = inventory.SelectedSlotIndex;
+        int maxSlots = inventory.GetActiveSlotCount();
+        int nextSlot = (currentSlot + 1) % maxSlots;
+        
+        // 다음 슬롯으로 이동 (아이템 유무 상관없이)
+        inventory.SelectedSlotIndex = nextSlot;
+        
+        // 스왑 시도
+        if (inventory.SwapHeldItemWithSlot(nextSlot))
+        {
+            Debug.Log($"[{name}] 다음 슬롯으로 스왑: {currentSlot} → {nextSlot}");
+        }
+        else
+        {
+            // 스왑 실패 시 현재 손에 든 아이템을 빈 슬롯에 저장
+            if (inventory.CurrentHeldObject != null && inventory.StoreItemToSlot(inventory.CurrentHeldObject))
+            {
+                inventory.DropHeldObject();
+                Debug.Log($"[{name}] 아이템을 슬롯 {nextSlot}에 저장하고 손을 비웠습니다.");
+            }
+        }
+    }
+    
+    // 🔄 이전 슬롯으로 스왑
+    private void SwapToPreviousSlot()
+    {
+        if (inventory == null) return;
+        
+        int currentSlot = inventory.SelectedSlotIndex;
+        int maxSlots = inventory.GetActiveSlotCount();
+        int prevSlot = (currentSlot - 1 + maxSlots) % maxSlots;
+        
+        // 이전 슬롯으로 이동 (아이템 유무 상관없이)
+        inventory.SelectedSlotIndex = prevSlot;
+        
+        // 스왑 시도
+        if (inventory.SwapHeldItemWithSlot(prevSlot))
+        {
+            Debug.Log($"[{name}] 이전 슬롯으로 스왑: {currentSlot} → {prevSlot}");
+        }
+        else
+        {
+            // 스왑 실패 시 현재 손에 든 아이템을 빈 슬롯에 저장
+            if (inventory.CurrentHeldObject != null && inventory.StoreItemToSlot(inventory.CurrentHeldObject))
+            {
+                inventory.DropHeldObject();
+                Debug.Log($"[{name}] 아이템을 슬롯 {prevSlot}에 저장하고 손을 비웠습니다.");
+            }
+        }
+    }
+    
+
     
     // 🎮 Hold 전용 사용 처리 - 상태 변화로 Press/Release 감지
     private void HandleUsage(IUsableItem usableItem, SpelunkyPlayerData input, NetworkButtons pressed)
@@ -106,30 +219,28 @@ public class PlayerItemUsage : NetworkBehaviour
         WasHolding = isCurrentlyHolding;
     }
     
-    // 🔄 회전 처리 - 기존과 동일
+    // 🔄 회전 처리 - Hand 오브젝트를 마우스 방향으로 회전
     private void RotateObjectToMouse(GameObject targetObject, Vector2 mouseWorldPosition)
     {
-        if (targetObject == null) return;
-
-        Vector2 direction = (mouseWorldPosition - (Vector2)transform.position).normalized;
+        if (handTransform == null) return;
+        Vector2 direction = (mouseWorldPosition - (Vector2)handTransform.position).normalized;
         float targetAngle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-        bool isLeft = mouseWorldPosition.x < transform.position.x;
-        
+        bool isLeft = mouseWorldPosition.x < handTransform.position.x;
+
         // InputAuthority는 SpelunkyPlayerController에서 이미 체크됨
         NetworkedFlipY = isLeft;
         NetworkedRotationAngle = targetAngle;
+        handTransform.rotation = Quaternion.Euler(0, 0, targetAngle);
     }
 
     public override void FixedUpdateNetwork()
     {
         base.FixedUpdateNetwork();
-        
-        GameObject currentObject = GetCurrentTargetObject();
-        if (currentObject != null && enableItemRotation)
+        if (handTransform != null && enableItemRotation)
         {
-            // 실제 오브젝트의 회전 값은 네트워크 상태를 직접 따름
-            currentObject.transform.localEulerAngles = new Vector3(0, 0, NetworkedRotationAngle);
+            handTransform.rotation = Quaternion.Euler(0, 0, NetworkedRotationAngle);
         }
+        // 기존 currentObject 회전 코드는 제거
     }
     
     // 🎨 렌더링 - 시각적 요소만 처리

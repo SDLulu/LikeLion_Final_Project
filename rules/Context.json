@@ -1,0 +1,97 @@
+{
+  "project": {
+    "name": "LikeLion Final Project",
+    "type": "Unity Multiplayer Game",
+    "genre": "2D Platformer (Spelunky-like)",
+    "engine": "Unity",
+    "networking": "Photon Fusion 2",
+    "mode": "Host-Client"
+  },
+  "developer": {
+    "role": "Student (Game Development Learning)",
+    "experience": "Learning Unity and Photon Fusion",
+    "team": "Multiple developers (KYW, LMU)"
+  },
+  "code_rules": {
+    "properties": {
+      "style": "Use { get; set; } or { get { return ...; } } instead of arrow functions (=>)",
+      "example": "public bool IsAlive { get; private set; } = true;"
+    },
+    "comments": {
+      "style": "Use simple Korean comments instead of XML documentation (/// <summary>)",
+      "example": "// 플레이어가 살아있는지 확인"
+    },
+    "language": "Always use Korean for comments and responses"
+  },
+  "architecture": {
+    "folder_structure": {
+      "main_scripts": "Assets/Scripts/",
+      "test_sandbox": "Assets/_TestSandBox/",
+      "kyw_folder": "Assets/_TestSandBox/KYW/Scripts/",
+      "lmu_folder": "Assets/_TestSandBox/LMU/Scripts/"
+    },
+    "component_organization": {
+      "core": "Core/ - 핵심 시스템 스크립트",
+      "control": "Control/ - 플레이어 제어 관련",
+      "items": "Items/ - 아이템 시스템",
+      "physics": "Physics/ - 물리 및 충돌 처리",
+      "util": "Util/ - 유틸리티 및 디버그",
+      "input": "Input/ - 입력 처리",
+      "data": "Data/ - 데이터 관련",
+      "debug": "Debug/ - 디버그 관련"
+    }
+  },
+  "game_mechanics": {
+    "player_controls": {
+      "movement": "Horizontal movement with A/D or Arrow keys",
+      "jump": "Space key (when not ducking)",
+      "duck": "Down arrow + grounded",
+      "climbing": "W key near ladder",
+      "item_pickup": "Space + ducking",
+      "item_use": "Left mouse click",
+      "item_throw": "Right mouse click",
+      "skill": "Shift key"
+    },
+    "state_system": {
+      "basic_states": ["Idle", "Walking", "Ducking", "Jumping", "Falling", "Climbing", "Stunned", "Dead"],
+      "action_states": ["UsingItem", "ThrowingItem", "PickingUpItem", "UsingSkill", "Invincible"],
+      "item_usage": "Available in most states (except Stunned/Dead)",
+      "item_pickup": "Only available when Ducking"
+    }
+  },
+  "networking": {
+    "framework": "Photon Fusion 2",
+    "patterns": {
+      "input_handling": "Use NetworkButtons for immediate input handling",
+      "state_sync": "Use [Networked] properties for state synchronization",
+      "rpc_usage": "Use RPCs for one-time events like item pickup"
+    },
+    "authority": {
+      "state_authority": "Host controls state changes",
+      "input_authority": "Local player controls input",
+      "spawning": "Host spawns players using NetworkPrefabRef"
+    }
+  },
+  "file_naming": {
+    "classes": "PascalCase (e.g., SpelunkyPlayerController)",
+    "variables": "camelCase (e.g., playerMovement)",
+    "constants": "UPPER_SNAKE_CASE (e.g., MAX_PLAYER_COUNT)",
+    "properties": "PascalCase (e.g., PlayerHealth)"
+  },
+  "development_workflow": {
+    "testing": "Use _TestSandBox for experimental features",
+    "refactoring": "Maintain consistency and unified approach",
+    "documentation": "Update .cursorrules when project structure changes"
+  },
+  "important_notes": {
+    "ladder_system": "W key initiates hang/climb state",
+    "camera_handling": "Player handles camera setup automatically",
+    "component_references": "All component references should be set in Spawned() method",
+    "error_handling": "Use Debug.LogError for missing components in Spawned()"
+  },
+  "recent_changes": {
+    "state_management": "Added PlayerState and PlayerAction enums for centralized state management",
+    "component_optimization": "Moved all GetComponent calls to Spawned() method",
+    "null_check_removal": "Removed runtime null checks after Spawned() validation"
+  }
+} 
