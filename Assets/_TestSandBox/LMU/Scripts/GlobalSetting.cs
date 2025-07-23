@@ -7,27 +7,28 @@ using UnityEngine.SceneManagement;
 
 public class GlobalSetting : BaseManager<GlobalSetting>
 {
-    [SerializeField] private SO_GlobalSetting _globalSetting;
+    [SerializeField] private SO_GlobalSetting _settingData;
+    public SO_GlobalSetting SettingData => _settingData;
 
-    public bool IsShowGameUI => _globalSetting.IsShowGameUI;
+    public bool IsShowGameUI => _settingData.IsShowGameUI;
     
     public string LobbyScenePath 
     {
         get
         {
-            if (string.IsNullOrEmpty(_globalSetting.LobbyScenePath))
+            if (string.IsNullOrEmpty(_settingData.LobbyScenePath))
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]에 로비 씬 경로 할당되지 않았습니다.");
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]에 로비 씬 경로 할당되지 않았습니다.");
                 return string.Empty;
             }
 
-            if (CheckScenePath(_globalSetting.LobbyScenePath) == false)
+            if (IsValidScenePath(_settingData.LobbyScenePath) == false)
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 로비 씬 경로가 유효하지 않습니다: {_globalSetting.LobbyScenePath}");
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]의 로비 씬 경로가 유효하지 않습니다: {_settingData.LobbyScenePath}");
                 return string.Empty;
             }
 
-            return _globalSetting.LobbyScenePath;
+            return _settingData.LobbyScenePath;
         }
     }
     
@@ -35,19 +36,38 @@ public class GlobalSetting : BaseManager<GlobalSetting>
     {
         get
         {
-            if (string.IsNullOrEmpty(_globalSetting.GameScenePath))
+            if (string.IsNullOrEmpty(_settingData.GameScenePath))
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]에 게임 씬 패스가 할당되지 않았습니다.");
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]에 게임 씬 패스가 할당되지 않았습니다.");
                 return string.Empty;
             }
 
-            if (!CheckScenePath(_globalSetting.GameScenePath))
+            if (IsValidScenePath(_settingData.GameScenePath) == false)
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]의 게임 씬 경로가 유효하지 않습니다");
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]의 게임 씬 경로가 유효하지 않습니다");
                 return string.Empty;
             }
 
-            return _globalSetting.GameScenePath;
+            return _settingData.GameScenePath;
+        }
+    }
+
+    public string FocusScenePath
+    {
+        get
+        {
+            if (_settingData.FocusScene == null)
+            {
+                return string.Empty;
+            }
+
+            if (IsValidScenePath(_settingData.FocusScene.name) == false)
+            {
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]의 포커스 씬 경로가 유효하지 않습니다");
+                return string.Empty;
+            }
+
+            return _settingData.FocusScene.name;
         }
     }
 
@@ -55,38 +75,37 @@ public class GlobalSetting : BaseManager<GlobalSetting>
     {
         get
         {
-            if (_globalSetting.PlayerPrefab == null)
+            if (_settingData.PlayerPrefab == null)
             {
-                Debug.LogError($"GlobalSetting[{_globalSetting.GlobalSettingName}]에 플레이어 프리팹이 할당되지 않았습니다.");
+                Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]에 플레이어 프리팹이 할당되지 않았습니다.");
                 return null;
             }
 
-            return _globalSetting.PlayerPrefab;
+            return _settingData.PlayerPrefab;
         }
     }
 
     /// <summary>
     /// 씬 경로가 유효한지 확인하는 함수
     /// </summary>
-    private bool CheckScenePath(string scenePath)
+    private bool IsValidScenePath(string scenePath)
     {
-        // 빌드 설정에 포함된 씬인지 확인
-        int buildIndex = SceneUtility.GetBuildIndexByScenePath(scenePath);
-        if (buildIndex >= 0)
-        {
-            return true;
-        }
 
-#if UNITY_EDITOR
-        // 2. 에디터에서 실제 씬 파일이 존재하는지 확인
-        var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
-        if (sceneAsset != null)
-        {
-            Debug.LogWarning($"씬 파일은 존재하지만 빌드 설정에 포함되지 않았습니다: {scenePath}");
-            return true;
-        }
-#endif
+// #if UNITY_EDITOR
+//         // 에디터에서 실제 씬 파일이 존재하는지 확인
+//         var sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath);
+//         if (sceneAsset == null)
+//             return false;
+// #endif
 
-        return false;
+        return true;
+    }
+
+    public Vector2 LobbySpawnPos => _settingData.LobbySpawnPos;
+
+    public Vector2 GetRandomLobbySpawnPos(float xFactor = 2.0f)
+    {
+        float randSpawnX = UnityEngine.Random.Range(LobbySpawnPos.x - xFactor, LobbySpawnPos.x + xFactor);
+        return new Vector2(randSpawnX, LobbySpawnPos.y);
     }
 }

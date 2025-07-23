@@ -17,5 +17,6 @@ public abstract class BaseStateBehaviour : StateBehaviour
     protected Fader Fader {get; set;}
     protected PlayerManager PlayerM {get; set;}
     protected CutSceneController CutSceneC {get; set;}
+    protected PMK_TileRogic TileRogicM {get; set;}
     public abstract E_StateName StateName {get;}
 }

@@ -34,9 +34,11 @@ public class PlayerSpawnHandler : MonoBehaviour
     /// </summary>
     private async Awaitable OnHostPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
     {
+        Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
+
         // 호스트 입장시 네트워크 관리 컴포넌트 스폰
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        await runner.SpawnAsync(id, Vector3.zero, Quaternion.identity, player,
+        await runner.SpawnAsync(id, playerSpawnPos, Quaternion.identity, player,
             onCompleted: (info) =>
             {
                 var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
@@ -58,8 +60,10 @@ public class PlayerSpawnHandler : MonoBehaviour
     /// </summary>
     private async Awaitable OnClientPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
     {
+        Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
+
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        var spawnedPlayer = await runner.SpawnAsync(id, Vector3.zero, Quaternion.identity, player);
+        var spawnedPlayer = await runner.SpawnAsync(id, playerSpawnPos, Quaternion.identity, player);
         runner.SetPlayerObject(player, spawnedPlayer);
 
         // PlayerManager 네트워크 등록까지 대기
@@ -153,8 +157,7 @@ public class PlayerSpawnHandler : MonoBehaviour
     private bool IsGameSceneState(object currentState)
     {
         return currentState is GameStageWaitingState ||
-               currentState is GameStagePlayingState ||
-               currentState is GameStageTransitionState;
+               currentState is GameStagePlayingState;
     }
 
     /// <summary>

@@ -126,7 +126,6 @@ namespace LMCore
             CheckAndInitialize();
             if (_contentsRoot == null || IsFading)
                 return;
-            Debug.Log("FadeInExpandAsync");
 
             _isFading = true;
             _bgImage.color = color;
@@ -147,7 +146,6 @@ namespace LMCore
             if (_contentsRoot == null || IsFading)
                 return;
 
-            Debug.Log("FadeOutExpandAsync");
             _isFading = true;
             _contentsRoot.sizeDelta = _startSize;
             
@@ -171,7 +169,6 @@ namespace LMCore
             if (_imageRoot == null || _contentsRoot == null || IsFading)
                 return;
 
-            Debug.Log($"FadeInAsync 시작 - 시간: {seconds}초");
             _isFading = true;
             _contentsRoot.gameObject.SetActive(false);
             _imageRoot.gameObject.SetActive(false);
@@ -197,7 +194,6 @@ namespace LMCore
             image.gameObject.SetActive(false);
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
-            Debug.Log("FadeInAsync 완료");
             await Awaitable.NextFrameAsync();
         }
         
@@ -207,7 +203,6 @@ namespace LMCore
             if (_imageRoot == null || _contentsRoot == null || IsFading)
                 return;
 
-            Debug.Log($"FadeOutAsync 시작 - 시간: {seconds}초");
             _isFading = true;
             _contentsRoot.gameObject.SetActive(false);
             _imageRoot.gameObject.SetActive(false);
@@ -231,7 +226,6 @@ namespace LMCore
 
             image.color = new Color(color.r, color.g, color.b, 1f);
             _isFading = false;
-            Debug.Log("FadeOutAsync 완료");
             await Awaitable.NextFrameAsync();
         }
 

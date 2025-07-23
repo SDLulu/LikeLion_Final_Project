@@ -57,6 +57,9 @@ public class PlayerStageController : NetworkBehaviour
     /// </summary>
     public void SetPosition(Vector2 position)
     {
+        if (Runner.IsServer == false)
+            return;
+
         var rigid = GetComponent<NetworkRigidbody2D>();
         rigid.Teleport(position);
     }
@@ -134,7 +137,8 @@ public class PlayerDebugLogFilter : ILogHandler
             string lowerMessage = message.ToLower();
             
             // 핵심 플레이어 관련 키워드들
-            if (lowerMessage.Contains("🎮") || // 플레이어 컨트롤러
+            if (lowerMessage.Contains("📷") ||
+                lowerMessage.Contains("🎮") || // 플레이어 컨트롤러
                 lowerMessage.Contains("🌐") || // 네트워크 설정
                 lowerMessage.Contains("🏠") || // 로컬 플레이어
                 lowerMessage.Contains("🌍") || // 원격 플레이어
@@ -155,7 +159,9 @@ public class PlayerDebugLogFilter : ILogHandler
                 lowerMessage.Contains("떨림 방지") ||
                 lowerMessage.Contains("master client") ||
                 lowerMessage.Contains("interpolation target") ||
-                lowerMessage.Contains("interpolation data source"))
+                lowerMessage.Contains("interpolation data source") ||
+                lowerMessage.Contains("아이템")
+                )
             {
                 return true; // 차단
             }

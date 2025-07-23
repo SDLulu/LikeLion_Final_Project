@@ -1,12 +1,11 @@
-using UnityEngine;
+VVVVusing UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
-using GoogleSheet.Type;
 
-public class PMK_TileRogic : MonoBehaviour
+public partial class PMK_TileRogic : MonoBehaviour
 {
-     public static PMK_TileRogic Instance { get; private set; }
+    public static PMK_TileRogic Instance { get; private set; }
 
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
@@ -242,6 +241,7 @@ public class PMK_TileRogic : MonoBehaviour
     }
     #endregion
 
+    public Vector2 StartPos {get; private set;}
 
     #region 스폰맵 생성
     private void SpawnMap_Instantiate()
@@ -250,6 +250,7 @@ public class PMK_TileRogic : MonoBehaviour
         removeMapX = Random.Range(0, maxTileX);
         Vector2 spawnPos = mapXY[removeMapX, 0];
         Create_Map("C", 0, spawnPos.x, spawnPos.y);
+        StartPos = spawnPos;
     }
     #endregion
 
