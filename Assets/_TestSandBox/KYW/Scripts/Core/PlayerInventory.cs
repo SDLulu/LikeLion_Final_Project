@@ -76,20 +76,33 @@ public class PlayerInventory : NetworkBehaviour
         return true;
     }
 
-    // 캐릭터 들기
-    public bool HoldCharacter(GameObject character)
-    {
-        if (currentHeldObject != null) return false;
-        var netObj = character.GetComponent<NetworkObject>();
-        if (netObj == null) return false;
-        currentHeldObject = netObj;
-        return true;
-    }
-
     // 손에 든 것 내려놓기
     public void DropHeldObject()
     {
+        if (currentHeldObject != null)
+        {
+            var netObj = currentHeldObject.GetComponent<NetworkObject>();
+            if (netObj != null && netObj.HasInputAuthority)
+            {
+                netObj.RemoveInputAuthority(); // InputAuthority 해제
+            }
+        }
         currentHeldObject = null;
+    }
+
+    // 아이템/캐릭터 등 무엇이든 손에 들기 (슬롯 저장 X, 무조건 손에 듦)
+    public bool HoldObject(GameObject obj)
+    {
+        if (currentHeldObject != null) return false;
+        var netObj = obj.GetComponent<NetworkObject>();
+        if (netObj == null) return false;
+        // InputAuthority 할당 (던질 수 있도록)
+        if (!netObj.HasInputAuthority)
+        {
+            netObj.AssignInputAuthority(Object.InputAuthority);
+        }
+        currentHeldObject = netObj;
+        return true;
     }
 
     // 슬롯 개수 증가/감소

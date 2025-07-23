@@ -154,3 +154,21 @@
 - **액션 동시성**: 플래그 열거형으로 여러 액션을 동시에 수행 가능
 - **파일 크기**: 각 스크립트의 크기 정보 포함하여 복잡도 파악 가능
 - **컴포넌트 참조**: Spawned() 메서드에서 모든 컴포넌트 참조 초기화 
+
+# 플레이어 오브젝트 계층구조 및 컴포넌트 배치 규칙
+
+아래 구조를 반드시 지킬 것. (컴포넌트 참조 실수 방지)
+
+| 오브젝트 계층         | 필수 컴포넌트 목록                                  |
+|----------------------|---------------------------------------------------|
+| Player (루트)        | PlayerInventory, PlayerMovement, PlayerJump,      |
+|                      | PlayerClimbing, PlayerGroundCheck, ...            |
+| ├── Visual           | SpriteRenderer, Animator, PlayerAnimation         |
+| └── Hand             | PlayerItemPickup, PlayerItemUsage, PlayerItemThrower, CircleCollider2D |
+
+- **PlayerInventory는 반드시 Player(루트)에 붙인다.**
+- **Hand에는 PlayerItemPickup, PlayerItemUsage, PlayerItemThrower만 붙인다.**
+- Hand의 모든 아이템 참조/조작은 GetComponentInParent<PlayerInventory>()로 한다.
+- Visual에는 시각적 컴포넌트만 배치한다.
+
+> 이 구조를 어기면 참조 오류, 아이템 사용/던지기 버그가 발생할 수 있음. 

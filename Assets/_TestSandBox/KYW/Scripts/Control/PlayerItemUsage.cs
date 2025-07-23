@@ -23,18 +23,21 @@ public class PlayerItemUsage : NetworkBehaviour
  
     // 📎 참조할 다른 컴포넌트들
     private PlayerItemPickup itemPickup;      // 📦 아이템 보유 상태 확인용
+    private PlayerInventory inventory;        // 인벤토리 참조
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
         // 모든 컴포넌트 참조를 한 번에 설정
         itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
-        
+        inventory = GetComponentInParent<PlayerInventory>();    // 인벤토리 캐싱 (부모에서 찾음)
         // 필수 컴포넌트 검증
         if (itemPickup == null)
             Debug.LogError($"[{name}] PlayerItemPickup 컴포넌트를 찾을 수 없습니다!");
         if (basicPunchItem == null)
             Debug.LogError($"[{name}] BasicPunchItem이 설정되지 않았습니다!");
+        if (inventory == null)
+            Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
     }
     
     private void Awake()
@@ -42,48 +45,57 @@ public class PlayerItemUsage : NetworkBehaviour
         handTransform = this.transform;
     }
 
-// 🎮 입력 처리 - 대폭 간소화
+    // 🎮 입력 처리 - 단순화 버전
     public void ProcessInput(SpelunkyPlayerData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
-        
-        // 🎯 현재 사용할 아이템/펀치 결정
-        IUsableItem usableItem = GetCurrentUsableItem();
-        GameObject targetObject = GetCurrentTargetObject();
-        
-        if (usableItem != null && targetObject != null)
+
+        GameObject held = inventory?.CurrentHeldObject;
+        IUsableItem usable = null;
+
+        if (held != null && held.layer == LayerMask.NameToLayer("Item"))
         {
-            // 🔄 회전 처리
+            usable = held.GetComponent<IUsableItem>();
+        }
+
+        if (usable != null)
+        {
             if (enableItemRotation)
-                RotateObjectToMouse(targetObject, input.MouseWorldPosition);
-            
-            // 🎮 사용 처리 - 하나의 메서드로 통합
-            HandleUsage(usableItem, input, pressed);
+                RotateObjectToMouse(held, input.MouseWorldPosition);
+            HandleUsage(usable, input, pressed);
+        }
+        else if (basicPunchItem != null)
+        {
+            if (enableItemRotation)
+                RotateObjectToMouse(basicPunchItem.gameObject, input.MouseWorldPosition);
+            HandleUsage(basicPunchItem, input, pressed);
         }
     }
     
     // 🎯 현재 사용할 아이템 결정 (아이템 > 펀치 우선순위)
     private IUsableItem GetCurrentUsableItem()
     {
-        // 아이템이 있으면 아이템 우선
-        if (itemPickup.CurrentItem != null)
+        // 손에 든 것이 아이템(레이어 == Item)일 때만 반환
+        if (inventory != null && inventory.CurrentHeldObject != null)
         {
-            return itemPickup.CurrentItem.GetComponent<IUsableItem>();
+            var obj = inventory.CurrentHeldObject;
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+                return obj.GetComponent<IUsableItem>();
         }
-        
-        // 아이템이 없으면 펀치
-        return basicPunchItem;
+        // 아이템이 아니면 null (기본 펀치는 별도 처리)
+        return null;
     }
     
     // 🎯 현재 회전시킬 오브젝트 결정
     private GameObject GetCurrentTargetObject()
     {
-        if (itemPickup.CurrentItem != null)
+        if (inventory != null && inventory.CurrentHeldObject != null)
         {
-            return itemPickup.CurrentItem;
+            var obj = inventory.CurrentHeldObject;
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+                return obj;
         }
-        
         return basicPunchItem.gameObject;
     }
     

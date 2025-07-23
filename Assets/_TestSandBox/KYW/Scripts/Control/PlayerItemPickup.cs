@@ -15,25 +15,10 @@ public class PlayerItemPickup : NetworkBehaviour
     
     // 🌐 네트워크 동기화 변수들 (모든 클라이언트가 동일한 값을 가짐)
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }        // 🎮 이전 프레임 버튼 상태 (래칭용)
-    [Networked] private NetworkObject CurrentItemNetworkObject { get; set; } // 📦 현재 아이템의 NetworkObject (직접 동기화)
     
-    // 🎯 간단한 CurrentItem 프로퍼티 - NetworkObject에서 GameObject 반환
-    public GameObject CurrentItem 
-    { 
-        get => CurrentItemNetworkObject?.gameObject;
-        private set
-        {
-            // ⚡ StateAuthority(보통 Host)에서만 네트워크 변수 업데이트
-            // 👉 이렇게 하면 Host가 변경하고 → 모든 클라이언트에게 자동 동기화됨
-            if (Object.HasStateAuthority)
-            {
-                CurrentItemNetworkObject = value?.GetComponent<NetworkObject>();
-            }
-        }
-    }
-    
-    // 🔍 게임 로직에 필요한 속성
-    public bool HasItem => CurrentItem != null;          // 📦 현재 아이템 보유 여부
+    // 🔍 게임 로직에 필요한 속성 (PlayerInventory에서 가져옴)
+    public GameObject CurrentHeldObject => inventory != null ? inventory.CurrentHeldObject : null; // 손에 든 오브젝트
+    public bool HasHeldObject => CurrentHeldObject != null; // 손에 든 것 보유 여부
     
     // 🎯 트리거로 감지된 주변 아이템들 (로컬에서만 관리, 네트워크 동기화 안됨)
     private HashSet<GameObject> nearbyItems = new HashSet<GameObject>();
@@ -41,6 +26,7 @@ public class PlayerItemPickup : NetworkBehaviour
     // 📎 참조할 다른 컴포넌트들
     private SpelunkyPlayerController playerController;
     private PlayerMovement playerMovement;
+    private PlayerInventory inventory;
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
@@ -51,12 +37,14 @@ public class PlayerItemPickup : NetworkBehaviour
         {
             playerController = parentPlayer.GetComponent<SpelunkyPlayerController>();
             playerMovement = parentPlayer.GetComponent<PlayerMovement>();
-            
+            inventory = parentPlayer.GetComponent<PlayerInventory>();
             // 필수 컴포넌트 검증
             if (playerController == null)
                 Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
             if (playerMovement == null)
                 Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+            if (inventory == null)
+                Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
         }
         else
         {
@@ -92,28 +80,41 @@ public class PlayerItemPickup : NetworkBehaviour
     // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
     public void ProcessInput(SpelunkyPlayerData input)
     {
-        // 🎯 버튼 래칭: 이전 프레임과 비교해서 새로 눌린 버튼만 감지
-        // 👉 이렇게 하면 "한 번 클릭"이 여러 프레임에 걸쳐 씹히지 않음
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
-        ButtonsPrevious = input.NetworkButtons;  // 🔄 다음 프레임을 위해 현재 상태 저장
-        
-        // 🎮 아이템 픽업 조건: Space키 + 웅크린 상태 + 아이템 없음
+        ButtonsPrevious = input.NetworkButtons;
+
+        // 🎮 오브젝트 픽업 조건: Space키 + 웅크린 상태 + 아무것도 안 들고 있을 때
         if (pressed.IsSet(SpelunkyInputButtons.PickupItem))
         {
-            if (!HasItem && playerMovement != null && playerMovement.IsDucking)
+            Debug.Log($"[PlayerItemPickup] Pickup 입력 감지됨");
+            if (!HasHeldObject && playerMovement != null && playerMovement.IsDucking)
             {
-                // 🔍 가장 가까운 아이템 찾기
+                Debug.Log($"[PlayerItemPickup] 웅크리기 상태, 손에 든 것 없음");
+                // 🔍 가장 가까운 픽업 대상 찾기
                 var nearest = FindNearestItem();
                 if (nearest != null)
                 {
+                    Debug.Log($"[PlayerItemPickup] 가장 가까운 아이템/오브젝트: {nearest.name}");
                     var netObj = nearest.GetComponent<NetworkObject>();
                     if (netObj != null)
                     {
+                        Debug.Log($"[PlayerItemPickup] NetworkObject 있음, RPC 호출: {netObj.Id}");
                         // 📡 Host(StateAuthority)에게 픽업 요청 RPC 전송
-                        // 👉 InputAuthority → StateAuthority로 요청
-                        PickupItemRpc(netObj.Id);
+                        PickupObjectRpc(netObj.Id);
+                    }
+                    else
+                    {
+                        Debug.Log($"[PlayerItemPickup] NetworkObject 없음");
                     }
                 }
+                else
+                {
+                    Debug.Log($"[PlayerItemPickup] 주변에 픽업 가능한 아이템/오브젝트 없음");
+                }
+            }
+            else
+            {
+                Debug.Log($"[PlayerItemPickup] 웅크리기 상태 아님 또는 이미 손에 든 것 있음");
             }
         }
     }
@@ -121,32 +122,26 @@ public class PlayerItemPickup : NetworkBehaviour
     // ✅ 유효한 픽업 대상인지 확인 (아이템, 스턴/죽은 적/NPC, 죽은 플레이어, 특정 상황의 플레이어)
     private bool IsValidPickupTarget(GameObject obj)
     {
-        if (obj == gameObject) return false; // 자기 자신 제외
-        if (obj == CurrentItem) return false; // 이미 들고 있는 것 제외
+        if (obj == gameObject) return false;
+        if (obj == CurrentHeldObject) return false;
 
         int layer = obj.layer;
-        // 1. 아이템
         if (layer == LayerMask.NameToLayer("Item"))
             return true;
 
-        // 2. 적/NPC: 스턴 또는 죽음 상태만
         if (layer == LayerMask.NameToLayer("Enemy") || layer == LayerMask.NameToLayer("Npc"))
         {
             // TODO: 스턴 또는 죽음 상태 체크 (예: obj.GetComponent<EnemyStatus>().IsStunned || IsDead)
-            // 예시: var status = obj.GetComponent<EnemyStatus>();
-            // if (status != null && (status.IsStunned || status.IsDead)) return true;
             return false; // 실제 구현 전까지 false
         }
 
-        // 3. 플레이어: 죽은 플레이어 or (특정 상황에서) 그냥 플레이어
         if (layer == LayerMask.NameToLayer("Player"))
         {
             // TODO: 죽음 상태 또는 픽업 가능 상태 체크 (예: obj.GetComponent<PlayerStatus>().IsDead || CanBePickedUp)
-            // 예시: var status = obj.GetComponent<PlayerStatus>();
-            // if (status != null && (status.IsDead || status.CanBePickedUp)) return true;
             return false; // 실제 구현 전까지 false
         }
 
+        // 그 외는 모두 false
         return false;
     }
     
@@ -157,44 +152,68 @@ public class PlayerItemPickup : NetworkBehaviour
     }
     
     // 📡 RPC: InputAuthority → StateAuthority로 픽업 요청
-    // 👉 로컬 플레이어가 호출 → Host가 받아서 처리
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
-    private void PickupItemRpc(NetworkId itemId)
+    private void PickupObjectRpc(NetworkId objectId)
     {
-        // 🔍 네트워크 ID로 아이템 오브젝트 찾기
-        var netObj = Runner.FindObject(itemId);
+        Debug.Log($"[PlayerItemPickup] PickupObjectRpc 호출됨: {objectId}");
+        var netObj = Runner.FindObject(objectId);
         if (netObj != null)
         {
-            PickupItem(netObj.gameObject);  // 🎯 실제 픽업 처리 (StateAuthority에서만 상태 변경)
+            Debug.Log($"[PlayerItemPickup] Runner.FindObject 성공: {netObj.name}");
+            // 최종 유효성 체크
+            if (!IsValidPickupTarget(netObj.gameObject))
+            {
+                Debug.Log($"[PlayerItemPickup] IsValidPickupTarget 실패: {netObj.name}");
+                return;
+            }
+            Debug.Log($"[PlayerItemPickup] IsValidPickupTarget 통과: {netObj.name}");
+            PickupObject(netObj.gameObject);  // 🎯 실제 픽업 처리 (StateAuthority에서만 상태 변경)
+        }
+        else
+        {
+            Debug.Log($"[PlayerItemPickup] Runner.FindObject 실패");
         }
     }
-    
-    // 📦 실제 아이템 픽업 처리 (StateAuthority에서만 의미 있음)
-    private void PickupItem(GameObject item)
+
+    // 📦 실제 오브젝트 픽업 처리 (StateAuthority에서만 의미 있음)
+    private void PickupObject(GameObject obj)
     {
-        var networkObject = item.GetComponent<NetworkObject>();
-        if (networkObject == null) return;
-        
-        // ⚡ StateAuthority(보통 Host)에서만 아이템 상태 변경
-        // 👉 이렇게 하면 Host가 변경하고 → 모든 클라이언트에게 자동 동기화
+        Debug.Log($"[PlayerItemPickup] PickupObject 실행: {obj.name}");
+        if (inventory == null)
+        {
+            Debug.LogError($"[PlayerItemPickup] inventory가 null");
+            return;
+        }
+        var networkObject = obj.GetComponent<NetworkObject>();
+        if (networkObject == null)
+        {
+            Debug.LogError($"[PlayerItemPickup] NetworkObject가 null: {obj.name}");
+            return;
+        }
+
         if (Object.HasStateAuthority)
         {
-            CurrentItem = item;  // 📦 아이템 소유권 설정 (네트워크 변수도 자동 업데이트)
-            nearbyItems.Remove(item);  // 🗑️ 주변 목록에서 제거
-            
-            // 🎯 아이템을 Hand 위치로 이동시키기
-            item.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
-            item.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
-            item.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
-            
-            // 🔑 중요: 아이템의 InputAuthority를 현재 플레이어에게 전송
-            // 👉 이래야 플레이어가 아이템의 RPC를 호출할 수 있음
-            if (networkObject.HasInputAuthority == false)
+            Debug.Log($"[PlayerItemPickup] StateAuthority에서 PickupObject 시도");
+            // 아이템/캐릭터 구분 없이 무조건 손에 든다
+            bool picked = inventory.HoldObject(obj); 
+            if (picked)
             {
-                networkObject.AssignInputAuthority(Object.InputAuthority);
+                Debug.Log($"[PlayerItemPickup] HoldObject 성공: {obj.name}");
+                nearbyItems.Remove(obj);  // 🗑️ 주변 목록에서 제거
+                obj.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
+                obj.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
+                obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
+                // InputAuthority 할당은 PlayerInventory.HoldObject에서 처리
+                DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화
             }
-            
-            DisableItemPhysics(item);  // ⚡ 물리 시뮬레이션 비활성화
+            else
+            {
+                Debug.Log($"[PlayerItemPickup] HoldObject 실패: {obj.name}");
+            }
+        }
+        else
+        {
+            Debug.Log($"[PlayerItemPickup] StateAuthority가 아님, PickupObject 무시");
         }
     }
     
@@ -240,23 +259,28 @@ public class PlayerItemPickup : NetworkBehaviour
             collider.isTrigger = true;
     }
     
-    // 🗑️ 아이템 참조 해제 (PlayerItemThrower에서 호출)
-    public void ClearItem()
+    // 🚪 트리거 진입: 아이템이 감지 범위에 들어왔을 때
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        // ⚡ StateAuthority에서만 네트워크 변수 변경
-        if (Object.HasStateAuthority)
+        Debug.Log($"[PlayerItemPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
+        if (IsValidPickupTarget(other.gameObject))
         {
-            // 🔑 아이템의 InputAuthority도 제거 (다른 플레이어가 주울 수 있도록)
-            if (CurrentItem != null)
-            {
-                var networkObject = CurrentItem.GetComponent<NetworkObject>();
-                if (networkObject != null && networkObject.HasInputAuthority)
-                {
-                    networkObject.RemoveInputAuthority();
-                }
-            }
-            
-            CurrentItem = null;  // 📦 아이템 참조 해제 (네트워크 변수도 자동 업데이트)
+            nearbyItems.Add(other.gameObject);
+            Debug.Log($"[PlayerItemPickup] 트리거 진입: {other.gameObject.name} 추가됨");
+        }
+        else
+        {
+            Debug.Log($"[PlayerItemPickup] 유효하지 않은 대상: {other.gameObject.name}");
+        }
+    }
+
+    // 🚪 트리거 이탈: 아이템이 감지 범위에서 나갔을 때
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (nearbyItems.Contains(other.gameObject))
+        {
+            nearbyItems.Remove(other.gameObject);
+            Debug.Log($"[PlayerItemPickup] 트리거 이탈: {other.gameObject.name} 제거됨");
         }
     }
 }
