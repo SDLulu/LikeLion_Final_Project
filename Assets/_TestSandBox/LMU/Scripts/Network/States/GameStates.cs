@@ -25,7 +25,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private Fader fader = null;
     [SerializeField] private CutSceneController cutSceneController = null;
     [SerializeField] private PlayerManager playerManager = null;
-    [SerializeField] private PMK_TileRogic tileRogicManager = null;
+    [SerializeField] private NetworkEventSystem networkEventSystem = null;
     [SerializeField] private StateBehaviour[] allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
     public override void Spawned()
@@ -136,7 +136,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
             { typeof(Fader), fader != null ? fader : Fader.Inst },
             { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
             { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
-            { typeof(PMK_TileRogic), tileRogicManager != null ? tileRogicManager : PMK_TileRogic.Instance }
+            { typeof(NetworkEventSystem), networkEventSystem != null ? networkEventSystem : NetworkEventSystem.Inst }
         };
 
         foreach (var state in allStates)
