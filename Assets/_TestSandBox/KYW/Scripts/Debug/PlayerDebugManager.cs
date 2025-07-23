@@ -21,6 +21,7 @@ public class PlayerDebugManager : NetworkBehaviour
     private PlayerClimbing climbing;
     private PlayerLadderCheck ladderCheck;
     private PlayerAnimation playerAnimation;
+    private PlayerInventory inventory; // 인벤토리 참조 추가
     
     private void Awake()
     {
@@ -35,6 +36,7 @@ public class PlayerDebugManager : NetworkBehaviour
         {
             itemPickup = handObject.GetComponent<PlayerItemPickup>();
             itemUsage = handObject.GetComponent<PlayerItemUsage>();
+            inventory = handObject.GetComponent<PlayerInventory>(); // 인벤토리 캐싱
         }
         
         // Visual 오브젝트에서 애니메이션 컴포넌트 찾기
@@ -88,17 +90,17 @@ public class PlayerDebugManager : NetworkBehaviour
         GUILayout.Box("🎒 아이템 시스템");
         
         // 픽업 정보
-        if (itemPickup != null)
+        if (inventory != null)
         {
-            string currentItemName = itemPickup.CurrentItem?.name ?? "없음";
-            GUILayout.Label($"현재 아이템: {currentItemName}");
-            GUILayout.Label($"아이템 보유: {(itemPickup.HasItem ? "예" : "아니오")}");
+            string currentItemName = inventory.CurrentHeldObject?.name ?? "없음";
+            GUILayout.Label($"현재 들고 있는 오브젝트: {currentItemName}");
+            GUILayout.Label($"오브젝트 보유: {(inventory.CurrentHeldObject != null ? "예" : "아니오")}");
         }
         
         // 사용 정보
-        if (itemUsage != null)
+        if (itemUsage != null && inventory != null)
         {
-            GUILayout.Label($"사용 가능: {(itemPickup?.CurrentItem != null ? "예" : "아니오")}");
+            GUILayout.Label($"사용 가능: {(inventory.CurrentHeldObject != null && inventory.CurrentHeldObject.layer == LayerMask.NameToLayer("Item") ? "예" : "아니오")}");
         }
         
         GUILayout.Label("");

@@ -11,6 +11,7 @@ public struct SpelunkyPlayerData : INetworkInput
     
     // 🖱️ 마우스 입력
     public Vector2 MouseWorldPosition; // 마우스 월드 좌표 (아이템 던지기 방향용)
+    public float MouseScrollWheel;     // 마우스 휠 스크롤 값 (아이템 스왑용)
     
     // 🔘 버튼 입력들 (Fusion 2 공식 방식 - NetworkButtons로 통합)
     public NetworkButtons NetworkButtons;
