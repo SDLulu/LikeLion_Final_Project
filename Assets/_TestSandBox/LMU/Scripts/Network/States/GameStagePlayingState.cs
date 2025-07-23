@@ -19,9 +19,9 @@ public class GameStagePlayingState : BaseStateBehaviour
     public async Awaitable MapLoad()
     {
         await Awaitable.NextFrameAsync();
-        TileRogicM.ResetMap();
+        NetEvent.TriggerStageLoadDoneEvent("1-1");
 
-        var startPos = TileRogicM.StartPos;
+        var startPos = Vector2.zero;
         foreach (var player in PlayerM.Players)
         {
             var playerC = player.Value.GetComponent<PlayerStageController>();
