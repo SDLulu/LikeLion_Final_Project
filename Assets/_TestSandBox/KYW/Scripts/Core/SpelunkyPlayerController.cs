@@ -31,6 +31,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private float horizontalInput;
     private float verticalInput;
     private Vector2 mouseWorldPosition;
+    private float mouseScrollWheel;     // 마우스 휠 스크롤 값 (아이템 스왑용)
     private bool jumpPressed;       // Space + !IsDucking
     private bool pickupPressed;     // Space + IsDucking  
     
@@ -146,11 +147,15 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             Vector3 mouseScreenPos = Input.mousePosition;
             mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPos);
             
+            // 마우스 휠 스크롤 입력
+            mouseScrollWheel = Input.GetAxis("Mouse ScrollWheel");
+            
             // 점프 입력 (일관성을 위해 변수로 저장)
             jumpPressed = Input.GetKey(KeyCode.Space) && !(movement?.IsDucking ?? false);
             
             // 🔘 아이템 관련 입력
             pickupPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);
+            
             useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
             throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
@@ -204,6 +209,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.HorizontalInput = horizontalInput;
             data.VerticalInput = verticalInput;
             data.MouseWorldPosition = mouseWorldPosition;
+            data.MouseScrollWheel = mouseScrollWheel;
             
             // 🔘 버튼 입력 설정
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
