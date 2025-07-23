@@ -1,24 +1,117 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Fusion;
 
-public class UI_FastTest : MonoBehaviour
+public class UI_GlobalSetting : MonoBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private RectTransform _fastTestHolder;
-    [SerializeField] private Button _fastTestStartButton;
-    
+    [SerializeField] private TMP_Dropdown _sceneDropdown;
+    [SerializeField] private TMP_Text _currentFocusSceneText;
+    [SerializeField] private Button _sceneListRefreshbutton;
+
+    [Header("디버그용")]
+    [SerializeField] private GlobalSetting _globalSetting;
+
+    public void ActiveUI(bool active)
+    {
+        gameObject.SetActive(active);
+    }
+
     private void Awake()
     {
+        _globalSetting = GetComponentInParent<GlobalSetting>();
         _fastTestHolder.gameObject.SetActive(true);
-        _fastTestStartButton.onClick.AddListener(OnFastTestStartButtonClick);
-        
-// #if UNITY_EDITOR
-//         _fastTestHolder.gameObject.SetActive(true);
-//         _fastTestStartButton.onClick.AddListener(OnFastTestStartButtonClick);
-// #else
-//         _fastTestHolder.gameObject.SetActive(false);
-// #endif
+
+        _sceneListRefreshbutton.onClick.AddListener(OnSceneListRefreshButtonClick);
+        _sceneDropdown.onValueChanged.AddListener(OnSceneDropdownValueChanged);
+
+        LoadSceneInfoList();
+
+    }
+
+    private void OnDestroy()
+    {
+        _globalSetting = null;
+        _sceneListRefreshbutton.onClick.RemoveAllListeners();
+        _sceneDropdown.onValueChanged.RemoveAllListeners();
+    }
+
+    private void LoadSceneInfoList()
+    {
+        if (_globalSetting.SettingData.IsLoadScenes)
+        {
+            _sceneDropdown.options.Clear();
+            foreach (var scene in _globalSetting.SettingData.SceneInfoList)
+            {
+                _sceneDropdown.options.Add(new TMP_Dropdown.OptionData(scene.name));
+            }
+        }
+        else
+        {
+            _globalSetting.SettingData.RegisterAllSceneInfo();
+            _sceneDropdown.options.Clear();
+            foreach (var scene in _globalSetting.SettingData.SceneInfoList)
+            {
+                _sceneDropdown.options.Add(new TMP_Dropdown.OptionData(scene.name));
+            }
+        }
+
+        if (_globalSetting.SettingData.IsFocusScene)
+        {
+            int value = _globalSetting.SettingData.SceneInfoList.IndexOf(_globalSetting.SettingData.FocusScene);
+            OnSceneDropdownValueChanged(value);
+        }
+        else
+        {
+            _currentFocusSceneText.text = "None";
+        }
+    }
+
+    private void OnSceneListRefreshButtonClick()
+    {
+        _globalSetting.SettingData.RegisterAllSceneInfo();
+        _sceneDropdown.options.Clear();
+        foreach (var scene in _globalSetting.SettingData.SceneInfoList)
+        {
+            _sceneDropdown.options.Add(new TMP_Dropdown.OptionData(scene.name));
+        }
+
+        // FocusScene으로 설정
+        int value = _globalSetting.SettingData.SceneInfoList.IndexOf(_globalSetting.SettingData.FocusScene);
+        OnSceneDropdownValueChanged(value);
+    }
+
+    private void OnSceneDropdownValueChanged(int value)
+    {
+        if(value < 0 || value >= _globalSetting.SettingData.SceneInfoList.Count)
+        {
+            return;
+        }
+        _globalSetting.SettingData.FocusScene = _globalSetting.SettingData.SceneInfoList[value];
+        _currentFocusSceneText.text = $"{_sceneDropdown.options[value].text}";
+        _globalSetting.SettingData.IsFocusScene = true;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    private void OnClickFastTestBtn()
+    {
+        _fastTestHolder.gameObject.SetActive(true);
     }
 
     private async void OnFastTestStartButtonClick()
@@ -138,8 +231,4 @@ public class UI_FastTest : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        _fastTestStartButton?.onClick.RemoveAllListeners();
-    }
 }

@@ -8,21 +8,23 @@ public class LobbyManager : BaseManager<LobbyManager>
 {
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
-    [SerializeField] private PlayerManager hostPlayerManage;
-    [SerializeField] private GameStates gameStates;
+    [SerializeField] private string localRoomName;
     public PlayerRef LocalPlayer { get; private set; }
 
     private byte[] connectionToken;
     private void Awake()
     {
         connectionToken = ConnectionTokens.NewToken();
+        localGameMode = default;
+        localRoomName = default;
     }
 
     private void OnDestroy()
     {
-        hostPlayerManage = null;
+        connectionToken = default;
+        localGameMode = default;
+        localRoomName = default;
     }
-
 
     [SerializeField] private NetworkRunner netRunner;
     public NetworkRunner NetRunner
@@ -106,6 +108,9 @@ public class LobbyManager : BaseManager<LobbyManager>
             var startGameAwait = StartGameAsync(NetRunner, mode, roomName, this.connectionToken);
             OnEnterLobby?.Invoke();
 
+            localGameMode = mode;
+            localRoomName = roomName;
+
             await startGameAwait;
             Debug.Log($"방에 입장함 {roomName}");
             await Awaitable.NextFrameAsync();
@@ -113,7 +118,9 @@ public class LobbyManager : BaseManager<LobbyManager>
         }
         catch (System.Exception ex)
         {
+            Debug.LogWarning("JoinOrCreateLobby - 로비입장중 오류");
             Debug.LogError(ex);
+            await LeaveGame();
         }
     }
 
@@ -131,6 +138,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
                 UI_Controller.Inst.ActiveTitleUI();
+                await Fader.Inst.FadeInAsync();
                 return;
             }
 
@@ -138,27 +146,26 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
-            Awaitable waitScene1 = default;
-            Awaitable waitScene2 = default;
             foreach (var scene in scenes)
             {
                 if (scene.name == "DevLobby")
                 {
-                    waitScene1 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
+                    _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
                 else if (scene.name == "DevGame")
                 {
-                    waitScene2 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
+                    _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
             UI_Controller.Inst.ActiveTitleUI();
 
-            await waitScene1;
-            await waitScene2;
+            localGameMode = default;
+            localRoomName = default;
             await Fader.Inst.FadeInAsync();
         }
         catch (Exception e)
         {
+            Debug.LogWarning("LeaveGame - 게임종료중 오류");
             Debug.LogError(e);
         }
     }
