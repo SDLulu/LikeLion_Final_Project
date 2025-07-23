@@ -29,7 +29,6 @@ public class GameStageWaitingState : BaseStateBehaviour
 
     protected override void OnExitState()
     {
-        Debug.Log("대기 상태 종료");
         GameStates.RPC_FadeInUI(this.Runner);
     }
 

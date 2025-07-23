@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using DG.Tweening;
 using Fusion;
 using Fusion.Addons.FSM;
 using LMCore;
@@ -8,7 +7,6 @@ using UnityEngine;
 public class GameStageCompletedState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.GameStageCompletedState;
-
 
     [Header("설정")]
     [SerializeField, Range(10.0f, 15.0f)] private float minWaitingTime = 15.0f;
