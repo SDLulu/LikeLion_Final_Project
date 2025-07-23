@@ -18,12 +18,25 @@ public class PlayerMovement : NetworkBehaviour
     private PlayerGroundCheck groundCheck;
     private Rigidbody2D rb; // ⚠️ 순간이동 문제의 핵심 원인! 일반 Rigidbody2D 사용 중
     private PlayerClimbing climbing;
+    private SpelunkyPlayerController playerController;
 
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         climbing = GetComponent<PlayerClimbing>();
+        playerController = GetComponent<SpelunkyPlayerController>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (climbing == null)
+            Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
@@ -44,18 +57,41 @@ public class PlayerMovement : NetworkBehaviour
     
     private void HandleDucking(SpelunkyPlayerData input)
     {
+        // 🎮 상태 기반 웅크리기 가능 여부 확인 (순환 의존성 방지)
+        // 현재 상태가 Ducking이 아닐 때만 CanDuck 체크
+        if (playerController.CurrentState != PlayerState.Ducking && !PlayerStateHelper.CanDuck(playerController.CurrentState)) 
+        {
+            IsDucking = false;
+            return;
+        }
+        
         // 웅크리기 (아래키 + 땅에 있을 때)
-        IsDucking = input.VerticalInput < 0f && groundCheck.IsGrounded;
+        bool shouldDuck = input.VerticalInput < 0f && groundCheck.IsGrounded;
+        
+        // 상태가 변경될 때만 업데이트 (깜빡임 방지)
+        if (IsDucking != shouldDuck)
+        {
+            IsDucking = shouldDuck;
+        }
     }
     
     private void ProcessMovement(SpelunkyPlayerData input)
     {
-        // 사다리 오르는 중에는 수평 이동 금지
-        if (climbing != null && climbing.IsClimbing)
+        // 🎮 상태 기반 이동 가능 여부 확인
+        if (!PlayerStateHelper.CanMove(playerController.CurrentState))
         {
             rb.linearVelocity = new Vector2(0, rb.linearVelocity.y);
             return;
         }
+        
+        // 사다리 오르는 중에는 플레이어 입력에 의한 수평 이동만 금지 (중앙 정렬은 허용)
+        if (climbing.IsClimbing)
+        {
+            // 🎯 사다리 중앙 정렬을 위해 기존 X 속도는 유지 (PlayerClimbing에서 조절)
+            // 플레이어 입력에 의한 수평 이동만 막음
+            return;
+        }
+        
         // 웅크린 상태에 따라 속도 조절
         float currentMoveSpeed = IsDucking ? duckMoveSpeed : moveSpeed;
         float targetSpeed = input.HorizontalInput * currentMoveSpeed;
