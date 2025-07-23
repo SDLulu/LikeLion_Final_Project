@@ -69,6 +69,7 @@ public partial class PMK_TileRogic : MonoBehaviour
         };
     }
 
+
     private void Start()
     {
         SaveMapPos(); // 전체 맵 위치 저장
