@@ -2,50 +2,49 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
-using GoogleSheet.Type;
 
-public class PMK_TileRogic : MonoBehaviour
+public partial class PMK_TileRogic : MonoBehaviour
 {
      public static PMK_TileRogic Instance { get; private set; }
 
 
-    [field: SerializeField] public Transform parentTrans { get; private set; } // Å¸ÀÏ ¿ÀºêÁ§Æ®¸¦ ºÎ¸ð·Î ¼³Á¤ÇÒ Æ®·£½ºÆû (¾À¿¡ Á¸ÀçÇÏ´Â Å¸ÀÏ ¿ÀºêÁ§Æ®ÀÇ ºÎ¸ð Æ®·£½ºÆû)
-    [field: SerializeField] public Tilemap mainTilemap { get; private set; } // º´ÇÕÇÒ Å¸ÀÏ¸Ê (¾À¿¡ Á¸ÀçÇÏ´Â Å¸ÀÏ¸Ê)
+    [field: SerializeField] public Transform parentTrans { get; private set; } // Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Î¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½Î¸ï¿½ Æ®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+    [field: SerializeField] public Tilemap mainTilemap { get; private set; } // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ï¸ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ Å¸ï¿½Ï¸ï¿½)
 
 
-    [Header("»ý¼ºÇÒ Å¸ÀÏ °³¼ö")]
-    [SerializeField] private int maxTileX = 5; // ¸ÊÀÇ °¡·Î ±âÁØ
-    [SerializeField] private int maxTileY = 5; // ¸ÊÀÇ ¼¼·Î ±âÁØ
+    [Header("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½")]
+    [SerializeField] private int maxTileX = 5; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    [SerializeField] private int maxTileY = 5; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-    [Header("´ÙÀ½ Å¸ÀÏ°úÀÇ °Å¸®")]
-    [SerializeField] private float nextTileX = 17; // ¸ÊÀÇ °¡·Î ±âÁØ ±æÀÌ
-    [SerializeField] private float nextTileY = 11; // ¸ÊÀÇ °¡·Î ±âÁØ ±æÀÌ
-
-
-    [Header("Å¸ÀÏ ¿ÀºêÁ§Æ®")]
-    [SerializeField] private GameObject[] Clear_Map_Prefab;        // ½ºÆùÁöÁ¡ or Å¬¸®¾î ¸Ê »ý¼º (½ºÆùÁöÁ¡ : ÁÂ,¿ì È®Á¤) (Å¬¸®¾î : ÁÂ,¿ì,À§ È®Á¤)
-    [SerializeField] private GameObject[] LR_Exit_Map_Prefab;      // ÁÂ,¿ì Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º (À§,¾Æ·¡ ·£´ý)
-    [SerializeField] private GameObject[] D_Exit_Map_Prefab;       // ¾Æ·¡ Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º (ÁÂ,¿ì,À§ ·£´ý)
-    [SerializeField] private GameObject[] W_Exit_Map_Prefab;       // ¾Æ·¡ Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º (ÁÂ,¿ì,À§ ·£´ý)
-    [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // À§,¾Æ·¡ Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º (ÁÂ,¿ì ·£´ý)
-    [SerializeField] private GameObject[] Special_Map_Prefab;      // »óÁ¡ÀÌ³ª Æ¯º°ÇÑ ¸Ê »ý¼º (ÁÂ,¿ì È®Á¤)
-    private Dictionary<string, GameObject[]> mapPrefabDict; //Å¸ÀÏ ÀÌ¸§ ÀúÀå
+    [Header("ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ï°ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½")]
+    [SerializeField] private float nextTileX = 17; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    [SerializeField] private float nextTileY = 11; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
 
-    [Header("Å¸ÀÏ ¾ÆÀÌÅÛ ¿ÀºêÁ§Æ®")]
+    [Header("Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®")]
+    [SerializeField] private GameObject[] Clear_Map_Prefab;        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ or Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½,ï¿½ï¿½ È®ï¿½ï¿½) (Å¬ï¿½ï¿½ï¿½ï¿½ : ï¿½ï¿½,ï¿½ï¿½,ï¿½ï¿½ È®ï¿½ï¿½)
+    [SerializeField] private GameObject[] LR_Exit_Map_Prefab;      // ï¿½ï¿½,ï¿½ï¿½ ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½,ï¿½Æ·ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] private GameObject[] D_Exit_Map_Prefab;       // ï¿½Æ·ï¿½ ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½,ï¿½ï¿½,ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] private GameObject[] W_Exit_Map_Prefab;       // ï¿½Æ·ï¿½ ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½,ï¿½ï¿½,ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // ï¿½ï¿½,ï¿½Æ·ï¿½ ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½,ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+    [SerializeField] private GameObject[] Special_Map_Prefab;      // ï¿½ï¿½ï¿½ï¿½ï¿½Ì³ï¿½ Æ¯ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½,ï¿½ï¿½ È®ï¿½ï¿½)
+    private Dictionary<string, GameObject[]> mapPrefabDict; //Å¸ï¿½ï¿½ ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
 
-    [SerializeField] private int itemSpawnChance = 35; // ¾ÆÀÌÅÛ »ý¼º È®·ü (0.0f ~ 1.0f) - 50% È®·ü·Î ¾ÆÀÌÅÛ »ý¼º
+
+    [Header("Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®")]
+
+    [SerializeField] private int itemSpawnChance = 35; // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ (0.0f ~ 1.0f) - 50% È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     [SerializeField] private List<PMK_TileTable> tileItems;
 
 
 
 
 
-    private Vector2[,] mapXY; // ¸Ê Å¸ÀÏ À§Ä¡ ÀúÀå¿ë 2Â÷¿ø ¹è¿­
-    private bool[,] useMapXY; // ¸Ê Å¸ÀÏÀÌ »ý¼ºµÇ¾ú´ÂÁö ¿©ºÎ¸¦ ÀúÀåÇÏ´Â 2Â÷¿ø ¹è¿­
+    private Vector2[,] mapXY; // ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½ 2ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­
+    private bool[,] useMapXY; // ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Î¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ 2ï¿½ï¿½ï¿½ï¿½ ï¿½è¿­
 
-    private int removeMapX; // Á¤ÇÏ°í ½ÍÁö ¾Ê´Â ¸ÊÀÇ XÀ§Ä¡¸¦ ÀúÀåÇÕ´Ï´Ù.
-    private List<int> LR_Choose = new List<int>(); // ¿ÞÂÊ, ¿À¸¥ÂÊ ¸Ê À§Ä¡¸¦ ÀúÀåÇÏ´Â ¸®½ºÆ® ÀÔ´Ï´Ù.
+    private int removeMapX; // ï¿½ï¿½ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´ï¿½ ï¿½ï¿½ï¿½ï¿½ Xï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
+    private List<int> LR_Choose = new List<int>(); // ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ô´Ï´ï¿½.
 
 
     private void Awake()
@@ -65,27 +64,27 @@ public class PMK_TileRogic : MonoBehaviour
 
     private void Start()
     {
-        SaveMapPos(); // ÀüÃ¼ ¸Ê À§Ä¡ ÀúÀåÇÏ±â
+        // SaveMapPos(); // ï¿½ï¿½Ã¼ ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½
 
-        ResetMap();
+        // ResetMap();
 
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1)) // 1¹øÅ°¸¦ ´­·¶À» ¶§ ¸ÊÀ» ÃÊ±âÈ­ÇÏ°í ´Ù½Ã »ý¼ºÇÕ´Ï´Ù.
+        if (Input.GetKeyDown(KeyCode.Alpha1)) // 1ï¿½ï¿½Å°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­ï¿½Ï°ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
         {
             ResetMap();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2)) // 2¹øÅ°¸¦ ´­·¶À» ¶§ ºó °ø°£¿¡ ·£´ý ¸ÊÀ» Ã¤¿ó´Ï´Ù.
+        else if (Input.GetKeyDown(KeyCode.Alpha2)) // 2ï¿½ï¿½Å°ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½Ï´ï¿½.
         {
             Create_EmptyMap();
         }
     }
 
 
-    #region ¸Ê ÃÊ±âÈ­ ¹× Àç»ý¼º
-    private void ResetMap()
+    #region ï¿½ï¿½ ï¿½Ê±ï¿½È­ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
+    public void ResetMap()
     {
         mainTilemap.ClearAllTiles();
 
@@ -97,7 +96,7 @@ public class PMK_TileRogic : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        // ¸Ê ´Ù½Ã »ý¼º
+        // ï¿½ï¿½ ï¿½Ù½ï¿½ ï¿½ï¿½ï¿½ï¿½
         SaveMapPos();
         SpawnMap_Instantiate();
         DownExit_Map_Instantiate(removeMapX);
@@ -107,10 +106,10 @@ public class PMK_TileRogic : MonoBehaviour
     #endregion
 
 
-    #region ÀüÃ¼ ¸Ê À§Ä¡ ÀúÀå
+    #region ï¿½ï¿½Ã¼ ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½
     private void SaveMapPos()
     {
-        // Á¤ÇÑ ¸Ê Å©±â ¸¸Å­ Å¸ÀÏÀ§Ä¡¸¦ mapX¿¡ ÀúÀå
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Å©ï¿½ï¿½ ï¿½ï¿½Å­ Å¸ï¿½ï¿½ï¿½ï¿½Ä¡ï¿½ï¿½ mapXï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
         mapXY = new Vector2[maxTileX, maxTileY];
         useMapXY = new bool[maxTileX, maxTileY];
@@ -121,19 +120,19 @@ public class PMK_TileRogic : MonoBehaviour
             {
                 mapXY[x, y] = new Vector2(x * nextTileX, y * -nextTileY);
                 useMapXY[x, y] = false;
-                Debug.Log($"x: {x}, y: {y} ¡æ pos: {mapXY[x, y]}");
+                Debug.Log($"x: {x}, y: {y} ï¿½ï¿½ pos: {mapXY[x, y]}");
             }
         }
     }
     #endregion
 
 
-    #region ¿øÇÏ´Â ¸Ê »ý¼º
+    #region ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            if (mapType != "C") //Å¬¸®¾î¸ÊÀÌ ¾Æ´Ï¶ó¸é ¸ðµÎ ·£´ý µ¹¸®±â
+            if (mapType != "C") //Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ´Ï¶ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             {
                 randomIndex = Random.Range(0, prefabs.Length);
             }
@@ -142,7 +141,7 @@ public class PMK_TileRogic : MonoBehaviour
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>();
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0);
 
-            // --- Å¸ÀÏ º¹ºÙ ---
+            // --- Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ---
             foreach (Tilemap sourceTilemap in tilemaps)
             {
                 BoundsInt bounds = sourceTilemap.cellBounds;
@@ -160,31 +159,31 @@ public class PMK_TileRogic : MonoBehaviour
                             mainTilemap.SetTile(targetPos, tile);
 
 
-                            // Å¸ÀÏ ¾ÆÀÌÅÛ »ý¼º
+                            // Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                             Create_TileItem(targetPos);
                         }
                     }
                 }
             }
 
-            // --- ¿ÀºêÁ§Æ® º¹ºÙ ---
+            // --- ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½ ---
             foreach (Transform child in temp.transform)
             {
-                // Å¸ÀÏ¸ÊÀÌ ¾Æ´Ñ ÀÏ¹Ý ¿ÀºêÁ§Æ®¸¸ ¼±ÅÃ
+                // Å¸ï¿½Ï¸ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½ ï¿½Ï¹ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 if (child.GetComponent<Tilemap>() == null)
                 {
-                    // Å¸ÀÏ¸Ê ±âÁØ ÁÂÇ¥°è·Î º´ÇÕµÈ À§Ä¡ °è»ê
+                    // Å¸ï¿½Ï¸ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ç¥ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Õµï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½
                     Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
 
                     GameObject clone = Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans);
-                    clone.name = child.name; // ÀÌ¸§ À¯Áö (µð¹ö±ë ÆíÀÇ)
+                    clone.name = child.name; // ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
                 }
             }
 
-            Destroy(temp); // ÀÓ½Ã ÇÁ¸®ÆÕ Á¦°Å
-            mainTilemap.RefreshAllTiles(); // Å¸ÀÏ¸Ê ÃÖ½ÅÈ­
+            Destroy(temp); // ï¿½Ó½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+            mainTilemap.RefreshAllTiles(); // Å¸ï¿½Ï¸ï¿½ ï¿½Ö½ï¿½È­
 
-            // ÁÂÇ¥ ±â·Ï
+            // ï¿½ï¿½Ç¥ ï¿½ï¿½ï¿½
             Vector2 pos = new Vector2(spawnXpos, spawnYpos);
             for (int y = 0; y < maxTileY; y++)
             {
@@ -200,16 +199,16 @@ public class PMK_TileRogic : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning($"MapType '{mapType}' ÀÔ·ÂµÈ ÀÌ¸§ÀÌ ¾Æ´Ô!");
+            Debug.LogWarning($"MapType '{mapType}' ï¿½Ô·Âµï¿½ ï¿½Ì¸ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½!");
         }
     }
     #endregion
 
 
-    #region Å¸ÀÏ¿¡ ¾ÆÀÌÅÛ »ý¼º
+    #region Å¸ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     public void Create_TileItem(Vector3Int targetPos)
     {
-        // Å¸ÀÏ¿¡ ¾ÆÀÌÅÛ »ý¼º
+        // Å¸ï¿½Ï¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos);
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f);
@@ -217,14 +216,14 @@ public class PMK_TileRogic : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            if (hit.CompareTag("Tileitem")) // ÇÁ¸®ÆÕ¿¡ ÀÌ ÅÂ±× ¼³Á¤ ÇÊ¼ö
+            if (hit.CompareTag("Tileitem")) // ï¿½ï¿½ï¿½ï¿½ï¿½Õ¿ï¿½ ï¿½ï¿½ ï¿½Â±ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¼ï¿½
             {
                 hasSameTag = true;
                 break;
             }
         }
 
-        // ¾ÆÀÌÅÛ »ý¼ºÀÌ È®Á¤µÈ´Ù¸é ·£´ýÈ®·ü·Î ¾ÆÀÌÅÛ »ý¼º
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È®ï¿½ï¿½ï¿½È´Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (!hasSameTag)
         {
             if (Random.Range(0, 100) > itemSpawnChance) return;
@@ -247,102 +246,104 @@ public class PMK_TileRogic : MonoBehaviour
     }
     #endregion
 
+    public Vector2 StartPos {get; private set;}
 
-    #region ½ºÆù¸Ê »ý¼º
+    #region ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private void SpawnMap_Instantiate()
     {
-        //Ä³¸¯ÅÍ ½ºÆù ¸Ê »ý¼ºÇÏ±â
-        removeMapX = Random.Range(0, maxTileX); // x°ª ·£´ý »ý¼ºÇÏ¿© y0¿¡ ½ÃÀÛ¸Ê »ý¼º
+        //Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï±ï¿½
+        removeMapX = Random.Range(0, maxTileX); // xï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ y0ï¿½ï¿½ ï¿½ï¿½ï¿½Û¸ï¿½ ï¿½ï¿½ï¿½ï¿½
         Vector2 spawnPos = mapXY[removeMapX, 0];
         Create_Map("C", 0, spawnPos.x, spawnPos.y);
+        StartPos = spawnPos;
     }
     #endregion
 
 
-    #region ¿øÇÏ´Â ¸Ê ±âÁØ ¿ÞÂÊ, ¿À¸¥ÂÊ ¼±ÅÃ ¹× ÀúÀå
-    private void LR_RandomChoose(int removeTile) // ¿øÇÏ´Â ¸Ê ±âÁØÀ¸·Î ¿ÞÂÊ, ¿À¸¥ÂÊ ¸Ê À§Ä¡¸¦ Á¤ÇÏ±â
+    #region ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+    private void LR_RandomChoose(int removeTile) // ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½Ï±ï¿½
     {
-        LR_Choose.Clear(); // ÀÌÀü¿¡ ÀúÀåµÈ ¸®½ºÆ® ÃÊ±âÈ­
+        LR_Choose.Clear(); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ê±ï¿½È­
 
-        bool is_LR = Random.Range(0, 2) == 0; // ¿ÞÂÊ ¿À¸¥ÂÊ Á¤ÇÏ±â
+        bool is_LR = Random.Range(0, 2) == 0; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï±ï¿½
 
         if (is_LR && removeTile > 0)
         {
-            for (int i = 0; i < removeTile; i++) // ¿ÞÂÊ ÈÄº¸
+            for (int i = 0; i < removeTile; i++) // ï¿½ï¿½ï¿½ï¿½ ï¿½Äºï¿½
                 LR_Choose.Add(i);
         }
         else if (LR_Choose.Count == 0)
         {
-            for (int i = removeTile + 1; i < maxTileX; i++) // ¿À¸¥ÂÊ ÈÄº¸
+            for (int i = removeTile + 1; i < maxTileX; i++) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Äºï¿½
                 LR_Choose.Add(i);
         }
 
         if (!is_LR && removeTile != maxTileX - 1)
         {
-            for (int i = removeTile + 1; i < maxTileX; i++) // ¿À¸¥ÂÊ ÈÄº¸
+            for (int i = removeTile + 1; i < maxTileX; i++) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Äºï¿½
                 LR_Choose.Add(i);
         }
         else if (LR_Choose.Count == 0)
         {
-            for (int i = 0; i < removeTile; i++) // ¿ÞÂÊ ÈÄº¸
+            for (int i = 0; i < removeTile; i++) // ï¿½ï¿½ï¿½ï¿½ ï¿½Äºï¿½
                 LR_Choose.Add(i);
         }
     }
     #endregion
 
 
-    #region ¿øÇÏ´Â ¸Ê ±âÁØ Å»Ãâ ¸Ê »ý¼º ¹× »çÀÌ¸¦ ¾ç¿·ÀÌ Œä¸° ¸ÊÀ¸·Î Ã¤¿ò
+    #region ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å»ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ç¿·ï¿½ï¿½ ï¿½ä¸° ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½
     private void DownExit_Map_Instantiate(int removeTile)
     {
         for (int y = 0; y < maxTileY; y++)
         {
-            LR_RandomChoose(removeTile); // ¿ÞÂÊ, ¿À¸¥ÂÊ ¸Ê À§Ä¡ Á¤ÇÏ±â
+            LR_RandomChoose(removeTile); // ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½Ï±ï¿½
 
-            // ÁÂ¿ì ¼±ÅÃµÈ À§Ä¡ Áß¿¡¼­ ·£´ýÀ¸·Î Å»Ãâ ¸Ê »ý¼º
+            // ï¿½Â¿ï¿½ ï¿½ï¿½ï¿½Ãµï¿½ ï¿½ï¿½Ä¡ ï¿½ß¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å»ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             int exitDownMap = LR_Choose[Random.Range(0, LR_Choose.Count)];
             Vector2 exitPos = mapXY[exitDownMap, y];
 
-            if (y != maxTileY - 1) // ¸¶Áö¸· y°ªÀÌ ¾Æ´Ò ¶§´Â ¾Æ·¡ Å»Ãâ±¸°¡ È®Á¤µÈ ¸Ê »ý¼º
+            if (y != maxTileY - 1) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ yï¿½ï¿½ï¿½ï¿½ ï¿½Æ´ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Æ·ï¿½ Å»ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             {
                 Create_Map("D", 0, exitPos.x, exitPos.y);
             }
-            else // ¸¶Áö¸· y°ªÀÏ ¶§´Â Å¬¸®¾î ¸Ê »ý¼º
+            else // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ yï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             {
                 Create_Map("C", 1, exitPos.x, exitPos.y);
             }
 
-            // ¿øÇÏ´Â ¸Ê°ú Å»Ãâ ¸Ê »çÀÌ¸¦ ¶Õ¸° ¸ÊÀ¸·Î Ã¤¿ì±â
+            // ï¿½ï¿½ï¿½Ï´ï¿½ ï¿½Ê°ï¿½ Å»ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½Õ¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½ï¿½
             int min = Mathf.Min(removeTile, exitDownMap);
             int max = Mathf.Max(removeTile, exitDownMap);
 
             for (int x = min + 1; x < max; x++)
             {
                 Vector2 fillPos = mapXY[x, y];
-                Create_Map("LR", 0, fillPos.x, fillPos.y); // ÁÂ¿ì¸¸ ¶Õ¸° ¸ÊÀ¸·Î Ã¤¿ò
+                Create_Map("LR", 0, fillPos.x, fillPos.y); // ï¿½Â¿ì¸¸ ï¿½Õ¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½
             }
 
 
 
-            // Å»Ãâ±¸ y°ª¿¡ ´ÙÀ½ Å»Ãâ±¸°¡ È®Á¤ µÇ¾îÀÖ´Â Å¸ÀÏ »ý¼º
+            // Å»ï¿½â±¸ yï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å»ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ ï¿½Ç¾ï¿½ï¿½Ö´ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
             if (y + 1 < maxTileY)
             {
                 Vector2 nextExit_Pos = mapXY[exitDownMap, y + 1];
 
-                if (exitDownMap != Random.Range(0, maxTileX)) // ·£´ý°ªÀÌ ÇöÀç Å»Ãâ ¸Ê°ú °°Áö ¾Ê´Ù¸é ÁÂ,¿ì Å»Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º
+                if (exitDownMap != Random.Range(0, maxTileX)) // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å»ï¿½ï¿½ ï¿½Ê°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ê´Ù¸ï¿½ ï¿½ï¿½,ï¿½ï¿½ Å»ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                 {
                     Create_Map("W", 0, nextExit_Pos.x, nextExit_Pos.y);
                     removeTile = exitDownMap;
                 }
                 else
                 {
-                    Create_Map("WD", 0, nextExit_Pos.x, nextExit_Pos.y); // ·£´ý°ªÀÌ ÇöÀç Å»Ãâ ¸Ê°ú °°´Ù¸é À§,¾Æ·¡°¡ Å»Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º
+                    Create_Map("WD", 0, nextExit_Pos.x, nextExit_Pos.y); // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å»ï¿½ï¿½ ï¿½Ê°ï¿½ ï¿½ï¿½ï¿½Ù¸ï¿½ ï¿½ï¿½,ï¿½Æ·ï¿½ï¿½ï¿½ Å»ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                     removeTile = exitDownMap;
 
-                    if (y + 2 < maxTileY) // ÀÌ ¾È¿¡¼­ ¶Ç ´ÙÀ½ Å¸ÀÏ È®ÀÎ
+                    if (y + 2 < maxTileY) // ï¿½ï¿½ ï¿½È¿ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ È®ï¿½ï¿½
                     {
                         Vector2 deeperExit_Pos = mapXY[exitDownMap, y + 2];
-                        Create_Map("W", 0, deeperExit_Pos.x, deeperExit_Pos.y); // ´ÙÀ½ Å¸ÀÏ¿¡ dkfo Å»Ãâ±¸°¡ È®Á¤ÀÎ ¸Ê »ý¼º
+                        Create_Map("W", 0, deeperExit_Pos.x, deeperExit_Pos.y); // ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½Ï¿ï¿½ dkfo Å»ï¿½â±¸ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
                         removeTile = exitDownMap;
                         y++;
                     }
@@ -354,12 +355,12 @@ public class PMK_TileRogic : MonoBehaviour
     #endregion
 
 
-    #region ºó °ø°£¿¡ Æ¯º°ÇÑ ¸Ê »ý¼º
+    #region ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Æ¯ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     private void Create_Special_Map(int Map_Number, int Percent)
     {
         if (Random.Range(0, 100) < Percent)
         {
-            const int maxAttempts = 100; // ±Ø¾ÇÀÇ È®·üÀÌÁö¸¸ ¸ðµç ¸ÊÀÌ Â÷¸é ¿À·ù°¡ ³ª±â¿¡ ÃÖ´ë 100¹ø ½ÃµµÇÕ´Ï´Ù.
+            const int maxAttempts = 100; // ï¿½Ø¾ï¿½ï¿½ï¿½ È®ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½â¿¡ ï¿½Ö´ï¿½ 100ï¿½ï¿½ ï¿½Ãµï¿½ï¿½Õ´Ï´ï¿½.
             for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
                 int x = Random.Range(0, maxTileX);
@@ -369,7 +370,7 @@ public class PMK_TileRogic : MonoBehaviour
                 {
                     Vector2 emptyPos = mapXY[x, y];
                     Create_Map("S", Map_Number, emptyPos.x, emptyPos.y);
-                    break; // ºó °ø°£¿¡ ¼º°øÀûÀ¸·Î »ý¼ºÇßÀ¸´Ï ¹Ýº¹ Á¾·á
+                    break; // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ýºï¿½ ï¿½ï¿½ï¿½ï¿½
                 }
             }
         }
@@ -377,17 +378,17 @@ public class PMK_TileRogic : MonoBehaviour
     #endregion
 
 
-    #region ºó °ø°£¿¡ ·£´ý ¸Ê Ã¤¿ì±â
+    #region ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ Ã¤ï¿½ï¿½ï¿½
     private void Create_EmptyMap()
     {
         for (int y = 0; y < maxTileY; y++)
         {
             for (int x = 0; x < maxTileX; x++)
             {
-                if (!useMapXY[x, y]) // ÇØ´ç À§Ä¡¿¡ ¸ÊÀÌ »ý¼ºµÇÁö ¾Ê¾Ò´Ù¸é
+                if (!useMapXY[x, y]) // ï¿½Ø´ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¾Ò´Ù¸ï¿½
                 {
                     Vector2 emptyPos = mapXY[x, y];
-                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // ÁÂ¿ì°¡ È®Á¤ÀÎ ¸Ê »ý¼º (³ªÁß¿¡ ¿Ã ·£´ýÀ¸·Î ¹Ù²Ù±â)
+                    Create_Map("LR", 0, emptyPos.x, emptyPos.y); // ï¿½Â¿ì°¡ È®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ß¿ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù²Ù±ï¿½)
                 }
             }
         }
@@ -403,7 +404,7 @@ public class PMK_TileRogic : MonoBehaviour
 
         if (mainTilemap.HasTile(cellPosition))
         {
-            mainTilemap.SetTile(cellPosition, null);  // Å¸ÀÏ Á¦°Å
+            mainTilemap.SetTile(cellPosition, null);  // Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
             mainTilemap.RefreshTile(cellPosition);
         }
     }

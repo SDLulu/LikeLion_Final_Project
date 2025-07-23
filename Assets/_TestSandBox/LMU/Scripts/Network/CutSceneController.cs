@@ -26,6 +26,7 @@ public class CutSceneController : MonoBehaviour
     {
         if (UICutSceneResult != null)
             UICutSceneResult.gameObject.SetActive(false);
+        DefocusCutSceneCamera();
     }
 
     public void FocusCutSceneCamera()
