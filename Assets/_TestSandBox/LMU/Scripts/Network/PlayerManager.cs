@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Fusion;
 using LMCore;
+using Unity.Cinemachine;
 using UnityEngine;
 
 public class PlayerManager : NetworkBehaviour
@@ -87,6 +88,8 @@ public class PlayerManager : NetworkBehaviour
         this.AddRenderingAction(uiController.UpdateData);
         DontDestroyOnLoad(this.gameObject);
 
+        NetworkEventSystem.Inst.OnSceneLoadStartEvent += (runner, sceneName) =>  StartSceneLoad(sceneName);
+
         if (Runner.IsServer)
         {
             NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>  MoveToGameScene(sceneName);
@@ -105,14 +108,14 @@ public class PlayerManager : NetworkBehaviour
     // -- 플레이어 관리
     public void AddPlayer(PlayerRef player)
     {
-        if (Runner.IsServer == false)
-            return;
-
         if (IsSpawned == false)
         {
             Debug.LogError("플레이어 매니저가 스폰되지 않았습니다.");
             return;
         }
+
+        if (Runner.IsServer == false)
+            return;
 
         var tempPlayers = FindObjectsByType<PlayerData>(FindObjectsSortMode.None);
         if (tempPlayers == null || tempPlayers.Length <= 0)
@@ -255,10 +258,11 @@ public class PlayerManager : NetworkBehaviour
             Debug.Log("모든 플레이어가 준비되었습니다!");
 
             // FadeOut 신호를 보내고 완료될때까지 서버는 대기
+            // 씬로드 완료후 FadeIn은 GameStates(GameStagePlayingState) 에서 관리
             RPC_FadeOutUI();
             await WaitForAllPlayerFading();
 
-            var gameScenePath = GlobalSetting.Inst.GameScenePath;
+            var gameScenePath = GlobalSetting.Inst.FocusScenePath;
             await LevelManager.LoadSceneAsync(
                 gameScenePath, 
                 UnityEngine.SceneManagement.LoadSceneMode.Additive, 
@@ -268,7 +272,6 @@ public class PlayerManager : NetworkBehaviour
                     isGameSceneLoading = false;
                     isInGame = true;
                     isGameSceneLoaded = true;   
-                    RPC_FadeInUI();
                 });
 
             return true;
@@ -280,9 +283,31 @@ public class PlayerManager : NetworkBehaviour
         }
     }
 
+
+
+
+    private CinemachineCamera _cinemachineCamera;
+    private CinemachineBrain _cinemachineBrain;
+    /// <summary>
+    /// Note - 씬로드 시작시 호출 / Both - Server, Client
+    /// 로비의 카메라 참조 저장
+    /// </summary>
+    public void StartSceneLoad(string sceneName)
+    {
+        if (sceneName == GlobalSetting.Inst.LobbyScenePath)
+        {
+            _cinemachineCamera = this.FindObjectByTypeAtCurScene<CinemachineCamera>();
+            _cinemachineBrain = this.FindObjectByTypeAtCurScene<CinemachineBrain>();
+        }
+    }
+
+
+    /// <summary>
+    /// Note - 게임씬 로드완료시 호출 / Only Server
+    /// </summary>
     public void MoveToGameScene(string sceneName)
     {
-        if (sceneName == GlobalSetting.Inst.GameScenePath)
+        if (sceneName == GlobalSetting.Inst.FocusScenePath)
         {
             RPC_MoveToGameScene();
         }
@@ -295,6 +320,18 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_MoveToGameScene()
     {
+        // 게임씬 카메라 제거
+        var gameSceneCamera = this.FindObjectsByTypeAtCurScene<Camera>().FirstOrDefault(x=> x.tag != "MainCamera");
+        if (gameSceneCamera == null)
+        {
+            Debug.LogError("게임씬 카메라를 찾을 수 없습니다.");
+            return;
+        }
+        else
+        {
+            GameObject.Destroy(gameSceneCamera.gameObject);
+        }
+
         foreach (var obj in this.Players.ToList().Select(x => x.Value.gameObject))
         {
             if (obj == null)
@@ -307,8 +344,14 @@ public class PlayerManager : NetworkBehaviour
                 continue;
             }
             Runner.MoveGameObjectToSameScene(obj, gameSceneObj);
-            var teleporter = obj.GetComponent<PlayerStageController>();
-            teleporter.SetPosition(new Vector2(0, 0));
+            Runner.MoveGameObjectToSameScene(_cinemachineCamera.gameObject, gameSceneObj);
+            Runner.MoveGameObjectToSameScene(_cinemachineBrain.gameObject, gameSceneObj);
+
+            if (Runner.IsServer)
+            {
+                var teleporter = obj.GetComponent<PlayerStageController>();
+                teleporter.SetPosition(new Vector2(0, 0));
+            }
         }
     }
     
