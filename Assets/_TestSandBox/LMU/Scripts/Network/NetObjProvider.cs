@@ -11,7 +11,12 @@ public class NetObjProvider : NetworkObjectProviderDefault
     private static NetworkObjectBaker _baker;
     private static NetworkObjectBaker Baker => _baker ??= new NetworkObjectBaker();
     public static NetObjProvider Inst => BaseManager<NetObjProvider>.Inst;
-    
+
+    private void OnDestroy()
+    {
+        _baker = null;
+    }
+
     public override NetworkObjectAcquireResult AcquirePrefabInstance(NetworkRunner runner, in NetworkPrefabAcquireContext context, out NetworkObject result)
     {
         if (context.PrefabId.RawValue == PLAYER)
