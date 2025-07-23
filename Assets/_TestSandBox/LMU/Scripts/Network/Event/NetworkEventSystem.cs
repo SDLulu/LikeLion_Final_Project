@@ -13,6 +13,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, PlayerRef> OnPlayerJoinedEvent;
     public event Action<NetworkRunner, PlayerRef> OnPlayerLeftEvent;
     public event Action<NetworkRunner, string> OnSceneLoadDoneEvent;
+    public event Action<NetworkRunner, string> OnSceneLoadStartEvent;
     public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
     public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
 
@@ -65,10 +66,12 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
+        Debug.Log($"OnConnectRequest 연결요청 - {request.RemoteAddress}");
     }
 
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
     {
+        Debug.Log($"OnConnectFailed 연결실패 - {remoteAddress} - {reason}");
     }
 
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
@@ -93,6 +96,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnConnectedToServer(NetworkRunner runner)
     {
+
     }
 
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
@@ -115,5 +119,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnSceneLoadStart(NetworkRunner runner)
     {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        OnSceneLoadStartEvent?.Invoke(runner, sceneName);
     }
 }

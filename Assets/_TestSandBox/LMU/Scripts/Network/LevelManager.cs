@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Fusion;
 using LMCore;
 using UnityEngine;
@@ -14,7 +15,7 @@ public class LevelManager : NetworkSceneManagerDefault
     }
 
     public static async Awaitable LoadSceneAsync(string sceneName,
-                    UnityEngine.SceneManagement.LoadSceneMode loadSceneMode,
+                    LoadSceneMode loadSceneMode,
                     bool setActiveOnLoad = true,
                     Action onLoadComplete = null)
     {
@@ -30,5 +31,15 @@ public class LevelManager : NetworkSceneManagerDefault
             Debug.LogError($"{sceneName} 씬 로드중 오류");
             Debug.LogError($"오류 내용: {e.Message}");
         }
+    }
+
+    protected override IEnumerator LoadSceneCoroutine(SceneRef sceneRef, NetworkLoadSceneParameters sceneParams)
+    {
+        yield return base.LoadSceneCoroutine(sceneRef, sceneParams);
+    }
+
+    protected override IEnumerator UnloadSceneCoroutine(SceneRef sceneRef)
+    {
+        return base.UnloadSceneCoroutine(sceneRef);
     }
 }

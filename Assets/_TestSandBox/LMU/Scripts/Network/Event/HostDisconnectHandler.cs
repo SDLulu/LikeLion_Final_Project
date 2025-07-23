@@ -20,17 +20,15 @@ public class HostDisconnectHandler : MonoBehaviour
             
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
-            Awaitable waitScene1 = default;
-            Awaitable waitScene2 = default;
             foreach (var scene in scenes)
             {
                 if (scene.name == "DevLobby")
                 {
-                    waitScene1 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
+                    _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
                 else if (scene.name == "DevGame")
                 {
-                    waitScene2 = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
+                    _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
             UI_Controller.Inst.ActiveTitleUI();
