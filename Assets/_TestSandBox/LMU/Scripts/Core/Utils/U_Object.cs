@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace LMCore
@@ -17,7 +18,7 @@ namespace LMCore
         /// <summary>
         /// 현재씬에서 특정 타입 탐색
         /// </summary>
-        public static T FindObjectByTypeAtCurScene<T>(this MonoBehaviour mono) where T : MonoBehaviour
+        public static T FindObjectByTypeAtCurScene<T>(this MonoBehaviour mono) where T : Component
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var objects = scene.GetRootGameObjects();
@@ -28,6 +29,23 @@ namespace LMCore
                     return component;
             }
             return null;
+        }
+
+        /// <summary>
+        /// 현재씬에서 특정 타입 탐색하고 리스트로 반환
+        /// </summary>
+        public static List<T> FindObjectsByTypeAtCurScene<T>(this MonoBehaviour mono) where T : Component
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            var objects = scene.GetRootGameObjects();
+            var list = new List<T>();
+            foreach (var obj in objects)
+            {
+                var component = obj.GetComponent<T>();
+                if (component != null)
+                    list.Add(component);
+            }
+            return list;
         }
     }
 }
