@@ -8,23 +8,17 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
     [SerializeField] private float punchDistance = 1.2f;   // 펀치 거리
     [SerializeField] private float punchDuration = 0.15f;   // 펀치 지속 시간
 
-    // [Header("Hit Settings")]
-    // [SerializeField] private float knockbackForce = 5f;
-    // [SerializeField] private float knockbackDuration = 0.1f;
-    // [SerializeField] private float stunDuration = 0.2f;
-    // [SerializeField] private LayerMask targetLayers = -1;
-
     // 컴포넌트 참조
     private SpriteRenderer spriteRenderer;
     private Collider2D punchCollider;
     private Vector3 originalPosition;
 
     // 네트워크 변수
-    [Networked] private float PunchTimer { get; set; }        // 펀치 타이머 (0 = 비활성, >0 = 활성)
+    [Networked] private TickTimer PunchTimer { get; set; } // 펀치 타이머 (TickTimer로 변경)
     [Networked] private Vector3 PunchDirection { get; set; }  // 펀치 방향
 
     // 로컬 캐시
-    private bool isPunchActive => PunchTimer > 0f;
+    private bool isPunchActive { get { return PunchTimer.IsRunning; } } // TickTimer 기준으로 변경
 
     private void Awake()
     {
@@ -32,36 +26,42 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         punchCollider = GetComponent<Collider2D>();
         originalPosition = transform.localPosition;
         
-        // 시작 시 비활성화
-        if (spriteRenderer != null) spriteRenderer.enabled = false;
-        if (punchCollider != null) punchCollider.enabled = false;
+        // // 시작 시 비활성화
+        // if (spriteRenderer != null) spriteRenderer.enabled = false;
+        // if (punchCollider != null) punchCollider.enabled = false;
     }
 
     public override void Spawned()
     {
-        Runner.SetIsSimulated(Object, true);
-        base.Object.RenderSource = RenderSource.Interpolated;
-        base.Object.ForceRemoteRenderTimeframe = true;
+        if(!HasInputAuthority)
+        {
+            Runner.SetIsSimulated(Object, true);
+            base.Object.RenderSource = RenderSource.Interpolated;
+            base.Object.ForceRemoteRenderTimeframe = true;
+        }
+
     }
 
     // 🔄 실제 위치 업데이트 (물리/충돌용)
     public override void FixedUpdateNetwork()
     {
-        if (PunchTimer > 0f)
+        if (PunchTimer.IsRunning)
         {
-            PunchTimer -= Runner.DeltaTime;
-            if (PunchTimer <= 0f)
+            if (PunchTimer.Expired(Runner))
             {
-                PunchTimer = 0f;  // 펀치 종료
+                PunchTimer = TickTimer.None; // 펀치 종료
             }
-            
-            // 실제 위치 업데이트 (충돌 처리를 위해)
-            float progress = PunchTimer / punchDuration;
-            Vector3 punchOffset = PunchDirection * (punchDistance * progress);
-            transform.localPosition = originalPosition + punchOffset;
-            
-            // 콜라이더 활성화
-            if (punchCollider != null) punchCollider.enabled = true;
+            else
+            {
+                // 실제 위치 업데이트 (충돌 처리를 위해)
+                float remaining = PunchTimer.RemainingTime(Runner) ?? 0f;
+                float progress = 1f - (remaining / punchDuration); // 0~1 진행도
+                Vector3 punchOffset = PunchDirection * (punchDistance * progress);
+                transform.localPosition = originalPosition + punchOffset;
+
+                // 콜라이더 활성화
+                if (punchCollider != null) punchCollider.enabled = true;
+            }
         }
         else
         {
@@ -77,11 +77,11 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         // 스프라이트 활성화/비활성화만 처리
         if (isPunchActive)
         {
-            if (spriteRenderer != null) spriteRenderer.enabled = true;
+            // if (spriteRenderer != null) spriteRenderer.enabled = true;
         }
         else
         {
-            if (spriteRenderer != null) spriteRenderer.enabled = false;
+            // if (spriteRenderer != null) spriteRenderer.enabled = false;
         }
     }
 
@@ -89,13 +89,13 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
         if (isPunchActive) return;
-        
-        // 펀치 방향 계산 (플레이어 위치에서 마우스 방향)
-        Vector2 direction = (mouseWorldPosition - playerPosition).normalized;
-        
-        // 네트워크 변수 설정
-        PunchTimer = punchDuration;
-        PunchDirection = direction;
+
+        // 현재 펀치 오브젝트 위치와 마우스 위치로 방향 벡터 계산
+        Vector2 worldDir = ((Vector2)mouseWorldPosition - (Vector2)transform.position).normalized;
+        Vector2 localDir = (Vector2)transform.parent.InverseTransformDirection(worldDir);   // Hand 기준 로컬
+        PunchDirection = localDir;
+
+        PunchTimer = TickTimer.CreateFromSeconds(Runner, punchDuration); // TickTimer로 시작
     }
 
     // 사용하지 않는 인터페이스

@@ -74,15 +74,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 907367525660238801}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9eea07e92eb3000498d3913ff946ffd0, type: 3}
+  m_Script: {fileID: 11500000, guid: fade3c4d7388aac4da4975bb3a96d725, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletPrefab: {fileID: 1614702581054560036, guid: 3d68f5edbae40f5468d3436153fbadd9, type: 3}
-  firePoint: {fileID: 8318100913007191719}
-  fireRate: 0.1
-  bulletSpeed: 15
-  maxAmmo: 30
-  reloadTime: 2
+  swingAngle: 90
+  swingDuration: 0.18
+  bladeCollider: {fileID: 2302947856504980160}
+  tileLayer:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!114 &6923880113649277173
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -123,6 +123,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 1305449986944296522}
   - {fileID: 6923880113649277173}
   ForceRemoteRenderTimeframe: 0
 --- !u!61 &4343185428898307119
