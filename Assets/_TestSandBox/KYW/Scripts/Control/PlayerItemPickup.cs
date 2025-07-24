@@ -178,18 +178,7 @@ public class PlayerItemPickup : NetworkBehaviour
     // 📦 실제 오브젝트 픽업 처리 (StateAuthority에서만 의미 있음)
     private void PickupObject(GameObject obj)
     {
-        Debug.Log($"[PlayerItemPickup] PickupObject 실행: {obj.name}");
-        if (inventory == null)
-        {
-            Debug.LogError($"[PlayerItemPickup] inventory가 null");
-            return;
-        }
         var networkObject = obj.GetComponent<NetworkObject>();
-        if (networkObject == null)
-        {
-            Debug.LogError($"[PlayerItemPickup] NetworkObject가 null: {obj.name}");
-            return;
-        }
 
         if (Object.HasStateAuthority)
         {
@@ -203,17 +192,15 @@ public class PlayerItemPickup : NetworkBehaviour
                 obj.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
                 obj.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
                 obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
-                // InputAuthority 할당은 PlayerInventory.HoldObject에서 처리
+                
+                // 🎮 InputAuthority 할당 (던질 수 있도록)
+                if (!networkObject.HasInputAuthority)
+                {
+                    networkObject.AssignInputAuthority(Object.InputAuthority);
+                }
+                
                 DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화
             }
-            else
-            {
-                Debug.Log($"[PlayerItemPickup] HoldObject 실패: {obj.name}");
-            }
-        }
-        else
-        {
-            Debug.Log($"[PlayerItemPickup] StateAuthority가 아님, PickupObject 무시");
         }
     }
     
@@ -243,17 +230,17 @@ public class PlayerItemPickup : NetworkBehaviour
     // ⚡ 아이템의 물리 시뮬레이션 비활성화 (들고 있을 때)
     private void DisableItemPhysics(GameObject item)
     {
-        // 🌪️ Rigidbody2D 설정: 물리 법칙 적용 안함
+        // 🌪️ Rigidbody2D 설정: 외력 영향 안받지만 트리거는 작동
         var rigidbody = item.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
         {
             rigidbody.isKinematic = true;      // 🔒 키네마틱 모드 (외력 영향 안받음)
             rigidbody.linearVelocity = Vector2.zero;  // 🛑 속도 0으로 설정
             rigidbody.angularVelocity = 0f;    // 🛑 회전 속도 0으로 설정
-            rigidbody.simulated = false;       // ⏸️ 물리 시뮬레이션 완전 중단
+            rigidbody.simulated = false;        // ✅ 물리 시뮬레이션 활성화 (트리거 이벤트 위해)
         }
         
-        // 🚫 Collider2D 비활성화: 다른 오브젝트와 충돌 안함
+        // 🚫 Collider2D 트리거 설정: 충돌 반응 없지만 트리거 감지는 가능
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.isTrigger = true;

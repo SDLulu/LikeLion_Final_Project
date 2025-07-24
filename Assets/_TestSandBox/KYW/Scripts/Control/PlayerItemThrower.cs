@@ -39,8 +39,7 @@ public class PlayerItemThrower : NetworkBehaviour
         }
     }
     
-    // 📡 RPC: InputAuthority → All Clients로 던지기 명령 전송
-    // 👉 모든 클라이언트에서 동시에 던지기 실행 (시각적 동기화)
+    // 📡 RPC: InputAuthority → StateAuthority로 던지기 요청
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
     private void ThrowObjectRpc(Vector2 mouseWorldPosition)
     {
@@ -56,25 +55,41 @@ public class PlayerItemThrower : NetworkBehaviour
     // 🚀 실제 오브젝트 던지기 처리
     private void ThrowObject(GameObject obj, Vector2 direction)
     {
-        if (inventory == null) return;
-        // 손에서 해제 (InputAuthority 해제는 DropHeldObject에서 처리)
-        inventory.DropHeldObject();
-        obj.transform.SetParent(null);
-
-        // 물리/충돌 복구
-        var rigidbody = obj.GetComponent<Rigidbody2D>();
         var netObj = obj.GetComponent<NetworkObject>();
-        if (rigidbody != null && netObj != null && netObj.HasStateAuthority)
+        
+        if (Object.HasStateAuthority)
         {
-            float currentZAngle = obj.transform.eulerAngles.z;
+            // 🎮 InputAuthority 해제
+            if (netObj != null && netObj.HasInputAuthority)
+            {
+                netObj.RemoveInputAuthority();
+            }
+            
+            // 손에서 해제 (데이터만 관리)
+            inventory.DropHeldObject();
+            obj.transform.SetParent(null);
+
+            // 물리/충돌 복구
+            EnableItemPhysics(obj, direction);
+        }
+    }
+    
+    // ⚡ 아이템의 물리 시뮬레이션 활성화 (던졌을 때)
+    private void EnableItemPhysics(GameObject item, Vector2 direction)
+    {
+        var rigidbody = item.GetComponent<Rigidbody2D>();
+        if (rigidbody != null)
+        {
+            float currentZAngle = item.transform.eulerAngles.z;
             rigidbody.rotation = currentZAngle;
-            rigidbody.simulated = true;
-            rigidbody.isKinematic = false;
+            rigidbody.simulated = true;        // ✅ 물리 시뮬레이션 활성화
+            rigidbody.isKinematic = false;     // 🔓 키네마틱 모드 해제 (외력 영향 받음)
             rigidbody.linearVelocity = direction * throwForce;
             rigidbody.angularVelocity = 0f;
         }
-        var collider = obj.GetComponent<Collider2D>();
+        
+        var collider = item.GetComponent<Collider2D>();
         if (collider != null)
-            collider.isTrigger = false;
+            collider.isTrigger = false;        // 🔄 일반 충돌로 복구
     }
 } 
