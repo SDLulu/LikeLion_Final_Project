@@ -1,323 +1,357 @@
 using Fusion;
+using Fusion.Addons.Physics;
+using TMPro;
 using UnityEngine;
-using TMPro; // TextMeshProUGUI¸¦ À§ÇØ ÇÊ¿ä
 
-// »óÁ¡ ÁÖÀÎ »óÅÂ¸¦ Á¤ÀÇÇÏ´Â Enum
 public enum ShopkeeperState
 {
-    Peaceful,   // ÆòÈ­·Î¿î »óÅÂ (±âº»)
-    Warning,    // °æ°í »óÅÂ (µµµÏÁú ½Ãµµ °¨Áö)
-    Aggressive  // °ø°İ »óÅÂ (°ø°İ¹Ş°Å³ª ¾ÆÀÌÅÛ ÈÉÃÆÀ» ¶§)
+    Passive,    // í‰ì˜¨í•œ ìƒíƒœ (ê¸°ë³¸)
+    Talking,    // í”Œë ˆì´ì–´ì™€ ëŒ€í™” ì¤‘
+    Aggressive, // í”Œë ˆì´ì–´ê°€ ë¬¼ê±´ì„ í›”ì¹˜ë ¤ í•  ë•Œ ê³µê²©ì  ìƒíƒœ
+    Attacking,
+    Defeated    // ì“°ëŸ¬ì§„ ìƒíƒœ (ì¶”ê°€ì ì¸ êµ¬í˜„ì´ í•„ìš”í•  ìˆ˜ ìˆìŒ)
 }
+// TextMeshProë¥¼ ì‚¬ìš©í•˜ëŠ” ê²½ìš°
 
 public class Shopkeeper : NetworkBehaviour
 {
-    // --- À¯´ÏÆ¼ ¿¡µğÅÍ ¼³Á¤ º¯¼ö ---
-    [Header("References")]
-    [SerializeField] private SpriteRenderer spriteRenderer;
-    [SerializeField] private Collider2D detectionCollider;
-    [SerializeField] private GameObject speechBubble;
-    [SerializeField] private TextMeshProUGUI speechText;
-    [SerializeField] private GameObject alertIcon;
-    [SerializeField] private GameObject weaponPrefab;
-    [SerializeField] private Transform weaponSpawnPoint;
-
     [Header("Shopkeeper Settings")]
-    [SerializeField] private float warningDuration = 3f;
-    [SerializeField] private float attackCooldown = 1f;
-    [SerializeField] private float detectionRange = 3f;
-    [SerializeField] private LayerMask playerLayer;
-    [SerializeField] private LayerMask itemLayer;
+    [SerializeField] private TextMeshProUGUI speechBubbleText; // ëŒ€í™” ë§í’ì„  í…ìŠ¤íŠ¸
+    [SerializeField] private GameObject speechBubbleObject; // ëŒ€í™” ë§í’ì„  ì˜¤ë¸Œì íŠ¸ (í™œì„±í™”/ë¹„í™œì„±í™”ìš©)
+    [SerializeField] private float speechDisplayDuration = 3f; // ë§í’ì„  í‘œì‹œ ì‹œê°„
+    [SerializeField] private float playerDetectionRadius = 10f; // í”Œë ˆì´ì–´ ê°ì§€ ë°˜ê²½ (OverlapCircleìš©)
+    [SerializeField] private LayerMask playerLayerMask; // í”Œë ˆì´ì–´ ë ˆì´ì–´ ë§ˆìŠ¤í¬
 
-    [Header("Dialogues")]
-    [SerializeField] private string[] peacefulDialogues;
-    [SerializeField] private string[] warningDialogues;
-    [SerializeField] private string[] aggressiveDialogues;
+    [Header("Movement & Combat Settings")]
+    [SerializeField] private float chaseSpeed = 5.0f; // ì«“ì•„ê°ˆ ë•Œì˜ ì´ë™ ì†ë„
+    [SerializeField] private float stopDistance = 0.5f; // í”Œë ˆì´ì–´ì—ê²Œ ì–¼ë§ˆë‚˜ ê°€ê¹Œì´ ë‹¤ê°€ê°€ë©´ ë©ˆì¶œì§€ (ê³µê²© ë²”ìœ„ ê°œë…)
+    private NetworkRigidbody2D _netRigidbody; // Shopkeeperì˜ ë¬¼ë¦¬ ì´ë™ì„ ìœ„í•œ NetworkRigidbody2D
+    // private Animator _animator; // ì• ë‹ˆë©”ì´ì…˜ì´ ìˆë‹¤ë©´ ì¶”ê°€
 
-    // --- Ãß°¡µÉ ºÎºĞ ---
-    [Networked] private PlayerRef _lastAggressor { get; set; } // ´©°¡ ¸¶Áö¸·À¸·Î °ø°İ/µµµÏÁúÇß´ÂÁö ±â·Ï
-
-
-    // --- ³×Æ®¿öÅ© »óÅÂ º¯¼ö ---
-    // Fusion 2.0.4¿¡¼­´Â [Networked] ¾îÆ®¸®ºäÆ® ³»¿¡ OnChanged ÆÄ¶ó¹ÌÅÍ¸¦ »ç¿ëÇÕ´Ï´Ù.
-    // OnChangedRender´Â ÀÌ ¹öÀü¿¡¼­ Áö¿øÇÏÁö ¾ÊÀ» ¼ö ÀÖ½À´Ï´Ù.
+    // ğŸŒ ë„¤íŠ¸ì›Œí¬ ë™ê¸°í™” ë³€ìˆ˜ë“¤
     [Networked, OnChangedRender(nameof(OnShopkeeperStateChanged))]
-    public ShopkeeperState CurrentState { get; set; } = ShopkeeperState.Peaceful;
+    public ShopkeeperState CurrentState { get; set; } = ShopkeeperState.Passive;
 
-    [Networked] private TickTimer StateTimer { get; set; }
-    [Networked] private TickTimer AttackTimer { get; set; }
+    [Networked]
+    public PlayerRef LastAggressor { get; set; } = PlayerRef.None; // ë§ˆì§€ë§‰ìœ¼ë¡œ ìƒì  ì£¼ì¸ì„ í™”ë‚˜ê²Œ í•œ í”Œë ˆì´ì–´
 
-    // --- ³»ºÎ º¯¼ö ---
-    private ShopManager _shopManager;
-    //private PlayerRef _lastAggressor;
+    // ë¡œì»¬ í´ë¼ì´ì–¸íŠ¸ì—ì„œë§Œ ì‚¬ìš©ë  ë³€ìˆ˜
+    private float _speechTimer;
+    private PlayerRef _currentInteractingPlayer = PlayerRef.None; // í˜„ì¬ ìƒí˜¸ì‘ìš© ì¤‘ì¸ í”Œë ˆì´ì–´ (í˜¸ìŠ¤íŠ¸ì—ì„œë§Œ ì„¤ì •)
+    private ShopManager _shopManager; // ShopManager ì°¸ì¡° (ë„ë‚œ ê°ì§€ ì‹œ í•„ìš”)
+    private Animator _animator;
+
+    // âš”ï¸ ê³µê²© ê´€ë ¨ (ì˜ˆì‹œ) - ì‹¤ì œ ê³µê²© ë¡œì§ì€ ë³„ë„ ì»´í¬ë„ŒíŠ¸ë‚˜ FixedUpdateNetwork ë‚´ì—ì„œ êµ¬í˜„
+    [SerializeField] private float attackRange = 2f;
+    [SerializeField] private float attackDamage = 10f;
+    [SerializeField] private float attackCooldown = 1f;
+    private TickTimer _attackTimer;
 
     public override void Spawned()
     {
+        // ì”¬ì—ì„œ ShopManagerë¥¼ ì°¾ì•„ ì°¸ì¡°í•©ë‹ˆë‹¤.
         _shopManager = FindFirstObjectByType<ShopManager>();
+        _netRigidbody = GetComponent<NetworkRigidbody2D>();
+        _animator = GetComponentInChildren<Animator>();
+        if (_netRigidbody == null)
+        {
+            // ë§Œì•½ Shopkeeper í”„ë¦¬íŒ¹ì— NetworkRigidbody2Dê°€ ì—†ë‹¤ë©´ ê²½ê³ ë¥¼ ë„ì›ë‹ˆë‹¤.
+            Debug.LogError("Shopkeeper: NetworkRigidbody2D component not found! Movement will not work.");
+        }
         if (_shopManager == null)
         {
-            Debug.LogError("ShopManager not found in scene!");
+            Debug.LogError("Shopkeeper: ShopManager not found in scene!");
         }
 
-        // ½ºÆù ½Ã ÃÊ±â ºñÁÖ¾ó ¼³Á¤À» À§ÇØ ÇöÀç »óÅÂ¿¡ ¸ÂÃç ÇÑ ¹ø È£ÃâÇÕ´Ï´Ù.
-        // OnShopkeeperStateChanged´Â ¸Å°³º¯¼ö¸¦ ¹ŞÁö ¾ÊÀ¸¹Ç·Î,
-        // ÇöÀç CurrentState °ªÀ» Á÷Á¢ »ç¿ëÇÏµµ·Ï UpdateVisualsForState ÇÔ¼ö¸¦ È£ÃâÇÕ´Ï´Ù.
-        UpdateVisualsForState(CurrentState);
-
-
-        if (detectionCollider == null)
+        // ì´ˆê¸° ìƒíƒœ ì„¤ì •
+        if (Object.HasStateAuthority)
         {
-            Debug.LogError("Detection Collider is not assigned!");
-        }
-        else if (!detectionCollider.isTrigger)
-        {
-            Debug.LogWarning("Detection Collider should be set as Is Trigger.");
+            CurrentState = ShopkeeperState.Passive;
+            LastAggressor = PlayerRef.None;
         }
 
-        UpdateSpeechBubble(false);
-        if (alertIcon != null) alertIcon.SetActive(false);
+        // ë§í’ì„  ì´ˆê¸° ë¹„í™œì„±í™”
+        if (speechBubbleObject != null)
+        {
+            speechBubbleObject.SetActive(false);
+        }
     }
 
     public override void FixedUpdateNetwork()
     {
+        // í˜¸ìŠ¤íŠ¸(StateAuthority)ì—ì„œë§Œ ë¡œì§ ì²˜ë¦¬
+        if (Object.HasStateAuthority)
+        {
+            switch (CurrentState)
+            {
+                case ShopkeeperState.Passive:
+                    // ì£¼ë³€ í”Œë ˆì´ì–´ ê°ì§€ ë° ëŒ€í™” ì‹œì‘
+                    DetectAndGreetPlayer();
+                    break;
+                case ShopkeeperState.Aggressive:
+                    // Aggressive ìƒíƒœì—ì„œëŠ” ì¶”ì ê³¼ ê³µê²© ê²°ì •ë§Œ ë‹´ë‹¹í•©ë‹ˆë‹¤.
+                    ChaseAndAttackPlayer();
+                    break;
+
+                // --- ğŸ‘‡ ìƒˆë¡œìš´ Attacking ìƒíƒœ ë¡œì§ ---
+                case ShopkeeperState.Attacking:
+                    // ê³µê²© ì¤‘ì—ëŠ” ì•„ë¬´ê²ƒë„ í•˜ì§€ ì•Šê³  ê³µê²©ì´ ëë‚˜ê¸°ë¥¼ ê¸°ë‹¤ë¦½ë‹ˆë‹¤.
+                    // ê³µê²© ì¿¨ë‹¤ìš´ íƒ€ì´ë¨¸ê°€ ëë‚˜ë©´ ë‹¤ì‹œ Aggressive ìƒíƒœë¡œ ëŒì•„ê°€ ë‹¤ìŒ í–‰ë™ì„ ê²°ì •í•©ë‹ˆë‹¤.
+                    if (_attackTimer.ExpiredOrNotRunning(Runner))
+                    {
+                        SetShopkeeperState(ShopkeeperState.Aggressive);
+                    }
+                    break;
+
+
+                case ShopkeeperState.Talking:
+                    // ëŒ€í™” ì¤‘ì—ëŠ” íŠ¹ë³„í•œ ë¡œì§ ì—†ì´ ëŒ€ê¸°
+                    break;
+                case ShopkeeperState.Defeated:
+                    // ì“°ëŸ¬ì§„ ìƒíƒœ ë¡œì§
+                    break;
+            }
+
+            // ë§í’ì„  íƒ€ì´ë¨¸ ì—…ë°ì´íŠ¸ (í˜¸ìŠ¤íŠ¸ì—ì„œë§Œ ìƒíƒœ ë³€ê²½)
+            if (_speechTimer > 0)
+            {
+                _speechTimer -= Runner.DeltaTime;
+                if (_speechTimer <= 0)
+                {
+                    SetShopkeeperState(ShopkeeperState.Passive); // íƒ€ì´ë¨¸ ëë‚˜ë©´ ë‹¤ì‹œ í‰ì˜¨ ìƒíƒœë¡œ
+                    _currentInteractingPlayer = PlayerRef.None; // ìƒí˜¸ì‘ìš© í”Œë ˆì´ì–´ ì´ˆê¸°í™”
+                }
+            }
+        }
+    }
+
+    // ğŸ¨ ë Œë”ë§ (ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì—ì„œ ì‹œê°ì  ì—…ë°ì´íŠ¸)
+    public override void Render()
+    {
+        // Networked ë³€ìˆ˜ê°€ ë³€ê²½ë  ë•Œ OnShopkeeperStateChanged ì½œë°±ì´ í˜¸ì¶œë˜ë¯€ë¡œ,
+        // Renderì—ì„œëŠ” ì£¼ë¡œ ì• ë‹ˆë©”ì´ì…˜ì´ë‚˜ ë¹„ì£¼ì–¼ íš¨ê³¼ë¥¼ ì ìš©í•©ë‹ˆë‹¤.
+        // í˜„ì¬ ìƒíƒœì— ë”°ë¥¸ ì• ë‹ˆë©”ì´ì…˜ íŠ¸ë¦¬ê±° ë“±
+        UpdateVisuals();
+    }
+
+    // --- ìƒíƒœ ë³€ê²½ ë©”ì„œë“œ (Hostì—ì„œë§Œ í˜¸ì¶œ) ---
+    // ShopManagerì—ì„œ í˜¸ì¶œë©ë‹ˆë‹¤.
+    public void SetShopkeeperState(ShopkeeperState newState)
+    {
+        if (!Object.HasStateAuthority) return;
+        CurrentState = newState;
+        Debug.Log($"Host: Shopkeeper state changed to {newState}");
+        // ìƒíƒœ ë³€ê²½ ì‹œ í•„ìš”í•œ ì´ˆê¸°í™” ë¡œì§
+        if (newState == ShopkeeperState.Talking)
+        {
+            _speechTimer = speechDisplayDuration; // ëŒ€í™” íƒ€ì´ë¨¸ ì‹œì‘
+        }
+    }
+
+    // ShopManagerì—ì„œ í˜¸ì¶œë©ë‹ˆë‹¤.
+    public void SetLastAggressor(PlayerRef aggressor)
+    {
+        if (!Object.HasStateAuthority) return;
+        LastAggressor = aggressor;
+        Debug.Log($"Host: Shopkeeper's last aggressor set to Player {aggressor.PlayerId}");
+    }
+
+    // --- í”Œë ˆì´ì–´ ê°ì§€ ë° ëŒ€í™” ---
+    private void DetectAndGreetPlayer()
+    {
         if (!Object.HasStateAuthority) return;
 
-        switch (CurrentState)
+        if (CurrentState == ShopkeeperState.Aggressive) return;
+
+        Collider2D[] playersInRadius = Physics2D.OverlapCircleAll(transform.position, playerDetectionRadius, playerLayerMask);
+        if (playersInRadius.Length > 0)
         {
-            case ShopkeeperState.Peaceful:
-                CheckForWarningCondition();
-                break;
-            case ShopkeeperState.Warning:
-                if (StateTimer.Expired(Runner))
-                {
-                    SetShopkeeperState(ShopkeeperState.Peaceful);
-                }
-                break;
-            case ShopkeeperState.Aggressive:
-                if (AttackTimer.Expired(Runner))
-                {
-                    PerformAttack();
-                    AttackTimer = TickTimer.CreateFromSeconds(Runner, attackCooldown);
-                }
-                break;
-        }
-    }
-
-    // --- ³×Æ®¿öÅ© Äİ¹é (»óÁ¡ ÁÖÀÎ »óÅÂ º¯°æ ½Ã ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡¼­ È£Ãâ) ---
-    // Fusion 2.0.4¿¡¼­´Â ¸Å°³º¯¼ö¸¦ ¹ŞÁö ¾Ê´Â void ¸Ş¼­µå ÇüÅÂÀÔ´Ï´Ù.
-    private void OnShopkeeperStateChanged() // <--- ¸Å°³º¯¼ö°¡ Á¦°ÅµÇ¾ú½À´Ï´Ù.
-    {
-        Debug.Log($"Shopkeeper state changed to: {CurrentState}");
-        // OnShopkeeperStateChanged´Â CurrentStateÀÇ º¯°æÀ» °¨ÁöÇÏ¹Ç·Î,
-        // ÇöÀç CurrentState °ªÀ» Á÷Á¢ »ç¿ëÇÕ´Ï´Ù.
-        UpdateVisualsForState(CurrentState);
-    }
-
-    // --- ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®¸¦ Àü´ãÇÏ´Â ÇïÆÛ ÇÔ¼ö ---
-    private void UpdateVisualsForState(ShopkeeperState state)
-    {
-        switch (state)
-        {
-            case ShopkeeperState.Peaceful:
-                UpdateSpeechBubble(false);
-                if (alertIcon != null) alertIcon.SetActive(false);
-                // ±âÅ¸ ÆòÈ­·Î¿î »óÅÂÀÇ ºñÁÖ¾ó/¾Ö´Ï¸ŞÀÌ¼Ç
-                break;
-            case ShopkeeperState.Warning:
-                ShowDialogue(warningDialogues);
-                if (alertIcon != null) alertIcon.SetActive(true);
-                // ±âÅ¸ °æ°í »óÅÂÀÇ ºñÁÖ¾ó/¾Ö´Ï¸ŞÀÌ¼Ç
-                break;
-            case ShopkeeperState.Aggressive:
-                ShowDialogue(aggressiveDialogues);
-                if (alertIcon != null) alertIcon.SetActive(true);
-                // ±âÅ¸ °ø°İ »óÅÂÀÇ ºñÁÖ¾ó/¾Ö´Ï¸ŞÀÌ¼Ç
-                break;
-        }
-    }
-
-    // --- ÇÃ·¹ÀÌ¾î °¨Áö ¹× °æ°í Á¶°Ç Ã¼Å© (Host¿¡¼­ FixedUpdateNetwork¿¡¼­ È£Ãâ) ---
-    private void CheckForWarningCondition()
-    {
-        Collider2D[] detectedPlayers = Physics2D.OverlapCircleAll(transform.position, detectionRange, playerLayer);
-
-        bool isPlayerHoldingStolenItem = false;
-        foreach (Collider2D playerCollider in detectedPlayers)
-        {
-            PlayerController playerController = playerCollider.GetComponentInParent<PlayerController>();
-            if (playerController != null && playerController.Object.IsValid)
+            foreach (Collider2D playerCollider in playersInRadius)
             {
-                PlayerInventory playerInventory = playerController.GetComponent<PlayerInventory>();
-                if (playerInventory != null && playerInventory.HeldItemNetworkId != default)
+                // â­ï¸ ìˆ˜ì •: PlayerController ëŒ€ì‹  NetworkObjectë¥¼ ì°¾ì•„ InputAuthorityë¥¼ ê°€ì ¸ì˜´
+                NetworkObject playerNetworkObject = playerCollider.GetComponentInParent<NetworkObject>();
+
+                // NetworkObjectê°€ ìˆê³  InputAuthorityê°€ ìœ íš¨í•˜ë‹¤ë©´ í”Œë ˆì´ì–´ë¡œ ê°„ì£¼
+                if (playerNetworkObject != null && playerNetworkObject.InputAuthority.IsNone == false)
                 {
-                    NetworkObject heldObject = Runner.FindObject(playerInventory.HeldItemNetworkId);
-                    if (heldObject != null)
+                    // ì•„ì§ ìƒí˜¸ì‘ìš© ì¤‘ì¸ í”Œë ˆì´ì–´ê°€ ì—†ê±°ë‚˜ ìƒˆë¡œìš´ í”Œë ˆì´ì–´ê°€ ê°ì§€ë˜ì—ˆì„ ë•Œ
+                    if (_currentInteractingPlayer.IsNone || _currentInteractingPlayer != playerNetworkObject.InputAuthority)
                     {
-                        ShopItem heldShopItem = heldObject.GetComponent<ShopItem>();
-                        if (heldShopItem != null)
-                        {
-                            for (int i = 0; i < _shopManager.ShopItems.Length; i++)
-                            {
-                                var shopItemData = _shopManager.ShopItems.Get(i);
-                                if (shopItemData.ItemNetworkId == heldShopItem.Object.Id && shopItemData.IsAvailable && shopItemData.IsPicked)
-                                {
-                                    if (!_shopManager.IsPositionInShopArea(heldShopItem.transform.position))
-                                    {
-                                        isPlayerHoldingStolenItem = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                        _currentInteractingPlayer = playerNetworkObject.InputAuthority;
+                        SetShopkeeperState(ShopkeeperState.Talking);
+                        Rpc_DisplaySpeechBubble(_currentInteractingPlayer, "í™˜ì˜í•©ë‹ˆë‹¤, ì†ë‹˜!");
+                        return; // í•œ ëª…ì˜ í”Œë ˆì´ì–´ë§Œ ê°ì§€í•˜ì—¬ ì²˜ë¦¬
                     }
                 }
             }
-            if (isPlayerHoldingStolenItem) break;
-        }
-
-        if (isPlayerHoldingStolenItem && CurrentState == ShopkeeperState.Peaceful)
-        {
-            SetShopkeeperState(ShopkeeperState.Warning);
-            // detectedPlayers ¹è¿­ÀÌ ºñ¾îÀÖÁö ¾Ê´Ù°í °¡Á¤ÇÏ°í Ã¹ ¹øÂ° ÇÃ·¹ÀÌ¾î¸¦ ±â·Ï
-            if (detectedPlayers.Length > 0)
-            {
-                PlayerController detectedPlayerController = detectedPlayers[0].GetComponentInParent<PlayerController>();
-                if (detectedPlayerController != null && detectedPlayerController.Object.IsValid)
-                {
-                    _lastAggressor = detectedPlayerController.Object.InputAuthority;
-                }
-            }
         }
     }
-
-    // --- °ø°İ ½ÇÇà (Host¿¡¼­¸¸ È£Ãâ) ---
-    private void PerformAttack()
+    // ê¸°ì¡´ì˜ ChasePlayerì™€ HandleAggressiveBehaviorë¥¼ ëŒ€ì²´í•˜ê±°ë‚˜ í†µí•©í•  ìƒˆ ë©”ì„œë“œ
+    private void ChaseAndAttackPlayer()
     {
-        PlayerController targetPlayer = FindClosestPlayer();
-        if (targetPlayer != null)
+        if (LastAggressor.IsNone)
         {
-            Debug.Log($"Host: Shopkeeper attacking Player {targetPlayer.Object.InputAuthority.PlayerId}");
-            RPC_ShootWeapon(targetPlayer.transform.position);
+            SetShopkeeperState(ShopkeeperState.Passive);
+            return;
         }
+
+        NetworkObject aggressorObject = Runner.GetPlayerObject(LastAggressor);
+        if (aggressorObject == null)
+        {
+            SetShopkeeperState(ShopkeeperState.Passive);
+            LastAggressor = PlayerRef.None;
+            return;
+        }
+
+        float distance = Mathf.Abs(transform.position.x - aggressorObject.transform.position.x);
+
+        // ê³µê²© ì¿¨ë‹¤ìš´ì´ ëë‚¬ê³ , í”Œë ˆì´ì–´ê°€ ê³µê²© ë²”ìœ„ ì•ˆì— ìˆë‹¤ë©´
+        if (_attackTimer.ExpiredOrNotRunning(Runner) && distance <= attackRange)
+        {
+            // 1. ì œìë¦¬ì— ë©ˆì¶¥ë‹ˆë‹¤.
+            if (_netRigidbody.Rigidbody.linearVelocity.sqrMagnitude > 0)
+            {
+                _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
+            }
+
+            // 2. ê³µê²© RPCë¥¼ í˜¸ì¶œí•˜ê³  íƒ€ì´ë¨¸ë¥¼ ì‹œì‘í•©ë‹ˆë‹¤.
+            
+            Rpc_AttackPlayer(LastAggressor, attackDamage);
+            _attackTimer = TickTimer.CreateFromSeconds(Runner, attackCooldown);
+
+            // 3. ìƒíƒœë¥¼ 'Attacking'ìœ¼ë¡œ ë³€ê²½í•˜ì—¬ ì´ë™ì„ ë§‰ìŠµë‹ˆë‹¤.
+            SetShopkeeperState(ShopkeeperState.Attacking);
+            _animator.SetTrigger("AttackTrigger");
+            Debug.Log($"Host: Shopkeeper changing state to Attacking.");
+        }
+        // í”Œë ˆì´ì–´ê°€ ê³µê²© ë²”ìœ„ ë°–ì— ìˆë‹¤ë©´ ì¶”ì í•©ë‹ˆë‹¤.
+        else if (distance > stopDistance)
+        {
+            _animator.SetBool("IsRunning", true);
+            Vector2 directionToTarget = (aggressorObject.transform.position - transform.position).normalized;
+            _netRigidbody.Rigidbody.linearVelocity = directionToTarget * chaseSpeed;
+        }
+        // ê³µê²© ë²”ìœ„ì™€ ì •ì§€ ê±°ë¦¬ ì‚¬ì´ì— ìˆë‹¤ë©´ ë©ˆì¶¥ë‹ˆë‹¤.
         else
         {
-            SetShopkeeperState(ShopkeeperState.Peaceful);
+            _animator.SetBool("IsRunning", false);
+            _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
         }
     }
 
-    // --- ¹«±â ¹ß»ç RPC (Host -> All Clients) ---
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_ShootWeapon(Vector3 targetPosition)
+    // --- RPC: ëŒ€í™” ë§í’ì„  í‘œì‹œ (í˜¸ìŠ¤íŠ¸ -> íŠ¹ì • í´ë¼ì´ì–¸íŠ¸) ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    private void Rpc_DisplaySpeechBubble(PlayerRef targetPlayer, string message)
     {
-        if (weaponPrefab != null && weaponSpawnPoint != null)
+        if (speechBubbleObject != null && speechBubbleText != null)
         {
-            GameObject bullet = Instantiate(weaponPrefab, weaponSpawnPoint.position, Quaternion.identity);
-            Vector2 direction = (targetPosition - weaponSpawnPoint.position).normalized;
-            // bullet.GetComponent<Projectile>().Initialize(direction, damage);
-            Debug.Log($"Client: Shopkeeper shot at {targetPosition}");
+            speechBubbleText.text = message;
+            speechBubbleObject.SetActive(true);
+            // í´ë¼ì´ì–¸íŠ¸ì—ì„œ ë§í’ì„  í‘œì‹œ íƒ€ì´ë¨¸ ê´€ë¦¬ (Renderì—ì„œ ê°±ì‹ í•˜ê±°ë‚˜ ë³„ë„ Coroutine)
+            Debug.Log($"Client: Shopkeeper says: {message}");
         }
     }
 
-    // --- °¡Àå °¡±î¿î ÇÃ·¹ÀÌ¾î Ã£±â (Host¿¡¼­¸¸ È£Ãâ) ---
-    private PlayerController FindClosestPlayer()
+    // --- RPC: í”Œë ˆì´ì–´ ê³µê²© (í˜¸ìŠ¤íŠ¸ -> íŠ¹ì • í´ë¼ì´ì–¸íŠ¸) ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    private void Rpc_AttackPlayer(PlayerRef targetPlayer, float damage)
     {
-        PlayerController closestPlayer = null;
-        float minDistance = float.MaxValue;
+        // ê³µê²© ì• ë‹ˆë©”ì´ì…˜ íŠ¸ë¦¬ê±° (ëª¨ë“  í´ë¼ì´ì–¸íŠ¸)
+        // ì˜ˆë¥¼ ë“¤ì–´ Animator.SetTrigger("Attack")
+        Debug.Log($"Client: Shopkeeper plays attack animation.");
 
-        foreach (var playerRef in Runner.ActivePlayers)
+        // ë°ë¯¸ì§€ ì ìš©ì€ PlayerHealth ì»´í¬ë„ŒíŠ¸ì—ì„œ RPCë¥¼ ë°›ì•„ ì²˜ë¦¬í•˜ëŠ” ê²ƒì´ ì¢‹ìŠµë‹ˆë‹¤.
+        // NetworkObject playerObject = Runner.GetPlayerObject(targetPlayer);
+        // if (playerObject != null)
+        // {
+        //     PlayerHealth playerHealth = playerObject.GetComponent<PlayerHealth>();
+        //     if (playerHealth != null)
+        //     {
+        //         playerHealth.Rpc_TakeDamage(damage);
+        //     }
+        // }
+    }
+
+    // --- OnChanged ì½œë°±: ShopkeeperState ë³€ê²½ ê°ì§€ ---
+    // [Networked, OnChangedRender(nameof(OnShopkeeperStateChanged))] ì— ì˜í•´ í˜¸ì¶œë©ë‹ˆë‹¤.
+    void OnShopkeeperStateChanged()
+    {
+        // ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì—ì„œ ìƒíƒœ ë³€ê²½ì— ë”°ë¥¸ ë¹„ì£¼ì–¼/ì• ë‹ˆë©”ì´ì…˜ ì—…ë°ì´íŠ¸
+        UpdateVisuals();
+        Debug.Log($"Client (ID: {Object.Id}): Shopkeeper state changed to {CurrentState}");
+
+        // ëŒ€í™” ìƒíƒœê°€ ì•„ë‹ ë•Œ ë§í’ì„  ìˆ¨ê¹€
+        if (CurrentState != ShopkeeperState.Talking && speechBubbleObject != null && speechBubbleObject.activeSelf)
         {
-            NetworkObject playerObject = Runner.GetPlayerObject(playerRef);
-            if (playerObject != null)
-            {
-                PlayerController pc = playerObject.GetComponent<PlayerController>();
-                if (pc != null)
+            speechBubbleObject.SetActive(false);
+        }
+    }
+
+    // --- ë¹„ì£¼ì–¼ ì—…ë°ì´íŠ¸ (ì• ë‹ˆë©”ì´ì…˜, í‘œì • ë“±) ---
+    private void UpdateVisuals()
+    {
+        // TODO: í˜„ì¬ ìƒíƒœì— ë”°ë¼ ì• ë‹ˆë©”ì´ì…˜ íŠ¸ë¦¬ê±°ë‚˜ ìŠ¤í”„ë¼ì´íŠ¸ ë³€ê²½ ë¡œì§ ì¶”ê°€
+        switch (CurrentState)
+        {
+            case ShopkeeperState.Passive:
+                // ì• ë‹ˆë©”ì´í„°.SetBool("IsAggressive", false);
+                // ì• ë‹ˆë©”ì´í„°.SetBool("IsTalking", false);
+                break;
+            case ShopkeeperState.Talking:
+                // ì• ë‹ˆë©”ì´í„°.SetBool("IsTalking", true);
+                if (speechBubbleObject != null)
                 {
-                    float dist = Vector3.Distance(transform.position, pc.transform.position);
-                    if (dist < minDistance)
+                    speechBubbleObject.SetActive(true);
+                }
+                break;
+            case ShopkeeperState.Aggressive:
+                // 1. ìœ íš¨í•œ ê³µê²© ëŒ€ìƒ(LastAggressor)ì´ ìˆëŠ”ì§€ í™•ì¸í•©ë‹ˆë‹¤.
+                if (LastAggressor.IsNone) break;
+
+                // 2. ëŒ€ìƒ í”Œë ˆì´ì–´ì˜ NetworkObjectë¥¼ ì°¾ìŠµë‹ˆë‹¤.
+                NetworkObject aggressorObject = Runner.GetPlayerObject(LastAggressor);
+
+                // 3. í”Œë ˆì´ì–´ ì˜¤ë¸Œì íŠ¸ê°€ ì”¬ì— ìœ íš¨í•˜ê²Œ ì¡´ì¬í•˜ëŠ”ì§€ í™•ì¸í•©ë‹ˆë‹¤. (ì—°ê²° ëŠê¹€ ë“± ëŒ€ë¹„)
+                if (aggressorObject != null)
+                {
+                    // 4. ëª©í‘œ(í”Œë ˆì´ì–´)ê°€ ìƒì ì£¼ì¸ì˜ ì™¼ìª½ì— ìˆëŠ”ì§€ ì˜¤ë¥¸ìª½ì— ìˆëŠ”ì§€ íŒë‹¨í•©ë‹ˆë‹¤.
+                    float directionX = aggressorObject.transform.position.x - transform.position.x;
+
+                    // 5. ë¡œì»¬ ìŠ¤ì¼€ì¼(localScale)ì˜ xê°’ì„ ì¡°ì ˆí•˜ì—¬ ë°”ë¼ë³´ëŠ” ë°©í–¥ì„ ë°”ê¿‰ë‹ˆë‹¤.
+                    //    (ìŠ¤í”„ë¼ì´íŠ¸ê°€ ê¸°ë³¸ì ìœ¼ë¡œ ì˜¤ë¥¸ìª½ì„ ë³´ê³  ìˆë‹¤ê³  ê°€ì •)
+                    if (directionX < 0)
                     {
-                        minDistance = dist;
-                        closestPlayer = pc;
+                        // ëª©í‘œê°€ ì™¼ìª½ì— ìˆìœ¼ë©´ ì™¼ìª½ì„ ë³´ë„ë¡ x ìŠ¤ì¼€ì¼ì„ ìŒìˆ˜ë¡œ ë§Œë“­ë‹ˆë‹¤.
+                        transform.localScale = new Vector3(-Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
+                    }
+                    else
+                    {
+                        // ëª©í‘œê°€ ì˜¤ë¥¸ìª½ì— ìˆê±°ë‚˜ ê°™ì€ ìœ„ì¹˜ë©´ ì˜¤ë¥¸ìª½ì„ ë³´ë„ë¡ x ìŠ¤ì¼€ì¼ì„ ì–‘ìˆ˜ë¡œ ë§Œë“­ë‹ˆë‹¤.
+                        transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
                     }
                 }
-            }
-        }
-        return closestPlayer;
-    }
-
-    // --- Ãæµ¹ °¨Áö (ÇÇ°İ ¶Ç´Â ÇÃ·¹ÀÌ¾î¿ÍÀÇ Á¢ÃË) ---
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!Object.HasStateAuthority) return;
-
-        if (other.CompareTag("PlayerAttack"))
-        {
-            PlayerController attacker = other.GetComponentInParent<PlayerController>();
-            if (attacker != null)
-            {
-                Debug.Log($"Host: Shopkeeper hit by player {attacker.Object.InputAuthority.PlayerId}");
-                _lastAggressor = attacker.Object.InputAuthority;
-                SetShopkeeperState(ShopkeeperState.Aggressive);
-            }
+                break; // case ë¬¸ ì¢…ë£Œ
+            case ShopkeeperState.Defeated:
+                // ì• ë‹ˆë©”ì´í„°.SetTrigger("Defeated");
+                break;
         }
     }
 
-    // --- ´ëÈ­Ã¢ Ç¥½Ã ·ÎÁ÷ (Å¬¶óÀÌ¾ğÆ®¿¡¼­ OnShopkeeperStateChanged¿¡ ÀÇÇØ È£Ãâ) ---
-    private void ShowDialogue(string[] dialogues)
-    {
-        if (speechBubble != null && speechText != null)
-        {
-            if (dialogues.Length > 0)
-            {
-                speechBubble.SetActive(true);
-                speechText.text = dialogues[Random.Range(0, dialogues.Length)];
-            }
-            else
-            {
-                UpdateSpeechBubble(false);
-            }
-        }
-    }
-
-    private void UpdateSpeechBubble(bool active)
-    {
-        if (speechBubble != null)
-        {
-            speechBubble.SetActive(active);
-        }
-    }
-
-    // --- µğ¹ö±ë¿ë Gizmos ---
+    // --- ë””ë²„ê·¸ ìš© (í”Œë ˆì´ì–´ ê°ì§€ ë°˜ê²½ ì‹œê°í™”) ---
     private void OnDrawGizmos()
     {
-        if (detectionCollider != null)
-        {
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawWireCube(detectionCollider.bounds.center, detectionCollider.bounds.size);
-        }
-    }
-    public void SetShopkeeperState(ShopkeeperState newState) // publicÀ¸·Î º¯°æÇÏ¿© ShopManager¿¡¼­ È£Ãâ °¡´ÉÇÏµµ·Ï
-    {
-        if (Object.HasStateAuthority)
-        {
-            if (CurrentState != newState)
-            {
-                CurrentState = newState;
-                if (newState == ShopkeeperState.Warning)
-                {
-                    StateTimer = TickTimer.CreateFromSeconds(Runner, warningDuration);
-                }
-                Debug.Log($"Host: Shopkeeper state set to {newState}");
-            }
-        }
-    }
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, playerDetectionRadius);
 
-    // ¸¶Áö¸·À¸·Î »óÁ¡ ÁÖÀÎÀ» °ø°İ/µµµÏÁú ½ÃµµÇÑ ÇÃ·¹ÀÌ¾î¸¦ ¼³Á¤ÇÏ´Â ¸Ş¼­µå (Host¸¸ È£Ãâ °¡´É)
-    public void SetLastAggressor(PlayerRef player)
-    {
-        if (Object.HasStateAuthority)
+        if (Application.isPlaying && CurrentState == ShopkeeperState.Aggressive && LastAggressor.IsNone == false)
         {
-            _lastAggressor = player;
-            Debug.Log($"Host: Last aggressor set to Player {player.PlayerId}");
+            NetworkObject aggressorObject = Runner?.GetPlayerObject(LastAggressor);
+            if (aggressorObject != null)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(transform.position, aggressorObject.transform.position);
+                Gizmos.DrawWireSphere(transform.position, attackRange);
+            }
         }
     }
 }

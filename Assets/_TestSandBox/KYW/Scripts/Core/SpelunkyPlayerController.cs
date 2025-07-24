@@ -31,6 +31,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private Vector2 mouseWorldPosition;
     private bool jumpPressed;       // Space + !IsDucking
     private bool pickupPressed;     // Space + IsDucking  
+    private bool pickitem;
+    private bool buyitem;
     
     // 🔨 아이템 사용 입력
     private bool useItemHeld;           // 현재 클릭 유지 중
@@ -53,6 +55,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerItemUsage itemUsage;
     private PlayerItemThrower itemThrower;
 
+    
+
     public override void Spawned()
     {
         // 물리/로직 컴포넌트들 (같은 오브젝트에서 찾기)
@@ -72,6 +76,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         
         Debug.Log($"🎮 플레이어 소환 완료! InputAuthority: {Object.HasInputAuthority}, " +
                  $"IsLocalPlayer: {Object.InputAuthority == Runner.LocalPlayer}");
+
+        
     }
     
     // 📦 하위 오브젝트들 설정 (Visual, Hand)
@@ -177,6 +183,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
             throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
+            pickitem = Input.GetKey(KeyCode.C);
+            buyitem = Input.GetKey(KeyCode.X);
         }
     }
     
@@ -194,7 +202,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
+            
         }
+        
     }
 
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
@@ -214,6 +224,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.pick, pickitem);
+            data.NetworkButtons.Set(SpelunkyInputButtons.buy, buyitem);
         }
         
         return data;

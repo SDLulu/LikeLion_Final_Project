@@ -1,93 +1,42 @@
 using Fusion;
-using System.Collections.Generic;
 using UnityEngine;
-using static Unity.Collections.Unicode;
 
 public class ShopAreaCollider : NetworkBehaviour
 {
     private ShopManager _shopManager;
-    private List<Collider2D> _objectsInShopArea = new List<Collider2D>();
-
-    // ÇÃ·¹ÀÌ¾î ·¹ÀÌ¾î´Â ÀÌÁ¦ ÀÌ ½ºÅ©¸³Æ®¿¡¼­ Á÷Á¢ÀûÀ¸·Î µµµÏÁú °¨Áö¿¡ »ç¿ëµÇÁö ¾Ê½À´Ï´Ù.
-    // ÇÏÁö¸¸ ´Ù¸¥ ¸ñÀûÀ¸·Î OnTriggerExit2D¿¡¼­ ÇÃ·¹ÀÌ¾î¸¦ °¨ÁöÇØ¾ß ÇÑ´Ù¸é À¯ÁöÇÒ ¼ö ÀÖ½À´Ï´Ù.
-    // [SerializeField] private LayerMask playerLayer; // ÇÊ¿ä ¾øÀ¸¸é Á¦°Å °¡´É
-    [SerializeField] private LayerMask shopItemLayer; // ShopItem¿¡ ÇÒ´çµÈ ·¹ÀÌ¾î¸¦ ¿©±â¿¡ ÇÒ´ç
-
+    [SerializeField] private LayerMask playerLayer; // â­ï¸ ì¤‘ìš”: Inspectorì—ì„œ ì•„ì´í…œ ë ˆì´ì–´ ëŒ€ì‹  'Player' ë ˆì´ì–´ë¡œ ë³€ê²½í•´ì£¼ì„¸ìš”!
 
     void Awake()
     {
         _shopManager = FindFirstObjectByType<ShopManager>();
-        if (_shopManager == null)
-        {
-            Debug.LogError("ShopManager not found in scene! ShopAreaWatcher might not function correctly.");
-        }
-    }
-    private void OnTriggerStay2D(Collider2D other)
-    {
-        Debug.Log($"Host: Object staying in ShopAreaTrigger: {other.gameObject.name}");
-        if (Runner != null && Object.HasStateAuthority)
-        {
-            Debug.Log($"Host: Object staying in ShopAreaTrigger: {other.gameObject.name}");
-        }
-    }
-    // --- OnTriggerEnter2D ---
-    // ´Ù¸¥ Äİ¶óÀÌ´õ°¡ ÀÌ Äİ¶óÀÌ´õ(ShopAreaTrigger)¿¡ ÁøÀÔÇßÀ» ¶§ È£ÃâµË´Ï´Ù.
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        Debug.Log($"Host: Object entered ShopAreaTrigger: {other.gameObject.name}, Tag: {other.tag}");
-        // Host¿¡¼­¸¸ ·Î±×¸¦ Ãâ·ÂÇÏ°Å³ª ·ÎÁ÷À» Ã³¸®ÇÏ´Â °ÍÀÌ ÀÏ¹İÀûÀÔ´Ï´Ù.
-        // Å¬¶óÀÌ¾ğÆ®¿¡¼­µµ ·ÎÄÃ ·Î±×´Â °¡´ÉÇÏÁö¸¸, ½ÇÁ¦ °ÔÀÓ ·ÎÁ÷Àº Host¿¡¼­.
-        if (Runner != null && Object.HasStateAuthority) // Host/Server¿¡¼­¸¸ µ¿ÀÛ
-        {
-            Debug.Log($"Host: Object entered ShopAreaTrigger: {other.gameObject.name}, Tag: {other.tag}");
-
-            // ¸ñ·Ï¿¡ Ãß°¡ (Áßº¹ ¹æÁö)
-            if (!_objectsInShopArea.Contains(other))
-            {
-                _objectsInShopArea.Add(other);
-            }
-        }
     }
 
-    // --- OnTriggerExit2D ---
-    // ´Ù¸¥ Äİ¶óÀÌ´õ°¡ ÀÌ Äİ¶óÀÌ´õ(ShopAreaTrigger)¿¡¼­ ¹ş¾î³µÀ» ¶§ È£ÃâµË´Ï´Ù.
+    // â­ï¸ OnTriggerExit2D ë¡œì§ì„ ì•„ë˜ì™€ ê°™ì´ ì™„ì „íˆ ë³€ê²½í•©ë‹ˆë‹¤.
     void OnTriggerExit2D(Collider2D other)
     {
-        // ÀÌ ·ÎÁ÷Àº È£½ºÆ®(¼­¹ö)¿¡¼­¸¸ ½ÇÇàµÇ¾î¾ß ÇÕ´Ï´Ù.
-        //if (!Runner.IsServer || _shopManager == null) return;
-        // --- »óÁ¡ ¾ÆÀÌÅÛ °¨Áö ·ÎÁ÷ ---
-        // Äİ¶óÀÌ´õ¸¦ ¹ş¾î³­ ¿ÀºêÁ§Æ®°¡ ShopItem ·¹ÀÌ¾î¿¡ ¼ÓÇÏ´ÂÁö È®ÀÎÇÕ´Ï´Ù.
-        if (((1 << other.gameObject.layer) & shopItemLayer) != 0)
+        // í˜¸ìŠ¤íŠ¸ê°€ ì•„ë‹ˆê±°ë‚˜, ë‚˜ê°„ ê²ƒì´ í”Œë ˆì´ì–´ ë ˆì´ì–´ê°€ ì•„ë‹ˆë©´ ë¬´ì‹œ
+        if (!Object.HasStateAuthority || ((1 << other.gameObject.layer) & playerLayer) == 0)
         {
-            Debug.Log("¿ÀºêÁ§Æ® ÀÌÅ»");
-            ShopItem exitedShopItem = other.GetComponent<ShopItem>();
-
-            if (exitedShopItem != null)
-            {
-                // ShopManagerÀÇ ShopItems NetworkArray¿¡¼­ ÇØ´ç ¾ÆÀÌÅÛ µ¥ÀÌÅÍ¸¦ Á¶È¸ÇÕ´Ï´Ù.
-                bool isItemUnpurchasedAndExited = false;
-                for (int i = 0; i < _shopManager.ShopItems.Length; i++)
-                {
-                    var shopItemData = _shopManager.ShopItems.Get(i);
-                    // ¹ş¾î³­ ¾ÆÀÌÅÛÀÇ NetworkId¿Í ÀÏÄ¡ÇÏ°í, ¾ÆÁ÷ ±¸¸ÅµÇÁö ¾ÊÀº »óÅÂ(IsAvailable == true)ÀÎÁö È®ÀÎÇÕ´Ï´Ù.
-                    if (shopItemData.ItemNetworkId == exitedShopItem.Object.Id && shopItemData.IsAvailable)
-                    {
-                        isItemUnpurchasedAndExited = true;
-                        break; // ÇØ´ç ¾ÆÀÌÅÛÀ» Ã£¾ÒÀ¸¹Ç·Î ´õ ÀÌ»ó ¼øÈ¸ÇÒ ÇÊ¿ä ¾øÀ½
-                    }
-                }
-
-                if (isItemUnpurchasedAndExited)
-                {
-                    Debug.LogWarning($"Host: Theft detected! Unpurchased item '{exitedShopItem.name}' exited the shop area (rolled out or carried).");
-                    // ShopManager¿¡°Ô µµµÏÁú ½Ãµµ¸¦ ¾Ë¸³´Ï´Ù.
-                    // ÀÌ °æ¿ì Æ¯Á¤ ÇÃ·¹ÀÌ¾î°¡ Á÷Á¢ µé°í ³ª°£ °ÍÀÌ ¾Æ´Ò ¼ö ÀÖÀ¸¹Ç·Î, PlayerRef.NoneÀ» Àü´ŞÇÕ´Ï´Ù.
-                    _shopManager.NotifyTheftAttempt(PlayerRef.None, exitedShopItem.Object);
-                }
-            }
+            return;
         }
-        // ¸¸¾à ÇÃ·¹ÀÌ¾î°¡ ¾ÆÀÌÅÛ ¾øÀÌ ±×³É ³ª°¡´Â °æ¿ì¸¦ °¨ÁöÇÏ°í ½Í´Ù¸é,
-        // ¿©±â¿¡ playerLayer¸¦ Ã¼Å©ÇÏ´Â else if ºí·ÏÀ» Ãß°¡ÇÒ ¼ö ÀÖ½À´Ï´Ù.
-        // ÇÏÁö¸¸ ÇöÀç ÀÇµµ¿¡ µû¸£¸é ¾ÆÀÌÅÛÀÌ ³ª°¡´Â °Í¸¸ Áß¿äÇÏ¹Ç·Î »ı·«ÇÕ´Ï´Ù.
+
+        // ë‚˜ê°„ ì½œë¼ì´ë”ì—ì„œ PlayerInventory ì»´í¬ë„ŒíŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
+        PlayerInventory playerInventory = other.GetComponentInParent<PlayerInventory>();
+        if (playerInventory == null) return;
+
+        // í”Œë ˆì´ì–´ê°€ ë“¤ê³  ìˆëŠ” ì•„ì´í…œì„ í™•ì¸í•©ë‹ˆë‹¤.
+        ShopItem heldItem = playerInventory.HeldShopItem;
+
+        // â­ï¸ ë§Œì•½ í”Œë ˆì´ì–´ê°€ ì•„ì´í…œì„ ë“¤ê³  ìˆê³ , ê·¸ ì•„ì´í…œì´ ì•„ì§ êµ¬ë§¤ë˜ì§€ ì•Šì•˜ë‹¤ë©´('íŒë§¤ ê°€ëŠ¥' ìƒíƒœë¼ë©´)
+        if (heldItem != null && heldItem.ItemData.IsAvailable)
+        {
+            Debug.LogWarning($"Host: Theft detected! Player '{playerInventory.name}' exited with unpurchased item '{heldItem.name}'.");
+
+            // ShopManagerì—ê²Œ ë„ë‘‘ì§ˆì„ ì•Œë¦½ë‹ˆë‹¤.
+            // ë²”ì¸ì€ ì´ì œ ëª…í™•í•˜ê²Œ playerInventoryì˜ ì£¼ì¸ì…ë‹ˆë‹¤.
+            _shopManager.NotifyTheftAttempt(playerInventory.Object.InputAuthority, heldItem.Object);
+        }
     }
+
+    // OnTriggerEnter2Dì™€ OnTriggerStay2DëŠ” ì´ ë¡œì§ì—ì„œ ë” ì´ìƒ í•„ìš” ì—†ìœ¼ë¯€ë¡œ ì‚­ì œí•´ë„ ë©ë‹ˆë‹¤.
 }

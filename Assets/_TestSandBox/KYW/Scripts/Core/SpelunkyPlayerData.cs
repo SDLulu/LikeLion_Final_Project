@@ -25,4 +25,6 @@ public enum SpelunkyInputButtons
     UseItemHold = 3,    // 마우스 좌클릭 - 아이템 사용
     ThrowItem = 4,      // 마우스 우클릭 - 아이템 던지기
     Skill = 5,          // 쉬프트키 - 스킬 사용
+    pick = 6,
+    buy = 7
 } 

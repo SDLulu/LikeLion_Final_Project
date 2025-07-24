@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 341211699525651198}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.74, y: -1.3, z: 0}
+  m_LocalPosition: {x: 1.23, y: -2.07, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -56,7 +56,7 @@ Transform:
   m_GameObject: {fileID: 402608013330455404}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.92, y: -1.3, z: 0}
+  m_LocalPosition: {x: 3.94, y: -2.09, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -87,7 +87,7 @@ Transform:
   m_GameObject: {fileID: 712599035728351655}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.86, y: -1.3, z: 0}
+  m_LocalPosition: {x: 6.95, y: -2.07, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -183,11 +183,26 @@ MonoBehaviour:
   - {fileID: 2942115880849145758}
   - {fileID: 3240051432251687699}
   availableItemDataList:
-  - {fileID: 11400000, guid: e42bfe96bb34da045a1e3c11c7fc8cf2, type: 2}
-  - {fileID: 11400000, guid: c319b9130889a0a4cb3aad69f5aa9485, type: 2}
+  - itemType: 3
+    itemName: sword
+    basePrice: 1000
+    itemPrefab:
+      RawGuidValue: ef20f2eda1169c449b70f0c5e2eb6096
+    itemSprite: {fileID: 6077338267653451029, guid: 822ce8a3b49a3f244ba6d8f66f1541b1, type: 3}
   shopAreaTrigger: {fileID: 7306228366429866015}
   _shopAreaCollider: {fileID: 0}
-  _ShopItems: []
+  _ShopItems:
+  - ItemNetworkId:
+      Raw: 0
+    ItemType: 0
+    Price: 0
+    IsAvailable: 0
+    IsPicked: 0
+    OriginalPosition: {x: 0, y: 0, z: 0}
+    ItemName:
+      _length: 0
+      _data:
+        Data: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 --- !u!114 &7041268730039732480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -299,3 +314,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da730023bdb36fe46ba66bd4de4b2a7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 128

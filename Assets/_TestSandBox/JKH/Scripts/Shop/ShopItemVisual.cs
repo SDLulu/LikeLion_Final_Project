@@ -1,18 +1,20 @@
-using Fusion;
-using TMPro;
+ï»¿using TMPro; // TextMeshPro ì‚¬ìš©
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UI; // UnityEngine.UIëŠ” ë” ì´ìƒ í•„ìš” ì—†ì„ ìˆ˜ ìˆì§€ë§Œ, ì•ˆì „ì„ ìœ„í•´ ìœ ì§€
 
-public class ShopItemVisual : NetworkBehaviour
+public class ShopItemVisual : MonoBehaviour // â­ï¸ NetworkBehaviour ëŒ€ì‹  MonoBehaviour ìƒì†
 {
     [SerializeField] private GameObject priceTag;
-    [SerializeField] private TextMeshProUGUI priceText; // TextMeshPro·Î º¯°æ
+    [SerializeField] private TextMeshProUGUI priceText;
+    // â­ï¸ purchaseText í•„ë“œëŠ” ShopItemì—ì„œ ê´€ë¦¬í•˜ëŠ” _spawnedPurchaseUIì™€ ê²¹ì¹˜ë¯€ë¡œ ì œê±°
+    // [SerializeField] private GameObject purchaseText; // ì´ í•„ë“œëŠ” ì œê±°ë©ë‹ˆë‹¤.
+
     [SerializeField] private SpriteRenderer itemRenderer;
     [SerializeField] private Color availableColor = Color.white;
     [SerializeField] private Color pickedColor = Color.gray;
-    [SerializeField] private Color soldColor = Color.red; // ÆÇ¸ÅµÈ ¾ÆÀÌÅÛ »ö»ó
+    [SerializeField] private Color soldColor = Color.red; // íŒë§¤ëœ ì•„ì´í…œ ìƒ‰ìƒ
 
-    // ¾ÆÀÌÅÛ ½ºÇÁ¶óÀÌÆ®¸¦ ¼³Á¤ÇÏ´Â ÇÔ¼ö
+    // â­ï¸ ShopItemì—ì„œ í˜¸ì¶œí•˜ì—¬ ìŠ¤í”„ë¼ì´íŠ¸ë¥¼ ì„¤ì •í•˜ëŠ” í•¨ìˆ˜
     public void SetItemSprite(Sprite sprite)
     {
         if (itemRenderer != null)
@@ -21,43 +23,53 @@ public class ShopItemVisual : NetworkBehaviour
         }
     }
 
-    public void UpdateVisual(ShopItemData itemData)
+    // â­ï¸ ShopItemì—ì„œ í˜¸ì¶œí•˜ì—¬ ê°€ê²© í…ìŠ¤íŠ¸ë¥¼ ì—…ë°ì´íŠ¸í•˜ëŠ” í•¨ìˆ˜
+    public void UpdatePriceText(int price)
     {
-        // °¡°İ Ç¥½Ã
         if (priceText != null)
         {
-            priceText.text = $"${itemData.Price}";
+            priceText.text = $"${price}";
         }
-
-        // ¾ÆÀÌÅÛ »óÅÂº° »ö»ó º¯°æ ¹× °¡°İÇ¥ È°¼ºÈ­/ºñÈ°¼ºÈ­
-        if (!itemData.IsAvailable) // ÆÇ¸ÅµÊ
-        {
-            if (itemRenderer != null) itemRenderer.color = soldColor;
-            if (priceTag != null) priceTag.SetActive(false);
-            // ¾ÆÀÌÅÛ ¿ÀºêÁ§Æ® ÀÚÃ¼¸¦ ºñÈ°¼ºÈ­ÇÏ°Å³ª ÆÄ±«ÇÏ´Â ·ÎÁ÷Àº ShopManager¿¡¼­ Ã³¸®ÇØ¾ß ÇÔ
-        }
-        else if (itemData.IsPicked) // µé°í ÀÖ´Â Áß
-        {
-            if (itemRenderer != null) itemRenderer.color = pickedColor;
-            if (priceTag != null) priceTag.SetActive(true);
-        }
-        else // ±¸¸Å °¡´É »óÅÂ
-        {
-            if (itemRenderer != null) itemRenderer.color = availableColor;
-            if (priceTag != null) priceTag.SetActive(true);
-        }
-
-        // À±°û¼±Àº ÇÃ·¹ÀÌ¾î°¡ »óÈ£ÀÛ¿ë °¡´ÉÇÑ »óÅÂÀÏ ¶§ PlayerInteractionController¿¡¼­ Á¦¾îÇÒ ¼ö ÀÖ½À´Ï´Ù.
-        // ShowOutline(bool show) ÇÔ¼ö´Â ÇÊ¿ä½Ã ¿ÜºÎ¿¡¼­ È£Ãâ
     }
 
-    // ¾ÆÀÌÅÛÀÌ µé¾î¿Ã·ÁÁ³À» ¶§ À±°û¼± Ç¥½Ã (¼±ÅÃ »çÇ×, PlayerInteraction¿¡¼­ Á¦¾î °¡´É)
+    // â­ï¸ ShopItemì—ì„œ í˜¸ì¶œí•˜ì—¬ ì•„ì´í…œ ìƒíƒœì— ë”°ë¼ ë¹„ì£¼ì–¼ì„ ì—…ë°ì´íŠ¸í•˜ëŠ” í•¨ìˆ˜
+    public void UpdateItemColorAndPriceTag(bool isAvailable, bool isPicked)
+    {
+        if (itemRenderer != null)
+        {
+            if (!isAvailable) // íŒë§¤ë¨ (ë˜ëŠ” ë„ë‚œë¨)
+            {
+                itemRenderer.color = soldColor;
+            }
+            else if (isPicked) // ë“¤ê³  ìˆëŠ” ì¤‘
+            {
+                itemRenderer.color = pickedColor;
+            }
+            else // êµ¬ë§¤ ê°€ëŠ¥ ìƒíƒœ
+            {
+                itemRenderer.color = availableColor;
+            }
+        }
+
+        // ê°€ê²©í‘œ í™œì„±í™”/ë¹„í™œì„±í™” (íŒë§¤/ë„ë‚œ ì‹œ ìˆ¨ê¹€)
+        if (priceTag != null)
+        {
+            priceTag.SetActive(isAvailable);
+        }
+    }
+
+    // â­ï¸ ShowOutline í•¨ìˆ˜ëŠ” ê·¸ëŒ€ë¡œ ìœ ì§€ (ì™¸ë¶€ì—ì„œ í˜¸ì¶œ ê°€ëŠ¥)
     public void ShowOutline(bool show)
     {
-        var outline = GetComponent<Outline>(); // ¶Ç´Â ´Ù¸¥ À±°û¼± ÄÄÆ÷³ÍÆ®
+        var outline = GetComponent<Outline>(); // ë˜ëŠ” ë‹¤ë¥¸ ìœ¤ê³½ì„  ì»´í¬ë„ŒíŠ¸
         if (outline != null)
         {
             outline.enabled = show;
         }
     }
+
+    // â­ï¸ OnCollisionStay2D ë° OnCollisionExit2DëŠ” ShopItemVisualì—ì„œ ì œê±°ë©ë‹ˆë‹¤.
+    // ì´ ë¡œì§ì€ ShopItem.csì—ì„œ _isPlayerColliding networked ë³€ìˆ˜ë¥¼ í†µí•´ ê´€ë¦¬ë©ë‹ˆë‹¤.
+    // private void OnCollisionStay2D(Collision2D collision) { /* ì œê±° */ }
+    // private void OnCollisionExit2D(Collision2D collision) { /* ì œê±° */ }
 }

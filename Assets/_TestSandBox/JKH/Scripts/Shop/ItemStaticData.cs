@@ -1,25 +1,21 @@
-using UnityEngine;
+ï»¿using UnityEngine;
+using Fusion; // NetworkPrefabRefë¥¼ ì‚¬ìš©í•˜ê¸° ìœ„í•´ ì¶”ê°€
 
-public enum ItemType
-{
-    None = 0,
-    Bomb = 1,
-    Rope = 2,
-    Jetpack = 3,
-    Compass = 4,
-    // ÇÊ¿ä¿¡ µû¶ó ´õ ¸¹Àº ¾ÆÀÌÅÛ Å¸ÀÔ Ãß°¡
-}
-
-// --- ItemStaticData.cs ---
-// °¢ ¾ÆÀÌÅÛÀÇ Á¤Àû µ¥ÀÌÅÍ¸¦ °ü¸®ÇÏ´Â ScriptableObject (ÇÁ¸®ÆÕ, ½ºÇÁ¶óÀÌÆ® µî
-
-[CreateAssetMenu(fileName = "ItemStaticData", menuName = "GameData/ItemStaticData")]
-public class ItemStaticData : ScriptableObject
+[System.Serializable]
+public class ItemStaticData
 {
     public ItemType itemType;
-    public GameObject itemPrefab; // ÀÌ ¾ÆÀÌÅÛ Å¸ÀÔ¿¡ ÇØ´çÇÏ´Â ShopItem ÇÁ¸®ÆÕ
-    public Sprite itemSprite;     // ShopItemVisualÀÌ »ç¿ëÇÒ ½ºÇÁ¶óÀÌÆ®
-    public string itemName;       // ¾ÆÀÌÅÛ ÀÌ¸§
-    public string itemDescription; // ¾ÆÀÌÅÛ ¼³¸í
-    public int basePrice;         // ±âº» °¡°İ (»óÁ¡¿¡¼­ º¯µ¿µÉ ¼ö ÀÖÀ½)
+    public string itemName; // â­ï¸ ì¶”ê°€: ì•„ì´í…œ ì´ë¦„
+    public int basePrice;
+    public NetworkPrefabRef itemPrefab; // ShopItem ì»´í¬ë„ŒíŠ¸ê°€ ë¶™ì€ í”„ë¦¬íŒ¹
+    public Sprite itemSprite;
+}
+
+public enum ItemType // ì´ Enumì€ ItemStaticData ë˜ëŠ” ë³„ë„ì˜ ì „ì—­ íŒŒì¼ì— ì •ì˜ë˜ì–´ì•¼ í•©ë‹ˆë‹¤.
+{
+    None,
+    HealthPotion,
+    ManaPotion,
+    Sword,
+    Shield
 }
