@@ -31,22 +31,5 @@ public class PlayerInventory : NetworkBehaviour
     {
         currentHeldObject = null;
     }
-
-    // ===== 🏷️ 타입 판별 함수들 =====
-
-    // 현재 손에 든 것이 아이템인지 판별(레이어로 구분)
-    private bool IsHeldItem()
-    {
-        var obj = currentHeldObject?.gameObject;
-        return obj != null && obj.layer == LayerMask.NameToLayer("Item");
-    }
     
-    // 현재 손에 든 것이 캐릭터인지 판별(레이어로 구분)
-    private bool IsHeldCharacter()
-    {
-        var obj = currentHeldObject?.gameObject;
-        if (obj == null) return false;
-        int layer = obj.layer;
-        return layer == LayerMask.NameToLayer("PlayerNpc") || layer == LayerMask.NameToLayer("Enemy");
-    }
 } 

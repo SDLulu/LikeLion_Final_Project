@@ -56,13 +56,17 @@ public class PlayerObjectThrower : NetworkBehaviour
     private void ThrowObject(GameObject obj, Vector2 direction)
     {
         var netObj = obj.GetComponent<NetworkObject>();
+        int layer = obj.layer;
         
         if (Object.HasStateAuthority)
         {
-            // 🎮 InputAuthority 해제
-            if (netObj != null && netObj.HasInputAuthority)
+            // 🎮 InputAuthority 해제 (아이템만)
+            if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
             {
-                netObj.RemoveInputAuthority();
+                if (netObj != null && netObj.HasInputAuthority)
+                {
+                    netObj.RemoveInputAuthority();
+                }
             }
             
             // 손에서 해제 (데이터만 관리)

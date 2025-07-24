@@ -101,20 +101,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     
     // 🤲 Hand 오브젝트 설정
     private void SetupHandObject()
-    {
-        // handRoot가 설정되지 않은 경우 자동으로 찾기
-        if (handRoot == null)
-        {
-            handRoot = transform.Find("Hand");
-            
-            // Hand 오브젝트가 없으면 경고만 출력 (자동 생성 제거)
-            if (handRoot == null)
-            {
-                Debug.LogWarning($"[{name}] Hand 하위 오브젝트를 찾을 수 없습니다. " +
-                               "Inspector에서 Hand Root를 수동으로 설정해주세요.");
-            }
-        }
-        
+    {    
         // Hand 컴포넌트들 참조 설정
         itemPickup = handRoot?.GetComponent<PlayerObjectPickup>();
         itemUsage = handRoot?.GetComponent<PlayerItemUsage>();
