@@ -56,7 +56,7 @@ public class UI_Lobby : MonoBehaviour
         }
         else
         {
-            UI_Controller.Inst.UITitle.gameObject.SetActive(true);
+            LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(true);
             this.gameObject.SetActive(false);
         }
     }

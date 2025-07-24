@@ -118,7 +118,7 @@ public class UI_GlobalSetting : MonoBehaviour
     {
         try
         {
-            var title = UI_Controller.Inst.UIEnterOnline;
+            var title = LobbyUI_Manager.Inst.UIEnterOnline;
             if (title == null)
             {
                 Debug.LogError("UI_Title 컴포넌트를 찾을 수 없습니다.");
@@ -215,9 +215,9 @@ public class UI_GlobalSetting : MonoBehaviour
     {
         try
         {
-            if (UI_Controller.Inst != null && UI_Controller.Inst.UILobby != null)
+            if (LobbyUI_Manager.Inst != null && LobbyUI_Manager.Inst.UILobby != null)
             {
-                UI_Controller.Inst.UILobby.gameObject.SetActive(active);
+                LobbyUI_Manager.Inst.UILobby.gameObject.SetActive(active);
                 Debug.Log($"로컬 UI 제어: 로비 UI {(active ? "활성화" : "비활성화")}");
             }
             else

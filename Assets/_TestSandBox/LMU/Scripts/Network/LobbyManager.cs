@@ -9,6 +9,9 @@ public class LobbyManager : BaseManager<LobbyManager>
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private string localRoomName;
+
+    public GameMode LocalGameMode => localGameMode;
+    public string LocalRoomName => localRoomName;
     public PlayerRef LocalPlayer { get; private set; }
 
     private byte[] connectionToken;
@@ -137,7 +140,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             if (runner == null || runner.IsRunning == false)
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
-                UI_Controller.Inst.ActiveTitleUI();
+                LobbyUI_Manager.Inst.ActiveTitleUI();
                 await Fader.Inst.FadeInAsync();
                 return;
             }
@@ -157,7 +160,7 @@ public class LobbyManager : BaseManager<LobbyManager>
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
-            UI_Controller.Inst.ActiveTitleUI();
+            LobbyUI_Manager.Inst.ActiveTitleUI();
 
             localGameMode = default;
             localRoomName = default;

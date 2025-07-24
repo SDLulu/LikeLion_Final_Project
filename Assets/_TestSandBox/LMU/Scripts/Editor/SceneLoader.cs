@@ -58,6 +58,15 @@ public class SceneLoader : EditorWindow
                     }
                 }
 
+                // Remove 버튼 추가: 씬을 하이어라키에서 완전히 제거
+                if (GUILayout.Button("Remove"))
+                {
+                    if (PromptSaveModifiedScenes(new Scene[] { scene }))
+                    {
+                        EditorSceneManager.CloseScene(scene, true);
+                    }
+                }
+
                 EditorGUILayout.EndHorizontal();
             }
         }

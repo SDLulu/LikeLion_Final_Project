@@ -50,7 +50,26 @@ namespace LMCore
             DontDestroyOnLoad(this);
             InitializeFader();
         }
+
+        public void ActiveBGImage( bool isActive = true, Color color = default)
+        {
+            _fullScreenImage.gameObject.SetActive(isActive);
+            _fullScreenImage.GetComponent<Image>().color = color;
+        }
+
 #if UNITY_EDITOR
+        [ContextMenu("BGImage 활성화")]
+        private void ActiveBGImage()
+        {
+            ActiveBGImage(true, Color.black);
+        }
+
+        [ContextMenu("BGImage 비활성화")]
+        private void DeactiveBGImage()
+        {
+            ActiveBGImage(false, Color.black);
+        }
+
         bool _testFade = false;
         [ContextMenu("기본 FadeIn")]
         private async void FadeIn()
