@@ -164,10 +164,14 @@ public class PlayerObjectPickup : NetworkBehaviour
                 obj.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
                 obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
                 
-                // 🎮 InputAuthority 할당 (던질 수 있도록)
-                if (!networkObject.HasInputAuthority)
+                // 🎮 InputAuthority 할당 (아이템만)
+                int layer = obj.layer;
+                if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
                 {
-                    networkObject.AssignInputAuthority(Object.InputAuthority);
+                    if (!networkObject.HasInputAuthority)
+                    {
+                        networkObject.AssignInputAuthority(Object.InputAuthority);
+                    }
                 }
                 
                 DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화

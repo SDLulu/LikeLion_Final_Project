@@ -26,9 +26,9 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         punchCollider = GetComponent<Collider2D>();
         originalPosition = transform.localPosition;
         
-        // // 시작 시 비활성화
-        // if (spriteRenderer != null) spriteRenderer.enabled = false;
-        // if (punchCollider != null) punchCollider.enabled = false;
+        // 시작 시 비활성화
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
+        if (punchCollider != null) punchCollider.enabled = false;
     }
 
     public override void Spawned()
@@ -77,11 +77,11 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         // 스프라이트 활성화/비활성화만 처리
         if (isPunchActive)
         {
-            // if (spriteRenderer != null) spriteRenderer.enabled = true;
+            if (spriteRenderer != null) spriteRenderer.enabled = true;
         }
         else
         {
-            // if (spriteRenderer != null) spriteRenderer.enabled = false;
+            if (spriteRenderer != null) spriteRenderer.enabled = false;
         }
     }
 
@@ -92,7 +92,7 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
 
         // 현재 펀치 오브젝트 위치와 마우스 위치로 방향 벡터 계산
         Vector2 worldDir = ((Vector2)mouseWorldPosition - (Vector2)transform.position).normalized;
-        Vector2 localDir = (Vector2)transform.parent.InverseTransformDirection(worldDir);   // Hand 기준 로컬
+        Vector2 localDir = (Vector2)transform.parent.InverseTransformDirection(worldDir);
         PunchDirection = localDir;
 
         PunchTimer = TickTimer.CreateFromSeconds(Runner, punchDuration); // TickTimer로 시작
