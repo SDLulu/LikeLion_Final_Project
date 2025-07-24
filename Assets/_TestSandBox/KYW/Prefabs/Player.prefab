@@ -391,7 +391,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 426591a710951c04faa3c2574e2380ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxInventorySlots: 1
 --- !u!1 &3798957286774285588
 GameObject:
   m_ObjectHideFlags: 0
@@ -662,9 +661,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f1ac862ce736d1143a188b8d85b01bb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ladderLayer:
-    serializedVersion: 2
-    m_Bits: 1024
   ladderCheckSize: {x: 0.15, y: 0.75}
   _IsNearLadder: 0
 --- !u!114 &599824403376188830
@@ -777,7 +773,7 @@ GameObject:
   m_Layer: 0
   m_Name: Hand
   m_TagString: Untagged
-  m_Icon: {fileID: 1206586993520771344, guid: 0000000000000000d000000000000000, type: 0}
+  m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -790,7 +786,7 @@ Transform:
   m_GameObject: {fileID: 7979680091807745510}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.352, z: 0.18283623}
+  m_LocalPosition: {x: 0.311, y: -0.352, z: 0.18283623}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -806,12 +802,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 7979680091807745510}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2be059828c5767041b71dfa18340df2d, type: 3}
+  m_Script: {fileID: 11500000, guid: 01e04c5e52258e44699453872f8cf3dd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemLayerMask:
+  pickupLayerMask:
     serializedVersion: 2
-    m_Bits: 512
+    m_Bits: 1920
   pickupTrigger: {fileID: 2162887977885498126}
   defaultTriggerRadius: 1.5
 --- !u!114 &1019999502762045486
@@ -823,7 +819,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7979680091807745510}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d70a446d96d748b4684b3f9bde52f9c7, type: 3}
+  m_Script: {fileID: 11500000, guid: fe810692ac022bf4aa6dcf0eddc63541, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   throwForce: 10
@@ -842,7 +838,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   enableItemRotation: 1
   rotationSpeed: 25
-  handTransform: {fileID: 0}
+  handTransform: {fileID: 6193883160231370673}
   basicPunchItem: {fileID: 7351558282718365556}
 --- !u!58 &2162887977885498126
 CircleCollider2D:
@@ -878,8 +874,8 @@ CircleCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
-  m_Radius: 0.5
+  m_Offset: {x: -0.28209162, y: 0}
+  m_Radius: 0.7820916
 --- !u!1 &8971627956456379447
 GameObject:
   m_ObjectHideFlags: 0
@@ -919,6 +915,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6193883160231370673}
     m_Modifications:
+    - target: {fileID: 1336668326520832847, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
+      propertyPath: m_Radius
+      value: 0.29212284
+      objectReference: {fileID: 0}
+    - target: {fileID: 1336668326520832847, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
+      propertyPath: m_Offset.x
+      value: 0.3009944
+      objectReference: {fileID: 0}
     - target: {fileID: 3597694245438659254, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: SortKey
       value: 971127308
@@ -961,7 +965,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6772698792791021298, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.33
+      value: 0.241
       objectReference: {fileID: 0}
     - target: {fileID: 6772698792791021298, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_LocalPosition.y
@@ -977,7 +981,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7335317480394317469, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7335317480394317469, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_LocalPosition.z
