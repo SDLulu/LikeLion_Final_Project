@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 // 아이템 던지기 담당 컴포넌트
 // 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemThrower)
 // 🎯 목적: 우클릭으로 현재 들고 있는 아이템을 마우스 방향으로 던지기
-public class PlayerItemThrower : NetworkBehaviour
+public class PlayerObjectThrower : NetworkBehaviour
 {
     [Header("Throw Settings")]
     [SerializeField] private float throwForce = 10f;      // 💪 던지기 힘 (Rigidbody2D.velocity에 적용)
@@ -82,14 +82,14 @@ public class PlayerItemThrower : NetworkBehaviour
         {
             float currentZAngle = item.transform.eulerAngles.z;
             rigidbody.rotation = currentZAngle;
-            rigidbody.simulated = true;        // ✅ 물리 시뮬레이션 활성화
-            rigidbody.isKinematic = false;     // 🔓 키네마틱 모드 해제 (외력 영향 받음)
+            rigidbody.simulated = true; // 항상 활성화
+            rigidbody.isKinematic = false;
             rigidbody.linearVelocity = direction * throwForce;
             rigidbody.angularVelocity = 0f;
         }
         
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
-            collider.isTrigger = false;        // 🔄 일반 충돌로 복구
+            collider.isTrigger = false;
     }
 } 

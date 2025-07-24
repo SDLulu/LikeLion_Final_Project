@@ -6,7 +6,6 @@ using UnityEngine;
 public class PlayerLadderCheck : NetworkBehaviour
 {
     [Header("Ladder Detection")]
-    [SerializeField] private LayerMask ladderLayer = 1 << 8; // 사다리 레이어 지정 (필요시 인스펙터에서 변경)
     [SerializeField] private Vector2 ladderCheckSize = new Vector2(0.8f, 1.5f);
 
     // 🌐 네트워크 동기화
@@ -23,17 +22,23 @@ public class PlayerLadderCheck : NetworkBehaviour
 
     private void CheckLadder()
     {
-        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, ladderCheckSize, 0f, ladderLayer);
-        IsNearLadder = hits.Length > 0;
+        // 레이어 마스크 없이 모든 오브젝트 감지
+        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, ladderCheckSize, 0f);
+        IsNearLadder = false;
         GameObject nearestObj = null;
         float minDist = float.MaxValue;
         foreach (var hit in hits)
         {
-            float dist = Mathf.Abs(transform.position.x - hit.transform.position.x);
-            if (dist < minDist)
+            // Ladder(또는 Ladder 관련) 스크립트가 있는지 확인
+            if (hit.GetComponent<Ladder>() != null)
             {
-                minDist = dist;
-                nearestObj = hit.gameObject;
+                float dist = Mathf.Abs(transform.position.x - hit.transform.position.x);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestObj = hit.gameObject;
+                }
+                IsNearLadder = true;
             }
         }
         CurrentLadderObject = nearestObj;

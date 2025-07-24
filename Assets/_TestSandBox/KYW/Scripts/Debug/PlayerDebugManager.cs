@@ -13,7 +13,7 @@ public class PlayerDebugManager : NetworkBehaviour
     [SerializeField] private bool showAnimationInfo = true;
     
     // 참조 컴포넌트들
-    private PlayerItemPickup itemPickup;
+    private PlayerObjectPickup itemPickup;
     private PlayerItemUsage itemUsage;
     private PlayerMovement movement;
     private PlayerJump jump;
@@ -34,7 +34,7 @@ public class PlayerDebugManager : NetworkBehaviour
         Transform handObject = transform.Find("Hand");
         if (handObject != null)
         {
-            itemPickup = handObject.GetComponent<PlayerItemPickup>();
+            itemPickup = handObject.GetComponent<PlayerObjectPickup>();
             itemUsage = handObject.GetComponent<PlayerItemUsage>();
             inventory = handObject.GetComponent<PlayerInventory>(); // 인벤토리 캐싱
         }

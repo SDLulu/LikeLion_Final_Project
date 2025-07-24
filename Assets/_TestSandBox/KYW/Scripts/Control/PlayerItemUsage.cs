@@ -23,14 +23,14 @@ public class PlayerItemUsage : NetworkBehaviour
     
  
     // 📎 참조할 다른 컴포넌트들
-    private PlayerItemPickup itemPickup;      // 📦 아이템 보유 상태 확인용
+    private PlayerObjectPickup itemPickup;      // 📦 아이템 보유 상태 확인용
     private PlayerInventory inventory;        // 인벤토리 참조
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
         // 모든 컴포넌트 참조를 한 번에 설정
-        itemPickup = GetComponent<PlayerItemPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
+        itemPickup = GetComponent<PlayerObjectPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
         inventory = GetComponentInParent<PlayerInventory>();    // 인벤토리 캐싱 (부모에서 찾음)
         // 필수 컴포넌트 검증
         if (itemPickup == null)
