@@ -19,7 +19,7 @@ public class PlayerItemUsage : NetworkBehaviour
     [Networked] private float NetworkedRotationAngle { get; set; }     // 🔄 회전 각도 (네트워크 동기화)
     [Networked] private NetworkBool NetworkedFlipY { get; set; }       // 🔄 스프라이트 Y축 반전 여부
     [Networked] private bool WasHolding { get; set; }                  // 🎮 이전 프레임 Hold 상태 (상태 변화 감지용)
-    [Networked] private float PreviousScrollWheel { get; set; }        // 🎮 이전 프레임 휠 스크롤 값 (스왑 감지용)
+
     
  
     // 📎 참조할 다른 컴포넌트들
@@ -51,9 +51,6 @@ public class PlayerItemUsage : NetworkBehaviour
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
-
-        // 🎯 휠 스크롤로 아이템 스왑 처리
-        HandleWheelScroll(input);
 
         GameObject held = inventory?.CurrentHeldObject;
         IUsableItem usable = null;
@@ -103,87 +100,7 @@ public class PlayerItemUsage : NetworkBehaviour
         return basicPunchItem.gameObject;
     }
     
-    // 🎯 휠 스크롤로 아이템 스왑 처리
-    private void HandleWheelScroll(SpelunkyPlayerData input)
-    {
-        if (inventory == null) return;
-        
-        float currentScroll = input.MouseScrollWheel;
-        float scrollDelta = currentScroll - PreviousScrollWheel;
-        
-        // 스크롤 값이 변경되었을 때만 처리 (임계값 설정)
-        if (Mathf.Abs(scrollDelta) > 0.01f)
-        {
-            // 위로 스크롤 (양수) = 다음 슬롯으로
-            if (scrollDelta > 0)
-            {
-                SwapToNextSlot();
-            }
-            // 아래로 스크롤 (음수) = 이전 슬롯으로
-            else if (scrollDelta < 0)
-            {
-                SwapToPreviousSlot();
-            }
-        }
-        
-        PreviousScrollWheel = currentScroll;
-    }
-    
-    // 🔄 다음 슬롯으로 스왑
-    private void SwapToNextSlot()
-    {
-        if (inventory == null) return;
-        
-        int currentSlot = inventory.SelectedSlotIndex;
-        int maxSlots = inventory.GetActiveSlotCount();
-        int nextSlot = (currentSlot + 1) % maxSlots;
-        
-        // 다음 슬롯으로 이동 (아이템 유무 상관없이)
-        inventory.SelectedSlotIndex = nextSlot;
-        
-        // 스왑 시도
-        if (inventory.SwapHeldItemWithSlot(nextSlot))
-        {
-            Debug.Log($"[{name}] 다음 슬롯으로 스왑: {currentSlot} → {nextSlot}");
-        }
-        else
-        {
-            // 스왑 실패 시 현재 손에 든 아이템을 빈 슬롯에 저장
-            if (inventory.CurrentHeldObject != null && inventory.StoreItemToSlot(inventory.CurrentHeldObject))
-            {
-                inventory.DropHeldObject();
-                Debug.Log($"[{name}] 아이템을 슬롯 {nextSlot}에 저장하고 손을 비웠습니다.");
-            }
-        }
-    }
-    
-    // 🔄 이전 슬롯으로 스왑
-    private void SwapToPreviousSlot()
-    {
-        if (inventory == null) return;
-        
-        int currentSlot = inventory.SelectedSlotIndex;
-        int maxSlots = inventory.GetActiveSlotCount();
-        int prevSlot = (currentSlot - 1 + maxSlots) % maxSlots;
-        
-        // 이전 슬롯으로 이동 (아이템 유무 상관없이)
-        inventory.SelectedSlotIndex = prevSlot;
-        
-        // 스왑 시도
-        if (inventory.SwapHeldItemWithSlot(prevSlot))
-        {
-            Debug.Log($"[{name}] 이전 슬롯으로 스왑: {currentSlot} → {prevSlot}");
-        }
-        else
-        {
-            // 스왑 실패 시 현재 손에 든 아이템을 빈 슬롯에 저장
-            if (inventory.CurrentHeldObject != null && inventory.StoreItemToSlot(inventory.CurrentHeldObject))
-            {
-                inventory.DropHeldObject();
-                Debug.Log($"[{name}] 아이템을 슬롯 {prevSlot}에 저장하고 손을 비웠습니다.");
-            }
-        }
-    }
+
     
 
     
