@@ -41,7 +41,7 @@ public class UI_Title : MonoBehaviour
 
     private void OnClickSoloPlayBtn()
     {
-        UI_Controller.Inst.UILobby.ActiveSoloPanel();
+        LobbyUI_Manager.Inst.UILobby.ActiveSoloPanel();
     }
 
     private UI_GlobalSetting _uiGlobalSetting = null;

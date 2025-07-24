@@ -84,7 +84,7 @@ public class PlayerManager : NetworkBehaviour
     {
         IsSpawned = true;
         
-        var uiController = FindAnyObjectByType<UI_Controller>();
+        var uiController = FindAnyObjectByType<LobbyUI_Manager>();
         this.AddRenderingAction(uiController.UpdateData);
         DontDestroyOnLoad(this.gameObject);
 
@@ -411,7 +411,7 @@ public class PlayerManager : NetworkBehaviour
     public void RPC_FadeInUI()
     {
         UIEventSystem.Inst.TriggerGameUIActive(true);
-        UI_Controller.Inst.DeactiveAllLobbyUI();
+        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
         _= Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
 }

@@ -2,8 +2,9 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
+using Fusion;
 
-public partial class PMK_TileRogic : MonoBehaviour
+public partial class PMK_TileRogic : NetworkBehaviour
 {
     public static PMK_TileRogic Instance { get; private set; }
 
@@ -54,7 +55,6 @@ public partial class PMK_TileRogic : MonoBehaviour
         }
         else
         {
-            Destroy(gameObject);
         }
 
         // 맵 프리팹 딕셔너리 초기화 및 이름 설정
@@ -67,14 +67,25 @@ public partial class PMK_TileRogic : MonoBehaviour
             { "WD", WD_Exit_Map_Prefab },
             { "S", Special_Map_Prefab }
         };
+
+
     }
 
-
-    private void Start()
+    public override void Spawned()
     {
-        SaveMapPos(); // 전체 맵 위치 저장
-        ResetMap(); // 맵 초기화 및 재생성
+        if(Object.HasStateAuthority)
+            NetworkEventSystem.Inst.OnStageLoadDoneEvent += OnStageLoadDone;
     }
+
+    private void OnStageLoadDone(string stageInfo)
+    {
+        Debug.Log("스테이지 정보 : " + stageInfo);
+        if (stageInfo == "1-1")
+        {
+            ResetMap();
+        }
+    }
+
 
     private void Update()
     {
@@ -95,7 +106,7 @@ public partial class PMK_TileRogic : MonoBehaviour
             if (child.GetComponent<PMK_TileRogic>() != null)
                 continue;
 
-            Destroy(child.gameObject);
+            GameObject.Destroy(child.gameObject);
         }
 
         // 초기화
@@ -136,7 +147,7 @@ public partial class PMK_TileRogic : MonoBehaviour
                 randomIndex = Random.Range(0, prefabs.Length);
             }
 
-            GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
+            GameObject temp = GameObject.Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
 
@@ -172,13 +183,13 @@ public partial class PMK_TileRogic : MonoBehaviour
                 {
                     Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
 
-                    GameObject clone = Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
+                    GameObject clone = GameObject.Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
                     clone.name = child.name; // 이름을 원본과 동일하게 설정
                 }
             }
 
             // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
-            Destroy(temp);
+            GameObject.Destroy(temp);
             mainTilemap.RefreshAllTiles();
 
 
@@ -233,7 +244,7 @@ public partial class PMK_TileRogic : MonoBehaviour
                 current += item.spawnChance;
                 if (roll < current)
                 {
-                    Instantiate(item.prefab, worldPos, Quaternion.identity, parentTrans);
+                    GameObject.Instantiate(item.prefab, worldPos, Quaternion.identity, parentTrans);
                     break;
                 }
             }
