@@ -1,14 +1,19 @@
-using Fusion;
-using UnityEngine; // Vector3 ¶§¹®¿¡ ÇÊ¿ä
+ï»¿using Fusion;
+using UnityEngine; // Vector3ë¥¼ ìœ„í•´ ì¶”ê°€
 
 [System.Serializable]
 public struct ShopItemData : INetworkStruct
 {
+    public NetworkId ItemNetworkId; // ì‹¤ì œ ìŠ¤í°ëœ ShopItemì˜ NetworkId
     public ItemType ItemType;
     public int Price;
-    public bool IsAvailable;       // true: ±¸¸Å °¡´É / false: ÆÇ¸ÅµÊ (¿ø·¡ IsSold)
-    public bool IsPicked;          // µé°í ÀÖ´Â ÁßÀÎ°¡?
-    public PlayerRef CurrentHolder; // ÇöÀç µé°í ÀÖ´Â ÇÃ·¹ÀÌ¾î (PlayerRef.None ÀÌ¸é ¾Æ¹«µµ ¾È µé°í ÀÖÀ½)
-    public Vector3 OriginalPosition; // ÀÌ »óÁ¡ ¾ÆÀÌÅÛÀÇ ¿ø·¡ À§Ä¡
-    public NetworkId ItemNetworkId;  // ÀÌ »óÁ¡ ¾ÆÀÌÅÛ¿¡ ÇØ´çÇÏ´Â ½ÇÁ¦ ShopItem NetworkObjectÀÇ ID
+    public bool IsAvailable;    // ìƒì ì—ì„œ êµ¬ë§¤ ê°€ëŠ¥í•œì§€ ì—¬ë¶€ (íŒë§¤ ì™„ë£Œ/ë„ë‚œ ì‹œ false)
+    public bool IsPicked;       // í”Œë ˆì´ì–´ê°€ ë“¤ê³  ìˆëŠ”ì§€ ì—¬ë¶€
+    public PlayerRef CurrentHolder; // ì•„ì´í…œì„ í˜„ì¬ ë“¤ê³  ìˆëŠ” í”Œë ˆì´ì–´ (PlayerRef.Noneì´ë©´ ì—†ìŒ)
+    public Vector3 OriginalPosition; // ì•„ì´í…œì˜ ì›ë˜ ìŠ¤í° ìœ„ì¹˜
+    public NetworkString<_32> ItemName;     // â­ï¸ ì¶”ê°€: ì•„ì´í…œ ì´ë¦„
+
+    // ë¬¼ë¦¬ ìƒíƒœë¥¼ ShopItemDataì—ì„œ ì§ì ‘ ë™ê¸°í™”í•  ìˆ˜ë„ ìˆìŠµë‹ˆë‹¤.
+    // public NetworkBool IsPhysicsSimulated;
+    // public NetworkBool IsColliderTrigger;
 }

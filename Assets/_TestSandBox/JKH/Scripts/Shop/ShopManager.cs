@@ -1,32 +1,35 @@
 using Fusion;
 using System.Collections.Generic;
-using TMPro; // TMP_Text »ç¿ë
+using TMPro; // TMP_Text ì‚¬ìš©
 using UnityEngine;
 
 public class ShopManager : NetworkBehaviour
 {
 
     [Header("Shop References")]
-    [SerializeField] private NetworkPrefabRef shopkeeperPrefab; // À¯´ÏÆ¼ ¿¡µğÅÍ¿¡¼­ »óÁ¡ ÁÖÀÎ ÇÁ¸®ÆÕÀ» ÇÒ´çÇÕ´Ï´Ù.
-    [SerializeField] private Transform shopkeeperSpawnPoint; // À¯´ÏÆ¼ ¿¡µğÅÍ¿¡¼­ »óÁ¡ ÁÖÀÎ ½ºÆù Æ÷ÀÎÆ®¸¦ ÇÒ´çÇÕ´Ï´Ù.
+    [SerializeField] private NetworkPrefabRef shopkeeperPrefab; // ìœ ë‹ˆí‹° ì—ë””í„°ì—ì„œ ìƒì  ì£¼ì¸ í”„ë¦¬íŒ¹ì„ í• ë‹¹í•©ë‹ˆë‹¤.
+    [SerializeField] private Transform shopkeeperSpawnPoint; // ìœ ë‹ˆí‹° ì—ë””í„°ì—ì„œ ìƒì  ì£¼ì¸ ìŠ¤í° í¬ì¸íŠ¸ë¥¼ í• ë‹¹í•©ë‹ˆë‹¤.
 
-    // ½ºÆùµÈ »óÁ¡ ÁÖÀÎ NetworkObject¸¦ ÀúÀåÇÒ º¯¼ö (¼±ÅÃ »çÇ×)
     private NetworkObject _spawnedShopkeeper;
     private Shopkeeper shopkeeper;
 
     [SerializeField] private int maxShopItems = 3;
-    [SerializeField] private Transform[] itemSpawnPoints; // ¾ÆÀÌÅÛ ½ºÆù À§Ä¡ ¹è¿­
-    [SerializeField] private List<ItemStaticData> availableItemDataList; // »óÁ¡¿¡¼­ ÆÇ¸ÅµÉ ¾ÆÀÌÅÛ µ¥ÀÌÅÍ ¸ñ·Ï
-    [SerializeField] private GameObject shopAreaTrigger; // »óÁ¡ ¿µ¿ªÀ» ³ªÅ¸³»´Â Collider2D ¿ÀºêÁ§Æ® (Is Trigger)
+    [SerializeField] private Transform[] itemSpawnPoints; // ì•„ì´í…œ ìŠ¤í° ìœ„ì¹˜ ë°°ì—´
+    [SerializeField] private List<ItemStaticData> availableItemDataList; // ìƒì ì—ì„œ íŒë§¤ë  ì•„ì´í…œ ë°ì´í„° ëª©ë¡
+    [SerializeField] private GameObject shopAreaTrigger; // ìƒì  ì˜ì—­ì„ ë‚˜íƒ€ë‚´ëŠ” Collider2D ì˜¤ë¸Œì íŠ¸ (Is Trigger)
     [SerializeField] private Collider2D _shopAreaCollider;
 
-    // »óÁ¡ ¾ÆÀÌÅÛµéÀ» NetworkArray·Î °ü¸®
-    // NetworkArrayÀÇ º¯°æÀÌ °¨ÁöµÉ ¶§ 'OnShopItemsNetworkedChanged' ÇÔ¼ö°¡ È£ÃâµÇµµ·Ï ¼³Á¤
+    // ìƒì  ì•„ì´í…œë“¤ì„ NetworkArrayë¡œ ê´€ë¦¬
+    // NetworkArrayì˜ ë³€ê²½ì´ ê°ì§€ë  ë•Œ 'OnShopItemsNetworkedChanged' í•¨ìˆ˜ê°€ í˜¸ì¶œë˜ë„ë¡ ì„¤ì •
     [Networked, Capacity(3), OnChangedRender(nameof(OnShopItemsNetworkedChanged))]
     public NetworkArray<ShopItemData> ShopItems => default;
 
-    // ½ºÆùµÈ ShopItem ¿ÀºêÁ§Æ®µéÀÇ ÂüÁ¶¸¦ ·ÎÄÃ¿¡¼­ °ü¸®
-    private Dictionary<int, ShopItem> _spawnedShopItems = new Dictionary<int, ShopItem>();
+    // ìŠ¤í°ëœ ShopItem ì˜¤ë¸Œì íŠ¸ë“¤ì˜ ì°¸ì¡°ë¥¼ ë¡œì»¬ì—ì„œ ê´€ë¦¬ (NetworkIdë¥¼ í‚¤ë¡œ ì‚¬ìš©)
+    // ğŸ’¡ ì´ DictionaryëŠ” Hostì—ì„œë§Œ ì˜ë¯¸ê°€ ìˆìœ¼ë©°, ë‹¤ë¥¸ í´ë¼ì´ì–¸íŠ¸ëŠ” Runner.FindObject()ë¡œ ì°¾ì•„ì•¼ í•©ë‹ˆë‹¤.
+    // ë”°ë¼ì„œ ì´ DictionaryëŠ” InitializeShopItemsì—ì„œë§Œ ì°¸ì¡°ë¥¼ ì €ì¥í•˜ëŠ” ìš©ë„ë¡œ ì‚¬ìš©í•˜ê³ ,
+    // ì‹¤ì œ ë¡œì§ì—ì„œëŠ” Runner.FindObject()ë¥¼ ì‚¬ìš©í•˜ëŠ” ê²ƒì´ ë” ì•ˆì „í•©ë‹ˆë‹¤.
+    // private Dictionary<NetworkId, ShopItem> _spawnedShopItems = new Dictionary<NetworkId, ShopItem>();
+
 
     private void Awake()
     {
@@ -41,7 +44,6 @@ public class ShopManager : NetworkBehaviour
     }
     public override void Spawned()
     {
-        // ¼¥ ¿µ¿ª Äİ¶óÀÌ´õ ÂüÁ¶
         if (shopAreaTrigger != null)
         {
             _shopAreaCollider = shopAreaTrigger.GetComponent<Collider2D>();
@@ -55,15 +57,14 @@ public class ShopManager : NetworkBehaviour
             Debug.LogWarning("ShopAreaTrigger is not assigned. IsPositionInShopArea will not work.");
         }
 
-        if (Object.HasStateAuthority) // Host/Server¿¡¼­¸¸ »óÁ¡ ¾ÆÀÌÅÛ ÃÊ±âÈ­
+        if (Object.HasStateAuthority) // Host/Serverì—ì„œë§Œ ìƒì  ì•„ì´í…œ ì´ˆê¸°í™”
         {
             InitializeShopItems();
             SpawnShopkeeper();
         }
 
-        // ÃÊ±â µ¿±âÈ­ ½Ã ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®´Â OnShopItemsNetworkedChanged Äİ¹é¿¡ ÀÇÇØ ÀÚµ¿À¸·Î Ã³¸®µË´Ï´Ù.
-        // ¶Ç´Â OnShopItemsNetworkedChanged¸¦ Spawned ¸¶Áö¸·¿¡ ÇÑ ¹ø ¸í½ÃÀûÀ¸·Î È£ÃâÇÏ¿© ÃÊ±â »óÅÂ¸¦ ·»´õ¸µÇÒ ¼öµµ ÀÖ½À´Ï´Ù.
-        // OnShopItemsNetworkedChanged(); // ÇÊ¿äÇÏ´Ù¸é ÃÊ±â »óÅÂ °­Á¦ ¾÷µ¥ÀÌÆ®
+        // ì´ˆê¸° ë™ê¸°í™” ì‹œ ë¹„ì£¼ì–¼ ì—…ë°ì´íŠ¸ëŠ” OnShopItemsNetworkedChanged ì½œë°±ì— ì˜í•´ ìë™ìœ¼ë¡œ ì²˜ë¦¬ë©ë‹ˆë‹¤.
+        // OnShopItemsNetworkedChanged(); // í•„ìš”í•˜ë‹¤ë©´ ì´ˆê¸° ìƒíƒœ ê°•ì œ ì—…ë°ì´íŠ¸
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -72,21 +73,23 @@ public class ShopManager : NetworkBehaviour
         {
             runner.Despawn(_spawnedShopkeeper);
         }
-        // »óÁ¡ ¸Å´ÏÀú°¡ DespawnµÉ ¶§ ½ºÆùµÈ ¾ÆÀÌÅÛµéµµ Despawn
+        // ìƒì  ë§¤ë‹ˆì €ê°€ Despawnë  ë•Œ ìŠ¤í°ëœ ì•„ì´í…œë“¤ë„ Despawn
         if (Object.HasStateAuthority)
         {
-            foreach (var itemKvp in _spawnedShopItems)
+            for (int i = 0; i < ShopItems.Length; i++)
             {
-                if (itemKvp.Value != null && itemKvp.Value.Object.IsValid)
+                var itemData = ShopItems.Get(i);
+                NetworkObject itemObject = Runner.FindObject(itemData.ItemNetworkId);
+                if (itemObject != null && itemObject.IsValid)
                 {
-                    Runner.Despawn(itemKvp.Value.Object);
+                    Runner.Despawn(itemObject);
                 }
             }
         }
-        _spawnedShopItems.Clear();
+        // _spawnedShopItems.Clear(); // ë” ì´ìƒ ì‚¬ìš©í•˜ì§€ ì•Šì•„ë„ ë¨
     }
 
-    // Host¿¡¼­ »óÁ¡ ¾ÆÀÌÅÛ ÃÊ±âÈ­
+    // Hostì—ì„œ ìƒì  ì•„ì´í…œ ì´ˆê¸°í™”
     void InitializeShopItems()
     {
         if (itemSpawnPoints.Length < maxShopItems)
@@ -105,47 +108,52 @@ public class ShopManager : NetworkBehaviour
             ItemStaticData randomStaticItem = GetRandomItemData();
             if (randomStaticItem == null) continue;
 
-            // NetworkObject¸¦ ½ºÆùÇÏ¿© ShopItem ÀÎ½ºÅÏ½º »ı¼º
+            // NetworkObjectë¥¼ ìŠ¤í°í•˜ì—¬ ShopItem ì¸ìŠ¤í„´ìŠ¤ ìƒì„±
             ShopItem spawnedShopItem = Runner.Spawn(
-                randomStaticItem.itemPrefab, // ¾ÆÀÌÅÛ Å¸ÀÔ¿¡ ¸Â´Â ÇÁ¸®ÆÕ (ShopItem ÄÄÆ÷³ÍÆ® Æ÷ÇÔ)
+                randomStaticItem.itemPrefab, // ì•„ì´í…œ íƒ€ì…ì— ë§ëŠ” í”„ë¦¬íŒ¹ (ShopItem ì»´í¬ë„ŒíŠ¸ í¬í•¨)
                 itemSpawnPoints[i].position,
                 Quaternion.identity,
                 onBeforeSpawned: (runner, obj) =>
                 {
-                    // ½ºÆùµÇ±â Àü¿¡ ShopItem ÄÄÆ÷³ÍÆ®¿¡ µ¥ÀÌÅÍ ÇÒ´ç
+                    // ìŠ¤í°ë˜ê¸° ì „ì— ShopItem ì»´í¬ë„ŒíŠ¸ì— ë°ì´í„° í• ë‹¹
                     ShopItem shopItemComponent = obj.GetComponent<ShopItem>();
                     if (shopItemComponent != null)
                     {
-                        // ÃÊ±âÈ­ ½Ã ShopItem¿¡ ShopManager¿Í ÀÎµ¦½º ÂüÁ¶ Àü´Ş
-                        shopItemComponent.Initialize(this, i, randomStaticItem.itemType, randomStaticItem.basePrice);
+                        // â­ï¸ ShopItemì— ShopItemDataë¥¼ ì§ì ‘ ì´ˆê¸°í™”í•˜ë„ë¡ ë³€ê²½
+                        // ì´ ë°ì´í„°ëŠ” ShopItem.ItemData [Networked] ë³€ìˆ˜ì— ì €ì¥ë©ë‹ˆë‹¤.
+                        shopItemComponent.InitializeItemData(randomStaticItem.itemType, randomStaticItem.basePrice, randomStaticItem.itemName);
                     }
                 }
             ).GetComponent<ShopItem>();
 
             if (spawnedShopItem == null)
             {
-                Debug.LogError($"Failed to spawn ShopItem from prefab: {randomStaticItem.itemPrefab.name}");
+                Debug.LogError($"Failed to spawn ShopItem from prefab: {randomStaticItem.itemPrefab}");
                 continue;
             }
 
-            // NetworkArray¿¡ µ¥ÀÌÅÍ ÀúÀå
-            var itemData = new ShopItemData
+            // â­ï¸ ShopManagerì˜ NetworkArrayì— ë°ì´í„° ì €ì¥
+            // ì´ ë°ì´í„°ëŠ” ShopItem ìì²´ì˜ Networked ItemDataì™€ ë…¼ë¦¬ì ìœ¼ë¡œ ë™ê¸°í™”ë˜ì–´ì•¼ í•©ë‹ˆë‹¤.
+            // ShopItems NetworkArrayëŠ” ìƒì  "ëª©ë¡"ì˜ ìƒíƒœë¥¼ ê´€ë¦¬í•˜ê³ ,
+            // ShopItem.ItemDataëŠ” ê°œë³„ "ì•„ì´í…œ ì˜¤ë¸Œì íŠ¸"ì˜ ìƒíƒœë¥¼ ê´€ë¦¬í•©ë‹ˆë‹¤.
+            var itemDataInShopManagerArray = new ShopItemData
             {
+                ItemNetworkId = spawnedShopItem.Object.Id, // ìŠ¤í°ëœ NetworkObjectì˜ ID ì €ì¥
                 ItemType = randomStaticItem.itemType,
-                Price = CalculatePrice(randomStaticItem.itemType), // °¡°İ °è»ê ·ÎÁ÷Àº ÇÊ¿ä¿¡ µû¶ó
-                IsAvailable = true,
+                Price = CalculatePrice(randomStaticItem.itemType),
+                IsAvailable = true, // ì²˜ìŒì—ëŠ” íŒë§¤ ê°€ëŠ¥
                 IsPicked = false,
-                CurrentHolder = default, // NetworkId.None ´ë½Å default
+                CurrentHolder = default,
                 OriginalPosition = itemSpawnPoints[i].position,
-                ItemNetworkId = spawnedShopItem.Object.Id // ½ºÆùµÈ NetworkObjectÀÇ ID ÀúÀå
+                ItemName = randomStaticItem.itemName
             };
 
-            ShopItems.Set(i, itemData);
-            _spawnedShopItems[i] = spawnedShopItem; // ·ÎÄÃ ¸Ê¿¡ ÂüÁ¶ ÀúÀå
+            ShopItems.Set(i, itemDataInShopManagerArray);
+            // _spawnedShopItems[spawnedShopItem.Object.Id] = spawnedShopItem; // ë” ì´ìƒ ì‚¬ìš©í•˜ì§€ ì•ŠìŒ
         }
     }
 
-    // --- ¾ÆÀÌÅÛ µ¥ÀÌÅÍ °ü·Ã ÇïÆÛ ÇÔ¼ö ---
+    // --- ì•„ì´í…œ ë°ì´í„° ê´€ë ¨ í—¬í¼ í•¨ìˆ˜ ---
     ItemStaticData GetRandomItemData()
     {
         if (availableItemDataList == null || availableItemDataList.Count == 0)
@@ -170,7 +178,7 @@ public class ShopManager : NetworkBehaviour
         return availableItemDataList.Find(data => data.itemType == itemType);
     }
 
-    // --- ÇÃ·¹ÀÌ¾î °ñµå °ü¸® (Fusion ¹æ½Ä) ---
+    // --- í”Œë ˆì´ì–´ ê³¨ë“œ ê´€ë¦¬ (Fusion ë°©ì‹) ---
     private int GetPlayerGold(PlayerRef player)
     {
         NetworkObject playerObject = Runner.GetPlayerObject(player);
@@ -198,216 +206,322 @@ public class ShopManager : NetworkBehaviour
         }
     }
 
-    // --- RPC: ¾ÆÀÌÅÛ ±¸¸Å ¿äÃ» (Å¬¶óÀÌ¾ğÆ® -> È£½ºÆ®) ---
+    // --- RPC: ì•„ì´í…œ êµ¬ë§¤ ìš”ì²­ (í´ë¼ì´ì–¸íŠ¸ -> í˜¸ìŠ¤íŠ¸) ---
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void Rpc_RequestPurchase(PlayerRef buyer, int itemIndex)
+    public void Rpc_RequestPurchase(PlayerRef buyer, NetworkId itemNetworkId) // â­ï¸ NetworkIdë¡œ ë³€ê²½
     {
-        if (itemIndex < 0 || itemIndex >= maxShopItems)
+        int itemIndexInShopArray = -1;
+        ShopItemData itemDataFromShopArray = default; // ShopManagerì˜ ShopItems ë°°ì—´ì— ìˆëŠ” ë°ì´í„°
+
+        // ShopItems NetworkArrayì—ì„œ í•´ë‹¹ NetworkIdë¥¼ ê°€ì§„ ì•„ì´í…œì„ ì°¾ìŠµë‹ˆë‹¤.
+        for (int i = 0; i < ShopItems.Length; i++)
         {
-            Debug.LogError($"Invalid itemIndex: {itemIndex}");
-            return;
+            var currentItem = ShopItems.Get(i);
+            if (currentItem.ItemNetworkId == itemNetworkId)
+            {
+                itemDataFromShopArray = currentItem;
+                itemIndexInShopArray = i;
+                break;
+            }
         }
 
-        var item = ShopItems.Get(itemIndex); // NetworkArray¿¡¼­ °ª °¡Á®¿Ã ¶§ Get() »ç¿ë
-
-        if (!item.IsAvailable || item.IsPicked)
+        if (itemIndexInShopArray == -1 || !itemDataFromShopArray.IsAvailable || itemDataFromShopArray.IsPicked)
         {
-            Debug.Log($"Item {item.ItemType} at index {itemIndex} is not available or is picked.");
+            Debug.Log($"Host: Item {itemNetworkId} is not available, picked, or not found in shop array. IsAvailable: {itemDataFromShopArray.IsAvailable}, IsPicked: {itemDataFromShopArray.IsPicked}");
+            RPC_SendPurchaseResult(buyer, false, itemDataFromShopArray.ItemName); // êµ¬ë§¤ ì‹¤íŒ¨ ì•Œë¦¼
             return;
         }
 
         int playerGold = GetPlayerGold(buyer);
 
-        if (playerGold >= item.Price)
+        if (playerGold >= itemDataFromShopArray.Price)
         {
-            SetPlayerGold(buyer, playerGold - item.Price);
+            SetPlayerGold(buyer, playerGold - itemDataFromShopArray.Price);
 
-            item.IsAvailable = false;
-            item.CurrentHolder = buyer; // ±¸¸ÅÀÚ ¼³Á¤ (±»ÀÌ ±¸¸ÅÀÚ ¼³Á¤ ÇÊ¿ä ¾øÀ» ¼ö ÀÖÀ½, ÆÇ¸ÅµÇ¾úÀ¸´Ï)
+            // â­ï¸ ShopItems NetworkArrayì˜ í•´ë‹¹ ì•„ì´í…œ ìƒíƒœ ì—…ë°ì´íŠ¸
+            itemDataFromShopArray.IsAvailable = false; // êµ¬ë§¤ë˜ì—ˆìœ¼ë‹ˆ íŒë§¤ ë¶ˆê°€ëŠ¥
+            itemDataFromShopArray.IsPicked = false;   // í˜¹ì‹œ ë“¤ê³  ìˆì—ˆë‹¤ë©´ ë‚´ë ¤ë†“ìŒ ì²˜ë¦¬
+            itemDataFromShopArray.CurrentHolder = default; // êµ¬ë§¤ í›„ ë“¤ê³  ìˆëŠ” ì‚¬ëŒ ì—†ìŒ (ì†Œìœ ê¶Œ ì´ì „)
 
-            ShopItems.Set(itemIndex, item); // NetworkArray ¾÷µ¥ÀÌÆ®
+            ShopItems.Set(itemIndexInShopArray, itemDataFromShopArray); // NetworkArray ì—…ë°ì´íŠ¸ -> ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ë™ê¸°í™”
 
-            // ½ÇÁ¦ ¾ÆÀÌÅÛ ¿ÀºêÁ§Æ® Á¦°Å
-            ShopItem purchasedItemObject = GetShopItemObject(itemIndex);
-            if (purchasedItemObject != null && purchasedItemObject.Object.IsValid)
+            // â­ï¸ ì‹¤ì œ ì•„ì´í…œ ì˜¤ë¸Œì íŠ¸ì— êµ¬ë§¤ ì™„ë£Œë¥¼ ì•Œë¦¼ (ì—¬ê¸°ì„œ Despawnì„ ìœ ë„)
+            ShopItem purchasedShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
+            if (purchasedShopItem != null)
             {
-                Runner.Despawn(purchasedItemObject.Object);
-                _spawnedShopItems.Remove(itemIndex);
+                purchasedShopItem.OnPurchased(); // ShopItemì´ ìŠ¤ìŠ¤ë¡œ Despawní•˜ë„ë¡ í•¨
             }
-            Debug.Log($"Host: Player {buyer.PlayerId} successfully purchased {item.ItemType} for {item.Price} gold.");
+            else
+            {
+                Debug.LogWarning($"Host: Purchased ShopItem object with ID {itemNetworkId} not found or already despawned.");
+            }
 
-            RPC_SendPurchaseResult(buyer, true, item.ItemType.ToString());
+            Debug.Log($"Host: Player {buyer.PlayerId} successfully purchased {itemDataFromShopArray.ItemName} for {itemDataFromShopArray.Price} gold.");
+            RPC_SendPurchaseResult(buyer, true, itemDataFromShopArray.ItemName);
+
+            // êµ¬ë§¤ëœ ì•„ì´í…œì„ í”Œë ˆì´ì–´ ì¸ë²¤í† ë¦¬ì— ì¶”ê°€ (RPC_SendPurchaseResultì—ì„œ í•  ìˆ˜ë„ ìˆì§€ë§Œ, Hostì—ì„œ ê´€ë¦¬í•˜ëŠ” ê²ƒì´ ë” ì•ˆì „)
+            NetworkObject playerObject = Runner.GetPlayerObject(buyer);
+            if (playerObject != null)
+            {
+                PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
+                if (playerInventory != null)
+                {
+                    // â­ï¸ êµ¬ë§¤ëœ ì•„ì´í…œ ì •ë³´ë¥¼ ì¸ë²¤í† ë¦¬ì— ì¶”ê°€ (NetworkIdê°€ ì•„ë‹Œ ItemTypeìœ¼ë¡œ ì¶”ê°€í•œë‹¤ê³  ê°€ì •)
+                    playerInventory.AddItemToInventory(itemDataFromShopArray.ItemType);
+                }
+            }
+
         }
         else
         {
-            Debug.Log($"Host: Player {buyer.PlayerId} tried to buy {item.ItemType} but had insufficient gold. Gold: {playerGold}, Price: {item.Price}");
-            RPC_SendPurchaseResult(buyer, false, item.ItemType.ToString());
+            Debug.Log($"Host: Player {buyer.PlayerId} tried to buy {itemDataFromShopArray.ItemName} but had insufficient gold. Gold: {playerGold}, Price: {itemDataFromShopArray.Price}");
+            RPC_SendPurchaseResult(buyer, false, itemDataFromShopArray.ItemName);
         }
     }
 
-    // --- RPC: ±¸¸Å °á°ú Å¬¶óÀÌ¾ğÆ®¿¡°Ô Àü¼Û (È£½ºÆ® -> Æ¯Á¤ Å¬¶óÀÌ¾ğÆ®) ---
+    // --- RPC: êµ¬ë§¤ ê²°ê³¼ í´ë¼ì´ì–¸íŠ¸ì—ê²Œ ì „ì†¡ (í˜¸ìŠ¤íŠ¸ -> íŠ¹ì • í´ë¼ì´ì–¸íŠ¸) ---
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
-    public void RPC_SendPurchaseResult(PlayerRef targetPlayer, bool success, string itemTypeName)
+    public void RPC_SendPurchaseResult(PlayerRef targetPlayer, bool success, NetworkString<_32> itemTypeName)
     {
         if (success)
         {
-            Debug.Log($"Client: ±¸¸Å ¼º°ø! {itemTypeName}À»(¸¦) È¹µæÇß½À´Ï´Ù.");
+            Debug.Log($"Client: êµ¬ë§¤ ì„±ê³µ! {itemTypeName}ì„(ë¥¼) íšë“í–ˆìŠµë‹ˆë‹¤.");
         }
         else
         {
-            Debug.Log($"Client: ±¸¸Å ½ÇÆĞ! {itemTypeName}À»(¸¦) ±¸¸ÅÇÒ ¼ö ¾ø½À´Ï´Ù (µ· ºÎÁ·).");
+            Debug.Log($"Client: êµ¬ë§¤ ì‹¤íŒ¨! {itemTypeName}ì„(ë¥¼) êµ¬ë§¤í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤ (ëˆ ë¶€ì¡±).");
         }
+        // TODO: êµ¬ë§¤ ê²°ê³¼ UI í‘œì‹œ ë¡œì§ (HUD ë“±)
     }
 
-    // --- Networked ¼Ó¼º º¯°æ °¨Áö ¹× Ã³¸® ---
-    // ShopItems NetworkArrayÀÇ º¯°æÀ» °¨ÁöÇÏ´Â Äİ¹é
-    // Networked ¼Ó¼º¿¡ OnChanged = nameof(OnShopItemsNetworkedChanged)·Î ÁöÁ¤µÇ¾î È£ÃâµË´Ï´Ù.
+    // --- Networked ì†ì„± ë³€ê²½ ê°ì§€ ë° ì²˜ë¦¬ ---
+    // ShopItems NetworkArrayì˜ ë³€ê²½ì„ ê°ì§€í•˜ëŠ” ì½œë°±
+    // Networked ì†ì„±ì— OnChanged = nameof(OnShopItemsNetworkedChanged)ë¡œ ì§€ì •ë˜ì–´ í˜¸ì¶œë©ë‹ˆë‹¤.
     void OnShopItemsNetworkedChanged()
     {
-        // ÀÌ ÇÔ¼ö´Â ShopItems NetworkArray¿¡ º¯°æÀÌ ÀÖÀ» ¶§¸¶´Ù ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡¼­ ½ÇÇàµË´Ï´Ù.
+        // ì´ í•¨ìˆ˜ëŠ” ShopItems NetworkArrayì— ë³€ê²½ì´ ìˆì„ ë•Œë§ˆë‹¤ ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì—ì„œ ì‹¤í–‰ë©ë‹ˆë‹¤.
         Debug.Log("ShopItems NetworkArray changed! Updating visuals.");
 
-        // ¸ğµç ¾ÆÀÌÅÛÀÇ »óÅÂ¸¦ ´Ù½Ã È®ÀÎÇÏ°í ºñÁÖ¾óÀ» ¾÷µ¥ÀÌÆ®
         for (int i = 0; i < maxShopItems; i++)
         {
-            var itemData = ShopItems.Get(i); // NetworkArray¿¡¼­ °ª °¡Á®¿Ã ¶§ Get() »ç¿ë
-            ShopItem shopItemInstance = GetShopItemObject(i);
+            var itemData = ShopItems.Get(i); // ShopManagerì˜ NetworkArrayì— ìˆëŠ” ë°ì´í„°
+
+            // í•´ë‹¹ NetworkIdë¥¼ ê°€ì§„ ì‹¤ì œ ShopItem ì˜¤ë¸Œì íŠ¸ë¥¼ ì°¾ìŠµë‹ˆë‹¤.
+            ShopItem shopItemInstance = Runner.FindObject(itemData.ItemNetworkId)?.GetComponent<ShopItem>();
 
             if (shopItemInstance != null)
             {
-                // ShopItemVisualÀ» ÅëÇØ ¾ÆÀÌÅÛÀÇ ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®
+                // ShopItemVisualì„ í†µí•´ ì•„ì´í…œì˜ ë¹„ì£¼ì–¼ ì—…ë°ì´íŠ¸
                 UpdateItemVisual(shopItemInstance, itemData);
 
-                // ¾ÆÀÌÅÛÀÌ ÆÇ¸ÅµÇ¾úÀ¸¸é ºñÈ°¼ºÈ­ ¶Ç´Â Despawn Ã³¸®
-                if (!itemData.IsAvailable)
+                // â­ï¸ ì•„ì´í…œì´ ë” ì´ìƒ ì‚¬ìš© ê°€ëŠ¥í•˜ì§€ ì•Šê±°ë‚˜ (êµ¬ë§¤/ë„ë‚œ), í˜¹ì€ ì´ë¯¸ ë“¤ë ¤ìˆëŠ” ê²½ìš°
+                // ì˜¤ë¸Œì íŠ¸ ìì²´ë¥¼ ë¹„í™œì„±í™”í•˜ì—¬ ìˆ¨ê¹ë‹ˆë‹¤. (Despawnì€ ShopItem.OnPurchased()ë‚˜ NotifyTheftAttemptì—ì„œ ì²˜ë¦¬)
+                if (!itemData.IsAvailable || itemData.IsPicked)
                 {
-                    if (Object.HasStateAuthority) // Host¸¸ Despawn È£Ãâ
+                    if (shopItemInstance.gameObject.activeSelf)
                     {
-                        if (shopItemInstance.Object.IsValid) // ¾ÆÁ÷ À¯È¿ÇÑÁö ´Ù½Ã È®ÀÎ
-                        {
-                            Runner.Despawn(shopItemInstance.Object);
-                            _spawnedShopItems.Remove(i);
-                            Debug.Log($"Host: Despawning sold item {itemData.ItemType} at index {i}");
-                        }
+                        //shopItemInstance.gameObject.SetActive(false);
+                        Debug.Log($"Client: Hiding item {itemData.ItemName} at index {i} (Available: {itemData.IsAvailable}, Picked: {itemData.IsPicked}).");
                     }
-                    else // Å¬¶óÀÌ¾ğÆ®´Â ·ÎÄÃ ShopItem °´Ã¼¸¦ ¼û±è (Host°¡ DespawnÇÒ ¶§±îÁö)
+                }
+                else // ë‹¤ì‹œ ì‚¬ìš© ê°€ëŠ¥í•´ì§€ë©´ í™œì„±í™” (ì˜ˆ: ì•„ì´í…œ ë°˜ë‚© ì‹œ)
+                {
+                    if (!shopItemInstance.gameObject.activeSelf)
                     {
-                        if (shopItemInstance.gameObject.activeSelf)
-                        {
-                            shopItemInstance.gameObject.SetActive(false);
-                            Debug.Log($"Client: Hiding sold item {itemData.ItemType} at index {i}");
-                        }
+                        shopItemInstance.gameObject.SetActive(true);
+                        Debug.Log($"Client: Showing item {itemData.ItemName} at index {i} (Available).");
                     }
                 }
             }
-            else // ShopItem ÀÎ½ºÅÏ½º°¡ ¾ø´Â °æ¿ì (¿¹: ÀÌ¹Ì Despawn µÇ¾ú´Âµ¥ _spawnedShopItems¿¡ ³²¾ÆÀÖÀ» ¶§)
+            else // ShopItem ì¸ìŠ¤í„´ìŠ¤ê°€ ì—†ëŠ” ê²½ìš° (ì˜ˆ: ì´ë¯¸ Despawn ë˜ì—ˆì„ ë•Œ)
             {
-                if (itemData.IsAvailable) // ¾ÆÁ÷ ÆÇ¸ÅµÇÁö ¾Ê¾Ò´Âµ¥ ¿ÀºêÁ§Æ®°¡ ¾ø´Â °æ¿ì (¿¹¿Ü »óÈ²)
+                if (itemData.IsAvailable || itemData.IsPicked) // ë°ì´í„°ëŠ” ì¡´ì¬í•˜ëŠ”ë° ì˜¤ë¸Œì íŠ¸ê°€ ì‚¬ë¼ì¡Œë‹¤ë©´ ê²½ê³ 
                 {
-                    Debug.LogWarning($"ShopItem object at index {i} is null or invalid, but itemData.IsAvailable is true. Re-spawning or error?");
-                    // ¿©±â¼­ ´Ù½Ã ½ºÆùÇÏ´Â ·ÎÁ÷À» Ãß°¡ÇÒ ¼ö ÀÖÀ¸³ª, ÀÏ¹İÀûÀ¸·Î´Â Host°¡ °ü¸®ÇÕ´Ï´Ù.
+                    Debug.LogWarning($"ShopItem object for ID {itemData.ItemNetworkId} (Type: {itemData.ItemType}) is null or invalid, but itemData indicates it should be active/available. Was it prematurely despawned?");
                 }
             }
         }
     }
 
-    // --- Æ¯Á¤ ¾ÆÀÌÅÛ »óÅÂ ¾÷µ¥ÀÌÆ® (Host Authority) ---
+    // --- íŠ¹ì • ì•„ì´í…œ ìƒíƒœ ì—…ë°ì´íŠ¸ (Host Authority) ---
+    // ì´ RPCëŠ” PlayerItemPickupì—ì„œ ì•„ì´í…œì„ ì¤ê±°ë‚˜ ë†“ì„ ë•Œ í˜¸ì¶œë©ë‹ˆë‹¤.
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public void Rpc_UpdateItemState(int itemIndex, bool isPicked, PlayerRef holder)
+    public void Rpc_UpdateItemState(NetworkId itemNetworkId, bool isPicked, PlayerRef holder)
     {
-        if (itemIndex < 0 || itemIndex >= maxShopItems) return;
+        int itemIndex = -1;
+        ShopItemData currentItem = default;
 
-        var currentItem = ShopItems.Get(itemIndex);
+        for (int i = 0; i < ShopItems.Length; i++)
+        {
+            var tempItem = ShopItems.Get(i);
+            if (tempItem.ItemNetworkId == itemNetworkId)
+            {
+                currentItem = tempItem;
+                itemIndex = i;
+                break;
+            }
+        }
 
-        // µ¿½Ã¼º ¹®Á¦ ¹æÁö: ÀÌ¹Ì ´Ù¸¥ ÇÃ·¹ÀÌ¾î°¡ µé°í ÀÖ´Ù¸é ¹«½Ã
+        if (itemIndex == -1)
+        {
+            Debug.LogError($"Host: Item with NetworkId {itemNetworkId} not found in ShopItems NetworkArray for state update.");
+            return;
+        }
+
+        // ë™ì‹œì„± ë¬¸ì œ ë°©ì§€: ì´ë¯¸ ë‹¤ë¥¸ í”Œë ˆì´ì–´ê°€ ë“¤ê³  ìˆë‹¤ë©´ ë¬´ì‹œ
         if (isPicked && currentItem.IsPicked && currentItem.CurrentHolder != holder)
         {
-            Debug.Log($"Host: Item {itemIndex} already picked by {currentItem.CurrentHolder}. Request from {holder} ignored.");
+            Debug.Log($"Host: Item {currentItem.ItemName} (ID: {itemNetworkId}) already picked by {currentItem.CurrentHolder}. Request from {holder} ignored.");
             return;
         }
 
         currentItem.IsPicked = isPicked;
         currentItem.CurrentHolder = holder;
 
-        ShopItems.Set(itemIndex, currentItem); // NetworkArray ¾÷µ¥ÀÌÆ® -> ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ µ¿±âÈ­
-        Debug.Log($"Host: Item {itemIndex} state updated: IsPicked={isPicked}, Holder={holder}");
+        ShopItems.Set(itemIndex, currentItem); // NetworkArray ì—…ë°ì´íŠ¸ -> ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì— ë™ê¸°í™”
+        Debug.Log($"Host: ShopItems Array updated: Item {currentItem.ItemName} (ID: {itemNetworkId}) state updated: IsPicked={isPicked}, Holder={holder}");
+
+        // ì¶”ê°€ì ìœ¼ë¡œ ShopItem ìì²´ì˜ Networked ItemDataë„ ë™ê¸°í™”
+        ShopItem shopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
+        if (shopItem != null)
+        {
+            // ShopItem ìì²´ì˜ ItemDataë¥¼ ì—…ë°ì´íŠ¸
+            shopItem.ItemData = currentItem;
+            Debug.Log($"Host: ShopItem instance {shopItem.name} ItemData updated to match ShopManager's state.");
+        }
     }
 
-    // --- ¾ÆÀÌÅÛ »óÈ£ÀÛ¿ë ¶ô (¼­¹ö Ãø¿¡¼­ °ü¸®) ---
-    private Dictionary<int, float> itemInteractionLock = new Dictionary<int, float>();
+    // --- ì•„ì´í…œ ìƒí˜¸ì‘ìš© ë½ (ì„œë²„ ì¸¡ì—ì„œ ê´€ë¦¬) ---
+    private Dictionary<NetworkId, float> itemInteractionLock = new Dictionary<NetworkId, float>();
     private const float INTERACTION_COOLDOWN = 0.5f;
 
-    public bool CanInteractWithItem(int itemIndex)
+    public bool CanInteractWithItem(NetworkId itemNetworkId)
     {
-        if (itemInteractionLock.ContainsKey(itemIndex))
+        if (itemInteractionLock.ContainsKey(itemNetworkId))
         {
-            return Runner.SimulationTime > itemInteractionLock[itemIndex];
+            return Runner.SimulationTime > itemInteractionLock[itemNetworkId];
         }
         return true;
     }
 
-    public void SetItemInteractionLock(int itemIndex)
+    public void SetItemInteractionLock(NetworkId itemNetworkId)
     {
-        itemInteractionLock[itemIndex] = Runner.SimulationTime + INTERACTION_COOLDOWN;
+        itemInteractionLock[itemNetworkId] = Runner.SimulationTime + INTERACTION_COOLDOWN;
     }
 
-    // --- RPC: ¾ÆÀÌÅÛ Áı±â ¿äÃ» (Å¬¶óÀÌ¾ğÆ® -> È£½ºÆ®) ---
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void Rpc_RequestItemPickup(int itemIndex, PlayerRef player)
+    // --- RPC: ì•„ì´í…œ ì§‘ê¸° ìš”ì²­ (í´ë¼ì´ì–¸íŠ¸ -> í˜¸ìŠ¤íŠ¸) ---
+    // ì´ RPCëŠ” PlayerItemPickupì—ì„œ í˜¸ì¶œë˜ë©°, ì‹¤ì œ ì•„ì´í…œ í”½ì—… ë¡œì§ì„ ì‹œì‘í•©ë‹ˆë‹¤.
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void Rpc_RequestItemPickup(NetworkId itemNetworkId, PlayerRef player)
     {
-        if (!CanInteractWithItem(itemIndex))
+        if (!CanInteractWithItem(itemNetworkId))
         {
-            Debug.Log($"Host: Player {player.PlayerId} tried to pick up item {itemIndex} too quickly (cooldown).");
+            Debug.Log($"Host: Player {player.PlayerId} tried to pick up item {itemNetworkId} too quickly (cooldown).");
             return;
         }
 
-        var itemData = ShopItems.Get(itemIndex);
+        int itemIndex = -1;
+        ShopItemData itemData = default; // ShopManagerì˜ NetworkArrayì— ìˆëŠ” ë°ì´í„°
 
-        if (!itemData.IsAvailable || (itemData.IsPicked && itemData.CurrentHolder != player))
+        for (int i = 0; i < ShopItems.Length; i++)
         {
-            Debug.Log($"Host: Item {itemIndex} (Type: {itemData.ItemType}) cannot be picked up. IsAvailable: {itemData.IsAvailable}, IsPicked: {itemData.IsPicked}, Holder: {itemData.CurrentHolder}");
+            var tempItem = ShopItems.Get(i);
+            if (tempItem.ItemNetworkId == itemNetworkId)
+            {
+                itemData = tempItem;
+                itemIndex = i;
+                break;
+            }
+        }
+
+        if (itemIndex == -1 || !itemData.IsAvailable || (itemData.IsPicked && itemData.CurrentHolder != player))
+        {
+            Debug.Log($"Host: Item {itemNetworkId} (Type: {itemData.ItemType}) cannot be picked up. IsAvailable: {itemData.IsAvailable}, IsPicked: {itemData.IsPicked}, Holder: {itemData.CurrentHolder}");
             return;
         }
 
-        SetItemInteractionLock(itemIndex);
-
-        Rpc_UpdateItemState(itemIndex, true, player);
+        SetItemInteractionLock(itemNetworkId);
 
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
             PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
-            ShopItem actualShopItem = GetShopItemObject(itemIndex);
+            ShopItem actualShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
 
             if (playerInventory != null && actualShopItem != null && playerInventory.CanPickupItem())
             {
+                // â­ï¸ PlayerInventoryì˜ PickupItemì„ í˜¸ì¶œí•˜ê³ , ì—¬ê¸°ì„œ ShopItem.OnPickedUp()ì„ í˜¸ì¶œí•©ë‹ˆë‹¤.
                 playerInventory.PickupItem(actualShopItem);
+                Debug.Log($"Host: Player {player.PlayerId} successfully requested pickup of {itemData.ItemName}.");
             }
             else
             {
-                Debug.LogWarning($"Host: Player {player.PlayerId} cannot pick up item {itemIndex}. Inventory full or ShopItem null. Rolling back state.");
-                // ÇÈ¾÷ ½ÇÆĞ ½Ã »óÅÂ ·Ñ¹é
-                Rpc_UpdateItemState(itemIndex, false, default); // default ´ë½Å PlayerRef.None ½áµµ µÇÁö¸¸, default°¡ ´õ ÀÏ¹İÀû
+                Debug.LogWarning($"Host: Player {player.PlayerId} cannot pick up item {itemData.ItemName}. Inventory full or ShopItem null. No state change needed.");
+                // í”½ì—… ì‹¤íŒ¨ ì‹œ ìƒíƒœ ë¡¤ë°±ì€ ì—¬ê¸°ì„œ ì§ì ‘ í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤. (ShopItem.OnPickedUpì—ì„œë§Œ ItemData.IsPickedë¥¼ ë³€ê²½)
             }
         }
         else
         {
-            Debug.LogError($"Host: Player object for {player.PlayerId} not found.");
-            Rpc_UpdateItemState(itemIndex, false, default); // Player Object ¾øÀ¸¸é »óÅÂ ·Ñ¹é
+            Debug.LogError($"Host: Player object for {player.PlayerId} not found for pickup request.");
         }
     }
 
-    // --- ½ºÆùµÈ ShopItem ¿ÀºêÁ§Æ® °¡Á®¿À±â (·ÎÄÃ ¸Ê »ç¿ë) ---
-    public ShopItem GetShopItemObject(int index)
+    // --- ì•„ì´í…œ ë‚´ë ¤ë†“ê¸° ìš”ì²­ (í´ë¼ì´ì–¸íŠ¸ -> í˜¸ìŠ¤íŠ¸) ---
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    public void Rpc_RequestItemDrop(NetworkId itemNetworkId, PlayerRef player, Vector3 dropPosition)
     {
-        if (_spawnedShopItems.TryGetValue(index, out ShopItem item))
+        if (!CanInteractWithItem(itemNetworkId))
         {
-            return item;
+            Debug.Log($"Host: Player {player.PlayerId} tried to drop item {itemNetworkId} too quickly (cooldown).");
+            return;
         }
-        return null;
+
+        int itemIndex = -1;
+        ShopItemData itemData = default;
+
+        for (int i = 0; i < ShopItems.Length; i++)
+        {
+            var tempItem = ShopItems.Get(i);
+            if (tempItem.ItemNetworkId == itemNetworkId)
+            {
+                itemData = tempItem;
+                itemIndex = i;
+                break;
+            }
+        }
+
+        if (itemIndex == -1 || !itemData.IsPicked || itemData.CurrentHolder != player)
+        {
+            Debug.Log($"Host: Item {itemNetworkId} cannot be dropped by Player {player.PlayerId}. IsPicked: {itemData.IsPicked}, Holder: {itemData.CurrentHolder}");
+            return;
+        }
+
+        SetItemInteractionLock(itemNetworkId);
+
+        NetworkObject playerObject = Runner.GetPlayerObject(player);
+        if (playerObject != null)
+        {
+            PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
+            ShopItem actualShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
+
+            if (playerInventory != null && actualShopItem != null)
+            {
+                playerInventory.DropItem(actualShopItem, dropPosition);
+                Debug.Log($"Host: Player {player.PlayerId} successfully requested drop of {itemData.ItemName}.");
+            }
+            else
+            {
+                Debug.LogWarning($"Host: Player {player.PlayerId} cannot drop item {itemData.ItemName}. Inventory or ShopItem null.");
+            }
+        }
+        else
+        {
+            Debug.LogError($"Host: Player object for {player.PlayerId} not found for drop request.");
+        }
     }
 
-    // --- ShopItemVisual ¾÷µ¥ÀÌÆ® ÇïÆÛ ---
+
+    // --- ShopItemVisual ì—…ë°ì´íŠ¸ í—¬í¼ ---
     void UpdateItemVisual(ShopItem shopItemInstance, ShopItemData itemData)
     {
         ShopItemVisual visual = shopItemInstance.GetComponent<ShopItemVisual>();
@@ -418,12 +532,12 @@ public class ShopManager : NetworkBehaviour
             {
                 visual.SetItemSprite(staticData.itemSprite);
             }
-            visual.UpdateVisual(itemData);
+            //visual.UpdateVisual(itemData); // ShopItemVisualì´ ItemDataë¥¼ ë°›ì•„ ì ì ˆíˆ í‘œì‹œí•˜ë„ë¡
         }
     }
-    
 
-    // --- »óÁ¡ ¿µ¿ª È®ÀÎ ÇÔ¼ö ---
+
+    // --- ìƒì  ì˜ì—­ í™•ì¸ í•¨ìˆ˜ ---
     public bool IsPositionInShopArea(Vector3 position)
     {
         if (_shopAreaCollider == null)
@@ -434,7 +548,7 @@ public class ShopManager : NetworkBehaviour
         return _shopAreaCollider.OverlapPoint(position);
     }
 
-    // »óÁ¡ ÁÖÀÎÀ» ½ºÆùÇÏ´Â ¸Ş¼­µå
+    // ìƒì  ì£¼ì¸ì„ ìŠ¤í°í•˜ëŠ” ë©”ì„œë“œ
     private void SpawnShopkeeper()
     {
         if (Runner == null)
@@ -455,63 +569,50 @@ public class ShopManager : NetworkBehaviour
             return;
         }
 
-        // Runner.Spawn()À» »ç¿ëÇÏ¿© »óÁ¡ ÁÖÀÎÀ» ³×Æ®¿öÅ©»ó¿¡ ½ºÆùÇÕ´Ï´Ù.
-        // ½ºÆùµÈ ¿ÀºêÁ§Æ®´Â ÀÚµ¿À¸·Î State Authority¸¦ °¡Áı´Ï´Ù.
         _spawnedShopkeeper = Runner.Spawn(shopkeeperPrefab, shopkeeperSpawnPoint.position, shopkeeperSpawnPoint.rotation);
         shopkeeper = _spawnedShopkeeper.GetComponent<Shopkeeper>();
         Debug.Log($"Host: Shopkeeper spawned at {shopkeeperSpawnPoint.position}. NetworkId: {_spawnedShopkeeper.Id}");
-
-        // ½ºÆùµÈ »óÁ¡ ÁÖÀÎ¿¡°Ô ShopManager ÀÚ½ÅÀ» ¾Ë·ÁÁÙ ¼öµµ ÀÖ½À´Ï´Ù (¼±ÅÃ »çÇ×).
-        // Shopkeeper shopkeeperComponent = _spawnedShopkeeper.GetComponent<Shopkeeper>();
-        // if (shopkeeperComponent != null)
-        // {
-        //     shopkeeperComponent.SetShopManager(this); // ¸¸¾à Shopkeeper¿¡ SetShopManager ¸Ş¼­µå°¡ ÀÖ´Ù¸é
-        // }
     }
 
-    // --- ¼öÁ¤µÈ NotifyTheftAttempt ¸Ş¼­µå ---
-    // ÇÃ·¹ÀÌ¾î°¡ ¾ÆÀÌÅÛÀ» ±¸¸ÅÇÏÁö ¾Ê°í »óÁ¡ ¿µ¿ªÀ» ¹ş¾î³µÀ» ¶§ È£ÃâµË´Ï´Ù.
-    // (Host¿¡¼­¸¸ È£ÃâµÇ¾î¾ß ÇÔ)
-    // ÀÌÁ¦ `PlayerRef`´Â ¾ÆÀÌÅÛÀ» "Á÷Á¢ µé°í ³ª°£" Æ¯Á¤ ÇÃ·¹ÀÌ¾î¸¦ ÁöÄªÇÏÁö ¾Ê°í,
-    // ´Ü¼øÇÑ µµµÏÁú »óÈ²¿¡¼­´Â PlayerRef.NoneÀ¸·Î ³Ñ¾î¿Ã ¼ö ÀÖ½À´Ï´Ù.
+    // --- ìˆ˜ì •ëœ NotifyTheftAttempt ë©”ì„œë“œ ---
+    // í”Œë ˆì´ì–´ê°€ ì•„ì´í…œì„ êµ¬ë§¤í•˜ì§€ ì•Šê³  ìƒì  ì˜ì—­ì„ ë²—ì–´ë‚¬ì„ ë•Œ í˜¸ì¶œë©ë‹ˆë‹¤.
+    // (Hostì—ì„œë§Œ í˜¸ì¶œë˜ì–´ì•¼ í•¨)
     public void NotifyTheftAttempt(PlayerRef potentialAggressor, NetworkObject stolenItemObject)
     {
-        if (!Object.HasStateAuthority) return; // È£½ºÆ®¸¸ Ã³¸®ÇÕ´Ï´Ù.
+        if (!Object.HasStateAuthority) return; // í˜¸ìŠ¤íŠ¸ë§Œ ì²˜ë¦¬í•©ë‹ˆë‹¤.
 
         Debug.Log($"Host: Theft attempt detected! Item: {stolenItemObject?.name}. Potential Aggressor: {(Runner.GetPlayerObject(potentialAggressor) ? potentialAggressor.PlayerId.ToString() : "None")}");
 
-        // 1. »óÁ¡ ÁÖÀÎ »óÅÂ º¯°æ
+        // 1. ìƒì  ì£¼ì¸ ìƒíƒœ ë³€ê²½
         if (shopkeeper != null)
         {
             shopkeeper.SetShopkeeperState(ShopkeeperState.Aggressive);
 
-            // µµµÏÁúÀ» ½ÃµµÇÑ Æ¯Á¤ ÇÃ·¹ÀÌ¾î°¡ ÀÖ´Ù¸é ±× ÇÃ·¹ÀÌ¾î¸¦ _lastAggressor·Î ¼³Á¤
-            // ±×·¸Áö ¾Ê´Ù¸é (¾ÆÀÌÅÛÀÌ ±¼·¯³ª°£ °æ¿ì µî) _lastAggressor´Â PlayerRef.None »óÅÂ¸¦ À¯ÁöÇÏ¸ç
-            // »óÁ¡ ÁÖÀÎÀº FixedUpdateNetwork¿¡¼­ °¡Àå °¡±î¿î ÇÃ·¹ÀÌ¾î¸¦ Ã£¾Æ °ø°İÇÒ °ÍÀÔ´Ï´Ù.
             if (potentialAggressor.IsNone == false && Runner.GetPlayerObject(potentialAggressor) != null)
             {
                 shopkeeper.SetLastAggressor(potentialAggressor);
             }
-            // else { _spawnedShopkeeper._lastAggressor´Â PlayerRef.NoneÀ¸·Î À¯Áö }
         }
 
-        // 2. ÈÉÃÄÁø ¾ÆÀÌÅÛ Ã³¸®
+        // 2. í›”ì³ì§„ ì•„ì´í…œ ì²˜ë¦¬
         if (stolenItemObject != null)
         {
-            // ShopItems NetworkArray¸¦ ¼øÈ¸ÇÏ¸ç ÈÉÃÄÁø ¾ÆÀÌÅÛÀÇ »óÅÂ¸¦ ¾÷µ¥ÀÌÆ®ÇÕ´Ï´Ù.
-            // ÀÌ ¾ÆÀÌÅÛÀº ÀÌÁ¦ "±¸¸Å ºÒ°¡" »óÅÂ·Î º¯°æµË´Ï´Ù.
             for (int i = 0; i < ShopItems.Length; i++)
             {
                 var itemData = ShopItems.Get(i);
                 if (itemData.ItemNetworkId == stolenItemObject.Id)
                 {
-                    itemData.IsAvailable = false; // ´õ ÀÌ»ó ÆÇ¸Å °¡´ÉÇÑ ¾ÆÀÌÅÛÀÌ ¾Æ´Õ´Ï´Ù.
-                    itemData.IsPicked = false;    // È¤½Ã µé°í ÀÖ´Â »óÅÂ¿´´Ù¸é, ³»·Á³õÀ½ Ã³¸®.
-                    ShopItems.Set(i, itemData);   // NetworkArray ¾÷µ¥ÀÌÆ® ¹İ¿µ
+                    itemData.IsAvailable = false; // ë” ì´ìƒ íŒë§¤ ê°€ëŠ¥í•œ ì•„ì´í…œì´ ì•„ë‹™ë‹ˆë‹¤.
+                    itemData.IsPicked = false;   // ë“¤ê³  ìˆëŠ” ìƒíƒœì˜€ë‹¤ë©´, ë‚´ë ¤ë†“ìŒ ì²˜ë¦¬.
+                    itemData.CurrentHolder = default; // ì†Œìœ ì ì—†ìŒ (ë„ë‚œë¨)
+                    ShopItems.Set(i, itemData);  // NetworkArray ì—…ë°ì´íŠ¸ ë°˜ì˜
                     Debug.Log($"Host: Item {stolenItemObject.name} (ID: {stolenItemObject.Id}) marked as stolen/unavailable.");
 
-                    // ¾ÆÀÌÅÛ ¿ÀºêÁ§Æ® ÀÚÃ¼ÀÇ ºñÁÖ¾ó º¯°æ ¶Ç´Â ÆÄ±« µîÀ» ÇÒ ¼ö ÀÖ½À´Ï´Ù.
-                    // stolenItemObject.gameObject.SetActive(false); // ¿¹½Ã: ¾ÆÀÌÅÛ ¼û±â±â
+                    // í›”ì³ì§„ ì•„ì´í…œì„ Despawn
+                    if (stolenItemObject.IsValid)
+                    {
+                        //Runner.Despawn(stolenItemObject);
+                    }
                     break;
                 }
             }

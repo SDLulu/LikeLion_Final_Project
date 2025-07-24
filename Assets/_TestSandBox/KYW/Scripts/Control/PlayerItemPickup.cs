@@ -105,6 +105,7 @@ public class PlayerItemPickup : NetworkBehaviour
                 if (nearest != null)
                 {
                     var netObj = nearest.GetComponent<NetworkObject>();
+                    var Shopitem = nearest.GetComponent<ShopItem>();
                     if (netObj != null)
                     {
                         // 📡 Host(StateAuthority)에게 픽업 요청 RPC 전송

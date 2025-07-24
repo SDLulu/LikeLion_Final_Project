@@ -1,138 +1,319 @@
 using Fusion;
 using UnityEngine;
+using TMPro;
+using Fusion.Addons.Physics;
 
-// IInteractable ÀÎÅÍÆäÀÌ½º Á¤ÀÇ (ÇÃ·¹ÀÌ¾î »óÈ£ÀÛ¿ë ½ºÅ©¸³Æ®¿¡¼­ »ç¿ë)
-public interface IInteractable
+
+
+// ItemType, ShopItemDataëŠ” ì´ì „ ë‹µë³€ì—ì„œ ì •ì˜ëœ ëŒ€ë¡œ ìœ ì§€ë©ë‹ˆë‹¤.
+// ShopItemData structëŠ” ItemName í•„ë“œê°€ NetworkString<NXX> íƒ€ì…ìœ¼ë¡œ ë³€ê²½ë˜ì—ˆì–´ì•¼ í•©ë‹ˆë‹¤.
+
+public class ShopItem : NetworkBehaviour, IUsableItem
 {
-    void OnInteract(PlayerController player);
-}
+    public NetworkId ItemId => Object.Id;
 
-public class ShopItem : NetworkBehaviour, IInteractable
-{
-    [Networked] public ShopItemData ItemData { get; set; }
+    [Networked]
+    public ShopItemData ItemData { get; set; }
+    [Networked]
+    private NetworkButtons _previousInteractingPlayerButtons { get; set; }
 
-    [Networked] public ItemType itemType { get; set; }
-    [Networked] public int Price { get; set; } // Networked·Î º¯°æÇÏ¿© µ¿±âÈ­
+    [Header("UI Settings")]
+    [SerializeField] private GameObject purchaseUIPrefab;
+    //private GameObject _spawnedPurchaseUI; // êµ¬ë§¤ UI ì˜¤ë¸Œì íŠ¸
 
-    private int _shopIndex; // ShopManagerÀÇ NetworkArray ³» ÀÎµ¦½º
+    [Networked]
+    private NetworkBool _isPlayerColliding { get; set; } = false;
+
+    [Networked] // â­ï¸ ì´ ë³€ìˆ˜ëŠ” Networkedë¡œ ì„ ì–¸ë˜ì–´ì•¼ ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ê°€ ì•Œ ìˆ˜ ìˆìŠµë‹ˆë‹¤.
+    private PlayerRef _currentInteractingPlayer { get; set; } = PlayerRef.None; // â­ï¸ ì´ˆê¸°ê°’ ì„¤ì •
+
+
+    private NetworkRigidbody2D _netRigidbody;
+    private Collider2D _collider;
     private ShopManager _shopManager;
+
     private ShopItemVisual _shopItemVisual;
 
     public override void Spawned()
     {
-        
-        _shopItemVisual = GetComponent<ShopItemVisual>();
+        _netRigidbody = GetComponent<NetworkRigidbody2D>();
+        _collider = GetComponent<Collider2D>();
+        _shopManager = FindFirstObjectByType<ShopManager>();
+
+        // â­ï¸ ShopItemVisual ì»´í¬ë„ŒíŠ¸ ì°¸ì¡° ê°€ì ¸ì˜¤ê¸° (ìì‹ ì˜¤ë¸Œì íŠ¸ì—ë„ ìˆì„ ìˆ˜ ìˆìœ¼ë¯€ë¡œ GetComponentsInChildren ì‚¬ìš©)
+        _shopItemVisual = GetComponentInChildren<ShopItemVisual>();
         if (_shopItemVisual == null)
         {
-            Debug.LogError("ShopItemVisual component not found on ShopItem!");
+            Debug.LogError($"ShopItem {name}: ShopItemVisual component not found on this object or its children!", this);
         }
 
-        // Networked ¼Ó¼º º¯°æ °¨Áö (ItemType, Price º¯°æ ½Ã ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®)
-        // FixedUpdateNetwork¿¡¼­ ShopManagerÀÇ ShopItems µ¥ÀÌÅÍ¸¦ ÂüÁ¶ÇÏ¿© ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®ÇÏ´Â °ÍÀÌ ´õ ÀÏ°üÀûÀÏ ¼ö ÀÖ½À´Ï´Ù.
-        // ¿©±â¼­´Â ±×³É ÃÊ±â°ª ¼³Á¤¿¡ »ç¿ë
+        //if (purchaseUIPrefab != null)
+        //{
+        //    _spawnedPurchaseUI = Instantiate(purchaseUIPrefab);
+        //    _spawnedPurchaseUI.SetActive(false);
+
+        //    // â­ï¸ ì¤‘ìš”: UIë¥¼ ì ì ˆí•œ UI Canvasì˜ ìì‹ìœ¼ë¡œ ì„¤ì •í•´ì•¼ í™”ë©´ì— ë³´ì…ë‹ˆë‹¤.
+        //    // ì”¬ì— "MainCanvas" ê°™ì€ ì´ë¦„ì˜ Canvasê°€ ìˆë‹¤ê³  ê°€ì •í•©ë‹ˆë‹¤.
+        //    Canvas mainCanvas = FindObjectOfType<Canvas>();
+        //    if (mainCanvas != null)
+        //    {
+        //        _spawnedPurchaseUI.transform.SetParent(mainCanvas.transform, false); // false: ì›”ë“œ ì¢Œí‘œ ìœ ì§€ ì•ˆí•¨ (UIì— ì í•©)
+        //        Debug.Log($"ShopItem {name}: Purchase UI instantiated and parented to {mainCanvas.name}.");
+        //    }
+        //    else
+        //    {
+        //        Debug.LogWarning($"ShopItem {name}: No Canvas found in scene. Purchase UI might not be visible.");
+        //    }
+        //}
     }
 
-    // Host¿¡¼­ ShopManager°¡ ¾ÆÀÌÅÛÀ» ½ºÆùÇÒ ¶§ ÃÊ±âÈ­ÇÏ´Â ÇÔ¼ö
-    public void Initialize(ShopManager manager, int index, ItemType type, int price)
+    public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        _shopManager = manager;
-        _shopIndex = index;
-        itemType = type; // Networked ¼Ó¼º ¼³Á¤
-        Price = price;   // Networked ¼Ó¼º ¼³Á¤
+        //if (_spawnedPurchaseUI != null)
+        //{
+        //    Destroy(_spawnedPurchaseUI);
+        //}
     }
 
-    // ¾ÆÀÌÅÛ Áı±â ½Ãµµ (ÇÃ·¹ÀÌ¾îÀÇ »óÈ£ÀÛ¿ë ½Ã½ºÅÛ¿¡¼­ È£Ãâ)
-    public void OnInteract(PlayerController player)
-    {
-        if (player.Object.HasInputAuthority) // ÀÔ·Â ±ÇÇÑÀ» °¡Áø ÇÃ·¹ÀÌ¾î¸¸ ¿äÃ» °¡´É
-        {
-            // ShopManager¿¡ ¾ÆÀÌÅÛ ÇÈ¾÷ ¿äÃ»
-            _shopManager.Rpc_RequestItemPickup(_shopIndex, player.Object.InputAuthority);
-        }
-    }
-
-    // ¾ÆÀÌÅÛ ³õ±â Ã³¸® (PlayerController¿¡¼­ È£Ãâ)
-    // ÀÌ RPC´Â ÇÃ·¹ÀÌ¾î°¡ µé°í ÀÖ´Â ShopItem °´Ã¼ ÀÚÃ¼¿¡¼­ È£ÃâµË´Ï´Ù.
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_RequestDrop(PlayerRef player, Vector3 dropPosition)
-    {
-        // ÀÌ RPC´Â Host¿¡¼­ ½ÇÇàµË´Ï´Ù.
-        NetworkObject playerObject = Runner.GetPlayerObject(player);
-        PlayerController playerController = playerObject?.GetComponent<PlayerController>();
-        PlayerInventory playerInventory = playerObject?.GetComponent<PlayerInventory>();
-
-        if (playerController == null || playerInventory == null)
-        {
-            Debug.LogError($"Host: Player components not found for {player.PlayerId}");
-            return;
-        }
-
-        // ÇÃ·¹ÀÌ¾î ÀÎº¥Åä¸®¿¡¼­ µé°í ÀÖ´Â ¾ÆÀÌÅÛ »óÅÂ ÇØÁ¦
-        if (playerInventory.HeldItemNetworkId == Object.Id)
-        {
-            playerInventory.HeldItemNetworkId = default;
-            playerController.DropHeldItemLocal(); // ·ÎÄÃ ÇÃ·¹ÀÌ¾îÀÇ _heldShopItem ÂüÁ¶ ÇØÁ¦
-        }
-        else
-        {
-            Debug.LogWarning($"Host: Player {player.PlayerId} tried to drop item {Object.Id} but wasn't holding it.");
-            return;
-        }
-
-
-        // »óÁ¡ ¿µ¿ª ³»¿¡¼­ ³õ¾Ò´ÂÁö È®ÀÎ
-        bool isInShopArea = _shopManager.IsPositionInShopArea(dropPosition);
-
-        if (isInShopArea)
-        {
-            // »óÁ¡ ³»¿¡¼­ ³õ±â - ¿ø·¡ À§Ä¡·Î º¹±Í
-            var itemData = _shopManager.ShopItems[_shopIndex];
-            transform.position = itemData.OriginalPosition; // NetworkTransformÀ» »ç¿ëÇÑ´Ù¸é NetworkTransformÀ» ÅëÇØ À§Ä¡ ¼³Á¤
-
-            // ¾ÆÀÌÅÛ »óÅÂ ¾÷µ¥ÀÌÆ® (µé°í ÀÖÁö ¾ÊÀ½, È¦´õ ¾øÀ½)
-            _shopManager.Rpc_UpdateItemState(_shopIndex, false, PlayerRef.None);
-
-            // ¾ÆÀÌÅÛ È°¼ºÈ­
-            SetItemActive(true);
-            Debug.Log($"Host: Item {itemType} dropped in shop area. Returned to original pos.");
-        }
-        else
-        {
-            // »óÁ¡ ¹Û¿¡¼­ ³õ±â - ±¸¸Å Ã³¸®
-            // ¾ÆÀÌÅÛÀÌ ÇÊµå¿¡ µå·ÓµÇ¾úÀ¸¹Ç·Î ´õ ÀÌ»ó ShopManager¿¡¼­ °ü¸®ÇÏÁö ¾ÊÀ½.
-            // ´ë½Å, ±¸¸Å Ã³¸® ÈÄ ÇØ´ç ShopItem ¿ÀºêÁ§Æ®´Â ÆÄ±«µÇ¾î¾ß ÇÕ´Ï´Ù.
-            _shopManager.Rpc_RequestPurchase(player, _shopIndex); // ÀÌ ÇÔ¼ö ³»ºÎ¿¡¼­ ¾ÆÀÌÅÛ Despawn Ã³¸®
-            Debug.Log($"Host: Item {itemType} dropped outside shop area. Initiating purchase.");
-            // SetItemActive(true)´Â RequestPurchase¿¡¼­ ¾ÆÀÌÅÛÀÌ DespawnµÇ¹Ç·Î ¿©±â¼­´Â ÇÊ¿ä ¾øÀ½.
-        }
-    }
-
-
-    // ½ÇÁ¦ GameObjectÀÇ È°¼ºÈ­/ºñÈ°¼ºÈ­ (Host¿¡¼­ ½ÇÇà ÈÄ FusionÀÌ µ¿±âÈ­)
-    private void SetItemActive(bool active)
+    public void InitializeItemData(ItemType type, int price, string name)
     {
         if (Object.HasStateAuthority)
         {
-            gameObject.SetActive(active); // NetworkObject°¡ È°¼ºÈ­/ºñÈ°¼ºÈ­µÇ¸é ¸ğµç Å¬¶óÀÌ¾ğÆ®¿¡ µ¿±âÈ­
+            ItemData = new ShopItemData
+            {
+                ItemNetworkId = Object.Id,
+                ItemType = type,
+                Price = price,
+                IsAvailable = true,
+                IsPicked = false,
+                CurrentHolder = default,
+                OriginalPosition = transform.position,
+                ItemName = name // NetworkString<N> íƒ€ì…ìœ¼ë¡œ ìë™ ë³€í™˜ë  ê²ƒì…ë‹ˆë‹¤.
+            };
+            Debug.Log($"Host: ShopItem {name} data initialized with price {price}.");
+
+            UpdatePhysicsState(false, true); // ì²˜ìŒì—ëŠ” ë¬¼ë¦¬ ë¹„í™œì„±, íŠ¸ë¦¬ê±° í™œì„± (ìƒì ì— ë†“ì—¬ìˆìŒ)
+
+            // â­ï¸ ì´ˆê¸°í™” ì‹œì—ë„ ë¹„ì£¼ì–¼ ì—…ë°ì´íŠ¸ë¥¼ í˜¸ì¶œí•˜ì—¬ PriceTextê°€ ë°”ë¡œ ë³´ì´ë„ë¡ í•©ë‹ˆë‹¤.
+            if (_shopItemVisual != null)
+            {
+                _shopItemVisual.UpdatePriceText(ItemData.Price);
+                _shopItemVisual.UpdateItemColorAndPriceTag(ItemData.IsAvailable, ItemData.IsPicked);
+            }
         }
     }
 
-    // ShopManagerÀÇ OnShopItemsChanged¿¡¼­ È£ÃâµÇ¾î ºñÁÖ¾ó ¾÷µ¥ÀÌÆ®
-    public void UpdateItemVisual(ShopItemData itemData)
+    public override void FixedUpdateNetwork()
     {
+        if (Object.HasStateAuthority)
+        {
+            // FixedUpdateNetworkì—ì„œ _currentInteractingPlayerë¥¼ ì‚¬ìš©í•˜ëŠ” ë¡œì§ì€ ê¸°ì¡´ê³¼ ë™ì¼í•©ë‹ˆë‹¤.
+            if (!_currentInteractingPlayer.IsNone && Runner.TryGetInputForPlayer(_currentInteractingPlayer, out SpelunkyPlayerData input))
+            {
+                const SpelunkyInputButtons PICKUP_BUTTON_MASK = SpelunkyInputButtons.pick;
+
+                if (input.NetworkButtons.IsSet(PICKUP_BUTTON_MASK) && !_previousInteractingPlayerButtons.IsSet(PICKUP_BUTTON_MASK))
+                {
+                    Debug.Log($"Host: Player {_currentInteractingPlayer.PlayerId} pressed PICK for purchase on {ItemData.ItemName}.");
+                    if (_shopManager != null)
+                    {
+                        _shopManager.Rpc_RequestItemPickup(Object.Id, _currentInteractingPlayer);
+                    }
+                }
+                _previousInteractingPlayerButtons = input.NetworkButtons;
+            }
+            else if (_currentInteractingPlayer.IsNone)
+            {
+                _previousInteractingPlayerButtons = default;
+            }
+        }
+    }
+
+    public override void Render()
+    {
+        base.Render();
+
+        // â­ï¸ ShopItemVisual ì—…ë°ì´íŠ¸ ë¡œì§ (ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì—ì„œ ì‹¤í–‰)
         if (_shopItemVisual != null)
         {
-            _shopItemVisual.UpdateVisual(itemData);
+            _shopItemVisual.UpdatePriceText(ItemData.Price); // ê°€ê²© ì—…ë°ì´íŠ¸
+            _shopItemVisual.UpdateItemColorAndPriceTag(ItemData.IsAvailable, ItemData.IsPicked); // ìƒ‰ìƒ ë° ê°€ê²©í‘œ í™œì„±í™”/ë¹„í™œì„±í™”
         }
 
-        // ¾ÆÀÌÅÛÀÌ µé°í ÀÖ´Â »óÅÂ¸é ½ÇÁ¦ ¿ÀºêÁ§Æ®´Â ºñÈ°¼ºÈ­ (ÇÃ·¹ÀÌ¾î ¼Õ¿¡ ¸ğµ¨ÀÌ ³ªÅ¸³ªµµ·Ï)
-        if (Object.HasStateAuthority)
+        // â­ï¸ êµ¬ë§¤ UI í‘œì‹œ ë¡œì§ (ë¡œì»¬ í”Œë ˆì´ì–´ì—ê²Œë§Œ)
+        // ë¡œì»¬ í”Œë ˆì´ì–´ê°€ í˜„ì¬ ì´ ì•„ì´í…œê³¼ ì¶©ëŒ ì¤‘ì¸ì§€ í™•ì¸í•©ë‹ˆë‹¤.
+        // _currentInteractingPlayerëŠ” í˜¸ìŠ¤íŠ¸ì— ì˜í•´ Networked ë³€ìˆ˜ë¡œ ë™ê¸°í™”ë˜ë¯€ë¡œ ëª¨ë“  í´ë¼ì´ì–¸íŠ¸ì—ì„œ ë™ì¼í•œ ê°’ì„ ê°€ì§‘ë‹ˆë‹¤.
+        if (purchaseUIPrefab != null)
         {
-            bool isActive = !itemData.IsPicked && itemData.IsAvailable;
-            if (gameObject.activeSelf != isActive)
+            if (_currentInteractingPlayer == Runner.LocalPlayer && _isPlayerColliding && ItemData.IsAvailable && !ItemData.IsPicked)
             {
-                gameObject.SetActive(isActive);
+                ShowPurchaseUI();
             }
+            else
+            {
+                HidePurchaseUI();
+            }
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        if (other.CompareTag("Player"))
+        {
+            SpelunkyPlayerController spelunkyPlayerController = other.GetComponentInParent<SpelunkyPlayerController>();
+            if (spelunkyPlayerController != null)
+            {
+                _isPlayerColliding = true;
+                _currentInteractingPlayer = spelunkyPlayerController.Object.InputAuthority;
+                Debug.Log($"Host: Player {spelunkyPlayerController.Object.InputAuthority.PlayerId} entered {name} trigger. _isPlayerColliding = true. CurrentInteractingPlayer: {_currentInteractingPlayer.PlayerId}");
+            }
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if(Object == null)
+        {
+            Debug.LogWarning($"ShopItem {name}: NetworkObject is null in OnTriggerExit2D. Skipping processing.");
+            return; // Objectê°€ nullì´ë©´ ë” ì´ìƒ ì§„í–‰í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.
+        }
+
+        if (!Object.HasStateAuthority) return;
+
+        if (other.CompareTag("Player"))
+        {
+            SpelunkyPlayerController spelunkyPlayerController = other.GetComponentInParent<SpelunkyPlayerController>();
+            // â­ï¸ ì¤‘ìš”í•œ ë¶€ë¶„: ë‚˜ê°€ëŠ” í”Œë ˆì´ì–´ê°€ í˜„ì¬ ìƒí˜¸ì‘ìš© ì¤‘ì´ë˜ í”Œë ˆì´ì–´ì™€ ì¼ì¹˜í•˜ëŠ”ì§€ í™•ì¸
+            if (spelunkyPlayerController != null && _currentInteractingPlayer == spelunkyPlayerController.Object.InputAuthority)
+            {
+                _isPlayerColliding = false;
+                _currentInteractingPlayer = PlayerRef.None; // ì°¸ì¡° í•´ì œ
+                Debug.Log($"Host: Player {spelunkyPlayerController.Object.InputAuthority.PlayerId} exited {name} trigger. _isPlayerColliding = false. CurrentInteractingPlayer reset.");
+            }
+        }
+    }
+
+    private void ShowPurchaseUI()
+    {
+        if (purchaseUIPrefab != null )
+        {
+            //_spawnedPurchaseUI.SetActive(true);
+            purchaseUIPrefab.SetActive(true);
+            //TextMeshProUGUI uiText = _spawnedPurchaseUI.GetComponentInChildren<TextMeshProUGUI>();
+            //if (uiText != null)
+            //{
+            //    uiText.text = $"[ì¢Œí´ë¦­] êµ¬ë§¤: {ItemData.ItemName}\n({ItemData.Price}G)";
+            //    // â­ï¸ UI ìœ„ì¹˜ë¥¼ ì•„ì´í…œ ì˜¤ë¸Œì íŠ¸ì˜ ìŠ¤í¬ë¦° ì¢Œí‘œë¡œ ì—…ë°ì´íŠ¸ (Renderì—ì„œ ë§¤ í”„ë ˆì„ ì—…ë°ì´íŠ¸)
+            //    Vector2 screenPoint = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * 1f); // ì•„ì´í…œ ìœ„ 1ìœ ë‹›
+            //    _spawnedPurchaseUI.transform.position = screenPoint;
+            //}
+        }
+    }
+
+    private void HidePurchaseUI()
+    {
+        purchaseUIPrefab.SetActive(false);
+        //if (_spawnedPurchaseUI != null && _spawnedPurchaseUI.activeSelf)
+        //{
+        //    _spawnedPurchaseUI.SetActive(false);
+        //}
+    }
+
+    // OnPickedUp, OnDropped, OnPurchased, OnUsePress, OnUseHold, OnUseRelease, UpdatePhysicsStateëŠ” ê¸°ì¡´ê³¼ ë™ì¼
+    public void OnPickedUp(PlayerRef picker)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        ItemData = new ShopItemData
+        {
+            ItemNetworkId = ItemData.ItemNetworkId,
+            ItemType = ItemData.ItemType,
+            Price = ItemData.Price,
+            IsAvailable = ItemData.IsAvailable,
+            IsPicked = true,
+            CurrentHolder = picker,
+            OriginalPosition = ItemData.OriginalPosition,
+            ItemName = ItemData.ItemName
+        };
+
+        UpdatePhysicsState(false, true); // ì‹œë®¬ë ˆì´ì…˜ ë¹„í™œì„±, íŠ¸ë¦¬ê±° í™œì„±
+
+        _isPlayerColliding = false;
+        _currentInteractingPlayer = PlayerRef.None;
+
+        Debug.Log($"Host: Item {ItemData.ItemName} picked up by Player {picker.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
+    }
+
+    public void OnDropped(PlayerRef dropper)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        ItemData = new ShopItemData
+        {
+            ItemNetworkId = ItemData.ItemNetworkId,
+            ItemType = ItemData.ItemType,
+            Price = ItemData.Price,
+            IsAvailable = ItemData.IsAvailable,
+            IsPicked = false,
+            CurrentHolder = default,
+            OriginalPosition = ItemData.OriginalPosition,
+            ItemName = ItemData.ItemName
+        };
+
+        UpdatePhysicsState(true, false); // ì‹œë®¬ë ˆì´ì…˜ í™œì„±, íŠ¸ë¦¬ê±° ë¹„í™œì„±
+
+        Debug.Log($"Host: Item {ItemData.ItemName} dropped by Player {dropper.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
+    }
+
+    public void OnPurchased()
+    {
+        if (!Object.HasStateAuthority) return;
+
+        ItemData = new ShopItemData
+        {
+            ItemNetworkId = ItemData.ItemNetworkId,
+            ItemType = ItemData.ItemType,
+            Price = ItemData.Price,
+            IsAvailable = false,
+            IsPicked = false,
+            CurrentHolder = default,
+            OriginalPosition = ItemData.OriginalPosition,
+            ItemName = ItemData.ItemName
+        };
+
+        Debug.Log($"Host: Item {ItemData.ItemName} purchased. Despawning now.");
+
+        Runner.Despawn(Object);
+    }
+
+    // IUsableItem êµ¬í˜„
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+        Debug.Log($"ShopItem {ItemData.ItemName} used (Press). Implement actual item effect here.");
+    }
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+        Debug.Log($"ShopItem {ItemData.ItemName} used (Release).");
+    }
+
+    private void UpdatePhysicsState(bool simulatePhysics, bool isTriggerCollider)
+    {
+        if (_netRigidbody != null)
+        {
+            _netRigidbody.Rigidbody.simulated = simulatePhysics;
+            _netRigidbody.Rigidbody.isKinematic = !simulatePhysics;
+            _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
+            _netRigidbody.Rigidbody.angularVelocity = 0f;
+        }
+
+        if (_collider != null)
+        {
+            _collider.isTrigger = isTriggerCollider;
         }
     }
 }
