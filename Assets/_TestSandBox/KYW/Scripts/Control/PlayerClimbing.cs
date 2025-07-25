@@ -52,10 +52,7 @@ public class PlayerClimbing : NetworkBehaviour
     public void ProcessInput(SpelunkyPlayerInputData input)
     {
         HandleClimbing(input);
-        if (IsClimbing)  // 사다리 타고 있을 때만 중력 업데이트
-        {
-            UpdateClimbingPhysics();
-        }
+        UpdateClimbingPhysics();
     }
 
     private void HandleClimbing(SpelunkyPlayerInputData input)

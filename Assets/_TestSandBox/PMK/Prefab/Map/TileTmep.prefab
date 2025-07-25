@@ -9,7 +9,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 883904666419588802}
-  - component: {fileID: 6709395610266260483}
   m_Layer: 0
   m_Name: TileTmep
   m_TagString: Untagged
@@ -33,25 +32,6 @@ Transform:
   - {fileID: 7380832720176433073}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6709395610266260483
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2811268793539920138}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 4254634455
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 5751978690978429252}
-  ForceRemoteRenderTimeframe: 0
 --- !u!1 &5523969648053472459
 GameObject:
   m_ObjectHideFlags: 0
@@ -415,29 +395,22 @@ MonoBehaviour:
   maxTileY: 5
   nextTileX: 17
   nextTileY: 11
-  mapPrefabSets:
-  - mapType: C
-    prefabs:
-    - {fileID: 2777085221984976620, guid: 3ab09186f9d338b498b7d538397f74bf, type: 3}
-    - {fileID: 4675249073432161324, guid: 28f9115fd6c3519488e9806a403483d1, type: 3}
-  - mapType: LR
-    prefabs:
-    - {fileID: 7977107586126641711, guid: 1e85d83a7a36ca249865f786e12195a4, type: 3}
-    - {fileID: 7977107586126641711, guid: 3409d972621eba54aa3549b5371eb6b1, type: 3}
-  - mapType: D
-    prefabs:
-    - {fileID: 806208410943904702, guid: 6d4956d9c9a83eb48b71b0e1d0e20b6e, type: 3}
-  - mapType: W
-    prefabs:
-    - {fileID: 7785704958135451157, guid: 6bef849a0cae62e498f28d604b505eb5, type: 3}
-  - mapType: WD
-    prefabs:
-    - {fileID: 3710340501844651436, guid: 14ca8e19f217f20429556c31378db9af, type: 3}
-  - mapType: S
-    prefabs:
-    - {fileID: 7374161544316796849, guid: 88f855dd6b176264faaa09ce63b6ca81, type: 3}
+  Clear_Map_Prefab:
+  - {fileID: 4675249073432161324, guid: 28f9115fd6c3519488e9806a403483d1, type: 3}
+  - {fileID: 2777085221984976620, guid: 3ab09186f9d338b498b7d538397f74bf, type: 3}
+  LR_Exit_Map_Prefab:
+  - {fileID: 7977107586126641711, guid: 1e85d83a7a36ca249865f786e12195a4, type: 3}
+  - {fileID: 7977107586126641711, guid: 3409d972621eba54aa3549b5371eb6b1, type: 3}
+  D_Exit_Map_Prefab:
+  - {fileID: 806208410943904702, guid: 6d4956d9c9a83eb48b71b0e1d0e20b6e, type: 3}
+  W_Exit_Map_Prefab:
+  - {fileID: 7785704958135451157, guid: 6bef849a0cae62e498f28d604b505eb5, type: 3}
+  WD_Exit_Map_Prefab:
+  - {fileID: 3710340501844651436, guid: 14ca8e19f217f20429556c31378db9af, type: 3}
+  Special_Map_Prefab:
+  - {fileID: 7374161544316796849, guid: 88f855dd6b176264faaa09ce63b6ca81, type: 3}
   itemSpawnChance: 35
-  <tileItems>k__BackingField:
+  tileItems:
   - {fileID: 11400000, guid: 1777164a16c2af946b715a3b1db80a9a, type: 2}
 --- !u!1 &6023215706384045932
 GameObject:
