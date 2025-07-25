@@ -52,9 +52,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private SpriteRenderer spriteRenderer;
     
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
-    private PlayerObjectPickup itemPickup;
+    private PlayerItemPickup itemPickup;
     private PlayerItemUsage itemUsage;
-    private PlayerObjectThrower itemThrower;
+    private PlayerItemThrower itemThrower;
 
     public override void Spawned()
     {
@@ -116,13 +116,13 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
         
         // Hand 컴포넌트들 참조 설정
-        itemPickup = handRoot?.GetComponent<PlayerObjectPickup>();
+        itemPickup = handRoot?.GetComponent<PlayerItemPickup>();
         itemUsage = handRoot?.GetComponent<PlayerItemUsage>();
-        itemThrower = handRoot?.GetComponent<PlayerObjectThrower>();
+        itemThrower = handRoot?.GetComponent<PlayerItemThrower>();
         
         if (itemPickup == null)
         {
-            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerObjectPickup 컴포넌트가 없습니다.");
+            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemPickup 컴포넌트가 없습니다.");
         }
         if (itemUsage == null)
         {
@@ -130,7 +130,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
         if (itemThrower == null)
         {
-            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerObjectThrower 컴포넌트가 없습니다.");
+            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemThrower 컴포넌트가 없습니다.");
         }
     }
     
