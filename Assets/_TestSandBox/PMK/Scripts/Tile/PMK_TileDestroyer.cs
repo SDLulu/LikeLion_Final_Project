@@ -1,4 +1,5 @@
 using System.Collections;
+using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -11,7 +12,7 @@ public class PMK_TileDestroyer : MonoBehaviour
 
 
 
-    private void OnEnable()
+    private void Start()
     {
         tilemap = PMK_TileRogic.Instance.mainTilemap;
         StartCoroutine(DelayedTilePlacement());
@@ -19,15 +20,14 @@ public class PMK_TileDestroyer : MonoBehaviour
 
     private IEnumerator DelayedTilePlacement()
     {
-        yield return null; // ÇÑ ÇÁ·¹ÀÓ ´ë±â
+        yield return null;
         TryPlaceTileIfEmpty();
     }
 
-    // ÇöÀç À§Ä¡¿¡ Å¸ÀÏÀÌ ¾øÀ¸¸é ·ê Å¸ÀÏÀ» ¹èÄ¡ÇÕ´Ï´Ù.
+    // ê³µê°„ì´ ë¹„ì–´ìˆìœ¼ë©´ íƒ€ì¼ì„ ë°°ì¹˜í•©ë‹ˆë‹¤.
     private void TryPlaceTileIfEmpty()
     {
         Vector2 pos = transform.position;
-
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
         if (hits == null)
         {
@@ -35,38 +35,37 @@ public class PMK_TileDestroyer : MonoBehaviour
 
             if (tilemap.GetTile(cellPos) == null)
             {
-                // Å¸ÀÏ ¼³Ä¡
+
                 tilemap.SetTile(cellPos, ruleTile);
-                Physics2D.SyncTransforms(); // ¹°¸® ÃÖ½ÅÈ­
+                Physics2D.SyncTransforms();
 
-                PMK_TileRogic.Instance.Create_TileItem(cellPos); // ¾ÆÀÌÅÛ ·£´ı »ı¼º
+                PMK_TileRogic.Instance.Create_TileItem(cellPos);
 
-                Destroy(gameObject); // ÇöÀç ¾ÆÀÌÅÛ Á¦°Å
+                Destroy(gameObject);
             }
         }
     }
 
 
-    // º®ÀÌ ÀÖÀ»°æ¿ì º® »èÁ¦
+    // íƒ€ì¼ì´ ë¹„ì–´ìˆì§€ì•Šë‹¤ë©´ íƒ€ì¼ì„ íŒŒê´´í•©ë‹ˆë‹¤.
     private void OnTriggerStay2D(Collider2D collision)
     {
-        // ½ÇÁ¦ Ãæµ¹ ÁöÁ¡ °è»ê
         Vector2 contactPoint = collision.ClosestPoint(transform.position);
 
-        // ÇÃ·§Æû ·¹ÀÌ¾î¿¡ ÇØ´çÇÏ´Â Äİ¶óÀÌ´õ Å½»ö
+
         Collider2D hit = Physics2D.OverlapCircle(contactPoint, 0.01f, whatisPlatform);
         if (hit != null)
         {
             PMK_TileRogic destroyTile = hit.GetComponent<PMK_TileRogic>();
             if (destroyTile != null)
             {
-                destroyTile.DestoryTile(contactPoint); // ¿Ã¹Ù¸¥ ¿ùµå À§Ä¡ Àü´Ş
+                destroyTile.DestoryTile(contactPoint);
 
-                if (collision.CompareTag("Tileitem")) // º®¾È¿¡ ¾ÆÀÌÅÛÀÌ ÀÖÀ»°æ¿ì ¾ÆÀÌÅÛ »èÁ¦
+                if (collision.CompareTag("Tileitem"))
                 {
                     Destroy(collision.gameObject);
                 }
-                Destroy(gameObject); // º® Á¦°Å
+                Destroy(gameObject);
             }
         }
     }

@@ -6,7 +6,6 @@ public class PMK_TileItem : MonoBehaviour
 
     public void DestroyItem()
     {
-
         Instantiate(dropItem, transform.position, Quaternion.identity);
 
         Destroy(gameObject);

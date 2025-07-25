@@ -1,4 +1,5 @@
 using System.Collections;
+using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -9,10 +10,10 @@ public class PMK_TileZoneSpawner : MonoBehaviour
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
-    // е╦юо,гта╓ ╩Щ╪╨х╝╥Э
+    // е╦О©╫О©╫,О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫х╝О©╫О©╫
     [SerializeField] private int trapSpawnChance = 50;
 
-    private void OnEnable()
+    private void Start()
     {
         tilemap = PMK_TileRogic.Instance.mainTilemap;
         StartCoroutine(TryPlaceTileIfEmpty());
@@ -34,14 +35,14 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
                 if (Random.Range(0, 100) > trapSpawnChance)
                 {
-                    // е╦юо ╪Ёд║
+                    // е╦О©╫О©╫ О©╫О©╫д║
                     tilemap.SetTile(cellPos, ruleTile);
 
-                    Physics2D.SyncTransforms(); // ╧╟╦╝ цж╫ех╜
+                    Physics2D.SyncTransforms(); // О©╫О©╫О©╫О©╫ О©╫ж╫О©╫х╜
 
-                    PMK_TileRogic.Instance.Create_TileItem(cellPos); // ╬фюлеш ╥ё╢Щ ╩Щ╪╨
+                    PMK_TileRogic.Instance.Create_TileItem(cellPos); // О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫
 
-                    Destroy(gameObject); // гЖюГ ╬фюлеш а╕╟е
+                    Destroy(gameObject); // О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫
                 }
                 else
                 {
@@ -55,19 +56,20 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
 
 
-                    // ю╖3д╜ ╬Г©╥©║ е╦юоюл ╬Ь╟М , ╬ф╥║©║ е╦юоюл южю╩ ╟Ф©Л гта╓ ╪Ёд║
+                    // О©╫О©╫3д╜ О©╫Г©╥О©╫О©╫ е╦О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ , О©╫ф╥О©╫О©╫О©╫ е╦О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ О©╫О©╫О©╫ О©╫О©╫О©╫О©╫ О©╫О©╫д║
                     if (isThreeAboveEmpty && tilemap.GetTile(downCell) != null)
                     {
                         Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
-                        Instantiate(trap, worldPos, Quaternion.identity, PMK_TileRogic.Instance.parentTrans);
+
+                        Instantiate(trap, worldPos, Quaternion.identity, PMK_TileRogic.Instance.parentTrans); // Л·░Л▀²Л°╪К║° Л╤■Й╟─
                     }
-                    Destroy(gameObject); // гЖюГ ╬фюлеш а╕╟е
+                    Destroy(gameObject); // О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫
                 }
             }
         }
         else
         { 
-            Debug.Log("юл╧л е╦юоюл а╦юГгу╢о╢ы: " + pos);
+            Debug.Log("О©╫л╧О©╫ е╦О©╫О©╫О©╫О©╫ О©╫О©╫О©╫О©╫О©╫у╢о╢О©╫: " + pos);
         }
     }
 }
