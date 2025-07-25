@@ -9,6 +9,15 @@ public class PlayerHealth : NetworkBehaviour
 
     public int MaxHealth => 100;
 
+    // PlayerState 변경을 위한 컨트롤러 참조
+    private SpelunkyPlayerController playerController;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        playerController = GetComponent<SpelunkyPlayerController>();
+    }
+
     // 데미지 처리
     public void TakeDamage(int amount)
     {
@@ -38,6 +47,10 @@ public class PlayerHealth : NetworkBehaviour
     private void OnDeath()
     {
         Debug.Log("[PlayerHealth] Player died!");
+        if (playerController != null)
+        {
+            playerController.SetState(PlayerState.Dead);
+        }
         // TODO: 사망 애니메이션, 리스폰 등
     }
 } 

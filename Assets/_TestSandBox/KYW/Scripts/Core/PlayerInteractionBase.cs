@@ -5,10 +5,20 @@ using UnityEngine;
 public abstract class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
 {
     // --- 네트워크 동기화 상태 ---
-    [Networked] public int Health { get; protected set; }
     [Networked] public NetworkBool IsStunned { get; protected set; }
     [Networked] public NetworkBool _isInvincible { get; protected set; }
     [Networked] public TickTimer StunTimer { get; protected set; }
+
+    // --- PlayerHealth 참조 ---
+    protected PlayerHealth playerHealth;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        playerHealth = GetComponent<PlayerHealth>();
+        if (playerHealth == null)
+            Debug.LogError("[PlayerInteractionBase] PlayerHealth 컴포넌트를 찾을 수 없습니다!");
+    }
 
     // --- 한 줄짜리 프로퍼티 (필드 바로 밑에 배치) ---
     public virtual bool IsInvincible => _isInvincible;
@@ -22,7 +32,7 @@ public abstract class PlayerInteractionBase : NetworkBehaviour, IPlayerInteracti
     public virtual void TakeDamage(int damage)
     {
         if (_isInvincible) return;
-        Health -= damage;
+        playerHealth?.TakeDamage(damage);
     }
 
     public virtual void ApplyStun(float duration)
