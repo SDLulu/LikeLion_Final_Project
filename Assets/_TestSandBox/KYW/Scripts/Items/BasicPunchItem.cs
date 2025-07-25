@@ -36,8 +36,8 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         if(!HasInputAuthority)
         {
             Runner.SetIsSimulated(Object, true);
-            base.Object.RenderSource = RenderSource.Interpolated;
-            base.Object.ForceRemoteRenderTimeframe = true;
+            // base.Object.RenderSource = RenderSource.Interpolated;
+            // base.Object.ForceRemoteRenderTimeframe = true;
         }
 
     }
@@ -98,7 +98,7 @@ public class BasicPunchItem : NetworkBehaviour, IUsableItem
         PunchTimer = TickTimer.CreateFromSeconds(Runner, punchDuration); // TickTimer로 시작
     }
 
-    // 사용하지 않는 인터페이스
+    // 사용하지 않는 인터페이스 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 

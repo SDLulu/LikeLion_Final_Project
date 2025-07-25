@@ -55,7 +55,7 @@ public class PlayerObjectPickup : NetworkBehaviour
     
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)
     // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
@@ -96,31 +96,6 @@ public class PlayerObjectPickup : NetworkBehaviour
         }
     }
     
-    // ✅ 유효한 픽업 대상인지 확인 (아이템, 스턴/죽은 적/NPC, 죽은 플레이어, 특정 상황의 플레이어)
-    private bool IsValidPickupTarget(GameObject obj)
-    {
-        if (obj == gameObject) return false;
-        if (obj == CurrentHeldObject) return false;
-
-        int layer = obj.layer;
-        if (layer == LayerMask.NameToLayer("Item"))
-            return true;
-
-        if (layer == LayerMask.NameToLayer("Enemy") || layer == LayerMask.NameToLayer("Npc"))
-        {
-            // TODO: 스턴 또는 죽음 상태 체크 (예: obj.GetComponent<EnemyStatus>().IsStunned || IsDead)
-            return false; // 실제 구현 전까지 false
-        }
-
-        if (layer == LayerMask.NameToLayer("Player"))
-        {
-            // TODO: 죽음 상태 또는 픽업 가능 상태 체크 (예: obj.GetComponent<PlayerStatus>().IsDead || CanBePickedUp)
-            return false; // 실제 구현 전까지 false
-        }
-
-        // 그 외는 모두 false
-        return false;
-    }
     
     // 📡 RPC: InputAuthority → StateAuthority로 픽업 요청
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
@@ -131,14 +106,7 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (netObj != null)
         {
             Debug.Log($"[PlayerObjectPickup] Runner.FindObject 성공: {netObj.name}");
-            // 최종 유효성 체크
-            if (!IsValidPickupTarget(netObj.gameObject))
-            {
-                Debug.Log($"[PlayerObjectPickup] IsValidPickupTarget 실패: {netObj.name}");
-                return;
-            }
-            Debug.Log($"[PlayerObjectPickup] IsValidPickupTarget 통과: {netObj.name}");
-            PickupObject(netObj.gameObject);  // 🎯 실제 픽업 처리 (StateAuthority에서만 상태 변경)
+            PickupObject(netObj.gameObject);
         }
         else
         {
@@ -164,7 +132,7 @@ public class PlayerObjectPickup : NetworkBehaviour
                 obj.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
                 obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
                 
-                // 🎮 InputAuthority 할당 (아이템만)
+                // 🎮 InputAuthority 할당 (던질 수 있도록 )
                 int layer = obj.layer;
                 if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
                 {
@@ -186,7 +154,7 @@ public class PlayerObjectPickup : NetworkBehaviour
         float shortestDistance = float.MaxValue;
         
         // 🧹 null 참조 정리 (파괴된 오브젝트 제거)
-        nearbyObjects.RemoveWhere(item => item == null);
+        nearbyObjects.RemoveWhere(obj => obj == null);
         
         // 📏 거리 계산해서 가장 가까운 오브젝트 찾기
         foreach (var obj in nearbyObjects)
@@ -228,20 +196,12 @@ public class PlayerObjectPickup : NetworkBehaviour
         // pickupLayerMask에 포함된 레이어만 감지
         if ((pickupLayerMask.value & (1 << other.gameObject.layer)) == 0)
         {
+            nearbyObjects.Add(other.gameObject);
             Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함되지 않은 레이어: {other.gameObject.layer}");
             return;
         }
-        if (IsValidPickupTarget(other.gameObject))
-        {
-            nearbyObjects.Add(other.gameObject);
-            Debug.Log($"[PlayerObjectPickup] 트리거 진입: {other.gameObject.name} 추가됨");
-        }
-        else
-        {
-            Debug.Log($"[PlayerObjectPickup] 유효하지 않은 대상: {other.gameObject.name}");
-        }
     }
-
+    
     // 🚪 트리거 이탈: 오브젝트가가 감지 범위에서 나갔을 때
     private void OnTriggerExit2D(Collider2D other)
     {
