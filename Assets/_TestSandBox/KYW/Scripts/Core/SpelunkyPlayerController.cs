@@ -153,7 +153,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public override void FixedUpdateNetwork()
     {
         // 입력이 필요한 것들 (InputAuthority에서만)
-        if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
+        if (Runner.TryGetInputForPlayer<SpelunkyPlayerInputData>(Object.InputAuthority, out var input))
         {
             // 기존 컴포넌트들 처리 (그대로 유지)
             movement?.ProcessInput(input);
@@ -187,9 +187,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     }
 
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
-    public SpelunkyPlayerData GetNetworkInputData()
+    public SpelunkyPlayerInputData GetNetworkInputData()
     {
-        SpelunkyPlayerData data = new SpelunkyPlayerData();
+        SpelunkyPlayerInputData data = new SpelunkyPlayerInputData();
         
         if (Object.HasInputAuthority)
         {

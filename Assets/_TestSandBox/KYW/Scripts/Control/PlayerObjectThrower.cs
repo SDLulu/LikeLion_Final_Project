@@ -27,7 +27,7 @@ public class PlayerObjectThrower : NetworkBehaviour
     
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)
     // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;

@@ -49,13 +49,13 @@ public class PlayerClimbing : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
     }
 
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         HandleClimbing(input);
         UpdateClimbingPhysics();
     }
 
-    private void HandleClimbing(SpelunkyPlayerData input)
+    private void HandleClimbing(SpelunkyPlayerInputData input)
     {
         bool nearLadder = ladderCheck.IsNearLadder;
         bool isGrounded = groundCheck.IsGrounded;

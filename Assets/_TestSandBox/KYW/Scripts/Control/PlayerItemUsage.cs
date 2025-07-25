@@ -47,7 +47,7 @@ public class PlayerItemUsage : NetworkBehaviour
     }
 
     // 🎮 입력 처리 - 단순화 버전
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
@@ -105,7 +105,7 @@ public class PlayerItemUsage : NetworkBehaviour
 
     
     // 🎮 Hold 전용 사용 처리 - 상태 변화로 Press/Release 감지
-    private void HandleUsage(IUsableItem usableItem, SpelunkyPlayerData input, NetworkButtons pressed)
+    private void HandleUsage(IUsableItem usableItem, SpelunkyPlayerInputData input, NetworkButtons pressed)
     {
         Vector2 mousePos = input.MouseWorldPosition;
         Vector2 playerPos = transform.position;

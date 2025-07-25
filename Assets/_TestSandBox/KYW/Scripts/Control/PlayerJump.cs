@@ -46,7 +46,7 @@ public class PlayerJump : NetworkBehaviour
     }
     
     // 점프 관련 모든 처리를 통합한 메서드
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         HandleJump(input);
         ApplyGravity();
@@ -68,7 +68,7 @@ public class PlayerJump : NetworkBehaviour
         }
     }
     
-    private void HandleJump(SpelunkyPlayerData input)
+    private void HandleJump(SpelunkyPlayerInputData input)
     {
         // Fusion 2 공식 패턴: GetPressed로 점프 버튼 눌림 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);

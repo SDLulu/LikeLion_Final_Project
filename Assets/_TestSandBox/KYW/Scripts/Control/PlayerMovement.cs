@@ -40,7 +40,7 @@ public class PlayerMovement : NetworkBehaviour
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         // 덕킹 처리
         HandleDucking(input);
@@ -55,7 +55,7 @@ public class PlayerMovement : NetworkBehaviour
         NormalizedSpeed = Mathf.Abs(rb.linearVelocity.x) / moveSpeed;
     }
     
-    private void HandleDucking(SpelunkyPlayerData input)
+    private void HandleDucking(SpelunkyPlayerInputData input)
     {
         // 🎮 상태 기반 웅크리기 가능 여부 확인 (순환 의존성 방지)
         // 현재 상태가 Ducking이 아닐 때만 CanDuck 체크
@@ -75,7 +75,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
     
-    private void ProcessMovement(SpelunkyPlayerData input)
+    private void ProcessMovement(SpelunkyPlayerInputData input)
     {
         // 🎮 상태 기반 이동 가능 여부 확인
         if (!PlayerStateHelper.CanMove(playerController.CurrentState))
@@ -106,7 +106,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
     
-    private void UpdateFacingDirection(SpelunkyPlayerData input)
+    private void UpdateFacingDirection(SpelunkyPlayerInputData input)
     {
         // 네트워크 동기화되는 방향 상태 업데이트
         if (input.HorizontalInput != 0)
