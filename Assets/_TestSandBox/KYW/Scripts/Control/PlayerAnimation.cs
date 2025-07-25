@@ -15,6 +15,7 @@ public class PlayerAnimation : NetworkBehaviour
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
+    private SpelunkyPlayerController playerController;
     
     public override void Spawned()
     {
@@ -32,6 +33,7 @@ public class PlayerAnimation : NetworkBehaviour
             movement = playerObject.GetComponent<PlayerMovement>();
             jump = playerObject.GetComponent<PlayerJump>();
             climbing = playerObject.GetComponent<PlayerClimbing>();
+            playerController = playerObject.GetComponent<SpelunkyPlayerController>();
             
             // 필수 컴포넌트 검증
             if (animator == null)
@@ -46,6 +48,8 @@ public class PlayerAnimation : NetworkBehaviour
                 Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
             if (climbing == null)
                 Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
+            if (playerController == null)
+                Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
         }
         else
         {
@@ -57,6 +61,13 @@ public class PlayerAnimation : NetworkBehaviour
     // 애니메이션 동기화
     public override void Render()
     {
+        // Dead 상태면 IsDead 파라미터만 true로, 아니면 false로
+        if (playerController != null && animator != null)
+        {
+            bool isDead = playerController.CurrentState == PlayerState.Dead;
+            animator.SetBool("IsDead", isDead);
+            if (isDead) return; // 사망 상태면 다른 애니메이션 갱신 불필요
+        }
         UpdateAnimations();
         UpdateSpriteDirection();
     }

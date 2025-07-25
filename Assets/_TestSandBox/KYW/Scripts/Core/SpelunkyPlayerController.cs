@@ -124,6 +124,20 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
+        // Dead, Stunned 상태면 모든 입력 무시 + 입력값 초기화
+        if (CurrentState == PlayerState.Dead || CurrentState == PlayerState.Stunned)
+        {
+            horizontalInput = 0f;
+            verticalInput = 0f;
+            mouseScrollWheel = 0f;
+            jumpPressed = false;
+            pickupPressed = false;
+            useItemHeld = false;
+            throwItemPressed = false;
+            skillPressed = false;
+            return;
+        }
+
         if (Object.HasInputAuthority)
         {
             // 방향키 입력
@@ -289,5 +303,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         {
             return PlayerState.Falling;
         }
+    }
+
+    public void SetState(PlayerState newState)
+    {
+        if (!Object.HasStateAuthority) return;
+        CurrentState = newState;
     }
 } 
