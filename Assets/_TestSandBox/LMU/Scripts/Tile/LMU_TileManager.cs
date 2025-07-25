@@ -1,7 +1,8 @@
 using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
 
-public partial class PMK_TileRogic : MonoBehaviour
+public partial class PMK_TileRogic : NetworkBehaviour
 {
 
 
@@ -186,15 +187,7 @@ public partial class PMK_TileRogic : MonoBehaviour
         Debug.Log("LMU 초기화 중...");
         
         // 1. mapPrefabDict 초기화
-        mapPrefabDict = new Dictionary<string, GameObject[]>
-        {
-            { "C", Clear_Map_Prefab },
-            { "LR", LR_Exit_Map_Prefab },
-            { "D", D_Exit_Map_Prefab },
-            { "W", W_Exit_Map_Prefab },
-            { "WD", WD_Exit_Map_Prefab },
-            { "S", Special_Map_Prefab }
-        };
+
         
         // 2. 기존 맵 정리
         if (mainTilemap != null)
