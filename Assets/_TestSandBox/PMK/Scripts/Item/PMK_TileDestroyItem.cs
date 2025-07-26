@@ -49,7 +49,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
                     {
                         var tileLogic = overCollider2d.GetComponent<PMK_TileRogic>();
                         if (tileLogic != null)
-                            tileLogic.DestoryTile(checkCellPos);
+                            tileLogic.Rpc_DestroyTile(checkCellPos);
                     }
 
                     // 타일 아이템 파괴
