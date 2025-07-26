@@ -1,5 +1,4 @@
 using System.Collections;
-using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -10,7 +9,6 @@ public class PMK_TileZoneSpawner : MonoBehaviour
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
-    // Ÿ��,���� ����Ȯ��
     [SerializeField] private int trapSpawnChance = 50;
 
     private void Start()
@@ -35,14 +33,14 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
                 if (Random.Range(0, 100) > trapSpawnChance)
                 {
-                    // Ÿ�� ��ġ
+                    // trapSpawnChance 확률로 함정 생성
                     tilemap.SetTile(cellPos, ruleTile);
 
-                    Physics2D.SyncTransforms(); // ���� �ֽ�ȭ
+                    Physics2D.SyncTransforms();
 
-                    PMK_TileRogic.Instance.Create_TileItem(cellPos); // ������ ���� ����
+                    PMK_TileRogic.Instance.Create_TileItem(cellPos);
 
-                    Destroy(gameObject); // ���� ������ ����
+                    Destroy(gameObject);
                 }
                 else
                 {
@@ -56,20 +54,21 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
 
 
-                    // ��3ĭ �翷�� Ÿ���� ���� , �Ʒ��� Ÿ���� ���� ��� ���� ��ġ
+                    // 아래 셀에 타일이 없고, 위쪽 셀 3개가 비어있을 때 함정 생성
                     if (isThreeAboveEmpty && tilemap.GetTile(downCell) != null)
                     {
                         Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
 
                         Instantiate(trap, worldPos, Quaternion.identity, PMK_TileRogic.Instance.parentTrans); // 자식으로 추가
                     }
-                    Destroy(gameObject); // ���� ������ ����
+                    Destroy(gameObject);
                 }
             }
         }
         else
-        { 
+        {
             Debug.Log("�̹� Ÿ���� �����մϴ�: " + pos);
         }
     }
 }
+

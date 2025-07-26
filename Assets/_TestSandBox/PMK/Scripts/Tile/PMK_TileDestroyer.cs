@@ -15,12 +15,6 @@ public class PMK_TileDestroyer : MonoBehaviour
     private void Start()
     {
         tilemap = PMK_TileRogic.Instance.mainTilemap;
-        StartCoroutine(DelayedTilePlacement());
-    }
-
-    private IEnumerator DelayedTilePlacement()
-    {
-        yield return null;
         TryPlaceTileIfEmpty();
     }
 
@@ -28,45 +22,26 @@ public class PMK_TileDestroyer : MonoBehaviour
     private void TryPlaceTileIfEmpty()
     {
         Vector2 pos = transform.position;
-        Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
-        if (hits == null)
+        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.01f, whatisPlatform);
+
+        Vector3Int cellPos = tilemap.WorldToCell(pos);
+
+        if (hits.Length == 0 && tilemap.GetTile(cellPos) == null)
         {
-            Vector3Int cellPos = tilemap.WorldToCell(pos);
+            tilemap.SetTile(cellPos, ruleTile);
+            Physics2D.SyncTransforms();
 
-            if (tilemap.GetTile(cellPos) == null)
-            {
+            PMK_TileRogic.Instance.Create_TileItem(cellPos);
 
-                tilemap.SetTile(cellPos, ruleTile);
-                Physics2D.SyncTransforms();
-
-                PMK_TileRogic.Instance.Create_TileItem(cellPos);
-
-                Destroy(gameObject);
-            }
+            Destroy(gameObject);
         }
-    }
-
-
-    // 타일이 비어있지않다면 타일을 파괴합니다.
-    private void OnTriggerStay2D(Collider2D collision)
-    {
-        Vector2 contactPoint = collision.ClosestPoint(transform.position);
-
-
-        Collider2D hit = Physics2D.OverlapCircle(contactPoint, 0.01f, whatisPlatform);
-        if (hit != null)
+        else
         {
-            PMK_TileRogic destroyTile = hit.GetComponent<PMK_TileRogic>();
-            if (destroyTile != null)
-            {
-                destroyTile.DestoryTile(contactPoint);
+            Physics2D.SyncTransforms();
+            PMK_TileRogic.Instance.Rpc_DestroyTile(cellPos);
 
-                if (collision.CompareTag("Tileitem"))
-                {
-                    Destroy(collision.gameObject);
-                }
-                Destroy(gameObject);
-            }
+            PMK_TileRogic.Instance.Rpc_DestroyItem(pos);
+            Destroy(gameObject);
         }
     }
 }

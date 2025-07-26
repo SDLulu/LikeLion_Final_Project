@@ -55,7 +55,7 @@ public class Pickaxe : NetworkBehaviour, IUsableItem
             var tileLogic = other.GetComponent<PMK_TileRogic>();
             if (tileLogic != null)
             {
-                tileLogic.DestoryTile(other.transform.position);
+                tileLogic.Rpc_DestroyTile(other.transform.position);
                 HasHitTile = true;
                 if (bladeCollider != null) bladeCollider.enabled = false;
             }

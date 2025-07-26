@@ -3,6 +3,7 @@ using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
 using Fusion;
+using static Unity.Cinemachine.IInputAxisOwner.AxisDescriptor;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -407,7 +408,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 타일 파괴
-    public void DestoryTile(Vector3 Pos)
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void Rpc_DestroyTile(Vector3 Pos)
     {
         Debug.DrawRay(Pos, Vector2.up * 0.2f, Color.red, 1f);
 
@@ -415,9 +418,25 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mainTilemap.HasTile(cellPosition))
         {
-            mainTilemap.SetTile(cellPosition, null);  // Ÿ�� ����
+            mainTilemap.SetTile(cellPosition, null);  
             mainTilemap.RefreshTile(cellPosition);
         }
     }
+
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void Rpc_DestroyItem(Vector3 pos)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.05f);
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Tileitem"))
+            {
+                Destroy(hit.gameObject);
+            }
+        }
+    }
+
+
     #endregion
 }
