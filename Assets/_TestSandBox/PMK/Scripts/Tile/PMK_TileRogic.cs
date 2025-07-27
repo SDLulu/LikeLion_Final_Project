@@ -54,6 +54,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private int removeMapX; // 선택할 맵의 기준이 되는 x좌표
     private List<int> LR_Choose = new List<int>(); // 왼쪽, 오른쪽 선택을 위한 리스트 (탈출 맵 생성 시 좌우를 선택하기 위한 리스트)
 
+    public int rnd { get; private set; } // 랜덤값을 저장하기 위한 변수 (호스트가 생성한 랜덤값을 클라이언트와 동기화하기 위해 사용)
 
     private void Awake()
     {
@@ -137,19 +138,20 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
     #endregion
 
+
+    #region 원하는 맵 생성
     private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
         if (!HasStateAuthority) return;
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-           randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
+            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
 
-           RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
+            RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
     }
 
-    #region 원하는 맵 생성
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
@@ -217,6 +219,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
     #endregion
 
+
     #region 타일에 아이템 생성
 
     // 호스트가 타일 랜덤값을 적용후 공유함
@@ -258,6 +261,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
         Instantiate(tileItems[itemIndex].prefab, worldPos, Quaternion.identity, parentTrans); // 타일 아이템 생성
     }
     #endregion
+
 
     #region 스폰맵 생성
     private void SpawnMap_Instantiate()
@@ -432,6 +436,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
         {
             if (hit.CompareTag("Tileitem"))
             {
+                Debug.Log($"타일아이템 삭제");
                 Destroy(hit.gameObject);
             }
         }
@@ -439,4 +444,26 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #endregion
+
+
+
+    // 함정 생성
+    public void RPC_Create_Trap(GameObject trap, Vector3 worldPos)
+    {
+        Instantiate(trap, worldPos, Quaternion.identity, parentTrans);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_BroadcastRnd(int generatedRnd)
+    {
+        rnd = generatedRnd;
+    }
+
+    public void GenerateRndAndSend()
+    {
+        if (!HasStateAuthority) return;
+
+        int newRnd = Random.Range(0, 100);
+        RPC_BroadcastRnd(newRnd); // 모든 클라이언트에 랜덤 값 동기화
+    }
 }

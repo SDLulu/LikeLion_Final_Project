@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using Fusion;
 
 public class PMK_TileZoneSpawner : MonoBehaviour
 {
@@ -10,32 +11,34 @@ public class PMK_TileZoneSpawner : MonoBehaviour
     [SerializeField] private TileBase ruleTile;
 
     [SerializeField] private int trapSpawnChance = 50;
+    private int rnd;
 
     private void Start()
     {
         tilemap = PMK_TileRogic.Instance.mainTilemap;
-        StartCoroutine(TryPlaceTileIfEmpty());
+        TryPlaceTileIfEmpty();
     }
 
-    private IEnumerator TryPlaceTileIfEmpty()
+
+    private void TryPlaceTileIfEmpty()
     {
-        yield return null;
-
         Vector2 pos = transform.position;
-
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
+
+        Vector3Int cellPos = tilemap.WorldToCell(pos);
+
+        //
         if (hits == null)
         {
-            Vector3Int cellPos = tilemap.WorldToCell(pos);
-
+            // 해당 셀에 타일이 없으면 함정을 배치합니다.
             if (tilemap.GetTile(cellPos) == null)
             {
+                int rnd = PMK_TileRogic.Instance.rnd;
 
-                if (Random.Range(0, 100) > trapSpawnChance)
+                if (rnd > trapSpawnChance)
                 {
-                    // trapSpawnChance 확률로 함정 생성
+                    // 타일이 없으면 타일을 배치합니다.
                     tilemap.SetTile(cellPos, ruleTile);
-
                     Physics2D.SyncTransforms();
 
                     PMK_TileRogic.Instance.Create_TileItem(cellPos);
@@ -44,7 +47,6 @@ public class PMK_TileZoneSpawner : MonoBehaviour
                 }
                 else
                 {
-                    yield return null;
 
                     bool isThreeAboveEmpty =
                     tilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
@@ -58,16 +60,11 @@ public class PMK_TileZoneSpawner : MonoBehaviour
                     if (isThreeAboveEmpty && tilemap.GetTile(downCell) != null)
                     {
                         Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
-
-                        Instantiate(trap, worldPos, Quaternion.identity, PMK_TileRogic.Instance.parentTrans); // 자식으로 추가
+                        PMK_TileRogic.Instance.RPC_Create_Trap(trap, worldPos);
                     }
                     Destroy(gameObject);
                 }
             }
-        }
-        else
-        {
-            Debug.Log("�̹� Ÿ���� �����մϴ�: " + pos);
         }
     }
 }

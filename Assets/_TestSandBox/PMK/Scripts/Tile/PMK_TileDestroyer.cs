@@ -26,6 +26,7 @@ public class PMK_TileDestroyer : MonoBehaviour
 
         Vector3Int cellPos = tilemap.WorldToCell(pos);
 
+        // 타일이 없고, 해당 셀에 타일이 없으면 타일을 배치합니다.
         if (hits.Length == 0 && tilemap.GetTile(cellPos) == null)
         {
             tilemap.SetTile(cellPos, ruleTile);
@@ -35,6 +36,7 @@ public class PMK_TileDestroyer : MonoBehaviour
 
             Destroy(gameObject);
         }
+        // 타일이 있다면 파괴하고, 아이템 타일도 있다면 이것도 파괴합니다.
         else
         {
             Physics2D.SyncTransforms();
