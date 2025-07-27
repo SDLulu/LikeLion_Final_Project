@@ -1,18 +1,13 @@
 using Fusion;
 using UnityEngine;
 
-// 🎮 플레이어 상태 열거형
-// 기본적인 플레이어 상태 (상호 배타적)
+// 🎮 플레이어 상태 열거형 (실제 사용되는 상태만 유지)
 public enum PlayerState
 {
-    Idle,           // 기본 상태 (땅에 서있음)
-    Walking,        // 걷는 중
-    Ducking,        // 웅크린 상태
-    Jumping,        // 점프 중
-    Falling,        // 낙하 중
-    Climbing,       // 사다리 오르는 중
-    Stunned,        // 기절 상태
-    Dead            // 사망 상태 (유령 프리팹으로 전환 예정)
+    Normal,     // 기본 상태 (Idle, Walking, Jumping, Falling, Climbing 모두 포함)
+    Ducking,    // 웅크리기 상태
+    Stunned,    // 기절 상태
+    Dead        // 사망 상태
 }
 
 // 🎮 플레이어 액션 상태 (동시에 여러 개 가능)
@@ -25,7 +20,7 @@ public enum PlayerAction
     Invincible = 1 << 2      // 무적 상태
 }
 
-// 🎮 상태별 행동 가능 여부 확인
+// 🎮 상태별 행동 가능 여부 확인 (실제 사용되는 것만 유지)
 public static class PlayerStateHelper
 {
     // 상태별 이동 가능 여부
@@ -33,12 +28,8 @@ public static class PlayerStateHelper
     {
         return state switch
         {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
+            PlayerState.Normal => true,
             PlayerState.Ducking => true,
-            PlayerState.Jumping => true,
-            PlayerState.Falling => true,
-            PlayerState.Climbing => true,
             PlayerState.Stunned => false,
             PlayerState.Dead => false,
             _ => false
@@ -50,29 +41,8 @@ public static class PlayerStateHelper
     {
         return state switch
         {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
+            PlayerState.Normal => true,
             PlayerState.Ducking => false,
-            PlayerState.Jumping => false,
-            PlayerState.Falling => false,
-            PlayerState.Climbing => true,
-            PlayerState.Stunned => false,
-            PlayerState.Dead => false,
-            _ => false
-        };
-    }
-    
-    // 상태별 사다리 오르기 가능 여부
-    public static bool CanClimb(PlayerState state)
-    {
-        return state switch
-        {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
-            PlayerState.Ducking => false,
-            PlayerState.Jumping => true,
-            PlayerState.Falling => true,
-            PlayerState.Climbing => true,
             PlayerState.Stunned => false,
             PlayerState.Dead => false,
             _ => false
@@ -84,12 +54,8 @@ public static class PlayerStateHelper
     {
         return state switch
         {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
+            PlayerState.Normal => true,
             PlayerState.Ducking => false,
-            PlayerState.Jumping => true,
-            PlayerState.Falling => true,
-            PlayerState.Climbing => true,
             PlayerState.Stunned => false,
             PlayerState.Dead => false,
             _ => false
@@ -101,12 +67,8 @@ public static class PlayerStateHelper
     {
         return state switch
         {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
+            PlayerState.Normal => true,
             PlayerState.Ducking => false,
-            PlayerState.Jumping => true,
-            PlayerState.Falling => true,
-            PlayerState.Climbing => true,
             PlayerState.Stunned => false,
             PlayerState.Dead => false,
             _ => false
@@ -124,20 +86,16 @@ public static class PlayerStateHelper
     {
         return state switch
         {
-            PlayerState.Idle => true,
-            PlayerState.Walking => true,
+            PlayerState.Normal => true,
             PlayerState.Ducking => true,  // 🎯 Ducking 상태에서도 웅크리기 유지 가능
-            PlayerState.Jumping => false,
-            PlayerState.Falling => false,
-            PlayerState.Climbing => false,
             PlayerState.Stunned => false,
-            PlayerState.Dead => false,  // 사망 시 모든 행동 불가 (유령 전환 대기)
+            PlayerState.Dead => false,
             _ => false
         };
     }
 }
 
-// 🎮 상태 전환 조건 정의
+// 🎮 상태 전환 조건 정의 (단순화)
 public static class PlayerStateTransitions
 {
     // 상태 전환이 가능한지 확인하는 메서드들
@@ -145,73 +103,25 @@ public static class PlayerStateTransitions
     {
         switch (currentState)
         {
-            case PlayerState.Idle:
-                return newState == PlayerState.Walking || 
-                       newState == PlayerState.Ducking || 
-                       newState == PlayerState.Jumping ||
-                       newState == PlayerState.Climbing ||
-                       newState == PlayerState.Stunned ||
-                       newState == PlayerState.Dead;
-                       
-            case PlayerState.Walking:
-                return newState == PlayerState.Idle || 
-                       newState == PlayerState.Ducking || 
-                       newState == PlayerState.Jumping ||
-                       newState == PlayerState.Climbing ||
+            case PlayerState.Normal:
+                return newState == PlayerState.Ducking || 
                        newState == PlayerState.Stunned ||
                        newState == PlayerState.Dead;
                        
             case PlayerState.Ducking:
-                return newState == PlayerState.Idle || 
-                       newState == PlayerState.Walking || 
-                       newState == PlayerState.Stunned ||
-                       newState == PlayerState.Dead;
-                       
-            case PlayerState.Jumping:
-                return newState == PlayerState.Falling || 
-                       newState == PlayerState.Idle || 
-                       newState == PlayerState.Climbing ||
-                       newState == PlayerState.Stunned ||
-                       newState == PlayerState.Dead;
-                       
-            case PlayerState.Falling:
-                return newState == PlayerState.Idle || 
-                       newState == PlayerState.Climbing ||
-                       newState == PlayerState.Stunned ||
-                       newState == PlayerState.Dead;
-                       
-            case PlayerState.Climbing:
-                return newState == PlayerState.Jumping || 
-                       newState == PlayerState.Idle || 
-                       newState == PlayerState.Falling ||
+                return newState == PlayerState.Normal || 
                        newState == PlayerState.Stunned ||
                        newState == PlayerState.Dead;
                        
             case PlayerState.Stunned:
-                return newState == PlayerState.Idle || 
+                return newState == PlayerState.Normal || 
                        newState == PlayerState.Dead;
                        
             case PlayerState.Dead:
-                return false; // 사망 상태에서는 다른 상태로 전환 불가 (유령 프리팹으로 전환 예정)
+                return false; // 사망 상태에서는 다른 상태로 전환 불가
                 
             default:
                 return false;
         }
-    }
-    
-    // 액션별 동작 제한 확인
-    public static bool CanMove(PlayerAction action)
-    {
-        return true; // 액션은 이동을 제한하지 않음
-    }
-    
-    public static bool CanJump(PlayerAction action)
-    {
-        return true; // 액션은 점프를 제한하지 않음
-    }
-    
-    public static bool CanUseItem(PlayerAction action)
-    {
-        return true; // 액션은 아이템 사용을 제한하지 않음
     }
 } 

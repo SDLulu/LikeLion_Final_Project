@@ -22,7 +22,19 @@ public class PlayerObjectThrower : NetworkBehaviour
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
-        inventory = GetComponentInParent<PlayerInventory>(); // 인벤토리 캐싱 (부모에서 찾음)
+        Transform parentPlayer = transform.parent;
+        if (parentPlayer != null)
+        {
+            inventory = parentPlayer.GetComponentInChildren<PlayerInventory>(); // 자식에서만 찾음
+            if (inventory == null)
+            {
+                Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다! (자식에서만 탐색)");
+            }
+        }
+        else
+        {
+            Debug.LogError($"[{name}] PlayerObjectThrower이 Player 오브젝트의 하위가 아닙니다!");
+        }
     }
     
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)

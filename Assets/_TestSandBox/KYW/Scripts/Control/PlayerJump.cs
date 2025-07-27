@@ -77,12 +77,9 @@ public class PlayerJump : NetworkBehaviour
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지) - 상태 체크는 시작 시에만
+        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지)
         if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
         {
-            // 점프 시작 시에만 상태 기반 점프 가능 여부 확인
-            if (!PlayerStateHelper.CanJump(playerController.CurrentState)) return;
-            
             // 점프 상태 시작
             IsJumping = true;
             JumpTime = 0f;
