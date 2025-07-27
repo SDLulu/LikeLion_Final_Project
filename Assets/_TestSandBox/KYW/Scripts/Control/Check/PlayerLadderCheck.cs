@@ -47,7 +47,12 @@ public class PlayerLadderCheck : NetworkBehaviour
     // 🎯 기즈모로 감지 영역 시각화 (GroundCheckVisualizer 스타일)
     private void OnDrawGizmos()
     {
-        DrawLadderGizmo();
+        // Runner == null이면 네트워크 객체가 Spawned 상태가 아님
+        if (Runner != null)
+        {
+            DrawLadderGizmo();
+        }
+        // Spawned 전에는 [Networked] 값 접근하지 않음
     }
 
     private void OnDrawGizmosSelected()
@@ -57,13 +62,18 @@ public class PlayerLadderCheck : NetworkBehaviour
 
     private void DrawLadderGizmo()
     {
-        Color boxColor = IsNearLadder ? Color.cyan : Color.gray;
-        Gizmos.color = boxColor;
-        Gizmos.DrawWireCube(transform.position, ladderCheckSize);
-        // 내부 채우기
-        Color fillColor = boxColor;
-        fillColor.a = 0.2f;
-        Gizmos.color = fillColor;
-        Gizmos.DrawCube(transform.position, ladderCheckSize);
+        // Runner == null이면 네트워크 객체가 Spawned 상태가 아님
+        if (Runner != null)
+        {
+            Color boxColor = IsNearLadder ? Color.cyan : Color.gray;
+            Gizmos.color = boxColor;
+            Gizmos.DrawWireCube(transform.position, ladderCheckSize);
+            // 내부 채우기
+            Color fillColor = boxColor;
+            fillColor.a = 0.2f;
+            Gizmos.color = fillColor;
+            Gizmos.DrawCube(transform.position, ladderCheckSize);
+        }
+        // Spawned 전에는 [Networked] 값 접근하지 않음
     }
 }

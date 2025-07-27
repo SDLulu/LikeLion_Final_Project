@@ -16,6 +16,7 @@ public class PlayerAnimation : NetworkBehaviour
     private PlayerJump jump;
     private PlayerClimbing climbing;
     private SpelunkyPlayerController playerController;
+    private PlayerStunInvincible stunInvincible;
     
     public override void Spawned()
     {
@@ -34,6 +35,7 @@ public class PlayerAnimation : NetworkBehaviour
             jump = playerObject.GetComponent<PlayerJump>();
             climbing = playerObject.GetComponent<PlayerClimbing>();
             playerController = playerObject.GetComponent<SpelunkyPlayerController>();
+            stunInvincible = playerObject.GetComponent<PlayerStunInvincible>();
             
             // 필수 컴포넌트 검증
             if (animator == null)
@@ -50,6 +52,8 @@ public class PlayerAnimation : NetworkBehaviour
                 Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
             if (playerController == null)
                 Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+            if (stunInvincible == null)
+                Debug.LogError($"[{name}] PlayerStunDeadInvincible 컴포넌트를 찾을 수 없습니다!");
         }
         else
         {
@@ -68,6 +72,14 @@ public class PlayerAnimation : NetworkBehaviour
             animator.SetBool("IsDead", isDead);
             if (isDead) return; // 사망 상태면 다른 애니메이션 갱신 불필요
         }
+        // 스턴 상태면 스턴 애니메이션만 활성화
+        if (stunInvincible != null && stunInvincible.IsStunned)
+        {
+            animator.SetBool("IsStunned", true);
+            return; // 스턴 상태면 다른 애니메이션 갱신 불필요
+        }
+        if (animator != null)
+            animator.SetBool("IsStunned", false);
         UpdateAnimations();
         UpdateSpriteDirection();
     }

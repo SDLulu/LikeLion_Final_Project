@@ -31,7 +31,7 @@ public class PlayerItemUsage : NetworkBehaviour
     {
         // 모든 컴포넌트 참조를 한 번에 설정
         itemPickup = GetComponent<PlayerObjectPickup>();  // 📦 같은 오브젝트의 PlayerItemPickup
-        inventory = GetComponentInParent<PlayerInventory>();    // 인벤토리 캐싱 (부모에서 찾음)
+        inventory = transform.parent.GetComponentInChildren<PlayerInventory>();    // Player 오브젝트의 자식들 중에서 찾기
         // 필수 컴포넌트 검증
         if (itemPickup == null)
             Debug.LogError($"[{name}] PlayerItemPickup 컴포넌트를 찾을 수 없습니다!");

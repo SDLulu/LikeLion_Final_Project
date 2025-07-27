@@ -37,7 +37,7 @@ public class PlayerObjectPickup : NetworkBehaviour
         {
             playerController = parentPlayer.GetComponent<SpelunkyPlayerController>();
             playerMovement = parentPlayer.GetComponent<PlayerMovement>();
-            inventory = parentPlayer.GetComponent<PlayerInventory>();
+            inventory = parentPlayer.GetComponentInChildren<PlayerInventory>(); // Player 오브젝트의 자식들 중에서 찾기
             // 필수 컴포넌트 검증
             if (playerController == null)
                 Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
@@ -194,11 +194,10 @@ public class PlayerObjectPickup : NetworkBehaviour
     {
         Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
         // pickupLayerMask에 포함된 레이어만 감지
-        if ((pickupLayerMask.value & (1 << other.gameObject.layer)) == 0)
+        if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
         {
             nearbyObjects.Add(other.gameObject);
-            Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함되지 않은 레이어: {other.gameObject.layer}");
-            return;
+            Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함된 레이어: {other.gameObject.layer}");
         }
     }
     
