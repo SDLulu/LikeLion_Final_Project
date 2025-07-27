@@ -46,7 +46,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
-    private PlayerStunInvincible stunInvincible;
+    private PlayerStunInvincibleDie stunInvincibleDie;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -64,7 +64,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        stunInvincible = GetComponent<PlayerStunInvincible>();
+        stunInvincible = GetComponent<PlayerStunInvincibleDie>();
         
         // 🎮 상태 관리자 초기화 (자식 오브젝트에서 찾기)
         stateManager = GetComponentInChildren<PlayerStateManager>();
@@ -136,7 +136,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public void BeforeUpdate()
     {
         // Dead, Stunned 상태면 모든 입력 무시 + 입력값 초기화
-        if (stateManager != null && (stateManager.IsDead || stateManager.IsStunned))
+        if (stateManager != null && (stateManager.CurrentState == PlayerState.Dead ||
+         stateManager.CurrentState == PlayerState.Stunned))
         {
             horizontalInput = 0f;
             verticalInput = 0f;
@@ -250,7 +251,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 상태 확인 헬퍼 프로퍼티들
     public PlayerState CurrentState => stateManager?.CurrentState ?? PlayerState.Normal;
     public PlayerAction CurrentActions => stateManager?.CurrentActions ?? PlayerAction.None;
-    public bool IsDead => stateManager?.IsDead ?? false;
-    public bool IsStunned => stateManager?.IsStunned ?? false;
-    public bool IsNormal => stateManager?.IsNormal ?? true;
+    public bool IsDead => stateManager?.CurrentState == PlayerState.Dead;
+    public bool IsStunned => stateManager?.CurrentState == PlayerState.Stunned;
+    public bool IsNormal => stateManager?.CurrentState == PlayerState.Normal;
 } 

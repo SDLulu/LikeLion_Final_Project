@@ -16,7 +16,6 @@ public class PlayerAnimation : NetworkBehaviour
     private PlayerJump jump;
     private PlayerClimbing climbing;
     private SpelunkyPlayerController playerController;
-    private PlayerStunInvincible stunInvincible;
     
     public override void Spawned()
     {
@@ -26,60 +25,55 @@ public class PlayerAnimation : NetworkBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
             
-        // Player 오브젝트 찾기
-        Transform playerObject = transform.parent;
-        if (playerObject != null)
-        {
-            groundCheck = playerObject.GetComponentInChildren<PlayerGroundCheck>();
-            movement = playerObject.GetComponent<PlayerMovement>();
-            jump = playerObject.GetComponent<PlayerJump>();
-            climbing = playerObject.GetComponent<PlayerClimbing>();
-            playerController = playerObject.GetComponent<SpelunkyPlayerController>();
-            stunInvincible = playerObject.GetComponent<PlayerStunInvincible>();
-            
-            // 필수 컴포넌트 검증
-            if (animator == null)
-                Debug.LogError($"[{name}] Animator 컴포넌트를 찾을 수 없습니다!");
-            if (spriteRenderer == null)
-                Debug.LogError($"[{name}] SpriteRenderer 컴포넌트를 찾을 수 없습니다!");
-            if (groundCheck == null)
-                Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
-            if (movement == null)
-                Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
-            if (jump == null)
-                Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
-            if (climbing == null)
-                Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
-            if (playerController == null)
-                Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
-            if (stunInvincible == null)
-                Debug.LogError($"[{name}] PlayerStunDeadInvincible 컴포넌트를 찾을 수 없습니다!");
-        }
-        else
-        {
-            Debug.LogError($"[{name}] PlayerAnimation이 Player 오브젝트의 하위에 없습니다. " +
-                          "Player/Visual 하위에 배치해주세요.");
-        }
+        // 부모 오브젝트에서 컴포넌트들 찾기 (규칙에 맞게 수정)
+        groundCheck = GetComponentInParent<PlayerGroundCheck>();
+        movement = GetComponentInParent<PlayerMovement>();
+        jump = GetComponentInParent<PlayerJump>();
+        climbing = GetComponentInParent<PlayerClimbing>();
+        playerController = GetComponentInParent<SpelunkyPlayerController>();
+        
+        // 필수 컴포넌트 검증
+        if (animator == null)
+            Debug.LogError($"[{name}] Animator 컴포넌트를 찾을 수 없습니다!");
+        if (spriteRenderer == null)
+            Debug.LogError($"[{name}] SpriteRenderer 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (movement == null)
+            Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+        if (jump == null)
+            Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
+        if (climbing == null)
+            Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 애니메이션 동기화
     public override void Render()
     {
-        // Dead 상태면 IsDead 파라미터만 true로, 아니면 false로
-        if (playerController != null && animator != null)
+        if (playerController == null || animator == null) return;
+        
+        // 🎭 상태별 애니메이션 처리
+        PlayerState currentState = playerController.CurrentState;
+        
+        // 💀 사망 상태
+        if (currentState == PlayerState.Dead)
         {
-            bool isDead = playerController.CurrentState == PlayerState.Dead;
-            animator.SetBool("IsDead", isDead);
-            if (isDead) return; // 사망 상태면 다른 애니메이션 갱신 불필요
+            animator.SetBool("IsDead", true);
+            return; // 사망 상태면 다른 애니메이션 갱신 불필요
         }
-        // 스턴 상태면 스턴 애니메이션만 활성화
-        if (stunInvincible != null && stunInvincible.IsStunned)
+        
+        // 🛑 스턴 상태
+        if (currentState == PlayerState.Stunned)
         {
             animator.SetBool("IsStunned", true);
             return; // 스턴 상태면 다른 애니메이션 갱신 불필요
         }
-        if (animator != null)
-            animator.SetBool("IsStunned", false);
+        
+        // 🎮 정상 상태 애니메이션
+        animator.SetBool("IsDead", false);
+        animator.SetBool("IsStunned", false);
         UpdateAnimations();
         UpdateSpriteDirection();
     }
