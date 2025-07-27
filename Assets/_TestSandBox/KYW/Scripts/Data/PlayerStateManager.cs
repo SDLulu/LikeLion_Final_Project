@@ -10,7 +10,7 @@ public class PlayerStateManager : NetworkBehaviour
     [Networked] public PlayerAction CurrentActions { get; private set; } = PlayerAction.None;
     
     // 📦 상태 결정에 필요한 컴포넌트들
-    private PlayerStunInvincible stunInvincible;
+    private PlayerStunInvincibleDie stunInvincible;
     private PlayerShiftSkill shiftSkill;
     
     // 🎮 입력 상태 (BeforeUpdate에서 설정됨)
@@ -20,7 +20,7 @@ public class PlayerStateManager : NetworkBehaviour
     public override void Spawned()
     {
         // 필요한 컴포넌트들 캐싱 (부모 오브젝트에서 찾기)
-        stunInvincible = GetComponentInParent<PlayerStunInvincible>();
+        stunInvincible = GetComponentInParent<PlayerStunInvincibleDie>();
         shiftSkill = GetComponentInParent<PlayerShiftSkill>();
         
         Debug.Log($"🎮 PlayerStateManager 초기화 완료!");
@@ -76,6 +76,12 @@ public class PlayerStateManager : NetworkBehaviour
             newActions |= PlayerAction.UsingSkill;
         }
         
+        // 🛡️ 무적 상태 동기화
+        if (stunInvincible != null && stunInvincible.IsInvincible)
+        {
+            newActions |= PlayerAction.Invincible;
+        }
+        
         // 액션이 변경된 경우에만 업데이트
         if (CurrentActions != newActions)
         {
@@ -83,11 +89,11 @@ public class PlayerStateManager : NetworkBehaviour
         }
     }
     
-    // 🎮 현재 상태 결정 (기존 컴포넌트들의 상태를 기반으로)
+    // 🎮 현재 상태 결정 (PlayerStunInvincibleDie의 상태를 기반으로)
     private PlayerState DetermineCurrentState()
     {
         // 🎯 사망 상태는 최우선 (다른 상태로 전환 불가)
-        if (CurrentState == PlayerState.Dead) return PlayerState.Dead;
+        if (stunInvincible != null && stunInvincible.IsDead) return PlayerState.Dead;
         
         // 🎯 스턴 상태는 두 번째 우선순위 (다른 상태로 전환 불가)
         if (stunInvincible != null && stunInvincible.IsStunned) return PlayerState.Stunned;
@@ -95,6 +101,8 @@ public class PlayerStateManager : NetworkBehaviour
         // 나머지는 모두 Normal
         return PlayerState.Normal;
     }
+    
+
     
     // 🎮 상태 강제 설정 (외부에서 호출)
     public void SetState(PlayerState newState)
@@ -110,9 +118,8 @@ public class PlayerStateManager : NetworkBehaviour
         CurrentActions = newActions;
     }
     
+
     // 🎮 상태 확인 헬퍼 메서드들
-    public bool IsDead => CurrentState == PlayerState.Dead;
-    public bool IsStunned => CurrentState == PlayerState.Stunned;
     public bool IsNormal => CurrentState == PlayerState.Normal;
     public bool IsUsingItem => (CurrentActions & PlayerAction.UsingItem) != 0;
     public bool IsUsingSkill => (CurrentActions & PlayerAction.UsingSkill) != 0;

@@ -9,13 +9,15 @@ public class PlayerHealth : NetworkBehaviour
 
     public int MaxHealth => 100;
 
-    // PlayerState 변경을 위한 컨트롤러 참조
-    private SpelunkyPlayerController playerController;
+    // PlayerState 변경을 위한 상태 관리자 참조
+    private PlayerStateManager stateManager;
+    private PlayerStunInvincibleDie stunInvincible;
 
     public override void Spawned()
     {
         base.Spawned();
-        playerController = GetComponent<SpelunkyPlayerController>();
+        stateManager = GetComponentInChildren<PlayerStateManager>();
+        stunInvincible = GetComponentInParent<PlayerStunInvincibleDie>();
     }
 
     // 데미지 처리
@@ -47,9 +49,9 @@ public class PlayerHealth : NetworkBehaviour
     private void OnDeath()
     {
         Debug.Log("[PlayerHealth] Player died!");
-        if (playerController != null)
+        if (stunInvincible != null)
         {
-            playerController.SetState(PlayerState.Dead);
+            stunInvincible.Die();
         }
         // TODO: 사망 애니메이션, 리스폰 등
     }

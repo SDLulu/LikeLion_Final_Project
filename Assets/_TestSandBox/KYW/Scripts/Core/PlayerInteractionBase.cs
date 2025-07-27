@@ -4,29 +4,30 @@ using UnityEngine;
 // 플레이어 상호작용 추상 클래스 예시 (IPlayerInteraction 구현)
 public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
 {
-    // --- PlayerStunDeadInvincible 참조 ---
-    protected PlayerStunInvincible stunInvincible;
+    // --- PlayerStunInvincibleDie 참조 ---
+    protected PlayerStunInvincibleDie stunInvincible;
     protected PlayerHealth playerHealth;
     protected SpelunkyPlayerController playerController;
+    protected PlayerStateManager stateManager;
 
     public override void Spawned()
     {
         base.Spawned();
-        playerHealth = GetComponent<PlayerHealth>();
-        stunInvincible = GetComponent<PlayerStunInvincible>();
+        playerHealth = GetComponentInChildren<PlayerHealth>();
+        stunInvincible = GetComponent<PlayerStunInvincibleDie>();
         playerController = GetComponent<SpelunkyPlayerController>();
+        stateManager = GetComponentInChildren<PlayerStateManager>();
         if (playerHealth == null)
             Debug.LogError("[PlayerInteractionBase] PlayerHealth 컴포넌트를 찾을 수 없습니다!");
         if (stunInvincible == null)
-            Debug.LogError("[PlayerInteractionBase] PlayerStunInvincible 컴포넌트를 찾을 수 없습니다!");
+            Debug.LogError("[PlayerInteractionBase] PlayerStunInvincibleDie 컴포넌트를 찾을 수 없습니다!");
         if (playerController == null)
             Debug.LogError("[PlayerInteractionBase] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+        if (stateManager == null)
+            Debug.LogError("[PlayerInteractionBase] PlayerStateManager 컴포넌트를 찾을 수 없습니다!");
     }
 
-    // --- 프로퍼티 ---
-    public virtual bool IsStunned => stunInvincible != null && stunInvincible.IsStunned;
-    public virtual bool IsDead => stunInvincible != null && stunInvincible.IsDead;
-    public virtual bool IsInvincible => stunInvincible != null && stunInvincible.IsInvincible;
+
 
     // --- 메서드들 ---
     public virtual void ApplyKnockback(Vector3 force)
@@ -36,13 +37,13 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
 
     public virtual void TakeDamage(int damage)
     {
-        if (IsInvincible) return;
+        if (stunInvincible?.IsInvincible == true) return;
         playerHealth?.TakeDamage(damage);
     }
 
     public virtual void ApplyStun(float duration)
     {
-        playerController.SetState(PlayerState.Stunned);
+        stateManager?.SetState(PlayerState.Stunned);
         // 스턴 네트워크 상태 동기화
         stunInvincible?.Stun(duration);
     }

@@ -13,6 +13,5 @@ public interface IPlayerInteraction : IKnockbackable, IDamageable, IStunnable, I
     void ApplyStun(float duration);
 
     // 무적
-    bool IsInvincible { get; }
     void SetInvincible(bool value, float duration = 0f);
 } 

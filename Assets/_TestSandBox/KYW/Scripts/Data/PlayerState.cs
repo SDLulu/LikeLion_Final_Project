@@ -93,6 +93,12 @@ public static class PlayerStateHelper
             _ => false
         };
     }
+    
+    // 🛡️ 무적 상태 확인 (액션 기반)
+    public static bool IsInvincible(PlayerAction actions)
+    {
+        return (actions & PlayerAction.Invincible) != 0;
+    }
 }
 
 // 🎮 상태 전환 조건 정의 (단순화)
