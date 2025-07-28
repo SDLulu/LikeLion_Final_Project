@@ -113,7 +113,7 @@ public class EnemyInteractionTester : NetworkBehaviour
             {
                 if (enemyInteraction.IsHoldable)
                 {
-                    enemyInteraction.OnPickedUp(transform);
+                    enemyInteraction.OnPickedUp();
                     Debug.Log($"[{name}] {col.name}을(를) 들었습니다!");
                 }
                 else
