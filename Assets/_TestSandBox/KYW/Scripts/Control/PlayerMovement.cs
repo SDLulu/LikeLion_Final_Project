@@ -42,6 +42,12 @@ public class PlayerMovement : NetworkBehaviour
     // 이동 관련 모든 처리를 통합한 메서드
     public void ProcessInput(SpelunkyPlayerInputData input)
     {
+        // 상태 확인 - 이동 불가능한 상태면 처리하지 않음
+        if (playerController.IsDead || playerController.IsStunned || playerController.IsHeld || playerController.IsThrown)
+        {
+            return;
+        }
+        
         // 덕킹 처리
         HandleDucking(input);
         

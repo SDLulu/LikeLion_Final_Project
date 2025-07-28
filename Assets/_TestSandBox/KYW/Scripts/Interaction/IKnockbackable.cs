@@ -1,4 +1,6 @@
+using UnityEngine;
+
 public interface IKnockbackable
 {
-    void ApplyKnockback(UnityEngine.Vector3 force);
+    void ApplyKnockback(Vector2 force, float duration = 0f);
 } 

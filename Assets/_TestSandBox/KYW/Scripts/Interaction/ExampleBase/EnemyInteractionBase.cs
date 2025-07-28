@@ -15,9 +15,14 @@ public abstract class EnemyInteractionBase : NetworkBehaviour, IEnemyInteraction
     public virtual bool IsHoldable => IsStunned;
 
     // --- 메서드들 ---
-    public virtual void ApplyKnockback(Vector3 force)
+    public virtual void ApplyKnockback(Vector2 force, float duration = 0f)
     {
         // 기본 넉백 로직 (예시: Rigidbody2D에 force 적용)
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
     }
 
     public virtual void TakeDamage(int damage)
@@ -38,7 +43,7 @@ public abstract class EnemyInteractionBase : NetworkBehaviour, IEnemyInteraction
         // duration > 0이면 타이머로 해제 구현 가능
     }
 
-    public virtual void OnPickedUp(Transform holder)
+    public virtual void OnPickedUp()
     {
         // 들렸을 때 로직
     }

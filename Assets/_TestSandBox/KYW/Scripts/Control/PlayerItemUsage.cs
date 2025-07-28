@@ -8,7 +8,7 @@ public class PlayerItemUsage : NetworkBehaviour
 {
     [Header("Rotation Settings")]
     [SerializeField] private bool enableItemRotation = true;  // ⚙️ 회전 기능 켜기/끄기
-    [SerializeField] private float rotationSpeed = 10f;       // 🔄 회전 속도 (0 = 즉시, 양수 = 부드러운 보간)
+
     [SerializeField] private Transform handTransform;         // Hand 오브젝트(인스펙터에서 할당)
     
     [Header("Basic Punch")]

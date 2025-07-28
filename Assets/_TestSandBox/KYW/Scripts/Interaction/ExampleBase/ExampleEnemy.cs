@@ -25,7 +25,7 @@ public class ExampleEnemy : EnemyInteractionBase
     }
 
     // 넉백 오버라이드: Rigidbody2D에 실제 힘 적용
-    public override void ApplyKnockback(Vector3 force)
+    public override void ApplyKnockback(Vector2 force, float duration = 0f)
     {
         if (rb != null)
         {
@@ -76,9 +76,9 @@ public class ExampleEnemy : EnemyInteractionBase
     }
 
     // 들기 오버라이드: 물리 비활성화
-    public override void OnPickedUp(Transform holder)
+    public override void OnPickedUp()
     {
-        base.OnPickedUp(holder);
+        base.OnPickedUp();
         
         // 물리 시뮬레이션 비활성화
         if (rb != null)

@@ -4,7 +4,7 @@ using UnityEngine;
 public interface IEnemyInteraction : IKnockbackable, IDamageable, IStunnable, IInvincible, IHoldable
 {
     // 넉백
-    void ApplyKnockback(Vector3 force);
+    void ApplyKnockback(Vector2 force, float duration = 0f);
 
     // 데미지
     void TakeDamage(int damage);
@@ -18,6 +18,6 @@ public interface IEnemyInteraction : IKnockbackable, IDamageable, IStunnable, II
 
     // 들기: 스턴 상태에서만 가능
     bool IsHoldable { get; }
-    void OnPickedUp(Transform holder);
+    void OnPickedUp();
     void OnReleased();
 } 

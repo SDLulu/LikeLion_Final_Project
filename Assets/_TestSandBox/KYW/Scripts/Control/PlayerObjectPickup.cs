@@ -11,7 +11,10 @@ public class PlayerObjectPickup : NetworkBehaviour
     [Header("Pickup Settings")]
     [SerializeField] private LayerMask pickupLayerMask = -1;      // 🎛️ 인식할 레이어들
     [SerializeField] private CircleCollider2D pickupTrigger;    // 🔵 감지용 원형 트리거 (Hand에 위치)
-    [SerializeField] private float defaultTriggerRadius = 1.5f; // 📏 기본 감지 반경
+    
+    [Header("Position Offset")]
+    [SerializeField] private Vector3 playerHoldOffset = new Vector3(0f, 0.5f, 0f);  // 🎯 플레이어 들 때 위치 오프셋
+
     
     // 🌐 네트워크 동기화 변수들 (모든 클라이언트가 동일한 값을 가짐)
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }        // 🎮 이전 프레임 버튼 상태 (래칭용)
@@ -122,6 +125,18 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (Object.HasStateAuthority)
         {
             Debug.Log($"[PlayerObjectPickup] StateAuthority에서 PickupObject 시도");
+            
+            // 플레이어인 경우 특별 처리
+            if (obj.layer == LayerMask.NameToLayer("Player"))
+            {
+                var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
+                if (playerInteraction != null)
+                {
+                    // 들린 플레이어의 상태 설정
+                    playerInteraction.OnPickedUp();
+                }
+            }
+            
             // 아이템/캐릭터 구분 없이 무조건 손에 든다
             bool picked = inventory.HoldObject(obj); 
             if (picked)
@@ -129,11 +144,22 @@ public class PlayerObjectPickup : NetworkBehaviour
                 Debug.Log($"[PlayerObjectPickup] HoldObject 성공: {obj.name}");
                 nearbyObjects.Remove(obj);  // 🗑️ 주변 목록에서 제거
                 obj.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
-                obj.transform.localPosition = Vector3.zero; // 📍 Hand 중심에 위치
+                
+                // 🎯 캐릭터(플레이어/적/NPC)인 경우 오프셋 적용, 아이템은 기본 위치
+                Vector3 holdPosition = Vector3.zero;
+                int layer = obj.layer;
+                if (layer == LayerMask.NameToLayer("Player") || 
+                    layer == LayerMask.NameToLayer("Enemy") || 
+                    layer == LayerMask.NameToLayer("Npc"))
+                {
+                    holdPosition = playerHoldOffset;
+                    Debug.Log($"[PlayerObjectPickup] 캐릭터 오프셋 적용: {obj.name} (레이어: {layer})");
+                }
+                
+                obj.transform.localPosition = holdPosition; // 📍 위치 설정
                 obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
                 
                 // 🎮 InputAuthority 할당 (던질 수 있도록 )
-                int layer = obj.layer;
                 if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
                 {
                     if (!networkObject.HasInputAuthority)
@@ -177,10 +203,11 @@ public class PlayerObjectPickup : NetworkBehaviour
         var rigidbody = item.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
         {
-            rigidbody.isKinematic = true;      // 🔒 키네마틱 모드 (외력 영향 안받음)
+            rigidbody.bodyType = RigidbodyType2D.Kinematic;      // 🔒 키네마틱 모드 (외력 영향 안받음)
             rigidbody.linearVelocity = Vector2.zero;  // 🛑 속도 0으로 설정
             rigidbody.angularVelocity = 0f;    // 🛑 회전 속도 0으로 설정
             rigidbody.simulated = true;        // ✅ 물리 시뮬레이션 활성화 (트리거 이벤트 위해)
+            rigidbody.gravityScale = 0f;       // 🛑 중력 영향 제거
         }
         
         // 🚫 Collider2D 트리거 설정: 충돌 반응 없지만 트리거 감지는 가능
@@ -193,8 +220,19 @@ public class PlayerObjectPickup : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
-        // pickupLayerMask에 포함된 레이어만 감지
-        if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
+        
+        // 플레이어 레이어인 경우 특별 처리
+        if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
+        {
+            var playerInteraction = other.GetComponent<PlayerInteractionBase>();
+            if (playerInteraction != null && playerInteraction.IsHoldable) // 스턴 상태인지 확인
+            {
+                nearbyObjects.Add(other.gameObject);
+                Debug.Log($"[PlayerObjectPickup] 들 수 있는 플레이어 감지: {other.gameObject.name}");
+            }
+        }
+        // 기존 아이템 처리
+        else if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
         {
             nearbyObjects.Add(other.gameObject);
             Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함된 레이어: {other.gameObject.layer}");

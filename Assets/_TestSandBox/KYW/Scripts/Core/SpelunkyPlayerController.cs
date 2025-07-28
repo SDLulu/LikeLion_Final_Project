@@ -18,8 +18,7 @@ using UnityEngine;
 public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
 {
     [Header("Player State")]
-    // 🎮 상태 관리자 참조
-    private PlayerStateManager stateManager;
+    // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     
     [Header("Visual References")]
     [SerializeField] private Transform visualRoot; // Visual 하위 오브젝트 참조
@@ -64,15 +63,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        stunInvincible = GetComponent<PlayerStunInvincibleDie>();
+        stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         
-        // 🎮 상태 관리자 초기화 (자식 오브젝트에서 찾기)
-        stateManager = GetComponentInChildren<PlayerStateManager>();
-        if (stateManager == null)
-        {
-            Debug.LogWarning($"[{name}] PlayerStateManager 컴포넌트를 찾을 수 없습니다. " +
-                           "자식 오브젝트에 PlayerStateManager를 추가해주세요.");
-        }
+        // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
 
         
         // 하위 오브젝트들 설정 (Visual, Hand)
@@ -135,10 +128,25 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
-        // Dead, Stunned 상태면 모든 입력 무시 + 입력값 초기화
-        if (stateManager != null && (stateManager.CurrentState == PlayerState.Dead ||
-         stateManager.CurrentState == PlayerState.Stunned))
+        // Dead, Stunned, Held, Thrown 상태면 모든 입력 무시 + 입력값 초기화
+        if (stunInvincibleDie != null && (stunInvincibleDie.IsDead ||
+         stunInvincibleDie.IsStunned ||
+         stunInvincibleDie.IsHeld ||
+         stunInvincibleDie.IsThrown))
         {
+            // Held 상태에서는 점프 입력만 허용 (탈출용)
+            if (stunInvincibleDie.IsHeld && Object.HasInputAuthority)
+            {
+                bool jumpPressed = Input.GetKey(KeyCode.Space);
+                if (jumpPressed)
+                {
+                    // 점프로 탈출 - 던지기와 동일한 처리
+                    EscapeFromBeingHeld();
+                    
+                    return;
+                }
+            }
+            
             horizontalInput = 0f;
             verticalInput = 0f;
             mouseScrollWheel = 0f;
@@ -208,12 +216,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
 #endif
         
-        // 🎮 상태 관리자에 입력 상태 전달
-        if (stateManager != null)
-        {
-            stateManager.UpdateInputState(useItemHeld, skillPressed);
-            stateManager.UpdateStates();
-        }
+        // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     }
 
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
@@ -239,19 +242,37 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         return data;
     }
     
-    // 🎮 상태 설정 (외부에서 호출)
-    public void SetState(PlayerState newState)
-    {
-        if (stateManager != null)
-        {
-            stateManager.SetState(newState);
-        }
-    }
-    
     // 🎮 상태 확인 헬퍼 프로퍼티들
-    public PlayerState CurrentState => stateManager?.CurrentState ?? PlayerState.Normal;
-    public PlayerAction CurrentActions => stateManager?.CurrentActions ?? PlayerAction.None;
-    public bool IsDead => stateManager?.CurrentState == PlayerState.Dead;
-    public bool IsStunned => stateManager?.CurrentState == PlayerState.Stunned;
-    public bool IsNormal => stateManager?.CurrentState == PlayerState.Normal;
+    public bool IsDead => stunInvincibleDie?.IsDead ?? false;
+    public bool IsStunned => stunInvincibleDie?.IsStunned ?? false;
+    public bool IsInvincible => stunInvincibleDie?.IsInvincible ?? false;
+    public bool IsHeld => stunInvincibleDie?.IsHeld ?? false;
+    public bool IsThrown => stunInvincibleDie?.IsThrown ?? false;
+    public bool IsNormal => !(stunInvincibleDie?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
+    
+    // 🎯 들린 상태에서 탈출 처리 (던지기와 동일한 로직)
+    private void EscapeFromBeingHeld()
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        // 현재 들고 있는 오브젝트 찾기
+        var inventory = GetComponentInChildren<PlayerInventory>();
+        if (inventory?.CurrentHeldObject == null) return;
+        
+        var obj = inventory.CurrentHeldObject;
+        
+        // PlayerObjectThrower의 공통 해제 로직 사용 (힘 없이)
+        if (itemThrower != null)
+        {
+            itemThrower.ReleaseObject(obj, false);
+        }
+        
+        // 점프 힘 적용 (사다리에서 점프하는 것과 동일)
+        if (jump != null)
+        {
+            jump.SetJumpFromClimb();
+        }
+        
+        Debug.Log($"[{name}] 점프로 들린 상태에서 탈출!");
+    }
 } 

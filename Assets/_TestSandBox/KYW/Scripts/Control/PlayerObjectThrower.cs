@@ -9,7 +9,7 @@ public class PlayerObjectThrower : NetworkBehaviour
 {
     [Header("Throw Settings")]
     [SerializeField] private float throwForce = 10f;      // 💪 던지기 힘 (Rigidbody2D.velocity에 적용)
-    [SerializeField] private float throwOffset = 0.5f;    // 📏 던지기 시작 위치 오프셋 (플레이어로부터 얼마나 떨어뜨릴지)
+
     
     // 📎 참조할 다른 컴포넌트
     // private PlayerItemPickup itemPickup;  // 📦 아이템 보유 상태 확인용 (삭제)
@@ -67,26 +67,10 @@ public class PlayerObjectThrower : NetworkBehaviour
     // 🚀 실제 오브젝트 던지기 처리
     private void ThrowObject(GameObject obj, Vector2 direction)
     {
-        var netObj = obj.GetComponent<NetworkObject>();
-        int layer = obj.layer;
-        
         if (Object.HasStateAuthority)
         {
-            // 🎮 InputAuthority 해제 (아이템만)
-            if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
-            {
-                if (netObj != null && netObj.HasInputAuthority)
-                {
-                    netObj.RemoveInputAuthority();
-                }
-            }
-            
-            // 손에서 해제 (데이터만 관리)
-            inventory.DropHeldObject();
-            obj.transform.SetParent(null);
-
-            // 물리/충돌 복구
-            EnableItemPhysics(obj, direction);
+            // 공통 해제 로직 사용 (힘 적용)
+            ReleaseObject(obj, true, direction);
         }
     }
     
@@ -96,12 +80,91 @@ public class PlayerObjectThrower : NetworkBehaviour
         var rigidbody = item.GetComponent<Rigidbody2D>();
         if (rigidbody != null)
         {
+            // 🎯 물리 상태 완전 초기화
             float currentZAngle = item.transform.eulerAngles.z;
             rigidbody.rotation = currentZAngle;
             rigidbody.simulated = true; // 항상 활성화
-            rigidbody.isKinematic = false;
-            rigidbody.linearVelocity = direction * throwForce;
-            rigidbody.angularVelocity = 0f;
+            rigidbody.bodyType = RigidbodyType2D.Dynamic;
+            rigidbody.gravityScale = 1f; // 중력 복구
+            rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
+            rigidbody.angularVelocity = 0f; // 회전 속도 초기화
+            
+            // 🚀 던지기 힘 적용 (AddForce 사용)
+            rigidbody.AddForce(direction * throwForce, ForceMode2D.Impulse);
+        }
+        
+        var collider = item.GetComponent<Collider2D>();
+        if (collider != null)
+            collider.isTrigger = false;
+    }
+    
+    // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
+    public void ReleaseObject(GameObject obj, bool applyForce = false, Vector2 forceDirection = default)
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        var netObj = obj.GetComponent<NetworkObject>();
+        int layer = obj.layer;
+        
+        // 플레이어인 경우 특별 처리
+        if (layer == LayerMask.NameToLayer("Player"))
+        {
+            var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
+            if (playerInteraction != null)
+            {
+                // 들린 플레이어 해제
+                playerInteraction.OnReleased();
+            }
+            
+            // 🚀 던진 상태 설정 (던질 때만)
+            if (applyForce)
+            {
+                var stunInvincibleDie = obj.GetComponent<PlayerStunInvincibleDie>();
+                if (stunInvincibleDie != null)
+                {
+                    stunInvincibleDie.SetThrown(1.5f); // 1.5초간 던진 상태
+                }
+            }
+        }
+        
+        // 🎮 InputAuthority 해제 (아이템만)
+        if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
+        {
+            if (netObj != null && netObj.HasInputAuthority)
+            {
+                netObj.RemoveInputAuthority();
+            }
+        }
+        
+        // 손에서 해제 (데이터만 관리)
+        inventory.DropHeldObject();
+        obj.transform.SetParent(null);
+
+        // 물리/충돌 복구
+        if (applyForce)
+        {
+            EnableItemPhysics(obj, forceDirection);
+        }
+        else
+        {
+            EnableItemPhysicsWithoutForce(obj);
+        }
+    }
+    
+    // ⚡ 아이템의 물리 시뮬레이션 활성화 (힘 없이)
+    private void EnableItemPhysicsWithoutForce(GameObject item)
+    {
+        var rigidbody = item.GetComponent<Rigidbody2D>();
+        if (rigidbody != null)
+        {
+            // 🎯 물리 상태 완전 초기화
+            float currentZAngle = item.transform.eulerAngles.z;
+            rigidbody.rotation = currentZAngle;
+            rigidbody.simulated = true; // 항상 활성화
+            rigidbody.bodyType = RigidbodyType2D.Dynamic;
+            rigidbody.gravityScale = 1f; // 중력 복구
+            rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
+            rigidbody.angularVelocity = 0f; // 회전 속도 초기화
         }
         
         var collider = item.GetComponent<Collider2D>();

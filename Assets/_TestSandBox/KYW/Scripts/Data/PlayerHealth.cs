@@ -10,13 +10,11 @@ public class PlayerHealth : NetworkBehaviour
     public int MaxHealth => 100;
 
     // PlayerState 변경을 위한 상태 관리자 참조
-    private PlayerStateManager stateManager;
     private PlayerStunInvincibleDie stunInvincible;
 
     public override void Spawned()
     {
         base.Spawned();
-        stateManager = GetComponentInChildren<PlayerStateManager>();
         stunInvincible = GetComponentInParent<PlayerStunInvincibleDie>();
     }
 
