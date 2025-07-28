@@ -12,6 +12,7 @@ public class PlayerMovement : NetworkBehaviour
     
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsDucking { get; private set; }
+    [Networked] public bool IsLookingUp { get; private set; }
     [Networked] public bool IsFacingLeft { get; private set; }
     
     // 참조 컴포넌트들
@@ -66,10 +67,22 @@ public class PlayerMovement : NetworkBehaviour
         // 🎮 웅크리기 (아래키 + 땅에 있을 때)
         bool shouldDuck = input.VerticalInput < 0f && groundCheck.IsGrounded;
         
+        // 🎮 위를 보기 (위키 + 땅에 있을 때)
+        bool shouldLookUp = input.VerticalInput > 0f && groundCheck.IsGrounded;
+        
         // 상태가 변경될 때만 업데이트 (깜빡임 방지)
         if (IsDucking != shouldDuck)
         {
             IsDucking = shouldDuck;
+            // LookUp과 Ducking은 동시에 불가능
+            if (shouldDuck) IsLookingUp = false;
+        }
+        
+        if (IsLookingUp != shouldLookUp)
+        {
+            IsLookingUp = shouldLookUp;
+            // LookUp과 Ducking은 동시에 불가능
+            if (shouldLookUp) IsDucking = false;
         }
     }
     
@@ -80,6 +93,14 @@ public class PlayerMovement : NetworkBehaviour
         {
             // 🎯 사다리 중앙 정렬을 위해 기존 X 속도는 유지 (PlayerClimbing에서 조절)
             // 플레이어 입력에 의한 수평 이동만 막음
+            return;
+        }
+        
+        // 🎮 LookUp 중에는 수평 이동 제한
+        if (IsLookingUp)
+        {
+            // 수평 속도만 0으로 설정 (수직 속도는 유지)
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             return;
         }
         

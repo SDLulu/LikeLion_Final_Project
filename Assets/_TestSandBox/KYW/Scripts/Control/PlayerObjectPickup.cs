@@ -67,7 +67,7 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (pressed.IsSet(SpelunkyInputButtons.PickupItem))
         {
             Debug.Log($"[PlayerObjectPickup] Pickup 입력 감지됨");
-            if (!HasHeldObject && playerMovement != null && playerMovement.IsDucking)
+            if (!HasHeldObject && playerMovement != null && playerMovement.IsDucking && !playerMovement.IsLookingUp)
             {
                 Debug.Log($"[PlayerObjectPickup] 웅크리기 상태, 손에 든 것 없음");
                 // 🔍 가장 가까운 픽업 대상 찾기

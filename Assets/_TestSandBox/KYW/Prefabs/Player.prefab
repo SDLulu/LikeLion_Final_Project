@@ -346,6 +346,7 @@ MonoBehaviour:
   duckMoveSpeed: 2.5
   _NormalizedSpeed: 0
   _IsDucking: 0
+  _IsLookingUp: 0
   _IsFacingLeft: 0
 --- !u!114 &8347467253753751339
 MonoBehaviour:
@@ -398,6 +399,7 @@ MonoBehaviour:
   _IsDead: 0
   _IsInvincible: 0
   _IsHeld: 0
+  _IsThrown: 0
 --- !u!114 &6207183941582798706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -489,7 +491,7 @@ Transform:
   m_GameObject: {fileID: 4476438534513202936}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.053, y: -0.084, z: 0}
+  m_LocalPosition: {x: -0.056, y: -0.15, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -852,6 +854,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1920
   pickupTrigger: {fileID: 2162887977885498126}
+  playerHoldOffset: {x: 0, y: 1, z: 0}
 --- !u!114 &1019999502762045486
 MonoBehaviour:
   m_ObjectHideFlags: 0

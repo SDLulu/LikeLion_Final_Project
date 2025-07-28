@@ -130,12 +130,14 @@ public class PlayerAnimation : NetworkBehaviour
         float velocityY = jump.VelocityY;
         bool isGrounded = groundCheck.IsGrounded;
         bool isDucking = movement.IsDucking;
+        bool isLookingUp = movement.IsLookingUp;
         bool isClimbing = climbing.IsClimbing;
         
         animator.SetFloat("Speed", speed);
         animator.SetFloat("VelocityY", velocityY);
         animator.SetBool("IsGrounded", isGrounded);
         animator.SetBool("IsDucking", isDucking);
+        animator.SetBool("IsLookingUp", isLookingUp);
         animator.SetBool("IsClimbing", isClimbing);
     }
     
