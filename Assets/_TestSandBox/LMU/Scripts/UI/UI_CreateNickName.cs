@@ -5,7 +5,6 @@ using UnityEngine.UI;
 public class UI_CreateNickName : MonoBehaviour
 {
     [Header("닉네임 패널")]
-    [SerializeField] private RectTransform createNickNamePanel;
     [field: SerializeField] public RectTransform Holder { get; private set; }
     [SerializeField] private Button createNickNameBtn;
     [SerializeField] private TMP_InputField nickNameInputField;
@@ -42,7 +41,6 @@ public class UI_CreateNickName : MonoBehaviour
         Debug.Log($"닉네임 설정 : {nickNameInputField.text}");
     }
 
-    // --- 닉네임 입력 패널
     private void OnValueChangedNickName(string value)
     {
         if (string.IsNullOrEmpty(value))
