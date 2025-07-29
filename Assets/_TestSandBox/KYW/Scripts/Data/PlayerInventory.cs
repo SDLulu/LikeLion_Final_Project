@@ -26,6 +26,7 @@ public class PlayerInventory : NetworkBehaviour
         if (currentHeldObject != null) return false;
         var netObj = obj.GetComponent<NetworkObject>();
         if (netObj == null) return false;
+        
         currentHeldObject = netObj;
         return true;
     }
