@@ -33,6 +33,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private bool pickupPressed;     // Space + IsDucking  
     private bool pickitem;
     private bool buyitem;
+    private bool dropitem;
     
     // 🔨 아이템 사용 입력
     private bool useItemHeld;           // 현재 클릭 유지 중
@@ -45,7 +46,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
-    
+    private PlayerInventory inventory;
+
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
     private SpriteRenderer spriteRenderer;
@@ -54,7 +56,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerItemPickup itemPickup;
     private PlayerItemUsage itemUsage;
     private PlayerItemThrower itemThrower;
-
+    
     
 
     public override void Spawned()
@@ -64,7 +66,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        
+        inventory = GetComponent<PlayerInventory>();
+
         // 하위 오브젝트들 설정 (Visual, Hand)
         SetupChildObjects();
         
@@ -185,6 +188,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
             pickitem = Input.GetKey(KeyCode.C);
             buyitem = Input.GetKey(KeyCode.X);
+            dropitem = Input.GetKey(KeyCode.V);
         }
     }
     
@@ -202,7 +206,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
-            
+            inventory?.ProcessInput(input);
+
         }
         
     }
@@ -226,6 +231,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.pick, pickitem);
             data.NetworkButtons.Set(SpelunkyInputButtons.buy, buyitem);
+            data.NetworkButtons.Set(SpelunkyInputButtons.drop, dropitem);
+            
         }
         
         return data;

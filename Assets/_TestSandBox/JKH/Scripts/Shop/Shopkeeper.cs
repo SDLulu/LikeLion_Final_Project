@@ -1,6 +1,7 @@
 using Fusion;
 using Fusion.Addons.Physics;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public enum ShopkeeperState
@@ -112,16 +113,17 @@ public class Shopkeeper : NetworkBehaviour
                     break;
             }
 
-            // 말풍선 타이머 업데이트 (호스트에서만 상태 변경)
-            if (_speechTimer > 0)
-            {
-                _speechTimer -= Runner.DeltaTime;
-                if (_speechTimer <= 0)
-                {
-                    SetShopkeeperState(ShopkeeperState.Passive); // 타이머 끝나면 다시 평온 상태로
-                    _currentInteractingPlayer = PlayerRef.None; // 상호작용 플레이어 초기화
-                }
-            }
+            //말풍선 타이머 업데이트(호스트에서만 상태 변경)
+            //if (_speechTimer > 0)
+            //{
+            //    _speechTimer -= Runner.DeltaTime;
+            //    if (_speechTimer <= 0)
+            //    {
+                    
+            //        SetShopkeeperState(ShopkeeperState.Passive); // 타이머 끝나면 다시 평온 상태로
+            //        _currentInteractingPlayer = PlayerRef.None; // 상호작용 플레이어 초기화
+            //    }
+            //}
         }
     }
 
@@ -215,13 +217,13 @@ public class Shopkeeper : NetworkBehaviour
             }
 
             // 2. 공격 RPC를 호출하고 타이머를 시작합니다.
-            
+
             Rpc_AttackPlayer(LastAggressor, attackDamage);
             _attackTimer = TickTimer.CreateFromSeconds(Runner, attackCooldown);
 
             // 3. 상태를 'Attacking'으로 변경하여 이동을 막습니다.
             SetShopkeeperState(ShopkeeperState.Attacking);
-            _animator.SetTrigger("AttackTrigger");
+            //_animator.SetTrigger("AttackTrigger");
             Debug.Log($"Host: Shopkeeper changing state to Attacking.");
         }
         // 플레이어가 공격 범위 밖에 있다면 추적합니다.
@@ -240,7 +242,7 @@ public class Shopkeeper : NetworkBehaviour
     }
 
     // --- RPC: 대화 말풍선 표시 (호스트 -> 특정 클라이언트) ---
-    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void Rpc_DisplaySpeechBubble(PlayerRef targetPlayer, string message)
     {
         if (speechBubbleObject != null && speechBubbleText != null)
@@ -253,10 +255,14 @@ public class Shopkeeper : NetworkBehaviour
     }
 
     // --- RPC: 플레이어 공격 (호스트 -> 특정 클라이언트) ---
-    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void Rpc_AttackPlayer(PlayerRef targetPlayer, float damage)
     {
         // 공격 애니메이션 트리거 (모든 클라이언트)
+        if (_animator != null)
+        {
+            _animator.SetTrigger("AttackTrigger");
+        }
         // 예를 들어 Animator.SetTrigger("Attack")
         Debug.Log($"Client: Shopkeeper plays attack animation.");
 
@@ -294,8 +300,7 @@ public class Shopkeeper : NetworkBehaviour
         switch (CurrentState)
         {
             case ShopkeeperState.Passive:
-                // 애니메이터.SetBool("IsAggressive", false);
-                // 애니메이터.SetBool("IsTalking", false);
+                _animator.SetBool("IsRunning", false);
                 break;
             case ShopkeeperState.Talking:
                 // 애니메이터.SetBool("IsTalking", true);
@@ -307,10 +312,11 @@ public class Shopkeeper : NetworkBehaviour
             case ShopkeeperState.Aggressive:
                 // 1. 유효한 공격 대상(LastAggressor)이 있는지 확인합니다.
                 if (LastAggressor.IsNone) break;
+                ChaseAndAttackPlayer();
 
                 // 2. 대상 플레이어의 NetworkObject를 찾습니다.
                 NetworkObject aggressorObject = Runner.GetPlayerObject(LastAggressor);
-
+                _animator.SetBool("IsRunning", true);
                 // 3. 플레이어 오브젝트가 씬에 유효하게 존재하는지 확인합니다. (연결 끊김 등 대비)
                 if (aggressorObject != null)
                 {
@@ -329,8 +335,15 @@ public class Shopkeeper : NetworkBehaviour
                         // 목표가 오른쪽에 있거나 같은 위치면 오른쪽을 보도록 x 스케일을 양수로 만듭니다.
                         transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);
                     }
+
                 }
                 break; // case 문 종료
+            case ShopkeeperState.Attacking:
+                if (_attackTimer.ExpiredOrNotRunning(Runner))
+                {
+                    SetShopkeeperState(ShopkeeperState.Aggressive);
+                }
+                break;
             case ShopkeeperState.Defeated:
                 // 애니메이터.SetTrigger("Defeated");
                 break;

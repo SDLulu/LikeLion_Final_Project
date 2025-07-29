@@ -7,13 +7,20 @@ public class PlayerInventory : NetworkBehaviour
 {
     // ⭐️ 골드 Networked 변수 추가 (상점에서 사용)
     [Networked]
-    public int Gold { get; set; } = 100; // 초기 골드
+    public int Gold { get; set; } = 1000; // 초기 골드
 
     // ⭐️ 아이템 저장용 Networked List 또는 NetworkDictionary 등 (예시로 Networked KCC ItemType)
     // 실제 게임에 맞춰 List<ItemType>이나 Dictionary<ItemType, int> 등으로 구현
     // 여기서는 간단히 Networked Property를 사용한다고 가정합니다.
     [Networked]
     public ItemType CurrentInventoryItemType { get; private set; } = ItemType.None; // 현재 인벤토리 아이템 타입
+
+    [Networked] // ⭐️ 이 변수는 Networked로 선언되어야 모든 클라이언트가 알 수 있습니다.
+    private PlayerRef _currentInteractingPlayer { get; set; } = PlayerRef.None; // ⭐️ 초기값 설정
+
+    [Networked]
+    private NetworkButtons _previousButtons { get; set; }
+    private ShopManager _shopManager;
 
     // ⭐️ 현재 들고 있는 ShopItem 오브젝트 참조 (Host만 직접 참조하고 Client는 NetworkId로 찾음)
     private ShopItem _heldShopItem;
@@ -34,6 +41,7 @@ public class PlayerInventory : NetworkBehaviour
         {
             // 플레이어 Hand 하위의 PlayerItemPickup에서 아이템을 들고 있는 위치를 가져오는 방식
             _playerItemPickup = GetComponentInChildren<PlayerItemPickup>();
+            _shopManager = FindAnyObjectByType<ShopManager>();
             if (_playerItemPickup != null)
             {
                 itemHoldPoint = _playerItemPickup.transform; // PlayerItemPickup 위치를 아이템 홀드 위치로 사용
@@ -49,10 +57,40 @@ public class PlayerInventory : NetworkBehaviour
         // ⭐️ Host에서만 초기 골드 설정 (Spawned에서 이미 초기화되었으므로 필요 없을 수도 있음)
         if (Object.HasStateAuthority)
         {
-            Gold = 100; // 게임 시작 시 초기 골드
+            Gold = 1000; // 게임 시작 시 초기 골드
         }
     }
+    public void ProcessInput(SpelunkyPlayerData input) // 또는 FixedUpdateNetwork()
+    {
+        // 이 인벤토리의 소유자가 아니면 입력을 처리하지 않습니다.
+        if (!Object.HasInputAuthority) return;
 
+        // --- 👇 여기가 수정된 부분입니다 ---
+
+        // 1. SpelunkyInputButtons.drop에 해당하는 버튼 인덱스를 가져옵니다. (int로 형변환)
+        const SpelunkyInputButtons DROP_BUTTON_INDEX = SpelunkyInputButtons.drop;
+
+        // 2. 현재 프레임에는 버튼이 눌려있고(IsSet) && 이전 프레임에는 안 눌려있었는지(!IsSet) 확인
+        if (input.NetworkButtons.IsSet(DROP_BUTTON_INDEX) && !_previousButtons.IsSet(DROP_BUTTON_INDEX))
+        {
+            // 3. 드랍 로직 실행 (기존과 동일)
+            if (_heldShopItem != null)
+            {
+                Debug.Log($"Client: Manually detected drop for item {_heldShopItem.name}.");
+
+                Vector3 dropPosition = _playerItemPickup.transform.position;
+
+                _shopManager.Rpc_RequestItemDrop(
+                    _heldShopItem.Object.Id,
+                    Object.InputAuthority,
+                    dropPosition
+                );
+            }
+        }
+
+        // 4. ⭐️ 가장 중요: 다음 프레임에서 비교할 수 있도록 현재 버튼 상태를 'previous' 변수에 저장합니다.
+        _previousButtons = input.NetworkButtons;
+    }
     public override void Render()
     {
         // ⭐️ UI 업데이트 (골드 표시 등)은 InputAuthority 플레이어만
@@ -99,21 +137,34 @@ public class PlayerInventory : NetworkBehaviour
     public void DropItem(ShopItem item, Vector3 dropPosition)
     {
         if (!Object.HasStateAuthority) return;
-        if (_heldShopItem == null || _heldShopItem != item) return;
 
-        // 아이템을 내려놓기 전에 상태를 먼저 업데이트
+        if (_heldShopItem == null || _heldShopItem != item)
+        {
+            Debug.LogWarning($"Host: Player {Object.InputAuthority.PlayerId} tried to drop an item they don't hold: {item?.ItemData.ItemName}");
+            return;
+        }
+
+        // 1. ShopItem에게 "내려놓아졌다"고 알립니다.
+        //    이 메서드 안에서 IsPicked = false, CurrentHolder = None으로 설정됩니다.
         item.OnDropped(Object.InputAuthority);
+
+        // 2. 아이템의 부모 관계를 해제하여 씬의 최상위로 옮깁니다.
         item.transform.SetParent(null);
+
+        // 3. RPC로부터 전달받은 드랍 위치로 아이템을 이동시킵니다.
         item.transform.position = dropPosition;
 
+        // 4. 아이템의 InputAuthority를 제거하여 다른 플레이어가 주울 수 있게 합니다.
         if (item.Object.HasInputAuthority)
         {
             item.Object.RemoveInputAuthority();
         }
 
-        // 모든 처리가 끝난 후 인벤토리에서 참조를 제거합니다.
+        // 5. 플레이어의 인벤토리 상태를 비웁니다.
         _heldShopItem = null;
         CurrentInventoryItemType = ItemType.None;
+
+        Debug.Log($"Host: Player {Object.InputAuthority.PlayerId} dropped {item.ItemData.ItemName} at {dropPosition}.");
     }
 
     // ⭐️ 아이템 구매 (Host에서 PlayerItemPickup 등이 ShopManager를 통해 호출)

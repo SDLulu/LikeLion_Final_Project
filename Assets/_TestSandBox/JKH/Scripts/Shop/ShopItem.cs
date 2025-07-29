@@ -39,6 +39,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         _netRigidbody = GetComponent<NetworkRigidbody2D>();
         _collider = GetComponent<Collider2D>();
         _shopManager = FindFirstObjectByType<ShopManager>();
+        _previousInteractingPlayerButtons = default;
 
         // ⭐️ ShopItemVisual 컴포넌트 참조 가져오기 (자식 오브젝트에도 있을 수 있으므로 GetComponentsInChildren 사용)
         _shopItemVisual = GetComponentInChildren<ShopItemVisual>();
@@ -105,12 +106,14 @@ public class ShopItem : NetworkBehaviour, IUsableItem
 
     public override void FixedUpdateNetwork()
     {
+
         if (Object.HasStateAuthority)
         {
             // FixedUpdateNetwork에서 _currentInteractingPlayer를 사용하는 로직은 기존과 동일합니다.
             if (!_currentInteractingPlayer.IsNone && Runner.TryGetInputForPlayer(_currentInteractingPlayer, out SpelunkyPlayerData input))
             {
                 const SpelunkyInputButtons PICKUP_BUTTON_MASK = SpelunkyInputButtons.pick;
+                const SpelunkyInputButtons BUY_BUTTON_MASK = SpelunkyInputButtons.buy;
 
                 if (input.NetworkButtons.IsSet(PICKUP_BUTTON_MASK) && !_previousInteractingPlayerButtons.IsSet(PICKUP_BUTTON_MASK))
                 {
@@ -120,7 +123,17 @@ public class ShopItem : NetworkBehaviour, IUsableItem
                         _shopManager.Rpc_RequestItemPickup(Object.Id, _currentInteractingPlayer);
                     }
                 }
+                if (input.NetworkButtons.IsSet(BUY_BUTTON_MASK) && !_previousInteractingPlayerButtons.IsSet(BUY_BUTTON_MASK))
+                {
+                    Debug.Log($"Host: Player {_currentInteractingPlayer.PlayerId} pressed BUY for purchase on {ItemData.ItemName}.");
+                    if (_shopManager != null)
+                    {
+                        _shopManager.Rpc_RequestPurchase(_currentInteractingPlayer, Object.Id);
+                    }
+                }
+
                 _previousInteractingPlayerButtons = input.NetworkButtons;
+
             }
             else if (_currentInteractingPlayer.IsNone)
             {
@@ -260,32 +273,22 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             CurrentHolder = default,
             OriginalPosition = ItemData.OriginalPosition,
             ItemName = ItemData.ItemName
+            
         };
 
-        UpdatePhysicsState(true, false); // 시뮬레이션 활성, 트리거 비활성
+        UpdatePhysicsState(true, true); // 시뮬레이션 활성, 트리거 비활성
 
         Debug.Log($"Host: Item {ItemData.ItemName} dropped by Player {dropper.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
     }
 
-    public void OnPurchased()
+    public void MarkAsSold()
     {
         if (!Object.HasStateAuthority) return;
 
-        ItemData = new ShopItemData
-        {
-            ItemNetworkId = ItemData.ItemNetworkId,
-            ItemType = ItemData.ItemType,
-            Price = ItemData.Price,
-            IsAvailable = false,
-            IsPicked = false,
-            CurrentHolder = default,
-            OriginalPosition = ItemData.OriginalPosition,
-            ItemName = ItemData.ItemName
-        };
-
-        Debug.Log($"Host: Item {ItemData.ItemName} purchased. Despawning now.");
-
-        Runner.Despawn(Object);
+        // ItemData는 struct이므로, 복사본을 만들어 수정한 뒤 다시 할당해야 합니다.
+        var data = ItemData;
+        data.IsAvailable = false; // 판매 불가능 상태로 변경
+        ItemData = data;
     }
 
     // IUsableItem 구현
