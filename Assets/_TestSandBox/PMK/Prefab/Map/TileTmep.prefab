@@ -50,6 +50,7 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
+  - {fileID: 703647828870867153}
   - {fileID: 5751978690978429252}
   ForceRemoteRenderTimeframe: 0
 --- !u!1 &5523969648053472459
@@ -66,6 +67,7 @@ GameObject:
   - component: {fileID: 967516147877385817}
   - component: {fileID: 2024228497605858177}
   - component: {fileID: 7456059345074942352}
+  - component: {fileID: 703647828870867153}
   - component: {fileID: 5751978690978429252}
   m_Layer: 6
   m_Name: Main Map
@@ -397,6 +399,18 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &703647828870867153
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5523969648053472459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4580b41a23858894293a0ff7d89fdab0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &5751978690978429252
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -439,6 +453,8 @@ MonoBehaviour:
   itemSpawnChance: 35
   <tileItems>k__BackingField:
   - {fileID: 11400000, guid: 1777164a16c2af946b715a3b1db80a9a, type: 2}
+  <ruleTile>k__BackingField: {fileID: 11400000, guid: e5bfaeb1773fadf408135faf6502512a, type: 2}
+  <trap>k__BackingField: {fileID: 2285204622532898624, guid: b9649cb108cb38b49a1a3422a2170762, type: 3}
 --- !u!1 &6023215706384045932
 GameObject:
   m_ObjectHideFlags: 0

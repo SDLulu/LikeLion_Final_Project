@@ -3,7 +3,6 @@ using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
 using Fusion;
-using static Unity.Cinemachine.IInputAxisOwner.AxisDescriptor;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -21,11 +20,11 @@ public class MapPrefabSet
 public partial class PMK_TileRogic : NetworkBehaviour
 {
     public static PMK_TileRogic Instance { get; private set; }
+    private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance; // 타일 RPC 매니저 인스턴스 (타일 아이템 생성 및 파괴를 담당)
 
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
     [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 메인 타일맵 (맵 생성시 타일을 추가하는 타일맵)
-
 
     [Header("최대 타일 설정")]
     [SerializeField] private int maxTileX = 5; // x위치에 생성할 최대 타일값
@@ -40,12 +39,15 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [SerializeField] private MapPrefabSet[] mapPrefabSets;
     private Dictionary<string, GameObject[]> mapPrefabDict;
 
+
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
     [field: SerializeField] public List<PMK_TileItemTable> tileItems { get; private set; }
 
 
-
+    [Header("TileZoneSpawner 설정")]
+    [field: SerializeField] public TileBase ruleTile { get; private set; }// 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    [field: SerializeField] public GameObject trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일)
 
 
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
@@ -54,7 +56,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private int removeMapX; // 선택할 맵의 기준이 되는 x좌표
     private List<int> LR_Choose = new List<int>(); // 왼쪽, 오른쪽 선택을 위한 리스트 (탈출 맵 생성 시 좌우를 선택하기 위한 리스트)
 
-    public int rnd { get; private set; } // 랜덤값을 저장하기 위한 변수 (호스트가 생성한 랜덤값을 클라이언트와 동기화하기 위해 사용)
+
 
     private void Awake()
     {
@@ -221,7 +223,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 타일에 아이템 생성
-
     // 호스트가 타일 랜덤값을 적용후 공유함
     public void Create_TileItem(Vector3Int targetPos)
     {
@@ -246,19 +247,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (roll < current)
                 {
                     int index = tileItems.IndexOf(item);
-                    RPC_Create_TileItem(index, worldPos);
+                    tileRPCManager.RPC_Create_TileItem(index, worldPos);
                     break;
                 }
             }
         }
 
-    }
-
-    // 호스트, 클라이언트 동기화
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
-    {
-        Instantiate(tileItems[itemIndex].prefab, worldPos, Quaternion.identity, parentTrans); // 타일 아이템 생성
     }
     #endregion
 
@@ -409,61 +403,4 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
     #endregion
-
-
-    #region 타일 파괴
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void Rpc_DestroyTile(Vector3 Pos)
-    {
-        Debug.DrawRay(Pos, Vector2.up * 0.2f, Color.red, 1f);
-
-        Vector3Int cellPosition = mainTilemap.WorldToCell(Pos);
-
-        if (mainTilemap.HasTile(cellPosition))
-        {
-            mainTilemap.SetTile(cellPosition, null);  
-            mainTilemap.RefreshTile(cellPosition);
-        }
-    }
-
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void Rpc_DestroyItem(Vector3 pos)
-    {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.05f);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Tileitem"))
-            {
-                Debug.Log($"타일아이템 삭제");
-                Destroy(hit.gameObject);
-            }
-        }
-    }
-
-
-    #endregion
-
-
-
-    // 함정 생성
-    public void RPC_Create_Trap(GameObject trap, Vector3 worldPos)
-    {
-        Instantiate(trap, worldPos, Quaternion.identity, parentTrans);
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_BroadcastRnd(int generatedRnd)
-    {
-        rnd = generatedRnd;
-    }
-
-    public void GenerateRndAndSend()
-    {
-        if (!HasStateAuthority) return;
-
-        int newRnd = Random.Range(0, 100);
-        RPC_BroadcastRnd(newRnd); // 모든 클라이언트에 랜덤 값 동기화
-    }
 }

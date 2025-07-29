@@ -47,7 +47,7 @@ public class PMK_TileDestroyItem : MonoBehaviour
                     Collider2D overCollider2d = Physics2D.OverlapCircle(checkCellPos, 0.01f, destroyLayer);
                     if (overCollider2d != null)
                     {
-                        var tileLogic = overCollider2d.GetComponent<PMK_TileRogic>();
+                        var tileLogic = overCollider2d.GetComponent<PMK_TileRPC_Manager>();
                         if (tileLogic != null)
                             tileLogic.Rpc_DestroyTile(checkCellPos);
                     }

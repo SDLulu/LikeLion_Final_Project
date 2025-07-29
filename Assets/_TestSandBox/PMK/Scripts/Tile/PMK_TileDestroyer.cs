@@ -8,13 +8,12 @@ public class PMK_TileDestroyer : MonoBehaviour
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
-    private Tilemap tilemap;
-
+    private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
+    private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance;
 
 
     private void Start()
     {
-        tilemap = PMK_TileRogic.Instance.mainTilemap;
         TryPlaceTileIfEmpty();
     }
 
@@ -24,15 +23,15 @@ public class PMK_TileDestroyer : MonoBehaviour
         Vector2 pos = transform.position;
         Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.01f, whatisPlatform);
 
-        Vector3Int cellPos = tilemap.WorldToCell(pos);
+        Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
 
         // 타일이 없고, 해당 셀에 타일이 없으면 타일을 배치합니다.
-        if (hits.Length == 0 && tilemap.GetTile(cellPos) == null)
+        if (hits.Length == 0 && tileRogic.mainTilemap.GetTile(cellPos) == null)
         {
-            tilemap.SetTile(cellPos, ruleTile);
+            tileRogic.mainTilemap.SetTile(cellPos, ruleTile);
             Physics2D.SyncTransforms();
 
-            PMK_TileRogic.Instance.Create_TileItem(cellPos);
+            tileRogic.Create_TileItem(cellPos);
 
             Destroy(gameObject);
         }
@@ -40,9 +39,12 @@ public class PMK_TileDestroyer : MonoBehaviour
         else
         {
             Physics2D.SyncTransforms();
-            PMK_TileRogic.Instance.Rpc_DestroyTile(cellPos);
 
-            PMK_TileRogic.Instance.Rpc_DestroyItem(pos);
+            if (tileRPCManager.HasStateAuthority)
+            {
+                tileRPCManager.Rpc_DestroyTile(cellPos);
+                tileRPCManager.Rpc_DestroyItem(pos);
+            }
             Destroy(gameObject);
         }
     }
