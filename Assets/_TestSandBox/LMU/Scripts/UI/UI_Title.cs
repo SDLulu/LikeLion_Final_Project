@@ -10,7 +10,6 @@ public class UI_Title : MonoBehaviour
     [SerializeField] private Button exitBtn;
     [SerializeField] private RectTransform _titleButtonPanel;
     [SerializeField] private RectTransform _enterOnlinePanel;
-    [SerializeField] private RectTransform _fastTestPanel;
     [SerializeField] private RectTransform _preventPanel;
     [SerializeField] private UI_CreateNickName _uiCreateNickName;
 
@@ -26,7 +25,6 @@ public class UI_Title : MonoBehaviour
         _enterOnlineBackBtn.onClick.AddListener(OnClickEnterOnlineBackBtn);
 
         _uiCreateNickName.gameObject.SetActive(true);
-        _fastTestPanel.gameObject.SetActive(true);
         _titleButtonPanel.gameObject.SetActive(true);
         _enterOnlinePanel.gameObject.SetActive(false);
     }
@@ -38,6 +36,7 @@ public class UI_Title : MonoBehaviour
         settingBtn.onClick.RemoveAllListeners();
         exitBtn.onClick.RemoveAllListeners();
         _enterOnlineBackBtn.onClick.RemoveAllListeners();
+        _uiGlobalSetting = null;
     }
 
     private void OnClickSoloPlayBtn()
@@ -45,20 +44,22 @@ public class UI_Title : MonoBehaviour
         UI_Controller.Inst.UILobby.ActiveSoloPanel();
     }
 
+    private UI_GlobalSetting _uiGlobalSetting = null;
+    public UI_GlobalSetting UIGlobalSetting => _uiGlobalSetting ??= FindAnyObjectByType<UI_GlobalSetting>();
     private void OnClickEnterOnlineBackBtn()
     {
-        _fastTestPanel.gameObject.SetActive(true);
         _uiCreateNickName.gameObject.SetActive(true);
         _titleButtonPanel.gameObject.SetActive(true);
         _enterOnlinePanel.gameObject.SetActive(false);
+        UIGlobalSetting.ActiveUI(true);
     }
 
     private void OnClickOnlinePlayBtn()
     {
-        _fastTestPanel.gameObject.SetActive(false);
         _uiCreateNickName.gameObject.SetActive(false);
         _titleButtonPanel.gameObject.SetActive(false);
         _enterOnlinePanel.gameObject.SetActive(true);
+        UIGlobalSetting.ActiveUI(false);
     }
 
     private void OnClickSettingBtn()

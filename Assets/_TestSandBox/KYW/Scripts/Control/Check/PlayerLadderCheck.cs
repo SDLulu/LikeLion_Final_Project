@@ -6,11 +6,14 @@ using UnityEngine;
 public class PlayerLadderCheck : NetworkBehaviour
 {
     [Header("Ladder Detection")]
-    [SerializeField] private LayerMask ladderLayer = 1 << 8; // 사다리 레이어 지정 (필요시 인스펙터에서 변경)
     [SerializeField] private Vector2 ladderCheckSize = new Vector2(0.8f, 1.5f);
 
     // 🌐 네트워크 동기화
     [Networked] public bool IsNearLadder { get; private set; }
+
+    // 현재 감지된 사다리 (가장 가까운 것)
+    public GameObject CurrentLadderObject { get; private set; }
+    public Vector2? CurrentLadderCenter => CurrentLadderObject != null ? (Vector2?)CurrentLadderObject.transform.position : null;
 
     public override void FixedUpdateNetwork()
     {
@@ -19,14 +22,37 @@ public class PlayerLadderCheck : NetworkBehaviour
 
     private void CheckLadder()
     {
-        // 자신의 위치에서 사다리 체크 (OverlapBox)
-        IsNearLadder = Physics2D.OverlapBox(transform.position, ladderCheckSize, 0f, ladderLayer);
+        // 레이어 마스크 없이 모든 오브젝트 감지
+        Collider2D[] hits = Physics2D.OverlapBoxAll(transform.position, ladderCheckSize, 0f);
+        IsNearLadder = false;
+        GameObject nearestObj = null;
+        float minDist = float.MaxValue;
+        foreach (var hit in hits)
+        {
+            // Ladder(또는 Ladder 관련) 스크립트가 있는지 확인
+            if (hit.GetComponent<Ladder>() != null)
+            {
+                float dist = Mathf.Abs(transform.position.x - hit.transform.position.x);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    nearestObj = hit.gameObject;
+                }
+                IsNearLadder = true;
+            }
+        }
+        CurrentLadderObject = nearestObj;
     }
 
     // 🎯 기즈모로 감지 영역 시각화 (GroundCheckVisualizer 스타일)
     private void OnDrawGizmos()
     {
-        DrawLadderGizmo();
+        // Runner == null이면 네트워크 객체가 Spawned 상태가 아님
+        if (Runner != null)
+        {
+            DrawLadderGizmo();
+        }
+        // Spawned 전에는 [Networked] 값 접근하지 않음
     }
 
     private void OnDrawGizmosSelected()
@@ -36,13 +62,18 @@ public class PlayerLadderCheck : NetworkBehaviour
 
     private void DrawLadderGizmo()
     {
-        Color boxColor = IsNearLadder ? Color.cyan : Color.gray;
-        Gizmos.color = boxColor;
-        Gizmos.DrawWireCube(transform.position, ladderCheckSize);
-        // 내부 채우기
-        Color fillColor = boxColor;
-        fillColor.a = 0.2f;
-        Gizmos.color = fillColor;
-        Gizmos.DrawCube(transform.position, ladderCheckSize);
+        // Runner == null이면 네트워크 객체가 Spawned 상태가 아님
+        if (Runner != null)
+        {
+            Color boxColor = IsNearLadder ? Color.cyan : Color.gray;
+            Gizmos.color = boxColor;
+            Gizmos.DrawWireCube(transform.position, ladderCheckSize);
+            // 내부 채우기
+            Color fillColor = boxColor;
+            fillColor.a = 0.2f;
+            Gizmos.color = fillColor;
+            Gizmos.DrawCube(transform.position, ladderCheckSize);
+        }
+        // Spawned 전에는 [Networked] 값 접근하지 않음
     }
 }

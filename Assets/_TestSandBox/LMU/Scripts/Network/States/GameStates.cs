@@ -25,6 +25,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private Fader fader = null;
     [SerializeField] private CutSceneController cutSceneController = null;
     [SerializeField] private PlayerManager playerManager = null;
+    [SerializeField] private NetworkEventSystem networkEventSystem = null;
     [SerializeField] private StateBehaviour[] allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
     public override void Spawned()
@@ -100,8 +101,12 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public static void RPC_FadeOutUI(NetworkRunner runner)
+    public static async void RPC_FadeOutUI(NetworkRunner runner)
     {
+        while (Fader.Inst.IsFading)
+        {
+            await Awaitable.NextFrameAsync();
+        }
         _ = Fader.Inst.FadeOutAsync(Color.black, 1.0f);
     }
 
@@ -124,13 +129,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
     private void ApplyInject()
     {
-        // Note - CutSceneController는 게임씬에 존재
+        // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
             { typeof(UI_Controller), uiController != null ? uiController : UI_Controller.Inst },
             { typeof(Fader), fader != null ? fader : Fader.Inst },
             { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
-            { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() }
+            { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
+            { typeof(NetworkEventSystem), networkEventSystem != null ? networkEventSystem : NetworkEventSystem.Inst }
         };
 
         foreach (var state in allStates)

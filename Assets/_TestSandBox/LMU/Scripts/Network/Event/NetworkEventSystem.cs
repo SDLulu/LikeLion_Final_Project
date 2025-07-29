@@ -10,11 +10,22 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     [Header("이벤트 핸들러")]
     [SerializeField] private PlayerSpawnHandler spawnHandler;
     [SerializeField] private HostDisconnectHandler hostDisconnectHandler;
+
+    // -- 퓨전2 이벤트
     public event Action<NetworkRunner, PlayerRef> OnPlayerJoinedEvent;
     public event Action<NetworkRunner, PlayerRef> OnPlayerLeftEvent;
     public event Action<NetworkRunner, string> OnSceneLoadDoneEvent;
+    public event Action<NetworkRunner, string> OnSceneLoadStartEvent;
     public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
     public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
+
+    public event Action<string> OnStageLoadDoneEvent;
+
+    public void TriggerStageLoadDoneEvent(string stageInfo)    // 스테이지 정보 - "3-1 or 5-4"
+    {
+        OnStageLoadDoneEvent?.Invoke(stageInfo);
+    }
+
 
     private void Awake()
     {
@@ -33,6 +44,8 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnPlayerLeftEvent -= spawnHandler.OnPlayerLeft;
         OnDisconnectedFromServerEvent -= hostDisconnectHandler.OnDisconnectedFromServer;
         OnShutdownEvent -= hostDisconnectHandler.OnShutdown;
+
+        OnStageLoadDoneEvent = null;
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
@@ -65,10 +78,12 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
     {
+        Debug.Log($"OnConnectRequest 연결요청 - {request.RemoteAddress}");
     }
 
     public void OnConnectFailed(NetworkRunner runner, NetAddress remoteAddress, NetConnectFailedReason reason)
     {
+        Debug.Log($"OnConnectFailed 연결실패 - {remoteAddress} - {reason}");
     }
 
     public void OnUserSimulationMessage(NetworkRunner runner, SimulationMessagePtr message)
@@ -93,6 +108,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnConnectedToServer(NetworkRunner runner)
     {
+
     }
 
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
@@ -115,5 +131,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnSceneLoadStart(NetworkRunner runner)
     {
+        string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        OnSceneLoadStartEvent?.Invoke(runner, sceneName);
     }
 }

@@ -10,6 +10,7 @@ public class PlayerClimbing : NetworkBehaviour
     [SerializeField] private float climbRegrabCooldownTime = 0.2f; // 사다리 점프 후 재매달림 쿨타임(초)
     [SerializeField] private float climbingGravityScale = 0f; // 사다리 중 중력 (0 = 무중력)
     [SerializeField] private float normalGravityScale = 1f;   // 일반 상태 중력
+    [SerializeField] private float centerSnapSpeed = 30f; // 사다리 중심 흡입 속도
     
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsClimbing { get; private set; }
@@ -25,31 +26,49 @@ public class PlayerClimbing : NetworkBehaviour
     private PlayerMovement movement;
     private PlayerJump jump;
     private Rigidbody2D rb;
+    private SpelunkyPlayerController playerController;
 
     public override void Spawned()
     {
-        SetupReferences();
-    }
-    
-    private void SetupReferences()
-    {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         ladderCheck = GetComponentInChildren<PlayerLadderCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
+        playerController = GetComponent<SpelunkyPlayerController>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (ladderCheck == null)
+            Debug.LogError($"[{name}] PlayerLadderCheck 컴포넌트를 찾을 수 없습니다!");
+        if (movement == null)
+            Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+        if (jump == null)
+            Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
 
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
+        // 상태 확인 - 사다리 오르기 불가능한 상태면 처리하지 않음
+        if (playerController.IsDead || playerController.IsStunned || playerController.IsHeld || playerController.IsThrown)
+        {
+            return;
+        }
+        
         HandleClimbing(input);
         UpdateClimbingPhysics();
     }
 
-    private void HandleClimbing(SpelunkyPlayerData input)
+    private void HandleClimbing(SpelunkyPlayerInputData input)
     {
-        bool nearLadder = ladderCheck != null && ladderCheck.IsNearLadder;
-        bool isGrounded = groundCheck != null && groundCheck.IsGrounded;
+        bool nearLadder = ladderCheck.IsNearLadder;
+        bool isGrounded = groundCheck.IsGrounded;
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
 
         // 쿨타임 감소
@@ -62,10 +81,7 @@ public class PlayerClimbing : NetworkBehaviour
             StopClimbing();
             climbRequested = false;
             climbRegrabCooldown = climbRegrabCooldownTime; // 쿨타임 시작
-            if (jump != null)
-            {
-                jump.SetJumpFromClimb();
-            }
+            jump.SetJumpFromClimb();
             return;
         }
 
@@ -106,7 +122,16 @@ public class PlayerClimbing : NetworkBehaviour
         // 6. 사다리 상태에서만 위/아래키로 오르내림, 좌우키 무시
         if (IsClimbing)
         {
-            rb.linearVelocity = new Vector2(0, input.VerticalInput * climbingSpeed);
+            float xVelocity = 0f;
+            // 사다리 중앙으로 X축 속도 보정 (자연스럽게 붙도록)
+            if (ladderCheck.CurrentLadderCenter.HasValue)
+            {
+                float centerX = ladderCheck.CurrentLadderCenter.Value.x;
+                float diff = centerX - rb.position.x;
+                xVelocity = diff * centerSnapSpeed; // 중심 흡입 속도 적용
+            }
+            float yVelocity = input.VerticalInput * climbingSpeed;
+            rb.linearVelocity = new Vector2(xVelocity, yVelocity);
         }
 
         // 버튼 상태 갱신
