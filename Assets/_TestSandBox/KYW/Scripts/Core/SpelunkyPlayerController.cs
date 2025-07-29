@@ -5,7 +5,7 @@ using UnityEngine;
 // 컴포넌트들을 조합하고 네트워크 동기화 담당
 // 
 // 📁 권장 구조:
-// Player (이 오브젝트) - 물리/로직 컴포넌트들
+// Player (이 오브젝트) - 물리/로직 컴포넌트들 + PlayerStateManager
 // ├── Visual - 시각적 컴포넌트들 (SpriteRenderer, Animator, PlayerAnimation)
 // └── Hand - 아이템 시스템 (PlayerItemPickup, PlayerItemUsage, CircleCollider2D)
 //
@@ -14,12 +14,11 @@ using UnityEngine;
 // 2. Hand 하위 오브젝트 생성 후 PlayerItemPickup, PlayerItemUsage 이동
 // 3. Hand에 CircleCollider2D 추가 (IsTrigger = true, 아이템 감지용)
 // 4. Inspector에서 Visual Root, Hand Root 필드에 각각 할당
+// 5. PlayerStateManager는 자동으로 추가됨 (상태 관리 전용)
 public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
 {
     [Header("Player State")]
-    // 🎮 상태 패턴 관련 필드들
-    [Networked] public PlayerState CurrentState { get; private set; } = PlayerState.Idle;
-    [Networked] public PlayerAction CurrentActions { get; private set; } = PlayerAction.None;
+    // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     
     [Header("Visual References")]
     [SerializeField] private Transform visualRoot; // Visual 하위 오브젝트 참조
@@ -46,15 +45,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
+    private PlayerStunInvincibleDie stunInvincibleDie;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
     private SpriteRenderer spriteRenderer;
     
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
-    private PlayerItemPickup itemPickup;
+    private PlayerObjectPickup itemPickup;
     private PlayerItemUsage itemUsage;
-    private PlayerItemThrower itemThrower;
+    private PlayerObjectThrower itemThrower;
 
     public override void Spawned()
     {
@@ -63,6 +63,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
+        stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
+        
+        // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
+
         
         // 하위 오브젝트들 설정 (Visual, Hand)
         SetupChildObjects();
@@ -101,28 +105,15 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     
     // 🤲 Hand 오브젝트 설정
     private void SetupHandObject()
-    {
-        // handRoot가 설정되지 않은 경우 자동으로 찾기
-        if (handRoot == null)
-        {
-            handRoot = transform.Find("Hand");
-            
-            // Hand 오브젝트가 없으면 경고만 출력 (자동 생성 제거)
-            if (handRoot == null)
-            {
-                Debug.LogWarning($"[{name}] Hand 하위 오브젝트를 찾을 수 없습니다. " +
-                               "Inspector에서 Hand Root를 수동으로 설정해주세요.");
-            }
-        }
-        
+    {    
         // Hand 컴포넌트들 참조 설정
-        itemPickup = handRoot?.GetComponent<PlayerItemPickup>();
+        itemPickup = handRoot?.GetComponent<PlayerObjectPickup>();
         itemUsage = handRoot?.GetComponent<PlayerItemUsage>();
-        itemThrower = handRoot?.GetComponent<PlayerItemThrower>();
+        itemThrower = handRoot?.GetComponent<PlayerObjectThrower>();
         
         if (itemPickup == null)
         {
-            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemPickup 컴포넌트가 없습니다.");
+            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerObjectPickup 컴포넌트가 없습니다.");
         }
         if (itemUsage == null)
         {
@@ -130,13 +121,43 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
         if (itemThrower == null)
         {
-            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerItemThrower 컴포넌트가 없습니다.");
+            Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerObjectThrower 컴포넌트가 없습니다.");
         }
     }
     
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
+        // Dead, Stunned, Held, Thrown 상태면 모든 입력 무시 + 입력값 초기화
+        if (stunInvincibleDie != null && (stunInvincibleDie.IsDead ||
+         stunInvincibleDie.IsStunned ||
+         stunInvincibleDie.IsHeld ||
+         stunInvincibleDie.IsThrown))
+        {
+            // Held 상태에서는 점프 입력만 허용 (탈출용)
+            if (stunInvincibleDie.IsHeld && Object.HasInputAuthority)
+            {
+                bool jumpPressed = Input.GetKey(KeyCode.Space);
+                if (jumpPressed)
+                {
+                    // 점프로 탈출 - 던지기와 동일한 처리
+                    EscapeFromBeingHeld();
+                    
+                    return;
+                }
+            }
+            
+            horizontalInput = 0f;
+            verticalInput = 0f;
+            mouseScrollWheel = 0f;
+            jumpPressed = false;
+            pickupPressed = false;
+            useItemHeld = false;
+            throwItemPressed = false;
+            skillPressed = false;
+            return;
+        }
+
         if (Object.HasInputAuthority)
         {
             // 방향키 입력
@@ -166,7 +187,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public override void FixedUpdateNetwork()
     {
         // 입력이 필요한 것들 (InputAuthority에서만)
-        if (Runner.TryGetInputForPlayer<SpelunkyPlayerData>(Object.InputAuthority, out var input))
+        if (Runner.TryGetInputForPlayer<SpelunkyPlayerInputData>(Object.InputAuthority, out var input))
         {
             // 기존 컴포넌트들 처리 (그대로 유지)
             movement?.ProcessInput(input);
@@ -194,15 +215,14 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             }
         }
 #endif
-        // 🎮 상태 업데이트 (새로 추가)
-        UpdateCurrentState();
-        UpdateCurrentActions();
+        
+        // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     }
 
     // 📡 입력 데이터 생성 (LocalInputPoller에서 호출)
-    public SpelunkyPlayerData GetNetworkInputData()
+    public SpelunkyPlayerInputData GetNetworkInputData()
     {
-        SpelunkyPlayerData data = new SpelunkyPlayerData();
+        SpelunkyPlayerInputData data = new SpelunkyPlayerInputData();
         
         if (Object.HasInputAuthority)
         {
@@ -222,85 +242,37 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         return data;
     }
     
-    // 🎮 현재 상태 업데이트 (기존 컴포넌트들의 상태를 읽어서 결정)
-    private void UpdateCurrentState()
+    // 🎮 상태 확인 헬퍼 프로퍼티들
+    public bool IsDead => stunInvincibleDie?.IsDead ?? false;
+    public bool IsStunned => stunInvincibleDie?.IsStunned ?? false;
+    public bool IsInvincible => stunInvincibleDie?.IsInvincible ?? false;
+    public bool IsHeld => stunInvincibleDie?.IsHeld ?? false;
+    public bool IsThrown => stunInvincibleDie?.IsThrown ?? false;
+    public bool IsNormal => !(stunInvincibleDie?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
+    
+    // 🎯 들린 상태에서 탈출 처리 (던지기와 동일한 로직)
+    private void EscapeFromBeingHeld()
     {
-        // StateAuthority에서만 상태 변경
         if (!Object.HasStateAuthority) return;
         
-        PlayerState newState = DetermineCurrentState();
+        // 현재 들고 있는 오브젝트 찾기
+        var inventory = GetComponentInChildren<PlayerInventory>();
+        if (inventory?.CurrentHeldObject == null) return;
         
-        // 상태가 변경된 경우에만 업데이트
-        if (CurrentState != newState)
+        var obj = inventory.CurrentHeldObject;
+        
+        // PlayerObjectThrower의 공통 해제 로직 사용 (힘 없이)
+        if (itemThrower != null)
         {
-            CurrentState = newState;
-            Debug.Log($"🎮 상태 변경: {CurrentState}");
-        }
-    }
-    
-    // 🎮 현재 액션 업데이트
-    private void UpdateCurrentActions()
-    {
-        // StateAuthority에서만 액션 변경
-        if (!Object.HasStateAuthority) return;
-        
-        PlayerAction newActions = PlayerAction.None;
-        
-        // 아이템 사용 중인지 확인 (간단하게 입력으로 판단)
-        if (useItemHeld)
-        {
-            newActions |= PlayerAction.UsingItem;
+            itemThrower.ReleaseObject(obj, false);
         }
         
-        // 스킬 사용 중인지 확인 (PlayerShiftSkill이 있다면)
-        var shiftSkill = GetComponent<PlayerShiftSkill>();
-        if (shiftSkill != null && shiftSkill.IsSkillActive)
+        // 점프 힘 적용 (사다리에서 점프하는 것과 동일)
+        if (jump != null)
         {
-            newActions |= PlayerAction.UsingSkill;
+            jump.SetJumpFromClimb();
         }
         
-        // 액션이 변경된 경우에만 업데이트
-        if (CurrentActions != newActions)
-        {
-            CurrentActions = newActions;
-        }
-    }
-    
-    // 🎮 현재 상태 결정 (기존 컴포넌트들의 상태를 기반으로)
-    private PlayerState DetermineCurrentState()
-    {
-        // 사망 상태 체크
-        if (CurrentState == PlayerState.Dead) return PlayerState.Dead;
-        
-        // 기존 컴포넌트들의 상태를 읽어서 결정
-        bool isGrounded = groundCheck?.IsGrounded ?? false;
-        bool isClimbing = climbing?.IsClimbing ?? false;
-        bool isJumping = jump?.IsJumping ?? false;
-        bool isDucking = movement?.IsDucking ?? false;
-        
-        // 🎯 순환 의존성 방지: 현재 Ducking 상태일 때는 조건을 더 엄격하게 체크
-        if (CurrentState == PlayerState.Ducking)
-        {
-            // Ducking 상태에서 벗어나는 조건들
-            if (!isGrounded) return PlayerState.Falling;
-            if (isClimbing) return PlayerState.Climbing;
-            if (isJumping) return PlayerState.Jumping;
-            if (!isDucking) return PlayerState.Idle; // 웅크리기 해제 시 Idle로
-            return PlayerState.Ducking; // 계속 웅크리기 중
-        }
-        
-        // 일반적인 우선순위에 따라 상태 결정
-        if (isClimbing) return PlayerState.Climbing;
-        if (isJumping) return PlayerState.Jumping;
-        if (isGrounded)
-        {
-            if (isDucking) return PlayerState.Ducking;
-            if (movement?.NormalizedSpeed > 0.1f) return PlayerState.Walking;
-            return PlayerState.Idle;
-        }
-        else
-        {
-            return PlayerState.Falling;
-        }
+        Debug.Log($"[{name}] 점프로 들린 상태에서 탈출!");
     }
 } 
