@@ -27,7 +27,13 @@ public class PlayerGroundCheck : NetworkBehaviour
     // 🎯 기즈모로 감지 영역 시각화
     private void OnDrawGizmosSelected()
     {
-        Gizmos.color = IsGrounded ? Color.green : Color.red;
-        Gizmos.DrawWireCube(transform.position, groundCheckSize);
+        // Runner == null이면 네트워크 객체가 Spawned 상태가 아님
+        if (Runner != null)
+        {
+            bool isGrounded = IsGrounded;
+            Gizmos.color = isGrounded ? Color.green : Color.red;
+            Gizmos.DrawWireCube(transform.position, groundCheckSize);
+        }
+        // Spawned 전에는 [Networked] 값 접근하지 않음
     }
 } 

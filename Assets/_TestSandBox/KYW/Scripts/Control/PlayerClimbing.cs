@@ -26,6 +26,7 @@ public class PlayerClimbing : NetworkBehaviour
     private PlayerMovement movement;
     private PlayerJump jump;
     private Rigidbody2D rb;
+    private SpelunkyPlayerController playerController;
 
     public override void Spawned()
     {
@@ -35,6 +36,7 @@ public class PlayerClimbing : NetworkBehaviour
         ladderCheck = GetComponentInChildren<PlayerLadderCheck>();
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
+        playerController = GetComponent<SpelunkyPlayerController>();
         
         // 필수 컴포넌트 검증
         if (rb == null)
@@ -47,18 +49,23 @@ public class PlayerClimbing : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
         if (jump == null)
             Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
 
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
-        HandleClimbing(input);
-        if (IsClimbing)  // 사다리 타고 있을 때만 중력 업데이트
+        // 상태 확인 - 사다리 오르기 불가능한 상태면 처리하지 않음
+        if (playerController.IsDead || playerController.IsStunned || playerController.IsHeld || playerController.IsThrown)
         {
-            UpdateClimbingPhysics();
+            return;
         }
+        
+        HandleClimbing(input);
+        UpdateClimbingPhysics();
     }
 
-    private void HandleClimbing(SpelunkyPlayerData input)
+    private void HandleClimbing(SpelunkyPlayerInputData input)
     {
         bool nearLadder = ladderCheck.IsNearLadder;
         bool isGrounded = groundCheck.IsGrounded;

@@ -5,7 +5,7 @@ using Fusion.Sockets;
 using UnityEngine;
 
 // 🎮 스펠렁키 플레이어 입력 수집기
-// 기존 LocalInputPoller를 참고하되 SpelunkyPlayerData를 사용하도록 수정
+// 기존 LocalInputPoller를 참고하되 SpelunkyPlayerInputData를 사용하도록 수정
 public class SpelunkyLocalInputPoller : NetworkBehaviour, INetworkRunnerCallbacks
 {
     // 🎯 입력을 수집할 스펠렁키 플레이어 컨트롤러

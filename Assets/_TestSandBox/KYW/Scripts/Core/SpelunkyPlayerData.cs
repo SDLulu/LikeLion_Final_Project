@@ -1,9 +1,8 @@
 using Fusion;
 using UnityEngine;
 
-// 🎮 스펠렁키 플레이어 입력 데이터
-// 이동 + 점프 + 아이템 상호작용 포함
-public struct SpelunkyPlayerData : INetworkInput
+// 🎮 스펠렁키 플레이어 입력 데이터 (Input 전용)
+public struct SpelunkyPlayerInputData : INetworkInput
 {
     // 🏃 이동 입력 (방향키)
     public float HorizontalInput;  // 좌우 이동 (-1.0 ~ 1.0)

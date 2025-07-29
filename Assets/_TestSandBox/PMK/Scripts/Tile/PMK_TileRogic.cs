@@ -2,22 +2,8 @@ using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections.Generic;
 using System.Linq;
-using Fusion;
 
-// 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
-// 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
-
-
-
-
-[System.Serializable]
-public class MapPrefabSet
-{
-    public string mapType;
-    public GameObject[] prefabs;
-}
-
-public partial class PMK_TileRogic : NetworkBehaviour
+public partial class PMK_TileRogic : MonoBehaviour
 {
     public static PMK_TileRogic Instance { get; private set; }
 
@@ -36,12 +22,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     [Header("맵 프리팹 설정")]
-    [SerializeField] private MapPrefabSet[] mapPrefabSets;
-    private Dictionary<string, GameObject[]> mapPrefabDict;
+    [SerializeField] private GameObject[] Clear_Map_Prefab;        // 클리어 맵 프리팹 (시작맵, 클리어 맵)
+    [SerializeField] private GameObject[] LR_Exit_Map_Prefab;      // 왼,오 확정 탈출 프리팹
+    [SerializeField] private GameObject[] D_Exit_Map_Prefab;       // 아래 확정 탈출 프리팹
+    [SerializeField] private GameObject[] W_Exit_Map_Prefab;       // 위 확정 탈출 프리팹
+    [SerializeField] private GameObject[] WD_Exit_Map_Prefab;      // 위,아래 확정 탈출 프리팹
+    [SerializeField] private GameObject[] Special_Map_Prefab;      // 특별한 프리팹 (상점, 도전방 등)
+    private Dictionary<string, GameObject[]> mapPrefabDict;        // 맵 프리팹 딕셔너리 (맵 타입별로 프리팹을 저장하기 위한 딕셔너리)
+
 
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
-    [field: SerializeField] public List<PMK_TileItemTable> tileItems { get; private set; }
+    [SerializeField] private List<PMK_TileTable> tileItems;
 
 
 
@@ -62,27 +54,25 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
         else
         {
-            Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
+            Destroy(gameObject);
         }
+
+        // 맵 프리팹 딕셔너리 초기화 및 이름 설정
+        mapPrefabDict = new Dictionary<string, GameObject[]>
+        {
+            { "C", Clear_Map_Prefab },
+            { "LR", LR_Exit_Map_Prefab },
+            { "D", D_Exit_Map_Prefab },
+            { "W", W_Exit_Map_Prefab },
+            { "WD", WD_Exit_Map_Prefab },
+            { "S", Special_Map_Prefab }
+        };
     }
 
 
-    public override void Spawned()
+    private void Start()
     {
         SaveMapPos(); // 전체 맵 위치 저장
-
-        if (mapPrefabDict == null)
-        {
-            mapPrefabDict = new Dictionary<string, GameObject[]>();
-
-            foreach (var set in mapPrefabSets)
-            {
-                if (!mapPrefabDict.ContainsKey(set.mapType))
-                    mapPrefabDict.Add(set.mapType, set.prefabs);
-            }
-        }
-
-        if (!HasStateAuthority) return; // 호스트 또는 서버 권한이 있는 경우에만 맵을 생성
         ResetMap(); // 맵 초기화 및 재생성
     }
 
@@ -114,7 +104,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
         DownExit_Map_Instantiate(removeMapX);
         Create_Special_Map(0, 10);
         Create_EmptyMap();
-        mainTilemap.RefreshAllTiles();
     }
     #endregion
 
@@ -136,25 +125,17 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
     #endregion
 
-    private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
-    {
-        if (!HasStateAuthority) return;
-
-        if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
-        {
-           randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
-
-           RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
-        }
-    }
 
     #region 원하는 맵 생성
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
+    private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
+            if (mapType != "C") // 클리어 맵이 아니라면 맵을 랜덤으로 선택
+            {
+                randomIndex = Random.Range(0, prefabs.Length);
+            }
+
             GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
@@ -176,6 +157,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             Vector3Int targetPos = sourcePos + offset;
                             mainTilemap.SetTile(targetPos, tile);
 
+
                             // 랜덤한 확률로 아이템 생성
                             Create_TileItem(targetPos);
                         }
@@ -190,13 +172,14 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 {
                     Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
 
-                    Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
-                    child.name = child.name; // 이름을 원본과 동일하게 설정
+                    GameObject clone = Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
+                    clone.name = child.name; // 이름을 원본과 동일하게 설정
                 }
             }
 
             // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
             Destroy(temp);
+            mainTilemap.RefreshAllTiles();
 
 
             // 생성된 맵의 위치를 useMapXY에 저장
@@ -216,54 +199,59 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
     #endregion
 
-    #region 타일에 아이템 생성
 
-    // 호스트가 타일 랜덤값을 적용후 공유함
+    #region 타일에 아이템 생성
     public void Create_TileItem(Vector3Int targetPos)
     {
-        if (!HasStateAuthority) return;
-
-        if (Random.Range(0, 100) > itemSpawnChance) return;
 
         Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos); // 타일의 월드 좌표로 변환
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f); // 타일 위치에 있는 모든 콜라이더를 가져옴
-        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item")); // 아이템 레이어에 해당하는지 확인
+        bool hasSameTag = false;
 
+        // 타일 위치에 아이템이 있을경우 생성하지 않음
+        foreach (var hit in hits)
+        {
+            if (hit.gameObject.layer == LayerMask.NameToLayer("Item"))
+            {
+                hasSameTag = true;
+                break;
+            }
+        }
+
+        // 타일 위치에 아이템이 없을 경우 확률로 아이템 생성
         if (!hasSameTag)
         {
+            if (Random.Range(0, 100) > itemSpawnChance) return;
+
             int totalChance = tileItems.Sum(t => t.spawnChance);
             int roll = Random.Range(0, totalChance);
-            int current = 0;
 
+            int current = 0;
             foreach (var item in tileItems)
             {
                 current += item.spawnChance;
                 if (roll < current)
                 {
-                    int index = tileItems.IndexOf(item);
-                    RPC_Create_TileItem(index, worldPos);
+                    Instantiate(item.prefab, worldPos, Quaternion.identity, parentTrans);
                     break;
                 }
             }
         }
 
     }
-
-    // 호스트, 클라이언트 동기화
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
-    {
-        Instantiate(tileItems[itemIndex].prefab, worldPos, Quaternion.identity, parentTrans); // 타일 아이템 생성
-    }
     #endregion
+
+    public Vector2 StartPos {get; private set;}
 
     #region 스폰맵 생성
     private void SpawnMap_Instantiate()
     {
+        // y0쪽에 시작맵 생성
         removeMapX = Random.Range(0, maxTileX);
         Vector2 spawnPos = mapXY[removeMapX, 0];
         Create_Map("C", 0, spawnPos.x, spawnPos.y);
+        StartPos = spawnPos;
     }
     #endregion
 
