@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 public class UI_Title : MonoBehaviour
 {
@@ -16,6 +17,23 @@ public class UI_Title : MonoBehaviour
     [Header("EnterOnline 패널 뒤로가기")]
     [SerializeField] private Button _enterOnlineBackBtn;
 
+    [Header("Tween 설정값")]
+    [SerializeField] private float _moveDistance = 300f;
+    [SerializeField] private float _moveDuration = 0.7f;
+    [SerializeField] private float _moveOutDuration = 0.25f;
+    [SerializeField] private float _scaleStart = 0.8f;
+    [SerializeField] private float _scaleUp = 1.1f;
+    [SerializeField] private float _scaleUpDuration = 0.25f;
+    [SerializeField] private float _scaleDownDuration = 0.2f;
+
+    private Vector3 _originPos;
+    private Vector3 _offscreenPos;
+    private Tween _titleMoveTween;
+    private Tween _titleScaleTween;
+    private Tween _nicknameMoveTween;
+    private float _canvasHeight;
+    private float _canvasWidth;
+
     private void Awake()
     {
         soloPlayBtn.onClick.AddListener(OnClickSoloPlayBtn);
@@ -27,16 +45,86 @@ public class UI_Title : MonoBehaviour
         _uiCreateNickName.gameObject.SetActive(true);
         _titleButtonPanel.gameObject.SetActive(true);
         _enterOnlinePanel.gameObject.SetActive(false);
+
+        _originPos = _titleButtonPanel.anchoredPosition;
+        var canvas = GetComponentInParent<Canvas>();
+        if (canvas != null && canvas.pixelRect.height > 0)
+        {
+            _canvasHeight = canvas.pixelRect.height;
+            _canvasWidth = canvas.pixelRect.width;
+        }
+        else
+        {
+            Debug.LogWarning("Canvas를 찾을 수 없거나 크기가 0입니다. 기본 해상도(1920x1080)를 사용합니다.", this);
+            _canvasHeight = 1080f; // 기본값
+            _canvasWidth = 1920f;
+        }
+        _offscreenPos = _originPos + new Vector3(0, -_canvasHeight, 0);
+        _titleButtonPanel.anchoredPosition = _offscreenPos;
+        _titleButtonPanel.localScale = Vector3.one * _scaleStart;
+    }
+
+    public void Show()
+    {
+        if (gameObject.activeSelf == false)
+        {
+            gameObject.SetActive(true);
+        }
+        ShowTitlePanelWithTween();
+    }
+
+    private void ShowTitlePanelWithTween()
+    {
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _titleButtonPanel.anchoredPosition = _offscreenPos;
+        _titleButtonPanel.gameObject.SetActive(true);
+        _titleMoveTween = _titleButtonPanel.DOAnchorPos(_originPos, _moveDuration)
+            .SetEase(Ease.OutBack);
+        _titleButtonPanel.localScale = Vector3.one * _scaleStart;
+        _titleScaleTween = _titleButtonPanel.DOScale(_scaleUp, _scaleUpDuration)
+            .SetEase(Ease.OutQuad)
+            .OnComplete(() =>
+            {
+                _titleButtonPanel.DOScale(1f, _scaleDownDuration).SetEase(Ease.InQuad);
+            });
+    }
+
+    public void Hide()
+    {
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _titleMoveTween = _titleButtonPanel.DOAnchorPos(_originPos + new Vector3(0, _canvasHeight, 0), _moveOutDuration)
+            .SetEase(Ease.InBack)
+            .OnComplete(() =>
+            {
+                gameObject.SetActive(false);
+            });
+    }
+
+    private void HideTitlePanelWithTween(System.Action onComplete = null)
+    {
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _titleMoveTween = _titleButtonPanel.DOAnchorPos(_originPos + new Vector3(0, _canvasHeight, 0), _moveOutDuration)
+            .SetEase(Ease.InBack)
+            .OnComplete(() =>
+            {
+                _titleButtonPanel.gameObject.SetActive(false);
+                onComplete?.Invoke();
+            });
     }
 
     private void OnDestroy()
     {
-        soloPlayBtn.onClick.RemoveAllListeners();
-        onlinePlayBtn.onClick.RemoveAllListeners();
-        settingBtn.onClick.RemoveAllListeners();
-        exitBtn.onClick.RemoveAllListeners();
-        _enterOnlineBackBtn.onClick.RemoveAllListeners();
-        _uiGlobalSetting = null;
+        soloPlayBtn.onClick.RemoveListener(OnClickSoloPlayBtn);
+        onlinePlayBtn.onClick.RemoveListener(OnClickOnlinePlayBtn);
+        settingBtn.onClick.RemoveListener(OnClickSettingBtn);
+        exitBtn.onClick.RemoveListener(OnClickExitBtn);
+        _enterOnlineBackBtn.onClick.RemoveListener(OnClickEnterOnlineBackBtn);
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _nicknameMoveTween?.Kill();
     }
 
     private void OnClickSoloPlayBtn()
@@ -48,18 +136,23 @@ public class UI_Title : MonoBehaviour
     public UI_GlobalSetting UIGlobalSetting => _uiGlobalSetting ??= FindAnyObjectByType<UI_GlobalSetting>();
     private void OnClickEnterOnlineBackBtn()
     {
-        _uiCreateNickName.gameObject.SetActive(true);
-        _titleButtonPanel.gameObject.SetActive(true);
+        // 두 애니메이션을 동시에 시작합니다.
+        AnimateNicknamePanelIn(_uiCreateNickName.Holder);
+        ShowTitlePanelWithTween();
+
         _enterOnlinePanel.gameObject.SetActive(false);
         UIGlobalSetting.ActiveUI(true);
     }
 
     private void OnClickOnlinePlayBtn()
     {
-        _uiCreateNickName.gameObject.SetActive(false);
-        _titleButtonPanel.gameObject.SetActive(false);
-        _enterOnlinePanel.gameObject.SetActive(true);
-        UIGlobalSetting.ActiveUI(false);
+        // 두 애니메이션을 동시에 시작합니다.
+        AnimateNicknamePanelOut(_uiCreateNickName.Holder);
+        HideTitlePanelWithTween(() =>
+        {
+            _enterOnlinePanel.gameObject.SetActive(true);
+            UIGlobalSetting.ActiveUI(false);
+        });
     }
 
     private void OnClickSettingBtn()
@@ -73,5 +166,21 @@ public class UI_Title : MonoBehaviour
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
         #endif
+    }
+
+    private void AnimateNicknamePanelIn(RectTransform panel)
+    {
+        _nicknameMoveTween?.Kill();
+        panel.anchoredPosition = (Vector2)_originPos + new Vector2(-_canvasWidth, 0);
+        panel.gameObject.SetActive(true);
+        _nicknameMoveTween = panel.DOAnchorPos(_originPos, _moveDuration).SetEase(Ease.OutBack);
+    }
+
+    private void AnimateNicknamePanelOut(RectTransform panel)
+    {
+        _nicknameMoveTween?.Kill();
+        _nicknameMoveTween = panel.DOAnchorPos((Vector2)_originPos + new Vector2(0, _canvasHeight), _moveOutDuration)
+            .SetEase(Ease.InBack)
+            .OnComplete(() => panel.gameObject.SetActive(false));
     }
 }
