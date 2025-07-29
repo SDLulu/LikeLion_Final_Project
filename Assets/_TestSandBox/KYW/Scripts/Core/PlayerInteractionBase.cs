@@ -2,7 +2,7 @@ using Fusion;
 using UnityEngine;
 
 // 플레이어 상호작용 추상 클래스 예시 (IPlayerInteraction 구현)
-public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHoldable
+public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
 {
     // --- PlayerStunInvincibleDie 참조 ---
     protected PlayerStunInvincibleDie stunInvincible;
