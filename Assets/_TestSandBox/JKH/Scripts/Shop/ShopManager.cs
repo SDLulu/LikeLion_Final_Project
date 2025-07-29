@@ -236,40 +236,36 @@ public class ShopManager : NetworkBehaviour
 
         if (playerGold >= itemDataFromShopArray.Price)
         {
+            // 2. 골드 차감 (기존과 동일)
             SetPlayerGold(buyer, playerGold - itemDataFromShopArray.Price);
 
-            // ⭐️ ShopItems NetworkArray의 해당 아이템 상태 업데이트
-            itemDataFromShopArray.IsAvailable = false; // 구매되었으니 판매 불가능
-            itemDataFromShopArray.IsPicked = false;   // 혹시 들고 있었다면 내려놓음 처리
-            itemDataFromShopArray.CurrentHolder = default; // 구매 후 들고 있는 사람 없음 (소유권 이전)
+            // --- 👇 여기가 핵심 수정 부분입니다 ---
 
-            ShopItems.Set(itemIndexInShopArray, itemDataFromShopArray); // NetworkArray 업데이트 -> 모든 클라이언트에 동기화
-
-            // ⭐️ 실제 아이템 오브젝트에 구매 완료를 알림 (여기서 Despawn을 유도)
+            // 3. 구매할 아이템과 구매자 인벤토리를 찾습니다.
             ShopItem purchasedShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
-            if (purchasedShopItem != null)
+            PlayerInventory playerInventory = Runner.GetPlayerObject(buyer)?.GetComponent<PlayerInventory>();
+
+            // 4. 아이템과 인벤토리가 유효하고, 인벤토리에 공간이 있는지 최종 확인합니다.
+            if (purchasedShopItem != null && playerInventory != null && playerInventory.CanPickupItem())
             {
-                purchasedShopItem.OnPurchased(); // ShopItem이 스스로 Despawn하도록 함
+                // 5. 아이템을 "판매 완료" 상태로 먼저 변경합니다. (다시 구매 못하도록)
+                purchasedShopItem.MarkAsSold();
+
+                // 6. 플레이어 인벤토리의 PickupItem 메서드를 호출하여 아이템을 손으로 옮깁니다.
+                playerInventory.PickupItem(purchasedShopItem);
+
+                Debug.Log($"Host: Player {buyer.PlayerId} purchased and picked up {itemDataFromShopArray.ItemName}.");
+                RPC_SendPurchaseResult(buyer, true, itemDataFromShopArray.ItemName); // 구매 성공 알림
             }
             else
             {
-                Debug.LogWarning($"Host: Purchased ShopItem object with ID {itemNetworkId} not found or already despawned.");
+                // 만약 아이템을 집을 수 없는 예외 상황이라면 골드를 되돌려줍니다.
+                SetPlayerGold(buyer, playerGold); // 환불 처리
+                Debug.LogWarning($"Host: Purchase approved but pickup failed for Player {buyer.PlayerId}. Gold refunded.");
+                RPC_SendPurchaseResult(buyer, false, "인벤토리가 가득 찼습니다!"); // 실패 알림
             }
 
-            Debug.Log($"Host: Player {buyer.PlayerId} successfully purchased {itemDataFromShopArray.ItemName} for {itemDataFromShopArray.Price} gold.");
-            RPC_SendPurchaseResult(buyer, true, itemDataFromShopArray.ItemName);
-
-            // 구매된 아이템을 플레이어 인벤토리에 추가 (RPC_SendPurchaseResult에서 할 수도 있지만, Host에서 관리하는 것이 더 안전)
-            NetworkObject playerObject = Runner.GetPlayerObject(buyer);
-            if (playerObject != null)
-            {
-                PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
-                if (playerInventory != null)
-                {
-                    // ⭐️ 구매된 아이템 정보를 인벤토리에 추가 (NetworkId가 아닌 ItemType으로 추가한다고 가정)
-                    playerInventory.AddItemToInventory(itemDataFromShopArray.ItemType);
-                }
-            }
+            // --- 👆 여기까지 수정 ---
 
         }
         else
@@ -467,56 +463,27 @@ public class ShopManager : NetworkBehaviour
     }
 
     // --- 아이템 내려놓기 요청 (클라이언트 -> 호스트) ---
-    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void Rpc_RequestItemDrop(NetworkId itemNetworkId, PlayerRef player, Vector3 dropPosition)
     {
-        if (!CanInteractWithItem(itemNetworkId))
+        // 1. 아이템을 찾고 유효성을 검사합니다.
+        ShopItem itemToDrop = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
+        if (itemToDrop == null || !itemToDrop.ItemData.IsPicked || itemToDrop.ItemData.CurrentHolder != player)
         {
-            Debug.Log($"Host: Player {player.PlayerId} tried to drop item {itemNetworkId} too quickly (cooldown).");
+            Debug.Log($"Host: Item {itemNetworkId} cannot be dropped by Player {player.PlayerId}.");
             return;
         }
 
-        int itemIndex = -1;
-        ShopItemData itemData = default;
-
-        for (int i = 0; i < ShopItems.Length; i++)
-        {
-            var tempItem = ShopItems.Get(i);
-            if (tempItem.ItemNetworkId == itemNetworkId)
-            {
-                itemData = tempItem;
-                itemIndex = i;
-                break;
-            }
-        }
-
-        if (itemIndex == -1 || !itemData.IsPicked || itemData.CurrentHolder != player)
-        {
-            Debug.Log($"Host: Item {itemNetworkId} cannot be dropped by Player {player.PlayerId}. IsPicked: {itemData.IsPicked}, Holder: {itemData.CurrentHolder}");
-            return;
-        }
-
-        SetItemInteractionLock(itemNetworkId);
-
+        // 2. 플레이어 인벤토리를 찾아 DropItem 메서드를 호출합니다.
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
             PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
-            ShopItem actualShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
-
-            if (playerInventory != null && actualShopItem != null)
+            if (playerInventory != null)
             {
-                playerInventory.DropItem(actualShopItem, dropPosition);
-                Debug.Log($"Host: Player {player.PlayerId} successfully requested drop of {itemData.ItemName}.");
+                // 3. 실제 드랍 로직을 실행합니다.
+                playerInventory.DropItem(itemToDrop, dropPosition);
             }
-            else
-            {
-                Debug.LogWarning($"Host: Player {player.PlayerId} cannot drop item {itemData.ItemName}. Inventory or ShopItem null.");
-            }
-        }
-        else
-        {
-            Debug.LogError($"Host: Player object for {player.PlayerId} not found for drop request.");
         }
     }
 
