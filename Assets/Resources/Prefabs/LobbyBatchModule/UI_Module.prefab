@@ -2421,6 +2421,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6994981052413923226}
   - component: {fileID: 691488528032186310}
+  - component: {fileID: 8753434897017345998}
   m_Layer: 5
   m_Name: Holder
   m_TagString: Untagged
@@ -2479,6 +2480,51 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &8753434897017345998
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3895051483424219258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b36ecc0e9f58d74478665ceba7ce822a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _hoverItems:
+  - Name: 
+    Texts:
+    - {fileID: 4401453912604305423}
+    Images: []
+    EventTrigger: {fileID: 1162036700060830315}
+  - Name: 
+    Texts:
+    - {fileID: 6530834000202161262}
+    Images: []
+    EventTrigger: {fileID: 1778588105395718879}
+  - Name: 
+    Texts:
+    - {fileID: 4014405597630417095}
+    Images: []
+    EventTrigger: {fileID: 5546836867624963544}
+  - Name: 
+    Texts:
+    - {fileID: 2692841226983057319}
+    Images: []
+    EventTrigger: {fileID: 5697296449122302432}
+  - Name: 
+    Texts:
+    - {fileID: 2207379359260802317}
+    Images: []
+    EventTrigger: {fileID: 5257598781888026551}
+  - Name: 
+    Texts:
+    - {fileID: 5649382731263328117}
+    Images: []
+    EventTrigger: {fileID: 4343733120557497426}
+  _nonHoverAlpha: 0.4
+  _hoverAlpha: 1
 --- !u!1 &4024949772879714672
 GameObject:
   m_ObjectHideFlags: 0
@@ -3758,7 +3804,7 @@ GameObject:
   - component: {fileID: 6288482035503763812}
   - component: {fileID: 3838383508652752470}
   - component: {fileID: 4942798285654636611}
-  - component: {fileID: 178388226560825322}
+  - component: {fileID: 1162036700060830315}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -3868,7 +3914,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &178388226560825322
+--- !u!114 &1162036700060830315
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3877,14 +3923,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 5942424179827156961}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 4401453912604305423}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1 &6072894163619771778
 GameObject:
   m_ObjectHideFlags: 0
@@ -4286,7 +4328,7 @@ GameObject:
   - component: {fileID: 2057016936599559486}
   - component: {fileID: 699705917669017624}
   - component: {fileID: 7952794350088577995}
-  - component: {fileID: 2469466486532547318}
+  - component: {fileID: 4343733120557497426}
   m_Layer: 5
   m_Name: GameQuitButton
   m_TagString: Untagged
@@ -4396,7 +4438,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &2469466486532547318
+--- !u!114 &4343733120557497426
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -4405,14 +4447,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 6293791614536814441}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 5649382731263328117}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1 &6378863226964921758
 GameObject:
   m_ObjectHideFlags: 0
@@ -5172,7 +5210,7 @@ GameObject:
   - component: {fileID: 2726212039263111112}
   - component: {fileID: 1988667697664623588}
   - component: {fileID: 132864141303289167}
-  - component: {fileID: 8335455139513229201}
+  - component: {fileID: 5546836867624963544}
   m_Layer: 5
   m_Name: OptButton
   m_TagString: Untagged
@@ -5282,7 +5320,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &8335455139513229201
+--- !u!114 &5546836867624963544
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5291,14 +5329,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 7382356744218897848}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 4014405597630417095}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1 &7407058390324361517
 GameObject:
   m_ObjectHideFlags: 0
@@ -5728,7 +5762,7 @@ GameObject:
   - component: {fileID: 1564252563725687983}
   - component: {fileID: 4395202889626102082}
   - component: {fileID: 8709452447328858891}
-  - component: {fileID: 7444346322062270583}
+  - component: {fileID: 1778588105395718879}
   m_Layer: 5
   m_Name: OnlineButton
   m_TagString: Untagged
@@ -5838,7 +5872,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &7444346322062270583
+--- !u!114 &1778588105395718879
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -5847,14 +5881,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8017554493566473193}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 6530834000202161262}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1 &8105839692788016396
 GameObject:
   m_ObjectHideFlags: 0
@@ -6429,7 +6459,7 @@ GameObject:
   - component: {fileID: 1231139797989826559}
   - component: {fileID: 4486432632565715076}
   - component: {fileID: 3638863528831700686}
-  - component: {fileID: 6717819290793852037}
+  - component: {fileID: 5697296449122302432}
   m_Layer: 5
   m_Name: LeaderBoardButton
   m_TagString: Untagged
@@ -6539,7 +6569,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6717819290793852037
+--- !u!114 &5697296449122302432
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6548,14 +6578,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 8557895858781347111}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 2692841226983057319}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1 &8649485068042575822
 GameObject:
   m_ObjectHideFlags: 0
@@ -7120,7 +7146,7 @@ GameObject:
   - component: {fileID: 7474874571949229789}
   - component: {fileID: 7242727946191367441}
   - component: {fileID: 147046412010214364}
-  - component: {fileID: 8493729908740693028}
+  - component: {fileID: 5257598781888026551}
   m_Layer: 5
   m_Name: PlayerProfileButton
   m_TagString: Untagged
@@ -7230,7 +7256,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &8493729908740693028
+--- !u!114 &5257598781888026551
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -7239,14 +7265,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 9095381109269105679}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b3c982b907b454449d9914782bfb90b, type: 3}
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _texts:
-  - {fileID: 2207379359260802317}
-  _images: []
-  _nonHoverAlpha: 0.4
-  _hoverAlpha: 1
+  m_Delegates: []
 --- !u!1001 &5229818090903157596
 PrefabInstance:
   m_ObjectHideFlags: 0

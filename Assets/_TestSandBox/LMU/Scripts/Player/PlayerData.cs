@@ -46,6 +46,10 @@ public class PlayerData : NetworkBehaviour
     [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
     [field: SerializeField] public Skin.Data SkinData {get; private set;}
 
+    public string NickName => Static_PlayerData.NickName.ToString();
+    public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
+    public string SkinPath => Dynamic_CharacterData.SkinPath.ToString();
+
     public override void Spawned()
     {
         // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
@@ -108,8 +112,4 @@ public class PlayerData : NetworkBehaviour
             IsReady = ready;
         }
     }
-
-    public string NickName => Static_PlayerData.NickName.ToString();
-    public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
-    public string SkinPath => Dynamic_CharacterData.SkinPath.ToString();
 }
