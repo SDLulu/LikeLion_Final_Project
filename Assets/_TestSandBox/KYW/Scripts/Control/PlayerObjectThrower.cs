@@ -136,6 +136,13 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
         }
         
+        // ️ Held 태그 제거 (픽업 가능하도록)
+        if (obj.CompareTag("Held"))
+        {
+            obj.tag = "Untagged";
+            Debug.Log($"[PlayerObjectThrower] Held 태그 제거: {obj.name}");
+        }
+        
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
         obj.transform.SetParent(null);
