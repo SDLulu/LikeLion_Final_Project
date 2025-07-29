@@ -42,7 +42,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
-    [field: SerializeField] public List<PMK_TileItemTable> tileItems { get; private set; }
+    [field: SerializeField] public List<PMK_TileTable> tileItems { get; private set; }
 
 
     [Header("TileZoneSpawner 설정")]
