@@ -145,7 +145,20 @@ public class PlayerObjectThrower : NetworkBehaviour
         
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
-        obj.transform.SetParent(null);
+        
+        // 🎯 캐릭터인 경우 로테이션만 초기화, 아이템은 부모만 해제
+        if (layer == LayerMask.NameToLayer("Player") || 
+            layer == LayerMask.NameToLayer("Enemy") || 
+            layer == LayerMask.NameToLayer("Npc"))
+        {
+            obj.transform.SetParent(null);
+            obj.transform.rotation = Quaternion.identity; // 🔄 로테이션만 0으로 초기화
+            Debug.Log($"[PlayerObjectThrower] 캐릭터 로테이션 초기화: {obj.name}");
+        }
+        else
+        {
+            obj.transform.SetParent(null);
+        }
 
         // 물리/충돌 복구
         if (applyForce)
