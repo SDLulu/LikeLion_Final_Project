@@ -24,17 +24,36 @@ public class PlayerJump : NetworkBehaviour
     private PlayerGroundCheck groundCheck;
     private PlayerMovement movement;
     private Rigidbody2D rb;
+    private SpelunkyPlayerController playerController;
     
     public override void Spawned()
     {
+        // 모든 컴포넌트 참조를 한 번에 설정
         rb = GetComponent<Rigidbody2D>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
+        playerController = GetComponent<SpelunkyPlayerController>();
+        
+        // 필수 컴포넌트 검증
+        if (rb == null)
+            Debug.LogError($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없습니다!");
+        if (groundCheck == null)
+            Debug.LogError($"[{name}] PlayerGroundCheck 컴포넌트를 찾을 수 없습니다!");
+        if (movement == null)
+            Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+        if (playerController == null)
+            Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 점프 관련 모든 처리를 통합한 메서드
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
+        // 상태 확인 - 점프 불가능한 상태면 처리하지 않음
+        if (playerController.IsDead || playerController.IsStunned || playerController.IsHeld || playerController.IsThrown)
+        {
+            return;
+        }
+        
         HandleJump(input);
         ApplyGravity();
         ClampVelocity();
@@ -50,17 +69,13 @@ public class PlayerJump : NetworkBehaviour
         {
             IsJumping = true;
             JumpTime = 0f;
-            if (rb != null)
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
             Debug.Log("🦘 사다리에서 점프!");
         }
     }
     
-    private void HandleJump(SpelunkyPlayerData input)
+    private void HandleJump(SpelunkyPlayerInputData input)
     {
-        // 웅크린 상태에서는 점프 불가
-        if (movement.IsDucking) return;
-        
         // Fusion 2 공식 패턴: GetPressed로 점프 버튼 눌림 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
@@ -68,7 +83,7 @@ public class PlayerJump : NetworkBehaviour
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 점프 시작 (땅에 있을 때만, 한 번만 감지)
+        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지)
         if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
         {
             // 점프 상태 시작

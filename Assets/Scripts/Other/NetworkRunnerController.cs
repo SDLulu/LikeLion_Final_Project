@@ -26,6 +26,9 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     // 🛠️ 개발용 설정: 현재 씬에서 바로 테스트할지 여부
     private bool skipSceneLoading = false;
 
+    // 🏷️ 게임 씬 이름 (인스펙터에서 설정)
+    [SerializeField] public string gameSceneName = "Main";
+
     // 🛑 네트워크 연결 종료 메서드
     public void ShutDownRunner()
     {
@@ -92,10 +95,8 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
               // 🛠️ 개발 모드에서는 씬 이동 건너뛰기
               if (!skipSceneLoad)
               {
-                  // ✅ 성공시 메인 게임 씬으로 이동
-                  //const string SCENE_NAME = "MainGame";
-                  const string SCENE_NAME = "KHScene";
-                  networkRunnerInstance.LoadScene(SCENE_NAME);
+                  // ✅ 성공시 인스펙터에서 지정한 게임 씬으로 이동
+                  networkRunnerInstance.LoadScene(gameSceneName);
               }
               else
               {

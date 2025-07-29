@@ -35,13 +35,13 @@ public class PlayerShiftSkill : NetworkBehaviour
         animator = GetComponentInChildren<Animator>();
     }
 
-    public void ProcessInput(SpelunkyPlayerData input)
+    public void ProcessInput(SpelunkyPlayerInputData input)
     {
         HandleSkillInput(input);
         UpdateSkillState();
     }
 
-    private void HandleSkillInput(SpelunkyPlayerData input)
+    private void HandleSkillInput(SpelunkyPlayerInputData input)
     {
         // InputAuthority에서만 스킬 입력 처리
         if (!Object.HasInputAuthority) return;
