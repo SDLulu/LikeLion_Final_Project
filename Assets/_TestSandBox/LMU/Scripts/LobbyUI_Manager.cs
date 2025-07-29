@@ -24,14 +24,17 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
                 Fader.Inst.ActiveBGImage(true, Color.black);
                 await Awaitable.WaitForSecondsAsync(2.0f);
                 await Fader.Inst.FadeInAsync();
+                UITitle.Show(); 
             }
         }
     }
 
-    public void ActiveTitleUI()
+    public void ActiveTitleUI(bool showTitleTween = false)
     {
         UIEnterOnline.gameObject.SetActive(true);
         UILobby.gameObject.SetActive(false);
+        if (showTitleTween)
+            UITitle.Show();
     }
 
     public void ActiveLobbyOnLineUI()
