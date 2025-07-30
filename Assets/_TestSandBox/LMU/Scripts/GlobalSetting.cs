@@ -56,6 +56,7 @@ public class GlobalSetting : BaseManager<GlobalSetting>
     {
         get
         {
+            #if UNITY_EDITOR
             if (_settingData.FocusScene == null)
             {
                 return string.Empty;
@@ -66,8 +67,9 @@ public class GlobalSetting : BaseManager<GlobalSetting>
                 Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]의 포커스 씬 경로가 유효하지 않습니다");
                 return string.Empty;
             }
-
             return _settingData.FocusScene.name;
+            #endif
+            return string.Empty;
         }
     }
 
