@@ -21,7 +21,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
 
     [Header("디버그용")]
-    [SerializeField] private UI_Controller uiController = null;
+    [SerializeField] private LobbyUI_Manager uiController = null;
     [SerializeField] private Fader fader = null;
     [SerializeField] private CutSceneController cutSceneController = null;
     [SerializeField] private PlayerManager playerManager = null;
@@ -119,7 +119,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         }
 
         UIEventSystem.Inst.TriggerGameUIActive(true);
-        UI_Controller.Inst.DeactiveAllLobbyUI();
+        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
         _ = Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
 
@@ -132,7 +132,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
-            { typeof(UI_Controller), uiController != null ? uiController : UI_Controller.Inst },
+            { typeof(LobbyUI_Manager), uiController != null ? uiController : LobbyUI_Manager.Inst },
             { typeof(Fader), fader != null ? fader : Fader.Inst },
             { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
             { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },

@@ -19,6 +19,7 @@ public class GameStagePlayingState : BaseStateBehaviour
     public async Awaitable MapLoad()
     {
         await Awaitable.NextFrameAsync();
+        await Awaitable.WaitForSecondsAsync(2.0f);
         NetEvent.TriggerStageLoadDoneEvent("1-1");
 
         var startPos = Vector2.zero;

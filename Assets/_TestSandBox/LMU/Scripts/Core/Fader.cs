@@ -28,6 +28,10 @@ namespace LMCore
         [SerializeField] private RectTransform _imageRoot;
         [SerializeField] private Image _bgImage;
 
+        [Header("로딩 UI")]
+        [SerializeField] private RectTransform _loadingPanel;
+        [SerializeField] private RectTransform _loadingRotateIcon;
+
         [Header("FullScreen 페이드")]
         [SerializeField] private RectTransform _fullScreenImage;
 
@@ -37,11 +41,16 @@ namespace LMCore
         [SerializeField] private Vector2 _endSize = new Vector2(0, 0);
         [SerializeField] private Ease _fadeInEase = Ease.InOutSine;
         [SerializeField] private Ease _fadeOutEase = Ease.InOutSine;
+        [SerializeField] private float _loadingUiFadeDuration = 0.5f;
+        [SerializeField] private float _loadingIconRotateSpeed = 1.0f;
 
         private bool _isInitialized = false;
         private bool _isFading = false;
 
         public bool IsFading => _isFading;
+
+        private Tween _loadingRotateTween;
+        private Tween _loadingScaleTween;
 
         public void Awake()
         {
@@ -50,7 +59,32 @@ namespace LMCore
             DontDestroyOnLoad(this);
             InitializeFader();
         }
+
+        private void OnDestroy()
+        {
+            _loadingRotateTween?.Kill();
+            _loadingScaleTween?.Kill();
+        }
+
+        public void ActiveBGImage( bool isActive = true, Color color = default)
+        {
+            _fullScreenImage.gameObject.SetActive(isActive);
+            _fullScreenImage.GetComponent<Image>().color = color;
+        }
+
 #if UNITY_EDITOR
+        [ContextMenu("BGImage 활성화")]
+        private void ActiveBGImage()
+        {
+            ActiveBGImage(true, Color.black);
+        }
+
+        [ContextMenu("BGImage 비활성화")]
+        private void DeactiveBGImage()
+        {
+            ActiveBGImage(false, Color.black);
+        }
+
         bool _testFade = false;
         [ContextMenu("기본 FadeIn")]
         private async void FadeIn()
@@ -91,6 +125,19 @@ namespace LMCore
             await FadeOutExpandAsync(Color.white, 1.5f, Vector2.zero);
             _testFade = false;
         }
+
+        [ContextMenu("로딩과 함께 FadeOut/In")]
+        private async void FadeWithLoadingTest()
+        {
+            if (_testFade)
+                return;
+            _testFade = true;
+            await FadeOutWithLoading(Color.black, 1.0f);
+            // 실제 사용 시, 이 부분에서 로딩 작업을 수행합니다.
+            await Awaitable.WaitForSecondsAsync(2.0f);
+            await FadeInWithLoading(Color.black, 1.0f);
+            _testFade = false;
+        }
 #endif
 
         private void InitializeFader()
@@ -103,6 +150,9 @@ namespace LMCore
             
             if (_imageRoot != null)
                 _imageRoot.gameObject.SetActive(false);
+
+            if (_loadingPanel != null)
+                _loadingPanel.gameObject.SetActive(false);
 
             if (_bgImage != null)
             {
@@ -225,6 +275,80 @@ namespace LMCore
             }
 
             image.color = new Color(color.r, color.g, color.b, 1f);
+            _isFading = false;
+            await Awaitable.NextFrameAsync();
+        }
+
+        public async Awaitable FadeOutWithLoading(Color color = default, float seconds = 1f)
+        {
+            CheckAndInitialize();
+            if (_fullScreenImage == null || IsFading)
+                return;
+
+            _isFading = true;
+
+            // 1. 화면을 어둡게 합니다.
+            var image = _fullScreenImage.GetComponent<Image>();
+            image.gameObject.SetActive(true);
+            image.color = new Color(color.r, color.g, color.b, 0f);
+            var fadeOutTween = image.DOFade(1f, seconds).SetUpdate(true);
+
+            // 2. 로딩 UI를 표시합니다.
+            if (_loadingPanel != null)
+            {
+                _loadingPanel.gameObject.SetActive(true);
+                _loadingPanel.localScale = Vector3.zero;
+                _loadingScaleTween?.Kill();
+                _loadingScaleTween = _loadingPanel.DOScale(1f, _loadingUiFadeDuration).SetEase(Ease.OutBack).SetUpdate(true);
+            }
+
+            // 3. 로딩 아이콘 회전을 시작합니다.
+            if (_loadingRotateIcon != null)
+            {
+                _loadingRotateTween?.Kill();
+                // 아이콘의 회전 값을 초기화하여 항상 같은 상태에서 시작하도록 합니다.
+                _loadingRotateIcon.localRotation = Quaternion.identity;
+                _loadingRotateTween = _loadingRotateIcon.DORotate(new Vector3(0, 0, -360), _loadingIconRotateSpeed, RotateMode.FastBeyond360)
+                    .SetLoops(-1, LoopType.Restart)
+                    .SetEase(Ease.Linear)
+                    .SetUpdate(true);
+            }
+
+            await fadeOutTween.AsyncWaitForCompletion();
+            _isFading = false;
+            await Awaitable.NextFrameAsync();
+        }
+
+        public async Awaitable FadeInWithLoading(Color color = default, float seconds = 1f)
+        {
+            CheckAndInitialize();
+            if (_fullScreenImage == null || IsFading)
+                return;
+
+            _isFading = true;
+
+            // 1. 화면을 밝게 합니다.
+            var image = _fullScreenImage.GetComponent<Image>();
+            image.gameObject.SetActive(true);
+            image.color = new Color(color.r, color.g, color.b, 1f);
+            var fadeInTween = image.DOFade(0f, seconds).SetUpdate(true).OnComplete(() => image.gameObject.SetActive(false));
+
+            // 2. 로딩 UI를 숨깁니다.
+            if (_loadingPanel != null)
+            {
+                _loadingScaleTween?.Kill();
+                _loadingScaleTween = _loadingPanel.DOScale(0f, _loadingUiFadeDuration).SetEase(Ease.InBack).SetUpdate(true)
+                    .OnComplete(() =>
+                    {
+                        _loadingPanel.gameObject.SetActive(false);
+                        // 아이콘의 회전 값을 초기화하여 다음 사용을 준비합니다.
+                        if (_loadingRotateIcon != null)
+                            _loadingRotateIcon.localRotation = Quaternion.identity;
+                    });
+            }
+            _loadingRotateTween?.Kill();
+
+            await fadeInTween.AsyncWaitForCompletion();
             _isFading = false;
             await Awaitable.NextFrameAsync();
         }

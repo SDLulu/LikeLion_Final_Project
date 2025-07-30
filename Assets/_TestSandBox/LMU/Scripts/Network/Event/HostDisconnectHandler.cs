@@ -31,7 +31,7 @@ public class HostDisconnectHandler : MonoBehaviour
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
-            UI_Controller.Inst.ActiveTitleUI();
+            LobbyUI_Manager.Inst.ActiveTitleUI();
             await Fader.Inst.FadeInAsync(Color.black, 1.0f);
         }
     }
