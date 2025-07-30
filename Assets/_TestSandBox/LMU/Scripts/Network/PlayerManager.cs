@@ -320,18 +320,6 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_MoveToGameScene()
     {
-        // 게임씬 카메라 제거
-        var gameSceneCamera = this.FindObjectsByTypeAtCurScene<Camera>().FirstOrDefault(x=> x.tag != "MainCamera");
-        if (gameSceneCamera == null)
-        {
-            Debug.LogError("게임씬 카메라를 찾을 수 없습니다.");
-            return;
-        }
-        else
-        {
-            GameObject.Destroy(gameSceneCamera.gameObject);
-        }
-
         foreach (var obj in this.Players.ToList().Select(x => x.Value.gameObject))
         {
             if (obj == null)

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
+using LMCore;
 
 public class UI_Title : MonoBehaviour
 {
@@ -156,8 +157,10 @@ public class UI_Title : MonoBehaviour
 
     }
 
-    private void OnClickExitBtn()
+    private async void OnClickExitBtn()
     {
+        await Fader.Inst.FadeOutAsync(seconds: 0.5f);
+
         Application.Quit();
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
