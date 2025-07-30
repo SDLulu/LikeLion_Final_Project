@@ -54,7 +54,7 @@ public static class SpelunkyNetworkInitializer
     // 로컬 플레이어용 카메라 설정
     public static void SetupCameraForLocalPlayer(SpelunkyPlayerController player)
     {
-        var existingCamera = Object.FindFirstObjectByType<CinemachineCamera>();
+        var existingCamera = CameraMover.Inst.PlayerCamera;
         if (existingCamera != null)
         {
             existingCamera.Follow = player.transform;

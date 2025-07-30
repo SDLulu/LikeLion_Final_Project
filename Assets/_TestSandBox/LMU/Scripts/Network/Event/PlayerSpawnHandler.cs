@@ -13,10 +13,27 @@ public class PlayerSpawnHandler : MonoBehaviour
     [SerializeField] private GameStates gameStates;
 
 
+
 #region 플레이어 입장 및 퇴장
+
+    /// <summary>
+    /// 로비씬로드 대기
+    /// </summary>
+    public async Awaitable WaitForLobbySceneLoaded()
+    {
+        while (true)
+        {
+            await Awaitable.NextFrameAsync();
+            if (LocalSceneManager.Inst.GetActiveScene().name == GlobalSetting.Inst.LobbyScenePath)
+            {
+                break;
+            }
+        }
+    }
     public async void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
         Debug.Log($"플레이어 {player} 입장");
+        await WaitForLobbySceneLoaded();
 
         localGameMode = runner.GameMode;
         if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null) 

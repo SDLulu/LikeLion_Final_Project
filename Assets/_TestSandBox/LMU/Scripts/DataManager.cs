@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using LMCore;
 using UnityEngine;
 
@@ -8,12 +9,14 @@ public class DataManager : BaseManager<DataManager>
     public Dictionary<int, Stage.Data> StageData;
     public Dictionary<int, Skin.Data> SkinData;
     public Dictionary<int, FakeClient.Data> FakeClientData;
+    public Dictionary<int, Sound.Data> SoundData;
 
-    public void Awake()
+    protected override void Awake()
     {
         StageData = Stage.Data.GetDictionary();
         SkinData = Skin.Data.GetDictionary();
         FakeClientData = FakeClient.Data.GetDictionary();
+        SoundData = Sound.Data.GetDictionary();
     }
 
     // --- 클라이언트 관련
@@ -50,5 +53,17 @@ public class DataManager : BaseManager<DataManager>
         int id = SkinData[0].DataID;
         var randomIndex = Random.Range(id, id + SkinData.Count);
         return GetSkinData(randomIndex);
+    }
+
+    // --- 사운드 데이터 관련
+    public Sound.Data GetSoundData(string name)
+    {
+        var result = SoundData.FirstOrDefault(x => x.Value.Name == name);
+        if (result.Value != null)
+        {
+            return result.Value;
+        }
+        Debug.LogError($"사운드 데이터를 찾을 수 없습니다. name: {name}");
+        return null;
     }
 }
