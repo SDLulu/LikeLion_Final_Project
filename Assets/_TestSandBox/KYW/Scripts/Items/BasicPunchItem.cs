@@ -7,8 +7,8 @@ public class BasicPunchItem : NetworkBehaviour, IItemInteraction
     [SerializeField] private float punchDistance = 1.2f;
     [SerializeField] private float punchDuration = 0.15f;
 
-    [Header("Punch Attack Collision Handler")]
-    [SerializeField] private AttackCollisionHandler punchAttackCollisionHandler;
+    [Header("Attack Collision Handler")]
+    [SerializeField] private AttackCollisionHandler AttackCollisionHandler;
 
     private SpriteRenderer spriteRenderer;
     private Collider2D attackCollider;
@@ -21,15 +21,15 @@ public class BasicPunchItem : NetworkBehaviour, IItemInteraction
     private bool isPunchActive { get { return PunchTimer.IsRunning; } }
     
     public bool IsPunchActive => isPunchActive;
-    public bool IsHoldable => !IsHeld;
+    bool IItemInteraction.IsHeld => true;  // 기본 펀치는 항상 들려있음
 
     private void Awake()
     {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         
-        if (punchAttackCollisionHandler != null)
+        if (AttackCollisionHandler != null)
         {
-            attackCollider = punchAttackCollisionHandler.punchAttackCollider;
+            attackCollider = AttackCollisionHandler.AttackCollider;
         }
         
         originalPosition = transform.localPosition;
