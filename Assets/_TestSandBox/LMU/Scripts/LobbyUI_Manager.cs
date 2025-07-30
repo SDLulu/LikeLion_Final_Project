@@ -17,14 +17,13 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
         if (_inited == false)
         {
             DontDestroyOnLoad(this);
-            ActiveTitleUI();
             _inited = true;
             if (GlobalSetting.Inst.IsShowTitleAnimation)
             {
                 Fader.Inst.ActiveBGImage(true, Color.black);
                 await Awaitable.WaitForSecondsAsync(2.0f);
                 await Fader.Inst.FadeInAsync();
-                UITitle.Show(); 
+                ActiveTitleUI(true);
             }
         }
     }
