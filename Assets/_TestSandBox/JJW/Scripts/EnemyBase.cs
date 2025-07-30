@@ -4,8 +4,6 @@ using System.Diagnostics;
 using Fusion;
 using Fusion.Addons.FSM;
 using Fusion.Addons.Physics;
-using Unity.VisualScripting;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 
 public enum EnemyStateName
