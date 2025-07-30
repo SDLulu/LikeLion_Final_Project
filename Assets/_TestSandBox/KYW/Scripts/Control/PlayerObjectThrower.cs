@@ -127,6 +127,17 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
         }
         
+        // 아이템인 경우 IItemInteraction 체크
+        if (layer == LayerMask.NameToLayer("Item"))
+        {
+            var itemInteraction = obj.GetComponent<IItemInteraction>();
+            if (itemInteraction != null)
+            {
+                // 아이템의 OnReleased 호출
+                itemInteraction.OnReleased();
+            }
+        }
+        
         // 🎮 InputAuthority 해제 (아이템만)
         if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
         {
@@ -134,13 +145,6 @@ public class PlayerObjectThrower : NetworkBehaviour
             {
                 netObj.RemoveInputAuthority();
             }
-        }
-        
-        // ️ Held 태그 제거 (픽업 가능하도록)
-        if (obj.CompareTag("Held"))
-        {
-            obj.tag = "Untagged";
-            Debug.Log($"[PlayerObjectThrower] Held 태그 제거: {obj.name}");
         }
         
         // 손에서 해제 (데이터만 관리)

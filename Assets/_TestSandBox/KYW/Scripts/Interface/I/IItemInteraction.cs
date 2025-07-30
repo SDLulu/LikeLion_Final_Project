@@ -4,15 +4,15 @@ using UnityEngine;
 public interface IItemInteraction : IKnockbackable, IHoldable, IUsableItem
 {
     // 넉백
-    void ApplyKnockback(Vector3 force);
+    new void ApplyKnockback(Vector2 force, float duration = 0f);
 
     // 들기
-    bool IsHoldable { get; }
-    void OnPickedUp(Transform holder);
-    void OnReleased();
+    new bool IsHoldable { get; }
+    new void OnPickedUp();
+    new void OnReleased();
 
     // 사용 (클릭 입력 기반)
-    void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition);
-    void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition);
-    void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition);
+    new void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition);
+    new void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition);
+    new void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition);
 } 
