@@ -137,6 +137,17 @@ public class PlayerObjectPickup : NetworkBehaviour
                 }
             }
             
+            // 아이템인 경우 IItemInteraction 체크
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+            {
+                var itemInteraction = obj.GetComponent<IItemInteraction>();
+                if (itemInteraction != null)
+                {
+                    // 아이템의 OnPickedUp 호출
+                    itemInteraction.OnPickedUp();
+                }
+            }
+            
             // 아이템/캐릭터 구분 없이 무조건 손에 든다
             bool picked = inventory.HoldObject(obj); 
             if (picked)
@@ -166,13 +177,6 @@ public class PlayerObjectPickup : NetworkBehaviour
                     {
                         networkObject.AssignInputAuthority(Object.InputAuthority);
                     }
-                }
-                
-                // ️ 아이템에 Held 태그 추가 (픽업 대상에서 제외)
-                if (layer == LayerMask.NameToLayer("Item"))
-                {
-                    obj.tag = "Held";
-                    Debug.Log($"[PlayerObjectPickup] 아이템에 Held 태그 추가: {obj.name}");
                 }
                 
                 DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화
@@ -228,10 +232,15 @@ public class PlayerObjectPickup : NetworkBehaviour
     {
         Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
         
-        // 🏷️ Held 태그가 있으면 픽업 대상에서 제외
-        if (other.CompareTag("Held"))
+        // 🎯 아이템인 경우 IItemInteraction 체크
+        if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
         {
-            Debug.Log($"[PlayerObjectPickup] Held 태그가 있어서 픽업 대상에서 제외: {other.gameObject.name}");
+            var itemInteraction = other.GetComponent<IItemInteraction>();
+            if (itemInteraction != null && itemInteraction.IsHoldable)
+            {
+                nearbyObjects.Add(other.gameObject);
+                Debug.Log($"[PlayerObjectPickup] 들 수 있는 아이템 감지: {other.gameObject.name}");
+            }
             return;
         }
         
@@ -245,7 +254,7 @@ public class PlayerObjectPickup : NetworkBehaviour
                 Debug.Log($"[PlayerObjectPickup] 들 수 있는 플레이어 감지: {other.gameObject.name}");
             }
         }
-        // 기존 아이템 처리
+        // 기타 레이어 처리
         else if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
         {
             nearbyObjects.Add(other.gameObject);
