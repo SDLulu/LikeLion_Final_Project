@@ -21,8 +21,8 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
             if (GlobalSetting.Inst.IsShowTitleAnimation)
             {
                 Fader.Inst.ActiveBGImage(true, Color.black);
-                await Awaitable.WaitForSecondsAsync(2.0f);
-                await Fader.Inst.FadeInAsync();
+                await Awaitable.WaitForSecondsAsync(0.5f);
+                await Fader.Inst.FadeInAsync(seconds: 0.5f);
                 ActiveTitleUI(true);
             }
         }

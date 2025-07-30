@@ -92,7 +92,6 @@ public class UI_CharacterSlot : MonoBehaviour
     {
         if (connectedPlayer != null)
         {
-            // 새로운 구조에서 데이터 가져오기
             playerNameText.text = connectedPlayer.NickName;
             characterImage.sprite = Resources.Load<Sprite>(connectedPlayer.SkinPath);
             isReady = connectedPlayer.IsReady;
