@@ -56,6 +56,7 @@ public class GlobalSetting : BaseManager<GlobalSetting>
     {
         get
         {
+            #if UNITY_EDITOR
             if (_settingData.FocusScene == null)
             {
                 return string.Empty;
@@ -68,6 +69,8 @@ public class GlobalSetting : BaseManager<GlobalSetting>
             }
 
             return _settingData.FocusScene.name;
+            #endif
+            return null;
         }
     }
 
