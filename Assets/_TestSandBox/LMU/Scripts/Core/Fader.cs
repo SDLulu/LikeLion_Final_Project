@@ -213,7 +213,7 @@ namespace LMCore
         }
         
 
-        public async Awaitable FadeInAsync(Color color = default, float seconds = 1f)
+        public async Awaitable FadeInAsync(Color color = default, float seconds = 0.5f)
         {
             CheckAndInitialize();
             if (_imageRoot == null || _contentsRoot == null || IsFading)
@@ -247,7 +247,7 @@ namespace LMCore
             await Awaitable.NextFrameAsync();
         }
         
-        public async Awaitable FadeOutAsync(Color color = default, float seconds = 1f)
+        public async Awaitable FadeOutAsync(Color color = default, float seconds = 0.5f)
         {
             CheckAndInitialize();
             if (_imageRoot == null || _contentsRoot == null || IsFading)
@@ -287,13 +287,11 @@ namespace LMCore
 
             _isFading = true;
 
-            // 1. 화면을 어둡게 합니다.
             var image = _fullScreenImage.GetComponent<Image>();
             image.gameObject.SetActive(true);
             image.color = new Color(color.r, color.g, color.b, 0f);
             var fadeOutTween = image.DOFade(1f, seconds).SetUpdate(true);
 
-            // 2. 로딩 UI를 표시합니다.
             if (_loadingPanel != null)
             {
                 _loadingPanel.gameObject.SetActive(true);
@@ -302,11 +300,9 @@ namespace LMCore
                 _loadingScaleTween = _loadingPanel.DOScale(1f, _loadingUiFadeDuration).SetEase(Ease.OutBack).SetUpdate(true);
             }
 
-            // 3. 로딩 아이콘 회전을 시작합니다.
             if (_loadingRotateIcon != null)
             {
                 _loadingRotateTween?.Kill();
-                // 아이콘의 회전 값을 초기화하여 항상 같은 상태에서 시작하도록 합니다.
                 _loadingRotateIcon.localRotation = Quaternion.identity;
                 _loadingRotateTween = _loadingRotateIcon.DORotate(new Vector3(0, 0, -360), _loadingIconRotateSpeed, RotateMode.FastBeyond360)
                     .SetLoops(-1, LoopType.Restart)
@@ -327,13 +323,11 @@ namespace LMCore
 
             _isFading = true;
 
-            // 1. 화면을 밝게 합니다.
             var image = _fullScreenImage.GetComponent<Image>();
             image.gameObject.SetActive(true);
             image.color = new Color(color.r, color.g, color.b, 1f);
             var fadeInTween = image.DOFade(0f, seconds).SetUpdate(true).OnComplete(() => image.gameObject.SetActive(false));
 
-            // 2. 로딩 UI를 숨깁니다.
             if (_loadingPanel != null)
             {
                 _loadingScaleTween?.Kill();
@@ -341,7 +335,6 @@ namespace LMCore
                     .OnComplete(() =>
                     {
                         _loadingPanel.gameObject.SetActive(false);
-                        // 아이콘의 회전 값을 초기화하여 다음 사용을 준비합니다.
                         if (_loadingRotateIcon != null)
                             _loadingRotateIcon.localRotation = Quaternion.identity;
                     });
