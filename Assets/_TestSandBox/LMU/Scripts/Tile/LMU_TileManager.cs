@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using Fusion;
 using UnityEngine;
 
-public partial class PMK_TileRogic : NetworkBehaviour
+public partial class PMK_TileRogic : MonoBehaviour
 {
     /// <summary>
     /// 전체 맵 삭제
@@ -183,19 +182,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private void InitializeForEditorTest()
     {
         Debug.Log("LMU 초기화 중...");
-
+        
         // 1. mapPrefabDict 초기화
-        if (mapPrefabDict == null)
+        mapPrefabDict = new Dictionary<string, GameObject[]>
         {
-            mapPrefabDict = new Dictionary<string, GameObject[]>();
-
-            foreach (var set in mapPrefabSets)
-            {
-                if (!mapPrefabDict.ContainsKey(set.mapType))
-                    mapPrefabDict.Add(set.mapType, set.prefabs);
-            }
-        }
-
+            { "C", Clear_Map_Prefab },
+            { "LR", LR_Exit_Map_Prefab },
+            { "D", D_Exit_Map_Prefab },
+            { "W", W_Exit_Map_Prefab },
+            { "WD", WD_Exit_Map_Prefab },
+            { "S", Special_Map_Prefab }
+        };
+        
         // 2. 기존 맵 정리
         if (mainTilemap != null)
         {

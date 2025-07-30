@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 6678292916413992203}
   - component: {fileID: 5927336736063456179}
   - component: {fileID: 5020810653289183323}
-  - component: {fileID: 4639333899981903039}
-  m_Layer: 8
+  - component: {fileID: 5928931463295727648}
+  m_Layer: 0
   m_Name: BoomMon!!!!!
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -154,7 +154,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &4639333899981903039
+--- !u!114 &5928931463295727648
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -163,16 +163,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 4569764235285626125}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0769a716c3fedef49aacd3c74ec7d80d, type: 3}
+  m_Script: {fileID: 11500000, guid: 6eac7ee85174e8446bf5edb81bd479f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   destroyArea: {fileID: 7953718114797873995}
-  destroyCollider2D: {fileID: 6111369041995829154}
-  destroyLayer:
+  whatisPlatform:
     serializedVersion: 2
     m_Bits: 64
+  whatisTileitem:
+    serializedVersion: 2
+    m_Bits: 512
+  deleteCollider2D: {fileID: 6111369041995829154}
   deleteRadius: 3
-  delayBeforeBoom: 3
 --- !u!1 &7953718114797873995
 GameObject:
   m_ObjectHideFlags: 0
