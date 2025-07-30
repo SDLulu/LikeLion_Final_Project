@@ -28,6 +28,7 @@ public class UI_Title : MonoBehaviour
 
     private Vector3 _originPos;
     private Vector3 _offscreenPos;
+    private Vector3 _nicknameOriginPos;
     private Tween _titleMoveTween;
     private Tween _titleScaleTween;
     private Tween _nicknameMoveTween;
@@ -47,21 +48,15 @@ public class UI_Title : MonoBehaviour
         _enterOnlinePanel.gameObject.SetActive(false);
 
         _originPos = _titleButtonPanel.anchoredPosition;
-        var canvas = GetComponentInParent<Canvas>();
-        if (canvas != null && canvas.pixelRect.height > 0)
-        {
-            _canvasHeight = canvas.pixelRect.height;
-            _canvasWidth = canvas.pixelRect.width;
-        }
-        else
-        {
-            Debug.LogWarning("Canvas를 찾을 수 없거나 크기가 0입니다. 기본 해상도(1920x1080)를 사용합니다.", this);
-            _canvasHeight = 1080f; // 기본값
-            _canvasWidth = 1920f;
-        }
+        _nicknameOriginPos = _uiCreateNickName.Holder.anchoredPosition; 
+        var canvas = GetComponent<Canvas>();
+        _canvasHeight = canvas.pixelRect.height;
+        _canvasWidth = canvas.pixelRect.width;
         _offscreenPos = _originPos + new Vector3(0, -_canvasHeight, 0);
         _titleButtonPanel.anchoredPosition = _offscreenPos;
         _titleButtonPanel.localScale = Vector3.one * _scaleStart;
+        _uiCreateNickName.Holder.anchoredPosition = (Vector2)_nicknameOriginPos + new Vector2(-_canvasWidth, 0);
+        _uiCreateNickName.Holder.gameObject.SetActive(true);
     }
 
     public void Show()
@@ -71,7 +66,21 @@ public class UI_Title : MonoBehaviour
             gameObject.SetActive(true);
         }
         ShowTitlePanelWithTween();
+        AnimateNicknamePanelIn(_uiCreateNickName.Holder);
     }
+
+    public void Hide()
+    {
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _titleMoveTween = _titleButtonPanel.DOAnchorPos(_originPos + new Vector3(0, _canvasHeight, 0), _moveOutDuration)
+            .SetEase(Ease.InBack)
+            .OnComplete(() =>
+            {
+                gameObject.SetActive(false);
+            });
+    }
+
 
     private void ShowTitlePanelWithTween()
     {
@@ -90,17 +99,6 @@ public class UI_Title : MonoBehaviour
             });
     }
 
-    public void Hide()
-    {
-        _titleMoveTween?.Kill();
-        _titleScaleTween?.Kill();
-        _titleMoveTween = _titleButtonPanel.DOAnchorPos(_originPos + new Vector3(0, _canvasHeight, 0), _moveOutDuration)
-            .SetEase(Ease.InBack)
-            .OnComplete(() =>
-            {
-                gameObject.SetActive(false);
-            });
-    }
 
     private void HideTitlePanelWithTween(System.Action onComplete = null)
     {
@@ -136,7 +134,6 @@ public class UI_Title : MonoBehaviour
     public UI_GlobalSetting UIGlobalSetting => _uiGlobalSetting ??= FindAnyObjectByType<UI_GlobalSetting>();
     private void OnClickEnterOnlineBackBtn()
     {
-        // 두 애니메이션을 동시에 시작합니다.
         AnimateNicknamePanelIn(_uiCreateNickName.Holder);
         ShowTitlePanelWithTween();
 
@@ -146,7 +143,6 @@ public class UI_Title : MonoBehaviour
 
     private void OnClickOnlinePlayBtn()
     {
-        // 두 애니메이션을 동시에 시작합니다.
         AnimateNicknamePanelOut(_uiCreateNickName.Holder);
         HideTitlePanelWithTween(() =>
         {
@@ -171,15 +167,15 @@ public class UI_Title : MonoBehaviour
     private void AnimateNicknamePanelIn(RectTransform panel)
     {
         _nicknameMoveTween?.Kill();
-        panel.anchoredPosition = (Vector2)_originPos + new Vector2(-_canvasWidth, 0);
+        panel.anchoredPosition = (Vector2)_nicknameOriginPos + new Vector2(-_canvasWidth, 0);
         panel.gameObject.SetActive(true);
-        _nicknameMoveTween = panel.DOAnchorPos(_originPos, _moveDuration).SetEase(Ease.OutBack);
+        _nicknameMoveTween = panel.DOAnchorPos(_nicknameOriginPos, _moveDuration).SetEase(Ease.OutBack);
     }
 
     private void AnimateNicknamePanelOut(RectTransform panel)
     {
         _nicknameMoveTween?.Kill();
-        _nicknameMoveTween = panel.DOAnchorPos((Vector2)_originPos + new Vector2(0, _canvasHeight), _moveOutDuration)
+        _nicknameMoveTween = panel.DOAnchorPos((Vector2)_nicknameOriginPos + new Vector2(0, _canvasHeight), _moveOutDuration)
             .SetEase(Ease.InBack)
             .OnComplete(() => panel.gameObject.SetActive(false));
     }
