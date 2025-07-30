@@ -2,27 +2,40 @@ using Fusion;
 using UnityEngine;
 
 // 네트워크 동기화 기반 곡괭이
-public class Pickaxe : NetworkBehaviour, IUsableItem
+public class Pickaxe : NetworkBehaviour, IItemInteraction
 {
     [Header("Pickaxe Settings")]
     [SerializeField] private float swingAngle = 90f;
     [SerializeField] private float swingDuration = 0.18f;
-    [SerializeField] private Collider2D bladeCollider;
-    [SerializeField] private LayerMask tileLayer;
+    
+    [Header("Attack Collision Handler")]
+    [SerializeField] private AttackCollisionHandler attackCollisionHandler;
+    
 
-    [Networked] private float PickaxeTimer { get; set; }
-    [Networked] private float PickaxeAngle { get; set; }
-    [Networked] private NetworkBool IsSwinging { get; set; }
-    [Networked] private NetworkBool HasHitTile { get; set; }
+    [Networked] private TickTimer PickaxeTimer { get; set; }
+
+    [Networked] private NetworkBool IsHeld { get; set; }
 
     private Quaternion originalRotation;
     private SpriteRenderer spriteRenderer;
+    private Collider2D attackCollider;
+
+    private bool isPickaxeActive { get { return PickaxeTimer.IsRunning; } }
+    
+    bool IItemInteraction.IsHeld => IsHeld;  // 인터페이스 구현 (명시적 구현)
 
     private void Awake()
     {
-        if (bladeCollider != null) bladeCollider.enabled = false;
-        originalRotation = transform.localRotation;
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        
+        if (attackCollisionHandler != null)
+        {
+            attackCollider = attackCollisionHandler.AttackCollider;
+        }
+        
+        originalRotation = transform.localRotation;
+        
+        if (attackCollider != null) attackCollider.enabled = false;
     }
 
     public override void Spawned()
@@ -38,68 +51,89 @@ public class Pickaxe : NetworkBehaviour, IUsableItem
 
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        if (!HasStateAuthority || IsSwinging) return;
-        IsSwinging = true;
-        PickaxeTimer = swingDuration;
-        HasHitTile = false;
+        if (isPickaxeActive) return;
+
+        PickaxeTimer = TickTimer.CreateFromSeconds(Runner, swingDuration);
+        
+        if (attackCollider != null)
+        {
+            attackCollider.enabled = true;
+        }
     }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        if (!IsSwinging || !HasStateAuthority || HasHitTile) return;
-        if (((1 << other.gameObject.layer) & tileLayer.value) != 0)
-        {
-            var tileLogic = other.GetComponent<PMK_TileRogic>();
-            if (tileLogic != null)
-            {
-                // tileLogic.DestoryTile(other.transform.position);
-                HasHitTile = true;
-                if (bladeCollider != null) bladeCollider.enabled = false;
-            }
-        }
-    }
-
     public override void FixedUpdateNetwork()
     {
-        if (IsSwinging)
+        if (PickaxeTimer.IsRunning)
         {
-            PickaxeTimer -= Runner.DeltaTime;
-            float t = Mathf.Clamp01(1f - (PickaxeTimer / swingDuration));
-            // flipY가 true면 왼쪽, false면 오른쪽
-            int facing = (spriteRenderer != null && spriteRenderer.flipY) ? -1 : 1;
-            float angle;
-            if (t < 0.5f)
+            if (PickaxeTimer.Expired(Runner))
             {
-                angle = Mathf.Lerp(0f, -swingAngle * facing, t * 2f);
-                if (bladeCollider != null) bladeCollider.enabled = false;
+                PickaxeTimer = TickTimer.None;
+                
+                if (attackCollider != null)
+                {
+                    attackCollider.enabled = false;
+                }
+                
+                if (transform.parent != null)
+                    transform.localRotation = originalRotation;
             }
             else
             {
-                angle = Mathf.Lerp(-swingAngle * facing, swingAngle * facing, (t - 0.5f) * 2f);
-                if (bladeCollider != null) bladeCollider.enabled = true;
-            }
-            PickaxeAngle = angle;
-            if (transform.parent != null)
-                transform.localRotation = originalRotation * Quaternion.Euler(0, 0, angle);
-            // 부모가 없으면(local) localRotation을 건드리지 않음
-
-            if (PickaxeTimer <= 0f)
-            {
-                IsSwinging = false;
-                HasHitTile = false;
-                if (bladeCollider != null) bladeCollider.enabled = false;
+                float remaining = PickaxeTimer.RemainingTime(Runner) ?? 0f;
+                float progress = 1f - (remaining / swingDuration);
+                
+                // flipY가 true면 왼쪽, false면 오른쪽
+                int facing = (spriteRenderer != null && spriteRenderer.flipY) ? -1 : 1;
+                float angle;
+                if (progress < 0.5f)
+                {
+                    angle = Mathf.Lerp(0f, -swingAngle * facing, progress * 2f);
+                    if (attackCollider != null) attackCollider.enabled = false;
+                }
+                else
+                {
+                    angle = Mathf.Lerp(-swingAngle * facing, swingAngle * facing, (progress - 0.5f) * 2f);
+                    if (attackCollider != null) attackCollider.enabled = true;
+                }
                 if (transform.parent != null)
-                    transform.localRotation = originalRotation;
+                    transform.localRotation = originalRotation * Quaternion.Euler(0, 0, angle);
             }
         }
         else
         {
-            if (bladeCollider != null) bladeCollider.enabled = false;
+            if (attackCollider != null) attackCollider.enabled = false;
             if (transform.parent != null)
                 transform.localRotation = originalRotation;
         }
     }
+    
+
+
+    public void OnPickedUp()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = true;
+    }
+
+    public void OnReleased()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = false;
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
+    {
+        if (!HasStateAuthority) return;
+        
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
+    
+
 } 

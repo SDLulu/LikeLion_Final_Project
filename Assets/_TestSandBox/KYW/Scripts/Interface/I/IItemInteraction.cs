@@ -7,7 +7,7 @@ public interface IItemInteraction : IKnockbackable, IHoldable, IUsableItem
     new void ApplyKnockback(Vector2 force, float duration = 0f);
 
     // 들기
-    new bool IsHoldable { get; }
+    bool IsHeld { get; }  // 현재 들려있는지 여부
     new void OnPickedUp();
     new void OnReleased();
 

@@ -4,141 +4,124 @@ using UnityEngine;
 public class AttackCollisionHandler : NetworkBehaviour
 {
     [Header("Attack Settings")]
-    [SerializeField] private int punchDamage = 1;
+    [SerializeField] private int attackDamage = 1;
     [SerializeField] private float knockbackForce = 5f;
     [SerializeField] private float knockbackDuration = 0.5f;
     
     [Header("Collider Reference")]
-    [SerializeField] public Collider2D punchAttackCollider;
+    [SerializeField] public Collider2D AttackCollider;
     
-    private BasicPunchItem punchItem;
+    private IItemInteraction weaponItem;
     
     public override void Spawned()
     {
-        // 부모 오브젝트에서 BasicPunchItem 찾기
-        punchItem = GetComponentInParent<BasicPunchItem>();
+        weaponItem = GetComponentInParent<IItemInteraction>();
         Runner.SetIsSimulated(Object, true);
+        
+        Debug.Log($"[AttackCollisionHandler] Spawned - weaponItem: {weaponItem?.GetType().Name ?? "null"}");
+        if (weaponItem != null)
+        {
+            Debug.Log($"[AttackCollisionHandler] weaponItem.IsHeld: {weaponItem.IsHeld}");
+        }
     }
     
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (!HasStateAuthority) return;
+        Debug.Log($"[AttackCollisionHandler] OnTriggerEnter2D 호출됨: {other.name}");
         
-        if (!IsPunchActive()) return;
+        if (!HasStateAuthority) 
+        {
+            Debug.Log($"[AttackCollisionHandler] StateAuthority 없음");
+            return;
+        }
         
-        if (other.gameObject == gameObject) return;
+        // 자기 자신 또는 같은 아이템의 다른 콜라이더와의 충돌 방지
+        if (IsSameItem(other.gameObject)) 
+        {
+            Debug.Log($"[AttackCollisionHandler] 같은 아이템과 충돌 무시: {other.name}");
+            return;
+        }
         
-        HandlePunchCollision(other.gameObject);
+        if (weaponItem == null) 
+        {
+            Debug.Log($"[AttackCollisionHandler] weaponItem이 null");
+            return;
+        }
+        if (!weaponItem.IsHeld) 
+        {
+            Debug.Log($"[AttackCollisionHandler] weaponItem.IsHeld = {weaponItem.IsHeld} (들려있지 않음)");
+            return;
+        }
+        
+        Debug.Log($"[AttackCollisionHandler] 충돌 감지: {other.name}, 레이어: {other.gameObject.layer}");
+        HandleCollision(other.gameObject);
     }
     
-    // 외부에서 호출할 수 있는 트리거 핸들러 (PunchTriggerHandler에서 사용)
-    public void HandleTriggerEnter(Collider2D other)
+    // 같은 아이템인지 확인 (자기 자신, 부모, 자식 모두 체크)
+    private bool IsSameItem(GameObject other)
     {
-        if (!HasStateAuthority) return;
+        // 자기 자신
+        if (other == gameObject) return true;
         
-        if (!IsPunchActive()) return;
+        // 부모가 같은지 확인 (같은 아이템의 다른 콜라이더)
+        if (weaponItem != null)
+        {
+            var otherItem = other.GetComponentInParent<IItemInteraction>();
+            if (otherItem != null && otherItem == weaponItem) return true;
+        }
         
-        if (other.gameObject == gameObject) return;
+        // 자식인지 확인
+        if (other.transform.IsChildOf(transform)) return true;
         
-        HandlePunchCollision(other.gameObject);
+        // 부모인지 확인
+        if (transform.IsChildOf(other.transform)) return true;
+        
+        return false;
     }
     
-    private void HandlePunchCollision(GameObject target)
+    private void HandleCollision(GameObject target)
     {
-        if (IsPlayerCollision(target))
-        {
-            HandlePlayerCollision(target);
-        }
-        else if (IsEnemyCollision(target))
-        {
-            HandleEnemyCollision(target);
-        }
-        else if (IsNpcCollision(target))
-        {
-            HandleNpcCollision(target);
-        }
-        else if (IsItemCollision(target))
-        {
-            HandleItemCollision(target);
-        }
-    }
-    
-    private void HandlePlayerCollision(GameObject player)
-    {
-        var playerInteraction = player.GetComponent<IPlayerInteraction>();
+        Debug.Log($"[AttackCollisionHandler] 충돌 처리 시작: {target.name}");
+        
+        // 플레이어, 적, NPC는 모두 IPlayerInteraction 사용 (나중에 적/NPC 처리를 다르게 할 수 있음)
+        var playerInteraction = target.GetComponent<IPlayerInteraction>();
         if (playerInteraction != null)
         {
-            Vector2 knockbackDirection = (player.transform.position - transform.position).normalized;
-            Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
-            
-            playerInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
-            playerInteraction.TakeDamage(punchDamage);
-            playerInteraction.SetInvincible(true, knockbackDuration);
+            Debug.Log($"[AttackCollisionHandler] 플레이어 상호작용 발견: {playerInteraction.GetType().Name}");
+            ApplyDamageAndKnockback(target, playerInteraction);
+            return;
         }
-    }
-    
-    private void HandleEnemyCollision(GameObject enemy)
-    {
-        var enemyInteraction = enemy.GetComponent<IPlayerInteraction>();
-        if (enemyInteraction != null)
-        {
-            Vector2 knockbackDirection = (enemy.transform.position - transform.position).normalized;
-            Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
-            
-            enemyInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
-            enemyInteraction.TakeDamage(punchDamage);
-            enemyInteraction.SetInvincible(true, knockbackDuration);
-        }
-    }
-    
-    private void HandleNpcCollision(GameObject npc)
-    {
-        var npcInteraction = npc.GetComponent<IPlayerInteraction>();
-        if (npcInteraction != null)
-        {
-            Vector2 knockbackDirection = (npc.transform.position - transform.position).normalized;
-            Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
-            
-            npcInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
-            npcInteraction.TakeDamage(punchDamage);
-            npcInteraction.SetInvincible(true, knockbackDuration);
-        }
-    }
-    
-    private void HandleItemCollision(GameObject item)
-    {
-        var itemInteraction = item.GetComponent<IItemInteraction>();
+        
+        // 아이템 충돌 처리
+        var itemInteraction = target.GetComponent<IItemInteraction>();
         if (itemInteraction != null)
         {
-            Vector2 knockbackDirection = (item.transform.position - transform.position).normalized;
-            Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
-            
-            itemInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
+            Debug.Log($"[AttackCollisionHandler] 아이템 상호작용 발견: {itemInteraction.GetType().Name}");
+            ApplyKnockbackOnly(target, itemInteraction);
         }
+        
+        Debug.Log($"[AttackCollisionHandler] 상호작용 컴포넌트를 찾을 수 없음: {target.name}");
     }
     
-    private bool IsPunchActive()
+    private void ApplyDamageAndKnockback(GameObject target, IPlayerInteraction interaction)
     {
-        return punchItem != null && punchItem.IsPunchActive;
+        // 콜라이더의 실제 중심점을 기준으로 넉백 방향 계산 (오프셋 고려)
+        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)AttackCollider.bounds.center).normalized;
+        Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
+        
+        interaction.ApplyKnockback(knockbackForceVector, knockbackDuration);
+        interaction.TakeDamage(attackDamage);
+        interaction.SetInvincible(true, knockbackDuration);
     }
     
-    private bool IsPlayerCollision(GameObject obj)
+    private void ApplyKnockbackOnly(GameObject target, IItemInteraction interaction)
     {
-        return obj.layer == LayerMask.NameToLayer("Player");
+        // 콜라이더의 실제 중심점을 기준으로 넉백 방향 계산 (오프셋 고려)
+        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)AttackCollider.bounds.center).normalized;
+        Vector2 knockbackForceVector = knockbackDirection * knockbackForce;
+        
+        interaction.ApplyKnockback(knockbackForceVector, knockbackDuration);
     }
     
-    private bool IsEnemyCollision(GameObject obj)
-    {
-        return obj.layer == LayerMask.NameToLayer("Enemy");
-    }
-    
-    private bool IsNpcCollision(GameObject obj)
-    {
-        return obj.layer == LayerMask.NameToLayer("NPC");
-    }
-    
-    private bool IsItemCollision(GameObject obj)
-    {
-        return obj.layer == LayerMask.NameToLayer("Item");
-    }
+
 } 

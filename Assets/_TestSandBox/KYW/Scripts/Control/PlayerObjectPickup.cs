@@ -236,7 +236,7 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
         {
             var itemInteraction = other.GetComponent<IItemInteraction>();
-            if (itemInteraction != null && itemInteraction.IsHoldable)
+            if (itemInteraction != null && !itemInteraction.IsHeld)
             {
                 nearbyObjects.Add(other.gameObject);
                 Debug.Log($"[PlayerObjectPickup] 들 수 있는 아이템 감지: {other.gameObject.name}");
