@@ -52,10 +52,10 @@ public class Pickaxe : NetworkBehaviour, IUsableItem
         if (!IsSwinging || !HasStateAuthority || HasHitTile) return;
         if (((1 << other.gameObject.layer) & tileLayer.value) != 0)
         {
-            var tileLogic = other.GetComponent<PMK_TileRPC_Manager>();
+            var tileLogic = other.GetComponent<PMK_TileRogic>();
             if (tileLogic != null)
             {
-                tileLogic.Rpc_DestroyTile(other.transform.position);
+                // tileLogic.DestoryTile(other.transform.position);
                 HasHitTile = true;
                 if (bladeCollider != null) bladeCollider.enabled = false;
             }
