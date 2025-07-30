@@ -1,39 +1,73 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class PMK_TileZoneSpawner : MonoBehaviour
 {
-    private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
-    private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance;
-
+    private Tilemap tilemap;
+    [SerializeField] private GameObject trap;
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
+    // ≈∏¿œ,«‘¡§ ª˝º∫»Æ∑¸
     [SerializeField] private int trapSpawnChance = 50;
-    private int rnd;
 
-    private void Start()
+    private void OnEnable()
     {
-        TryPlaceTileIfEmpty();
+        tilemap = PMK_TileRogic.Instance.mainTilemap;
+        StartCoroutine(TryPlaceTileIfEmpty());
     }
 
-    private void TryPlaceTileIfEmpty()
+    private IEnumerator TryPlaceTileIfEmpty()
     {
+        yield return null;
+
         Vector2 pos = transform.position;
+
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
-
-        Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
-
-        // Ìï¥Îãπ ÏÖÄÏóê ÌÉÄÏùºÏù¥ ÏûàÎäîÏßÄ ÌôïÏù∏Ìï©ÎãàÎã§.
         if (hits == null)
         {
-            rnd = Random.Range(0, 100);
-            if (tileRPCManager.HasStateAuthority)
+            Vector3Int cellPos = tilemap.WorldToCell(pos);
+
+            if (tilemap.GetTile(cellPos) == null)
             {
-                tileRPCManager.RPC_DestroyGameObject(rnd, cellPos, trapSpawnChance);
+
+                if (Random.Range(0, 100) > trapSpawnChance)
+                {
+                    // ≈∏¿œ º≥ƒ°
+                    tilemap.SetTile(cellPos, ruleTile);
+
+                    Physics2D.SyncTransforms(); // π∞∏Æ √÷Ω≈»≠
+
+                    PMK_TileRogic.Instance.Create_TileItem(cellPos); // æ∆¿Ã≈€ ∑£¥˝ ª˝º∫
+
+                    Destroy(gameObject); // «ˆ¿Á æ∆¿Ã≈€ ¡¶∞≈
+                }
+                else
+                {
+                    yield return null;
+
+                    bool isThreeAboveEmpty =
+                    tilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
+                    tilemap.GetTile(cellPos + new Vector3Int(0, 2, 0)) == null &&
+                    tilemap.GetTile(cellPos + new Vector3Int(0, 3, 0)) == null;
+                    Vector3Int downCell = cellPos + Vector3Int.down;
+
+
+
+                    // ¿ß3ƒ≠ æÁø∑ø° ≈∏¿œ¿Ã æ¯∞Ì , æ∆∑°ø° ≈∏¿œ¿Ã ¿÷¿ª ∞ÊøÏ «‘¡§ º≥ƒ°
+                    if (isThreeAboveEmpty && tilemap.GetTile(downCell) != null)
+                    {
+                        Vector3 worldPos = tilemap.GetCellCenterWorld(cellPos);
+                        Instantiate(trap, worldPos, Quaternion.identity, PMK_TileRogic.Instance.parentTrans);
+                    }
+                    Destroy(gameObject); // «ˆ¿Á æ∆¿Ã≈€ ¡¶∞≈
+                }
             }
-            Destroy(gameObject);
+        }
+        else
+        { 
+            Debug.Log("¿ÃπÃ ≈∏¿œ¿Ã ¡∏¿Á«’¥œ¥Ÿ: " + pos);
         }
     }
 }
-

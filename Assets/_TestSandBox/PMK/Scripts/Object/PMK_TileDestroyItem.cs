@@ -2,7 +2,7 @@ using System.Collections;
 using Unity.Burst.CompilerServices;
 using UnityEngine;
 
-public class MK_TileDestroyItem : MonoBehaviour
+public class PMK_TileDestroyItem : MonoBehaviour
 {
     [SerializeField] private GameObject destroyArea; // 파괴 영역 오브젝트
     [SerializeField] private LayerMask whatisPlatform; // 파괴할 타일 레이어
@@ -44,7 +44,7 @@ public class MK_TileDestroyItem : MonoBehaviour
                     Collider2D overCollider2d = Physics2D.OverlapCircle(checkCellPos, 0.01f, whatisPlatform);
                     if (overCollider2d != null)
                     {
-                        overCollider2d.transform.GetComponent<PMK_TileRPC_Manager>().Rpc_DestroyTile(checkCellPos);
+                        overCollider2d.transform.GetComponent<PMK_TileRogic>().DestoryTile(checkCellPos);
                     }
 
 
