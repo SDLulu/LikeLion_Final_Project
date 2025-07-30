@@ -3,13 +3,14 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using TMPro;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LMCore
 {
     public class UI_Hover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         [Header("인스펙터 할당")]
-        [SerializeField] private List<TMP_Text> _texts;
+        [SerializeField] private List<LMCore.UI_HoverText> _hoverTexts;
         [SerializeField] private List<Image> _images;
 
         [Header("호버 알파값 설정")]
@@ -48,16 +49,14 @@ namespace LMCore
         // 호버 진입 시 실행될 함수 (오버라이드 가능)
         protected virtual void OnHoverEnter()
         {
-            // 텍스트 리스트에 있는 모든 텍스트에 효과 적용
-            if (_texts != null)
+            // 텍스트 Tween 효과 적용
+            if (_hoverTexts != null)
             {
-                foreach (var text in _texts)
+                foreach (var hoverText in _hoverTexts)
                 {
-                    if (text != null)
+                    if (hoverText != null)
                     {
-                        Color textColor = text.color;
-                        textColor.a = _hoverAlpha;
-                        text.color = textColor;
+                        hoverText.HoverEnter();
                     }
                 }
             }
@@ -80,16 +79,14 @@ namespace LMCore
         // 호버 탈출 시 실행될 함수 (오버라이드 가능)
         protected virtual void OnHoverExit()
         {
-            // 텍스트 리스트에 있는 모든 텍스트를 원래 상태로 복원
-            if (_texts != null)
+            // 텍스트 Tween 효과 해제
+            if (_hoverTexts != null)
             {
-                foreach (var text in _texts)
+                foreach (var hoverText in _hoverTexts)
                 {
-                    if (text != null)
+                    if (hoverText != null)
                     {
-                        Color textColor = text.color;
-                        textColor.a = _nonHoverAlpha;
-                        text.color = textColor;
+                        hoverText.HoverExit();
                     }
                 }
             }

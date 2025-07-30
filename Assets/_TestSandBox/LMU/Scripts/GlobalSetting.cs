@@ -67,10 +67,9 @@ public class GlobalSetting : BaseManager<GlobalSetting>
                 Debug.LogError($"GlobalSetting[{_settingData.GlobalSettingName}]의 포커스 씬 경로가 유효하지 않습니다");
                 return string.Empty;
             }
-
             return _settingData.FocusScene.name;
             #endif
-            return null;
+            return string.Empty;
         }
     }
 
@@ -111,4 +110,6 @@ public class GlobalSetting : BaseManager<GlobalSetting>
         float randSpawnX = UnityEngine.Random.Range(LobbySpawnPos.x - xFactor, LobbySpawnPos.x + xFactor);
         return new Vector2(randSpawnX, LobbySpawnPos.y);
     }
+
+    public bool IsShowTitleAnimation => _settingData.IsShowTitleAnimation;
 }

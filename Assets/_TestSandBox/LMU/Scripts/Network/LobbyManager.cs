@@ -9,6 +9,9 @@ public class LobbyManager : BaseManager<LobbyManager>
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private string localRoomName;
+
+    public GameMode LocalGameMode => localGameMode;
+    public string LocalRoomName => localRoomName;
     public PlayerRef LocalPlayer { get; private set; }
 
     private byte[] connectionToken;
@@ -95,7 +98,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
-            await Fader.Inst.FadeOutAsync(Color.black, 1.0f);
+            await Fader.Inst.FadeOutWithLoading(Color.black, 1.0f);
             if (NetRunner == null)
             {
                 Debug.LogError("네트워크 러너가 존재하지 않습니다.");
@@ -114,7 +117,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             await startGameAwait;
             Debug.Log($"방에 입장함 {roomName}");
             await Awaitable.NextFrameAsync();
-            await Fader.Inst.FadeInAsync(Color.black, 1.0f);
+            await Fader.Inst.FadeInWithLoading(Color.black, 1.0f);
         }
         catch (System.Exception ex)
         {
@@ -131,14 +134,14 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
-            await Fader.Inst.FadeOutAsync();
+            await Fader.Inst.FadeOutWithLoading();
 
             var runner = LobbyManager.Inst.NetRunner;
             if (runner == null || runner.IsRunning == false)
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
-                UI_Controller.Inst.ActiveTitleUI();
-                await Fader.Inst.FadeInAsync();
+                LobbyUI_Manager.Inst.ActiveTitleUI();
+                await Fader.Inst.FadeInWithLoading();
                 return;
             }
 
@@ -157,11 +160,11 @@ public class LobbyManager : BaseManager<LobbyManager>
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
-            UI_Controller.Inst.ActiveTitleUI();
+            LobbyUI_Manager.Inst.ActiveTitleUI();
 
             localGameMode = default;
             localRoomName = default;
-            await Fader.Inst.FadeInAsync();
+            await Fader.Inst.FadeInWithLoading();
         }
         catch (Exception e)
         {
