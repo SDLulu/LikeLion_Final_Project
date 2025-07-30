@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 3295431805824986114}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.599, y: -0.089, z: 0}
+  m_LocalPosition: {x: 1.2, y: -0.089, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -45,7 +45,7 @@ GameObject:
   - component: {fileID: 5200941601201820631}
   - component: {fileID: 8460272725050500677}
   - component: {fileID: 3217813912065374172}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Beta ArrowTrap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -154,8 +154,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e3b9a0eeb618fc4590b65fe7c7ef6af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dir: {x: 1, y: 0}
-  ShotSpeed: 40
+  arrowDir: {x: 1, y: 0}
+  shotSpeed: 40
   launchTrapPrefab: {fileID: 6596423867139154273, guid: cb7f0f943c6766f45acacea309377768, type: 3}
   launchPoint: {fileID: 736469470944127754}
   <targetLayer>k__BackingField:

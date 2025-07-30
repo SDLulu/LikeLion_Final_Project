@@ -6,34 +6,47 @@ public class PMK_DeathTrap : NetworkBehaviour
 {
     private HashSet<NetworkObject> affectedPlayers = new HashSet<NetworkObject>();
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        if (!Object.HasStateAuthority || collision.gameObject.layer != LayerMask.NameToLayer("Player"))
-            return;
+        if (!Object.HasStateAuthority) return;
+        if (collision == null) return;
 
-        NetworkObject netObj = collision.GetComponent<NetworkObject>();
-        Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
+        // 충돌한 콜라이더의 게임오브젝트가 플레이어 레이어인지 체크
+        GameObject other = collision.gameObject;
 
-        if (rb != null && !affectedPlayers.Contains(netObj))
+        // 또는 collision.collider.gameObject 사용해도 됨
+        if (other.layer != LayerMask.NameToLayer("Player")) return;
+
+        NetworkObject netObj = other.GetComponentInParent<NetworkObject>();
+        Rigidbody2D rb = other.GetComponentInParent<Rigidbody2D>();
+
+        if (netObj == null || rb == null) return;
+
+        if (!affectedPlayers.Contains(netObj))
         {
-            // 중력 제거
             rb.linearVelocity = Vector2.zero;
             rb.gravityScale = 0.1f;
             affectedPlayers.Add(netObj);
         }
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    private void OnCollisionExit2D(Collision2D collision)
     {
-        if (!Object.HasStateAuthority || collision.gameObject.layer != LayerMask.NameToLayer("Player"))
-            return;
+        if (!Object.HasStateAuthority) return;
+        if (collision == null) return;
 
-        NetworkObject netObj = collision.GetComponent<NetworkObject>();
-        Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
-        if (rb != null && affectedPlayers.Contains(netObj))
+        GameObject other = collision.gameObject;
+
+        if (other.layer != LayerMask.NameToLayer("Player")) return;
+
+        NetworkObject netObj = other.GetComponentInParent<NetworkObject>();
+        Rigidbody2D rb = other.GetComponentInParent<Rigidbody2D>();
+
+        if (netObj == null || rb == null) return;
+
+        if (affectedPlayers.Contains(netObj))
         {
-            // 중력 복원 (기본 1으로 설정)
-            rb.gravityScale = 1;
+            rb.gravityScale = 1f;
             affectedPlayers.Remove(netObj);
         }
     }
