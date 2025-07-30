@@ -12,11 +12,6 @@ namespace LMCore
     {
         [Header("설정")]
         [SerializeField] private List<HoverableGroupItem> _hoverItems;
-
-        [Header("호버 알파값 설정")]
-        [SerializeField] private float _nonHoverAlpha = 0.4f;
-        [SerializeField] private float _hoverAlpha = 1f;
-
         private int _lastHoveredIndex = 0; // 마지막으로 호버된 아이템의 인덱스
 
         [ContextMenu("탐색")]
@@ -30,6 +25,7 @@ namespace LMCore
                 _hoverItems.Add(new HoverableGroupItem()
                 {
                     EventTrigger = eventTrigger,
+                    HoverText = eventTrigger.GetComponent<UI_HoverText>(),
                 });
             }
         }
@@ -58,7 +54,9 @@ namespace LMCore
             }
 
             _lastHoveredIndex = 0;
+            UI_HoverText.IsHoverBlocked = true;
             SetItemState(_lastHoveredIndex);
+            UI_HoverText.IsHoverBlocked = false;
         }
 
         private void OnItemEnter(int index)
@@ -76,35 +74,14 @@ namespace LMCore
         {
             for (int i = 0; i < _hoverItems.Count; i++)
             {
-                float targetAlpha = (i == activeIndex) ? _hoverAlpha : _nonHoverAlpha;
-                ApplyAlphaToItem(_hoverItems[i], targetAlpha);
-            }
-        }
+                var item = _hoverItems[i];
+                if (item.HoverText == null)
+                    continue;
 
-        private void ApplyAlphaToItem(HoverableGroupItem item, float alpha)
-        {
-            // 텍스트 알파값 적용
-            if (item.Texts != null)
-            {
-                foreach (var text in item.Texts)
-                {
-                    if (text == null) continue;
-                    Color color = text.color;
-                    color.a = alpha;
-                    text.color = color;
-                }
-            }
-
-            // 이미지 알파값 적용
-            if (item.Images != null)
-            {
-                foreach (var image in item.Images)
-                {
-                    if (image == null) continue;
-                    Color color = image.color;
-                    color.a = alpha;
-                    image.color = color;
-                }
+                if (i == activeIndex)
+                    item.HoverText.HoverEnter();
+                else
+                    item.HoverText.HoverExit();
             }
         }
     }
@@ -116,8 +93,7 @@ namespace LMCore
     public class HoverableGroupItem
     {
         public string Name;
-        public List<TMP_Text> Texts;
-        public List<Image> Images;
+        public UI_HoverText HoverText;
         public EventTrigger EventTrigger;
     }
 }

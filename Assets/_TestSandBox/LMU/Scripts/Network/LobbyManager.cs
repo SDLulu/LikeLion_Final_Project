@@ -14,8 +14,9 @@ public class LobbyManager : BaseManager<LobbyManager>
     public string LocalRoomName => localRoomName;
     public PlayerRef LocalPlayer { get; private set; }
 
+    public Func<Awaitable> OnEnterLobbyAction { get; set; }
     private byte[] connectionToken;
-    private void Awake()
+    protected override void Awake()
     {
         connectionToken = ConnectionTokens.NewToken();
         localGameMode = default;
@@ -66,7 +67,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     /// <summary>
     /// 게임 시작
     /// </summary>
-    private async Awaitable StartGameAsync(NetworkRunner runner,
+    private async Awaitable<StartGameResult> StartGameAsync(NetworkRunner runner,
                                             GameMode mode,
                                             string roomName,
                                             byte[] connectionToken = default,
@@ -85,8 +86,9 @@ public class LobbyManager : BaseManager<LobbyManager>
             HostMigrationResume = migrationAction,
         };
 
-        await runner.StartGame(startGameArgs);
+        var ret = await runner.StartGame(startGameArgs);
         await Awaitable.NextFrameAsync();
+        return ret;
     }
 
     /// <summary>
@@ -98,7 +100,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
-            await Fader.Inst.FadeOutWithLoading(Color.black, 1.0f);
+            await Fader.Inst.ShowLoadingAsync();
             if (NetRunner == null)
             {
                 Debug.LogError("네트워크 러너가 존재하지 않습니다.");
@@ -107,17 +109,29 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             NetRunner.AddCallbacks(NetworkEventSystem.Inst);
             NetRunner.ProvideInput = true;
-            await LocalSceneManager.Inst.LoadSceneAsync("DevLobby", LoadSceneMode.Additive, true);
-            var startGameAwait = StartGameAsync(NetRunner, mode, roomName, this.connectionToken);
-            OnEnterLobby?.Invoke();
+            
+            // 게임시작결과에 따른 처리
+            var startGameResult = await StartGameAsync(NetRunner, mode, roomName, this.connectionToken);
+            await Fader.Inst.HideLoadingAsync();
+            if (startGameResult.Ok)
+            {
+                await Fader.Inst.WideFadeOutAsync();
+                await LocalSceneManager.Inst.LoadSceneAsync("DevLobby", LoadSceneMode.Additive, true);
+                OnEnterLobby?.Invoke();
+            }
+            else
+            {
+                Debug.LogError($"게임 시작 실패: {startGameResult.ShutdownReason}");
+                return;
+            }
+
 
             localGameMode = mode;
             localRoomName = roomName;
 
-            await startGameAwait;
             Debug.Log($"방에 입장함 {roomName}");
             await Awaitable.NextFrameAsync();
-            await Fader.Inst.FadeInWithLoading(Color.black, 1.0f);
+            await Fader.Inst.WideFadeInAsync();
         }
         catch (System.Exception ex)
         {
@@ -134,14 +148,14 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
-            await Fader.Inst.FadeOutWithLoading();
+            await Fader.Inst.WideFadeOutAsync(1.5f);
 
             var runner = LobbyManager.Inst.NetRunner;
             if (runner == null || runner.IsRunning == false)
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
                 LobbyUI_Manager.Inst.ActiveTitleUI();
-                await Fader.Inst.FadeInWithLoading();
+                await Fader.Inst.WideFadeInAsync(1.5f);
                 return;
             }
 
@@ -164,7 +178,7 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             localGameMode = default;
             localRoomName = default;
-            await Fader.Inst.FadeInWithLoading();
+            await Fader.Inst.WideFadeInAsync(1.5f);
         }
         catch (Exception e)
         {
