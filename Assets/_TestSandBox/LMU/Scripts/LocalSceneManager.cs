@@ -2,6 +2,7 @@ using LMCore;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using System;
 
 public class LocalSceneManager : BaseManager<LocalSceneManager>
 {
@@ -15,14 +16,20 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
         SceneManager.UnloadSceneAsync(sceneName);
     }
 
-    public async Awaitable LoadSceneAsync(string sceneName, LoadSceneMode mode = LoadSceneMode.Single, bool activeScene = false)
+    public async Awaitable LoadSceneAsync(string sceneName, 
+                                            LoadSceneMode mode = LoadSceneMode.Single,
+                                            bool activeScene = false,
+                                            Action onPreLoad = default,
+                                            Action onPostLoad = default)
     {
+        onPreLoad?.Invoke();
         await SceneManager.LoadSceneAsync(sceneName, mode);
         if (activeScene)
         {
             SceneManager.SetActiveScene(SceneManager.GetSceneByName(sceneName));
         }
         await Awaitable.NextFrameAsync();
+        onPostLoad?.Invoke();
     }
 
     public async Awaitable UnloadSceneAsync(string sceneName)
