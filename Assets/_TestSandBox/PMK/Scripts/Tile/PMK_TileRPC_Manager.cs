@@ -109,4 +109,20 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
     }
 
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_SetPlayerGravity([RpcTarget] PlayerRef player, float gravityScale)
+    {
+        Debug.Log("RPC실행됨");
+        var playerObj = Runner.GetPlayerObject(player);
+        if (playerObj == null) return;
+
+        var rb = playerObj.GetComponentInChildren<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.gravityScale = gravityScale;
+            if (gravityScale < 1f)
+                rb.linearVelocity = Vector2.zero;
+        }
+    }
 }
