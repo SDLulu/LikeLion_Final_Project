@@ -5,9 +5,9 @@ using UnityEngine;
 public class PlayerHealth : NetworkBehaviour
 {
     [Networked, OnChangedRender(nameof(OnHealthChanged))]
-    public int Health { get; private set; } = 100;
+    public int Health { get; private set; } = 4;
 
-    public int MaxHealth => 100;
+    public int MaxHealth => 4;
 
     // PlayerState 변경을 위한 상태 관리자 참조
     private PlayerStunInvincibleDie stunInvincible;
