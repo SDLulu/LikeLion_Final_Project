@@ -31,6 +31,7 @@ public class CutSceneController : MonoBehaviour
 
     public void FocusCutSceneCamera()
     {
+        Debug.Log("FocusCutSceneCamera - FocusCutSceneCamera - FocusCutSceneCamera");
         CutSceneCamera.Priority = 100;
     }
 

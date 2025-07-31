@@ -33,6 +33,9 @@ public struct DynamicCharacterData : INetworkInput
 
 public class PlayerData : NetworkBehaviour
 {
+    [Header("인스펙터 참조")]
+    [SerializeField] private UI_ReadyText _readyText;
+
     public GameMode GameMode {get; set;}
 
     [Networked, UnitySerializeField]
@@ -40,7 +43,7 @@ public class PlayerData : NetworkBehaviour
 
     [Networked, UnitySerializeField]
     public ref DynamicCharacterData Dynamic_CharacterData => ref MakeRef<DynamicCharacterData>();
-    [Networked] public bool IsReady {get; private set;} = false;
+    [Networked, OnChangedRender(nameof(OnReadyChanged))] public bool IsReady {get; private set;} = false;
 
     [Header("로컬 데이터")]
     [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
@@ -49,6 +52,7 @@ public class PlayerData : NetworkBehaviour
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
     public string SkinPath => Dynamic_CharacterData.SkinPath.ToString();
+
 
     public override void Spawned()
     {
@@ -60,10 +64,22 @@ public class PlayerData : NetworkBehaviour
         }
 
         // 데이터 서버에서 생성후 전파
-        if (Object.HasStateAuthority)
+        if (Runner.IsServer && Object.HasStateAuthority)
         {
             SkinData = DataManager.Inst.GetSkinData(10000);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
+            
+            // 게임 상태변경시 Ready 상태 초기화
+            NetworkEventSystem.Inst.OnGameStateChangedEvent += (previousState, currentState) => 
+            {
+                if (currentState != E_StateName.GameStagePlayingState)
+                    return;
+
+                if (_readyText?.IsReady == false)
+                    return;
+
+                RPC_ReadyTween(false);
+            };
         }
 
         FakeClientData = null;
@@ -102,14 +118,21 @@ public class PlayerData : NetworkBehaviour
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
     }
 
-    /// <summary>
-    /// Ready 상태 직접 설정 (서버용)
-    /// </summary>
-    public void SetReadyState(bool ready)
+    private void OnReadyChanged()
     {
-        if (Object.HasStateAuthority)
+        if (_readyText?.IsReady == IsReady)
+            return;
+
+        if (Runner.IsServer)
         {
-            IsReady = ready;
+            _readyText.SetReady(IsReady);
+            RPC_ReadyTween(IsReady);
         }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_ReadyTween(bool isReady)
+    {
+        _readyText.SetReady(isReady);
     }
 }
