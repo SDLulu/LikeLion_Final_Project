@@ -3,6 +3,7 @@ using Fusion;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEditor.PlayerSettings;
 
 public class PMK_TileRPC_Manager : NetworkBehaviour
 {
@@ -22,18 +23,15 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     }
 
 
-    // 타일 아이템 생성
+    #region 타일 관련 RPC 메서드
+    // 타일 생성
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
+    public void RPC_Create_Tile(Vector3Int cellPos)
     {
-        try
-        {
-            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans); // 타일 아이템 생성
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"타일 아이템 생성 오류: {e}");
-        }
+        tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
+        Physics2D.SyncTransforms();
+
+        tileRogic.Create_TileItem(cellPos);
     }
 
 
@@ -53,6 +51,34 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     }
 
 
+    // 타일 아이템 생성
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
+    {
+        Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(worldPos);
+
+        bool isThreeAboveEmpty =
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null;
+
+
+        if (isThreeAboveEmpty && 25 > Random.Range(0, 100))
+        {
+            // 상 하 좌 우 셀에 타일이 없을 때 함정 생성
+            tileRogic.mainTilemap.SetTile(cellPos, null);
+            tileRogic.mainTilemap.RefreshTile(cellPos);
+            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+            return;
+        }
+        else
+        {
+            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans); // 타일 아이템 생성
+        }
+    }
+
+
     // 타일 아이템 파괴
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void Rpc_DestroyItem(Vector3 pos)
@@ -67,21 +93,10 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             }
         }
     }
+    #endregion
 
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DestroyGameObject(string objectName)
-    {
-        if (!HasStateAuthority) return;
-
-        GameObject obj = GameObject.Find(objectName);
-        if (obj != null)
-        {
-            Destroy(obj);
-        }
-    }
-
-
+    #region TileZoneSpawner 관련 RPC
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_RndTileSpawn(int rnd, Vector3Int cellPos, int trapSpawnChance)
     {
@@ -92,7 +107,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             {
                 // 타일이 없으면 타일을 배치합니다.
                 tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-                Physics2D.SyncTransforms();
 
                 PMK_TileRogic.Instance.Create_TileItem(cellPos);
             }
@@ -111,6 +125,10 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
                 if (isThreeAboveEmpty && tileRogic.mainTilemap.GetTile(downCell) != null)
                 {
                     StartCoroutine(DelayedTrapSpawn(cellPos));
+                }
+                else
+                {
+                    RPC_Create_Tile(cellPos);
                 }
             }
         }
@@ -131,25 +149,39 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
 
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
-        Instantiate(tileRogic.trap, worldPos, Quaternion.identity, tileRogic.parentTrans);
+        Instantiate(tileRogic.trap[0], worldPos, Quaternion.identity, tileRogic.parentTrans);
     }
 
+
+    // 위 아래 셀에 타일이 없을 때 돌 함정 생성 (빈 공간 방지)
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_DelayedTileSpawn(Vector3Int cellPos)
     {
-        bool isThreeAboveEmpty =
+        bool isTileEmpty =
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
         tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        if (isThreeAboveEmpty)
-        {
-            tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-            Physics2D.SyncTransforms();
+        bool isThreeAboveEmpty =
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-            PMK_TileRogic.Instance.Create_TileItem(cellPos);
+        Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
+        Vector3Int tilePos = tileRogic.mainTilemap.WorldToCell(cellPos);
+
+        if (isTileEmpty)
+        {
+            RPC_Create_Tile(tilePos);
+        }
+        else if (isThreeAboveEmpty)
+        {
+            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
     }
+    #endregion
 
 
 
@@ -157,7 +189,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
 
 
-
+    // 즉사 트랩 플레이어 중력 설정 (미완 - 아마 플레이어 스크립트를 건드려서 해야 될 듯 함)
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
     public void RPC_SetPlayerGravity([RpcTarget] PlayerRef player, float gravityScale)
     {
