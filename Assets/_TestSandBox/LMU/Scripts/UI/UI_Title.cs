@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using DG.Tweening;
 using LMCore;
+using Fusion;
 
 public class UI_Title : MonoBehaviour
 {
@@ -66,6 +67,20 @@ public class UI_Title : MonoBehaviour
         _uiCreateNickName.Holder.gameObject.SetActive(true);
     }
 
+    private void OnDestroy()
+    {
+        soloPlayBtn.onClick.RemoveListener(OnClickSoloPlayBtn);
+        onlinePlayBtn.onClick.RemoveListener(OnClickOnlinePlayBtn);
+        settingBtn.onClick.RemoveListener(OnClickSettingBtn);
+        exitBtn.onClick.RemoveListener(OnClickExitBtn);
+        _enterOnlineBackBtn.onClick.RemoveListener(OnClickEnterOnlineBackBtn);
+        _titleMoveTween?.Kill();
+        _titleScaleTween?.Kill();
+        _nicknameMoveTween?.Kill();
+        _onlinePanelMoveTween?.Kill();
+        _onlineBackBtnScaleTween?.Kill();
+    }
+
     public void Show()
     {
         if (gameObject.activeSelf == false)
@@ -90,24 +105,20 @@ public class UI_Title : MonoBehaviour
             });
     }
 
-    private void OnDestroy()
+    private async void OnClickSoloPlayBtn()
     {
-        soloPlayBtn.onClick.RemoveListener(OnClickSoloPlayBtn);
-        onlinePlayBtn.onClick.RemoveListener(OnClickOnlinePlayBtn);
-        settingBtn.onClick.RemoveListener(OnClickSettingBtn);
-        exitBtn.onClick.RemoveListener(OnClickExitBtn);
-        _enterOnlineBackBtn.onClick.RemoveListener(OnClickEnterOnlineBackBtn);
-        _titleMoveTween?.Kill();
-        _titleScaleTween?.Kill();
-        _nicknameMoveTween?.Kill();
-        _onlinePanelMoveTween?.Kill();
-        _onlineBackBtnScaleTween?.Kill();
-    }
-
-    private void OnClickSoloPlayBtn()
-    {
-        Debug.Log("OnClickSoloPlayBtn 호출됨!");
-        LobbyUI_Manager.Inst.UILobby.ActiveSoloPanel();
+        UIGlobalSetting.ActiveUI(false);
+        _preventPanel.gameObject.SetActive(true);
+        await LobbyManager.Inst.JoinOrCreateLobby(
+            isSoloPlay: true,
+            mode: GameMode.AutoHostOrClient,
+            roomName: "TestRoom",
+            OnEnterLobby: () =>
+            {
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+                _preventPanel.gameObject.SetActive(false);
+            }
+        );
     }
 
     private UI_GlobalSetting _uiGlobalSetting = null;

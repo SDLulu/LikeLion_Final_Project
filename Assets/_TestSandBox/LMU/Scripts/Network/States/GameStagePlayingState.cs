@@ -22,7 +22,7 @@ public class GameStagePlayingState : BaseStateBehaviour
         await Awaitable.WaitForSecondsAsync(2.0f);
         NetEvent.TriggerStageLoadDoneEvent("1-1");
 
-        var startPos = Vector2.zero;
+        var startPos = new Vector2(15.0f, 15.0f);
         foreach (var player in PlayerM.Players)
         {
             var playerC = player.Value.GetComponent<PlayerStageController>();
