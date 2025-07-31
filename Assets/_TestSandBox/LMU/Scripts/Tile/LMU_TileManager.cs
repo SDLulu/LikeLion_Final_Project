@@ -11,7 +11,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Debug.Log("구독수행됨");
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
             {
-                Debug.Log($"스테이지 정보: {stageInfo}");
+                Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName}");
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
