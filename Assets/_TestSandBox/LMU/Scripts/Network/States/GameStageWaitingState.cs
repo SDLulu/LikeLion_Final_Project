@@ -12,8 +12,6 @@ public class GameStageWaitingState : BaseStateBehaviour
 
     protected override async void OnEnterState()
     {
-        base.OnEnterState(); // 이벤트 발생을 위해 base 호출
-        
         if (Runner.IsServer)
         {
             GameStates.RPC_FadeOutUI(this.Runner);
@@ -21,7 +19,7 @@ public class GameStageWaitingState : BaseStateBehaviour
             try
             {
                 var playingState = Machine.GetState<GameStageCompletedState>();
-                await playingState.MapLoad();
+                await playingState.LoadNextMapAsync();
                 
                 _isMapLoadCompleted = true;
                 Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");

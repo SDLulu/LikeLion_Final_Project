@@ -10,8 +10,6 @@ public class GameStagePlayingState : BaseStateBehaviour
 
     protected override void OnEnterState()
     {
-        base.OnEnterState(); // 이벤트 발생을 위해 base 호출
-        
         if (Runner.IsServer)
         {
             var startPos = GameObject.FindGameObjectsWithTag("StartPos").ToList();
@@ -29,7 +27,6 @@ public class GameStagePlayingState : BaseStateBehaviour
 
     protected override void OnExitState()
     {
-        base.OnExitState(); // 이벤트 발생을 위해 base 호출
     }
 
 

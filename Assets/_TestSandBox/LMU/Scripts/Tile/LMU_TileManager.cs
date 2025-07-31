@@ -23,27 +23,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             mapPrefabDict.Add(set.mapType, set.prefabs);
                     }
                 }
-                ResetMap();
+                RPC_ResetMap();
             };
             return;
         }
-    }
-    
-    /// <summary>
-    /// 전체 맵 삭제
-    /// </summary>
-    public void DestroyAllMap()
-    {
-        mainTilemap.ClearAllTiles();
-
-        foreach (Transform child in parentTrans)
-        {
-            if (child.GetComponent<PMK_TileRogic>() != null)
-                continue;
-
-            Destroy(child.gameObject);
-        }
-
-        SaveMapPos();
     }
 }
