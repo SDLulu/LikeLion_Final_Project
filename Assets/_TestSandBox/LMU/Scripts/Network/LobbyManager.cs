@@ -92,9 +92,11 @@ public class LobbyManager : BaseManager<LobbyManager>
     }
 
     [field: SerializeField] public bool IsSoloPlay {get; private set;}
+
     /// <summary>
     /// 로비 입장
     /// </summary>
+    /// <param name="OnEnterLobby"> 네트워크 접속의 성공, 실패 여부와는 무관하게 실행되는 델리게이트 </param>
     public async Awaitable JoinOrCreateLobby(bool isSoloPlay = false, GameMode mode = GameMode.AutoHostOrClient,
                                             string roomName = "TestRoom",
                                             Action OnEnterLobby = default)
@@ -124,6 +126,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             }
             else
             {
+                OnEnterLobby?.Invoke();
                 Debug.LogError($"게임 시작 실패: {startGameResult.ShutdownReason}");
                 return;
             }

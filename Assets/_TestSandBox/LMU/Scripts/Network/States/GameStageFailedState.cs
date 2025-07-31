@@ -16,6 +16,8 @@ public class GameStageFailedState : BaseStateBehaviour
 
     protected override void OnEnterState()
     {
+        base.OnEnterState(); // 이벤트 발생을 위해 base 호출
+        
         waitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
         RPC_FadeOutUI();
     }
@@ -33,6 +35,7 @@ public class GameStageFailedState : BaseStateBehaviour
     {
         Debug.Log("대기 상태 종료");
         RPC_FadeInUI();
+        base.OnExitState(); // 이벤트 발생을 위해 base 호출
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]

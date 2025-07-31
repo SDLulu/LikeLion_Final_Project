@@ -23,8 +23,11 @@ public class NetObjProvider : NetworkObjectProviderDefault
         {
             var prefab = GlobalSetting.Inst.PlayerPrefab;
             var obj = GameObject.Instantiate(prefab)
-                    .AddComponent<PlayerStageController>().gameObject
-                    .AddComponent<PlayerData>().gameObject;
+                    .GetOrAddComponent<PlayerStageController>()
+                    .GetOrAddComponent<PlayerData>()
+                    .gameObject;
+
+            obj.GetOrAddComponent<NetworkObject>();
             
             Baker.Bake(obj);
             
