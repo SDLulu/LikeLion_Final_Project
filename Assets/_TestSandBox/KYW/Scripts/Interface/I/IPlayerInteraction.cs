@@ -14,4 +14,8 @@ public interface IPlayerInteraction : IKnockbackable, IDamageable, IStunnable, I
 
     // 무적
     new void SetInvincible(bool value, float duration = 0f);
+
+    // 들기 (IHoldable에서 상속)
+    new void OnPickedUp();
+    new void OnReleased();
 } 
