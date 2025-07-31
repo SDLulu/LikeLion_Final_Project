@@ -4,23 +4,20 @@ namespace LMCore
 {
     public abstract class BaseManager<T> : MonoBehaviour where T : MonoBehaviour
     {
-        #region Singlton
+        #region Singleton
         private static bool _shuttingDown = false;
-        private static object _lock = new object();
+        private static readonly object _lock = new object();
         private static T _instance;
 
-        /// <summary> 인스턴스가 존재하는지 확인</summary>
         public static bool HasInstance => !_shuttingDown && (_instance != null && _instance.gameObject != null);
 
-        /// <summary> Access singleton instance through this propriety. </summary>
         public static T Inst
         {
             get
             {
                 if (_shuttingDown)
                 {
-                    Debug.LogWarning("[Singleton] Instance '" + typeof(T) +
-                    "' already destroyed. Returning null.");
+                    Debug.LogWarning($"[Singleton] Instance '{typeof(T)}' already destroyed. Returning null.");
                     return null;
                 }
 
@@ -28,27 +25,34 @@ namespace LMCore
                 {
                     if (_instance == null)
                     {
-                        // Search for existing instance.
-                        _instance = FindAnyObjectByType<T>(); 
-
-                        // Create new instance if one doesn't already exist.
+                        _instance = FindAnyObjectByType<T>();
                         if (_instance == null)
                         {
-                            // Need to create a new GameObject to attach the singleton to.
                             var singletonObject = new GameObject();
                             _instance = singletonObject.AddComponent<T>();
-                            singletonObject.name = typeof(T).ToString() + " (Singleton)";
-
-                            //Make instance persistent.
+                            singletonObject.name = $"{typeof(T)} (Singleton)";
                             DontDestroyOnLoad(singletonObject);
                         }
                     }
-
                     return _instance;
                 }
             }
         }
         #endregion
+
+        protected virtual void Awake()
+        {
+            if (_instance == null)
+            {
+                _instance = this as T;
+                DontDestroyOnLoad(this.gameObject);
+            }
+            else if (_instance != this)
+            {
+                Debug.Log($"[Singleton] Instance of '{typeof(T)}' already exists. Destroying duplicate.");
+                Destroy(this.gameObject);
+            }
+        }
 
         private void OnApplicationQuit()
         {
@@ -57,8 +61,11 @@ namespace LMCore
 
         private void OnDestroy()
         {
-            _instance = null;
-            _shuttingDown = true;
+            if (_instance == this)
+            {
+                _instance = null;
+                _shuttingDown = true;
+            }
         }
     }
 }
