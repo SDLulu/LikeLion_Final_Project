@@ -37,8 +37,6 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     protected override void OnEnterState()
     {
-        base.OnEnterState(); // 이벤트 발생을 위해 base 호출
-        
         if (Runner.IsServer)
         {
             var players = PlayerM.GetPlayers();
@@ -144,6 +142,11 @@ public class GameStageCompletedState : BaseStateBehaviour
     }
 
 
+    /// <summary>
+    /// Note
+    /// 기본적으로 Task또는 UniTask의 WhenAll과 같은 함수를 Awaitable에서 제공하지않아서
+    /// AwaitableCompletionSource과 Action을 사용해 우회적으로 WhenAll의 기능을 구현
+    /// </summary>
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_StartFadeOut()
     {
@@ -203,44 +206,38 @@ public class GameStageCompletedState : BaseStateBehaviour
     /// <summary>
     /// 맵 로드 실행 - 서버에서만 실행 클라이언트는 바로 완료처리
     /// </summary>
-    private async Awaitable LoadNextMapAsync(Action onCompleted)
+    public async Awaitable LoadNextMapAsync(Action onComplete = default)
     {
         try 
         {
             if (Runner.IsServer)
             {
-                await MapLoad();
-                onCompleted?.Invoke();
+                await Awaitable.NextFrameAsync();
+                await Awaitable.WaitForSecondsAsync(2.0f);
+                var nextStageData = DataManager.Inst.GetStageData(_stageDataIndex);
+                NetEvent.TriggerStageLoadDoneEvent(nextStageData);
+
+                var startPos = new Vector2(15.0f, 15.0f);
+                foreach (var player in PlayerM.Players)
+                {
+                    var playerC = player.Value.GetComponent<PlayerStageController>();
+                    playerC.SetPosition(startPos);
+                }
+                onComplete?.Invoke();
                 Debug.Log("다음 스테이지 로딩이 완료되었습니다.");
             }
             else
             {
-                onCompleted?.Invoke();
+                onComplete?.Invoke();
             }
         }
         catch (System.Exception e)
         {
-            onCompleted?.Invoke();
+            onComplete?.Invoke();
             Debug.LogError("LoadNextMapAsync 오류");
             Debug.LogError(e.Message);  
         }
     }
-
-    public async Awaitable MapLoad()
-    {
-        await Awaitable.NextFrameAsync();
-        await Awaitable.WaitForSecondsAsync(2.0f);
-        var stageData = DataManager.Inst.GetStageData(_stageDataIndex);
-        NetEvent.TriggerStageLoadDoneEvent(stageData);
-
-        var startPos = new Vector2(15.0f, 15.0f);
-        foreach (var player in PlayerM.Players)
-        {
-            var playerC = player.Value.GetComponent<PlayerStageController>();
-            playerC.SetPosition(startPos);
-        }
-    }
-
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_FadeInUI()
