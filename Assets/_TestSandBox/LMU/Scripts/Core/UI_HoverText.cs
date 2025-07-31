@@ -21,10 +21,12 @@ namespace LMCore
 
         private Tween _scaleTween;
         private Tween _colorTween;
-        private void Awake()
-        {
-            _text = GetComponent<TMP_Text>();
-        }
+        private bool _isHovered = false;
+
+        /// <summary>
+        /// 전역 호버 플래그
+        /// </summary>
+        public static bool IsHoverBlocked = false;
 
         private void OnEnable()
         {
@@ -57,10 +59,12 @@ namespace LMCore
 
         public void HoverEnter()
         {
-            if (_text == null)
-            {
+            if (_text == null || _isHovered || IsHoverBlocked)
                 return;
-            }
+
+            _isHovered = true;
+
+            SoundManager.Inst.PlaySFX("UIHover");
 
             _scaleTween?.Kill();
             float targetScale = _hoverScale;
@@ -99,6 +103,8 @@ namespace LMCore
             {
                 return;
             }
+            if (!_isHovered) return;
+            _isHovered = false;
 
             _scaleTween?.Kill();
             float targetScale = _normalScale;
