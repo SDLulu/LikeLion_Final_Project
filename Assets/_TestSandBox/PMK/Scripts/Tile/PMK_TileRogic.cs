@@ -70,9 +70,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
+    public bool IsStageTestNetwork = false;
 
     public override void Spawned()
     {
+        RunTestMode();
+
         SaveMapPos(); // 전체 맵 위치 저장
 
         if (mapPrefabDict == null)

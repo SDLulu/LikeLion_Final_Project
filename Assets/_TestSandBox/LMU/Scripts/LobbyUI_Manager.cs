@@ -12,7 +12,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     [field: SerializeField] public UI_Title UITitle {get; private set;}
 
     private static bool _inited = false;
-    private async void Awake()
+    protected override async void Awake()
     {
         if (_inited == false)
         {

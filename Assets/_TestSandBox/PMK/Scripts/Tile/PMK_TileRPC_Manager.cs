@@ -26,7 +26,14 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
     {
-        Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans); // 타일 아이템 생성
+        try
+        {
+            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans); // 타일 아이템 생성
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"타일 아이템 생성 오류: {e}");
+        }
     }
 
 
