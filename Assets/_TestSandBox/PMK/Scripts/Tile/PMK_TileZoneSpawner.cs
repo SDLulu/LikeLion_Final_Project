@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -15,6 +16,8 @@ public class PMK_TileZoneSpawner : MonoBehaviour
     private void Start()
     {
         TryPlaceTileIfEmpty();
+
+        StartCoroutine(DelayedTileSpawn());
     }
 
     private void TryPlaceTileIfEmpty()
@@ -30,10 +33,23 @@ public class PMK_TileZoneSpawner : MonoBehaviour
             rnd = Random.Range(0, 100);
             if (tileRPCManager.HasStateAuthority)
             {
-                tileRPCManager.RPC_DestroyGameObject(rnd, cellPos, trapSpawnChance);
+                tileRPCManager.RPC_RndTileSpawn(rnd, cellPos, trapSpawnChance);
             }
-            Destroy(gameObject);
         }
+    }
+
+
+    private IEnumerator DelayedTileSpawn()
+    {
+        yield return new WaitForSeconds(0.05f);
+
+        if (tileRPCManager.HasStateAuthority)
+        {
+            Vector2 pos = transform.position;
+            Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
+            tileRPCManager.RPC_DelayedTileSpawn(cellPos);
+        }
+        Destroy(gameObject);
     }
 }
 
