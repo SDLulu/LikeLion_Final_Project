@@ -31,13 +31,16 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private float verticalInput;
     private Vector2 mouseWorldPosition;
     private float mouseScrollWheel;     // 마우스 휠 스크롤 값 (아이템 스왑용)
-    private bool jumpPressed;       // Space + !IsDucking
-    private bool pickupPressed;     // Space + IsDucking  
+    private bool jumpPressed;           // Space + !IsDucking
+    private bool downJumpPressed;       // Space + IsDucking (밑점프)
     
-    // 🔨 아이템 사용 입력
-    private bool useItemHeld;           // 현재 클릭 유지 중
-    private bool throwItemPressed;      // 우클릭 (MouseButton 1)
+    // 🔨 아이템 관련 입력
+    private bool useItemHeld;           // 마우스 좌클릭
+    private bool pickupItemPressed;     // 우클릭 (아이템 픽업)
+    private bool throwItemPressed;      // 우클릭 (아이템 던지기)
+    private bool interactPressed;       // F키 (상호작용)
     private bool skillPressed;          // 쉬프트키 (스킬 사용)
+    private bool deathPressed;          // K키 (테스트용 죽음 트리거)
 
     
     // 📦 물리/로직 컴포넌트 참조들 (같은 오브젝트에서 찾기)
@@ -55,6 +58,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerObjectPickup itemPickup;
     private PlayerItemUsage itemUsage;
     private PlayerObjectThrower itemThrower;
+    
+    // 🎯 상호작용 컴포넌트 참조
+    private PlayerInteraction interaction;
+    
+
 
     public override void Spawned()
     {
@@ -64,6 +72,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
+        interaction = GetComponent<PlayerInteraction>();
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
 
@@ -151,10 +160,13 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             verticalInput = 0f;
             mouseScrollWheel = 0f;
             jumpPressed = false;
-            pickupPressed = false;
-            useItemHeld = false;
+            downJumpPressed = false;
+            pickupItemPressed = false;
             throwItemPressed = false;
+            useItemHeld = false;
+            interactPressed = false;
             skillPressed = false;
+            deathPressed = false;
             return;
         }
 
@@ -174,12 +186,21 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             // 점프 입력 (일관성을 위해 변수로 저장)
             jumpPressed = Input.GetKey(KeyCode.Space) && !(movement?.IsDucking ?? false);
             
+            // 밑점프 입력 (앉은 상태에서 스페이스)
+            downJumpPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);
+            
             // 🔘 아이템 관련 입력
-            pickupPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);
+            bool rightClickPressed = Input.GetMouseButton(1);  // 마우스 우클릭
+            bool hasHeldObject = itemPickup?.HasHeldObject ?? false;
+            
+            // 우클릭으로 아이템 들기/던지기 구분
+            pickupItemPressed = rightClickPressed && !hasHeldObject;     // 손에 아무것도 없을 때 들기
+            throwItemPressed = rightClickPressed && hasHeldObject;   // 손에 뭔가 들고 있을 때 던지기
             
             useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
-            throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
+            interactPressed = Input.GetKey(KeyCode.F);   // F키 (상호작용)
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
+            deathPressed = Input.GetKey(KeyCode.K);      // K키 (테스트용 죽음 트리거)
         }
     }
     
@@ -196,25 +217,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
+            interaction?.ProcessInput(input);
+
         }
-        
-        // 1번 키 입력 체크 (InputAuthority에서만)
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Object.HasInputAuthority && Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            var inventory = GetComponentInChildren<PlayerInventory>();
-            if (inventory != null)
-            {
-                var held = inventory.CurrentHeldObject;
-                string heldName = held != null ? held.name : "없음";
-                Debug.Log($"[SpelunkyPlayerController] 현재 손에 든 오브젝트: {heldName}");
-            }
-            else
-            {
-                Debug.Log("[SpelunkyPlayerController] PlayerInventory 컴포넌트를 찾을 수 없습니다.");
-            }
-        }
-#endif
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     }
@@ -233,10 +238,13 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             
             // 🔘 버튼 입력 설정
             data.NetworkButtons.Set(SpelunkyInputButtons.Jump, jumpPressed);
-            data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.DownJump, downJumpPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.PickupItem, pickupItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Interact, interactPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Death, deathPressed);
         }
         
         return data;

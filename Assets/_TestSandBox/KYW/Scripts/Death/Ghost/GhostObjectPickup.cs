@@ -1,22 +1,20 @@
 using Fusion;
 using UnityEngine;
 using System.Collections.Generic;
-using System.Collections;
 
-// 아이템 감지 및 줍기 담당 컴포넌트
-// 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemPickup)
-// 🎯 목적: CircleCollider2D로 주변 아이템 감지 + Space+웅크리기로 픽업
-public class PlayerObjectPickup : NetworkBehaviour
+// 👻 유령 아이템 감지 및 줍기 담당 컴포넌트
+// 📍 위치: Ghost 하위 오브젝트 (Ghost > GhostObjectPickup)
+// 🎯 목적: CircleCollider2D로 주변 아이템 감지 + 우클릭으로 픽업
+public class GhostObjectPickup : NetworkBehaviour
 {
     [Header("Pickup Settings")]
     [SerializeField] private LayerMask pickupLayerMask = -1;      // 🎛️ 인식할 레이어들
-    [SerializeField] private CircleCollider2D pickupTrigger;    // 🔵 감지용 원형 트리거 (Hand에 위치)
+    [SerializeField] private CircleCollider2D pickupTrigger;    // 🔵 감지용 원형 트리거
     
     [Header("Position Offset")]
-    [SerializeField] private Vector3 playerHoldOffset = new Vector3(0f, 0.5f, 0f);  // 🎯 플레이어 들 때 위치 오프셋
+    [SerializeField] private Vector3 ghostHoldOffset = new Vector3(0f, 0.5f, 0f);  // 🎯 유령 들 때 위치 오프셋
 
-    
-    // 🌐 네트워크 동기화 변수들 (모든 클라이언트가 동일한 값을 가짐)
+    // 🌐 네트워크 동기화 변수들
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }        // 🎮 이전 프레임 버튼 상태 (래칭용)
     
     // 🔍 게임 로직에 필요한 속성 (PlayerInventory에서 가져옴)
@@ -27,104 +25,91 @@ public class PlayerObjectPickup : NetworkBehaviour
     private HashSet<GameObject> nearbyObjects = new HashSet<GameObject>();
     
     // 📎 참조할 다른 컴포넌트들
-    private SpelunkyPlayerController playerController;
-    private PlayerMovement playerMovement;
     private PlayerInventory inventory;
     
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
-        // 모든 컴포넌트 참조를 한 번에 설정
-        Transform parentPlayer = transform.parent;  // 🏠 부모 = Player 오브젝트
-        if (parentPlayer != null)
+        Transform parentGhost = transform.parent;
+        if (parentGhost != null)
         {
-            playerController = parentPlayer.GetComponent<SpelunkyPlayerController>();
-            playerMovement = parentPlayer.GetComponent<PlayerMovement>();
-            inventory = parentPlayer.GetComponentInChildren<PlayerInventory>(); // Player 오브젝트의 자식들 중에서 찾기
-            // 필수 컴포넌트 검증
-            if (playerController == null)
-                Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
-            if (playerMovement == null)
-                Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
+            inventory = parentGhost.GetComponentInChildren<PlayerInventory>();
             if (inventory == null)
+            {
                 Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
+            }
         }
         else
         {
-            Debug.LogError($"[{name}] PlayerObjectPickup이 Player 오브젝트의 하위가 아닙니다!");
+            Debug.LogError($"[{name}] GhostObjectPickup이 Ghost 오브젝트의 하위가 아닙니다!");
         }
     }
     
-    
-    // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)
-    // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
-    public void ProcessInput(SpelunkyPlayerInputData input)
+    // 🎮 입력 처리 (PlayerGhostController에서 호출)
+    public void ProcessInput(GhostInputData input)
     {
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
 
         // 🎮 오브젝트 픽업 조건: 우클릭 + 아무것도 안 들고 있을 때
-        if (pressed.IsSet(SpelunkyInputButtons.PickupItem))
+        if (pressed.IsSet(GhostInputButtons.RightClick))
         {
-            Debug.Log($"[PlayerObjectPickup] Pickup 입력 감지됨");
+            Debug.Log($"[{name}] 픽업 입력 감지됨");
             if (!HasHeldObject)
             {
-                Debug.Log($"[PlayerObjectPickup] 손에 든 것 없음, 픽업 시도");
+                Debug.Log($"[{name}] 손에 든 것 없음");
                 // 🔍 가장 가까운 픽업 대상 찾기
                 var nearest = FindNearestObject();
                 if (nearest != null)
                 {
-                    Debug.Log($"[PlayerObjectPickup] 가장 가까운 아이템/오브젝트: {nearest.name}");
+                    Debug.Log($"[{name}] 가장 가까운 아이템/오브젝트: {nearest.name}");
                     var netObj = nearest.GetComponent<NetworkObject>();
                     if (netObj != null)
                     {
-                        Debug.Log($"[PlayerObjectPickup] NetworkObject 있음, RPC 호출: {netObj.Id}");
+                        Debug.Log($"[{name}] NetworkObject 있음, RPC 호출: {netObj.Id}");
                         // 📡 Host(StateAuthority)에게 픽업 요청 RPC 전송
                         PickupObjectRpc(netObj.Id);
                     }
                     else
                     {
-                        Debug.Log($"[PlayerObjectPickup] NetworkObject 없음");
+                        Debug.Log($"[{name}] NetworkObject 없음");
                     }
                 }
                 else
                 {
-                    Debug.Log($"[PlayerObjectPickup] 주변에 픽업 가능한 아이템/오브젝트 없음");
+                    Debug.Log($"[{name}] 주변에 픽업 가능한 아이템/오브젝트 없음");
                 }
             }
             else
             {
-                Debug.Log($"[PlayerObjectPickup] 이미 손에 든 것 있음");
+                Debug.Log($"[{name}] 이미 손에 든 것 있음");
             }
         }
     }
     
-    
-    // 📡 RPC: InputAuthority → StateAuthority로 픽업 요청
+    // 📡 RPC: 픽업 요청
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
     private void PickupObjectRpc(NetworkId objectId)
     {
-        Debug.Log($"[PlayerObjectPickup] PickupObjectRpc 호출됨: {objectId}");
-        var netObj = Runner.FindObject(objectId);
-        if (netObj != null)
+        var networkObject = Runner.FindObject(objectId);
+        if (networkObject != null)
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 성공: {netObj.name}");
-            PickupObject(netObj.gameObject);
+            PickupObject(networkObject.gameObject);
         }
         else
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 실패");
+            Debug.LogError($"[{name}] NetworkObject를 찾을 수 없습니다: {objectId}");
         }
     }
-
-    // 📦 실제 오브젝트 픽업 처리 (StateAuthority에서만 의미 있음)
+    
+    // 🤲 실제 픽업 처리
     private void PickupObject(GameObject obj)
     {
         var networkObject = obj.GetComponent<NetworkObject>();
 
         if (Object.HasStateAuthority)
         {
-            Debug.Log($"[PlayerObjectPickup] StateAuthority에서 PickupObject 시도");
+            Debug.Log($"[{name}] StateAuthority에서 PickupObject 시도");
             
             // 플레이어인 경우 특별 처리
             if (obj.layer == LayerMask.NameToLayer("Player"))
@@ -152,9 +137,9 @@ public class PlayerObjectPickup : NetworkBehaviour
             bool picked = inventory.HoldObject(obj); 
             if (picked)
             {
-                Debug.Log($"[PlayerObjectPickup] HoldObject 성공: {obj.name}");
+                Debug.Log($"[{name}] HoldObject 성공: {obj.name}");
                 nearbyObjects.Remove(obj);  // 🗑️ 주변 목록에서 제거
-                obj.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
+                obj.transform.SetParent(transform);        // 🏠 유령의 자식으로 설정
                 
                 // 🎯 캐릭터(플레이어/적/NPC)인 경우 오프셋 적용, 아이템은 기본 위치
                 Vector3 holdPosition = Vector3.zero;
@@ -163,8 +148,8 @@ public class PlayerObjectPickup : NetworkBehaviour
                     layer == LayerMask.NameToLayer("Enemy") || 
                     layer == LayerMask.NameToLayer("Npc"))
                 {
-                    holdPosition = playerHoldOffset;
-                    Debug.Log($"[PlayerObjectPickup] 캐릭터 오프셋 적용: {obj.name} (레이어: {layer})");
+                    holdPosition = ghostHoldOffset;
+                    Debug.Log($"[{name}] 캐릭터 오프셋 적용: {obj.name} (레이어: {layer})");
                 }
                 
                 obj.transform.localPosition = holdPosition; // 📍 위치 설정
@@ -227,10 +212,10 @@ public class PlayerObjectPickup : NetworkBehaviour
             collider.isTrigger = true;
     }
     
-    // 🚪 트리거 진입: 오브젝트가가 감지 범위에 들어왔을 때
+    // 🚪 트리거 진입: 오브젝트가 감지 범위에 들어왔을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
+        Debug.Log($"[{name}] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
         
         // 🎯 아이템인 경우 IItemInteraction 체크
         if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
@@ -239,7 +224,7 @@ public class PlayerObjectPickup : NetworkBehaviour
             if (itemInteraction != null && !itemInteraction.IsHeld)
             {
                 nearbyObjects.Add(other.gameObject);
-                Debug.Log($"[PlayerObjectPickup] 들 수 있는 아이템 감지: {other.gameObject.name}");
+                Debug.Log($"[{name}] 들 수 있는 아이템 감지: {other.gameObject.name}");
             }
             return;
         }
@@ -251,24 +236,25 @@ public class PlayerObjectPickup : NetworkBehaviour
             if (playerInteraction != null && playerInteraction.IsHoldable) // 스턴 상태인지 확인
             {
                 nearbyObjects.Add(other.gameObject);
-                Debug.Log($"[PlayerObjectPickup] 들 수 있는 플레이어 감지: {other.gameObject.name}");
+                Debug.Log($"[{name}] 들 수 있는 플레이어 감지: {other.gameObject.name}");
             }
         }
-        // 기타 레이어 처리
-        else if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
+        // 기타 레이어 처리 (Enemy, Npc 등)
+        else if (other.gameObject.layer == LayerMask.NameToLayer("Enemy") || 
+                 other.gameObject.layer == LayerMask.NameToLayer("Npc"))
         {
             nearbyObjects.Add(other.gameObject);
-            Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함된 레이어: {other.gameObject.layer}");
+            Debug.Log($"[{name}] 들 수 있는 캐릭터 감지: {other.gameObject.name}");
         }
     }
     
-    // 🚪 트리거 이탈: 오브젝트가가 감지 범위에서 나갔을 때
+    // 🚪 트리거 이탈: 오브젝트가 감지 범위에서 나갔을 때
     private void OnTriggerExit2D(Collider2D other)
     {
         if (nearbyObjects.Contains(other.gameObject))
         {
             nearbyObjects.Remove(other.gameObject);
-            Debug.Log($"[PlayerObjectPickup] 트리거 이탈: {other.gameObject.name} 제거됨");
+            Debug.Log($"[{name}] 트리거 이탈: {other.gameObject.name} 제거됨");
         }
     }
-}
+} 
