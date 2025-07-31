@@ -91,15 +91,18 @@ public class LobbyManager : BaseManager<LobbyManager>
         return ret;
     }
 
+    [field: SerializeField] public bool IsSoloPlay {get; private set;}
     /// <summary>
     /// 로비 입장
     /// </summary>
-    public async Awaitable JoinOrCreateLobby(GameMode mode = GameMode.AutoHostOrClient,
+    public async Awaitable JoinOrCreateLobby(bool isSoloPlay = false, GameMode mode = GameMode.AutoHostOrClient,
                                             string roomName = "TestRoom",
                                             Action OnEnterLobby = default)
     {
         try
         {
+            IsSoloPlay = isSoloPlay;
+            
             await Fader.Inst.ShowLoadingAsync();
             if (NetRunner == null)
             {

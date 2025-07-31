@@ -27,8 +27,9 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     }
 
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         spawnHandler = this.GetOrAddComponent<PlayerSpawnHandler>();
         hostDisconnectHandler = this.GetOrAddComponent<HostDisconnectHandler>();
 
