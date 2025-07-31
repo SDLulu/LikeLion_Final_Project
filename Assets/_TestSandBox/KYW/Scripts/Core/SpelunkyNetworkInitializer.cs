@@ -10,7 +10,6 @@ public static class SpelunkyNetworkInitializer
     public static void InitializeNetworkSettings(SpelunkyPlayerController player)
     {
         player.Runner.SetIsSimulated(player.Object, true);
-        // ConfigureNetworkPhysics(player);
         if (player.Object.HasInputAuthority)
         {
             Debug.Log("🌐 로컬 플레이어 - Input Authority 설정 완료");
@@ -54,6 +53,7 @@ public static class SpelunkyNetworkInitializer
     // 로컬 플레이어용 카메라 설정
     public static void SetupCameraForLocalPlayer(SpelunkyPlayerController player)
     {
+        // 기존 시네머신 카메라 찾기
         var existingCamera = Object.FindFirstObjectByType<CinemachineCamera>();
         if (existingCamera != null)
         {
@@ -63,29 +63,52 @@ public static class SpelunkyNetworkInitializer
         }
         else
         {
-            var cameraGO = new GameObject("Player Virtual Camera");
-            var virtualCamera = cameraGO.AddComponent<CinemachineCamera>();
+            // 기존 카메라가 없으면 간단한 시네머신 설정 생성
+            CreateSimpleCinemachineSetup(player);
+        }
+    }
+
+    // 간단한 시네머신 설정 생성 (Unity Cinemachine 3.x의 간단한 API 사용)
+    private static void CreateSimpleCinemachineSetup(SpelunkyPlayerController player)
+    {
+        try
+        {
+            // 1. Main Camera 확인
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                var cameraGO = new GameObject("Main Camera");
+                mainCamera = cameraGO.AddComponent<Camera>();
+                cameraGO.tag = "MainCamera";
+                Debug.Log("📷 Main Camera 생성됨");
+            }
+
+            // 2. CinemachineBrain 추가 (없으면)
+            var brain = mainCamera.GetComponent<CinemachineBrain>();
+            if (brain == null)
+            {
+                brain = mainCamera.gameObject.AddComponent<CinemachineBrain>();
+                Debug.Log("📷 CinemachineBrain 추가됨");
+            }
+
+            // 3. Virtual Camera 생성 (간단하게)
+            var virtualCamera = new GameObject("Player Virtual Camera").AddComponent<CinemachineCamera>();
+            
+            // 4. 기본 설정만 적용
             virtualCamera.Follow = player.transform;
             virtualCamera.LookAt = player.transform;
-            try
-            {
-                var follow = virtualCamera.GetCinemachineComponent(CinemachineCore.Stage.Body) as CinemachineFollow;
-                if (follow != null)
-                {
-                    follow.FollowOffset = new Vector3(0, 2, -10);
-                }
-                
-                var lens = virtualCamera.Lens;
-                lens.FieldOfView = 60f;
-                lens.OrthographicSize = 5f;
-                virtualCamera.Lens = lens;
-                
-                Debug.Log("📷 새 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"📷 카메라 설정 실패: {e.Message}");
-            }
+            virtualCamera.Priority = 10;
+            
+            // 5. 2D 게임용 렌즈 설정
+            var lens = virtualCamera.Lens;
+            lens.OrthographicSize = 5f; // 2D 게임용
+            virtualCamera.Lens = lens;
+            
+            Debug.Log("📷 간단한 시네머신 설정 생성 완료");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"📷 시네머신 설정 생성 실패: {e.Message}");
         }
     }
 

@@ -8,6 +8,7 @@ public class PlayerJump : NetworkBehaviour
     [Header("Jump Settings")]
     [SerializeField] private float jumpSpeed = 10f;         // 점프 상승 속도 (일정)
     [SerializeField] private float maxJumpTime = 0.3f;      // 최대 점프 지속 시간
+    [SerializeField] private float downJumpSpeed = 8f;      // 밑점프 속도
     [SerializeField] private float gravity = 20f;
     [SerializeField] private float maxFallSpeed = 15f;
     [SerializeField] private bool showDebugInfo = true;     // 디버그 정보 표시
@@ -15,6 +16,7 @@ public class PlayerJump : NetworkBehaviour
     
     // 🦘 점프 상태 추적
     [Networked] public bool IsJumping { get; private set; }
+    [Networked] public bool IsDownJumping { get; private set; }
     [Networked] public float JumpTime { get; private set; }
     
     // Fusion 2 공식 패턴: 이전 버튼 상태 추적 (GetPressed 사용)
@@ -79,11 +81,24 @@ public class PlayerJump : NetworkBehaviour
         // Fusion 2 공식 패턴: GetPressed로 점프 버튼 눌림 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
+        bool downJumpPressed = input.NetworkButtons.IsSet(SpelunkyInputButtons.DownJump);
         
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지)
+        // 🎮 밑점프 시작 (플랫폼 위에서 앉은 상태일 때)
+        if (pressed.IsSet(SpelunkyInputButtons.DownJump) && groundCheck.IsGrounded && 
+            movement != null && movement.IsDucking && !movement.IsLookingUp)
+        {
+            // 밑점프 상태 시작 (아래로 점프)
+            IsJumping = true;
+            JumpTime = 0f;
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -downJumpSpeed);
+            Debug.Log("🦘 밑점프 시작!");
+            return; // 밑점프가 우선이므로 일반 점프 처리하지 않음
+        }
+        
+        // 🎮 일반 점프 시작 (땅에 있을 때만, 한 번만 감지)
         if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
         {
             // 점프 상태 시작
