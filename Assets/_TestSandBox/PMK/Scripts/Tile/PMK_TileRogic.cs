@@ -47,7 +47,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     [Header("TileZoneSpawner 설정")]
     [field: SerializeField] public TileBase ruleTile { get; private set; }// 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
-    [field: SerializeField] public GameObject trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일)
+    [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
 
 
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
@@ -85,21 +85,29 @@ public partial class PMK_TileRogic : NetworkBehaviour
                     mapPrefabDict.Add(set.mapType, set.prefabs);
             }
         }
-
-        if (!HasStateAuthority) return; // 호스트 또는 서버 권한이 있는 경우에만 맵을 생성
-        ResetMap(); // 맵 초기화 및 재생성
+        if (!HasStateAuthority) return;
+        RPC_ResetMap(); // 맵 초기화 및 재생성
     }
 
     private void Update()
     {
+
         if (Input.GetKeyDown(KeyCode.Alpha1)) // 1번 키를 누르면 맵 초기화 및 재생성
         {
-            ResetMap();
+            if (!HasStateAuthority) return;
+            RPC_ResetMap();
         }
     }
 
 
     #region 맵 초기화 및 재생성
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_ResetMap()
+    {
+        ResetMap();
+    }
+
+
     public void ResetMap()
     {
         mainTilemap.ClearAllTiles();
