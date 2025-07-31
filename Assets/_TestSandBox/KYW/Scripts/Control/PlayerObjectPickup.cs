@@ -99,25 +99,26 @@ public class PlayerObjectPickup : NetworkBehaviour
         }
     }
     
-    
-    // 📡 RPC: InputAuthority → StateAuthority로 픽업 요청
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    // 📡 픽업 RPC (InputAuthority → StateAuthority)
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void PickupObjectRpc(NetworkId objectId)
     {
         Debug.Log($"[PlayerObjectPickup] PickupObjectRpc 호출됨: {objectId}");
-        var netObj = Runner.FindObject(objectId);
-        if (netObj != null)
+        
+        // NetworkId로 오브젝트 찾기
+        if (Runner.TryFindObject(objectId, out var networkObject))
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 성공: {netObj.name}");
-            PickupObject(netObj.gameObject);
+            var obj = networkObject.gameObject;
+            Debug.Log($"[PlayerObjectPickup] 오브젝트 찾음: {obj.name}");
+            PickupObject(obj);
         }
         else
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 실패");
+            Debug.LogWarning($"[PlayerObjectPickup] NetworkId {objectId}에 해당하는 오브젝트를 찾을 수 없습니다!");
         }
     }
-
-    // 📦 실제 오브젝트 픽업 처리 (StateAuthority에서만 의미 있음)
+    
+    // 🎯 실제 픽업 처리 (StateAuthority에서만 실행)
     private void PickupObject(GameObject obj)
     {
         var networkObject = obj.GetComponent<NetworkObject>();

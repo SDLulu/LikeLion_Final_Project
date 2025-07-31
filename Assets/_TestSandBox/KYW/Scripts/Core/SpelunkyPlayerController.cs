@@ -36,12 +36,11 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     
     // 🔨 아이템 관련 입력
     private bool useItemHeld;           // 마우스 좌클릭
-    private bool pickupItemPressed;     // 우클릭 (아이템 픽업)
+    private bool pickupItemPressed;     // 앉기 + Space (아이템 픽업)
     private bool throwItemPressed;      // 우클릭 (아이템 던지기)
     private bool interactPressed;       // F키 (상호작용)
     private bool skillPressed;          // 쉬프트키 (스킬 사용)
     private bool deathPressed;          // K키 (테스트용 죽음 트리거)
-
     
     // 📦 물리/로직 컴포넌트 참조들 (같은 오브젝트에서 찾기)
     private PlayerGroundCheck groundCheck;
@@ -137,25 +136,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
     {
-        // Dead, Stunned, Held, Thrown 상태면 모든 입력 무시 + 입력값 초기화
-        if (stunInvincibleDie != null && (stunInvincibleDie.IsDead ||
-         stunInvincibleDie.IsStunned ||
-         stunInvincibleDie.IsHeld ||
-         stunInvincibleDie.IsThrown))
+        // 🎮 상태 확인 - 입력 불가능한 상태면 입력 무시
+        if (IsDead || IsStunned || IsHeld || IsThrown)
         {
-            // Held 상태에서는 점프 입력만 허용 (탈출용)
-            if (stunInvincibleDie.IsHeld && Object.HasInputAuthority)
-            {
-                bool jumpPressed = Input.GetKey(KeyCode.Space);
-                if (jumpPressed)
-                {
-                    // 점프로 탈출 - 던지기와 동일한 처리
-                    EscapeFromBeingHeld();
-                    
-                    return;
-                }
-            }
-            
+            // 입력 변수들 초기화
             horizontalInput = 0f;
             verticalInput = 0f;
             mouseScrollWheel = 0f;
@@ -190,17 +174,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             downJumpPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);
             
             // 🔘 아이템 관련 입력
-            bool rightClickPressed = Input.GetMouseButton(1);  // 마우스 우클릭
-            bool hasHeldObject = itemPickup?.HasHeldObject ?? false;
-            
-            // 우클릭으로 아이템 들기/던지기 구분
-            pickupItemPressed = rightClickPressed && !hasHeldObject;     // 손에 아무것도 없을 때 들기
-            throwItemPressed = rightClickPressed && hasHeldObject;   // 손에 뭔가 들고 있을 때 던지기
-            
-            useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
-            interactPressed = Input.GetKey(KeyCode.F);   // F키 (상호작용)
+            pickupItemPressed = Input.GetKey(KeyCode.Space) && (movement?.IsDucking ?? false);  // 앉기 + Space로 픽업
+            throwItemPressed = Input.GetMouseButton(1);       // 우클릭으로 던지기
+            useItemHeld = Input.GetMouseButton(0);           // 마우스 좌클릭
+            interactPressed = Input.GetKey(KeyCode.F);       // F키 (상호작용)
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
-            deathPressed = Input.GetKey(KeyCode.K);      // K키 (테스트용 죽음 트리거)
+            deathPressed = Input.GetKey(KeyCode.K);          // K키 (테스트용 죽음 트리거)
         }
     }
     
