@@ -48,7 +48,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
-    private PlayerInventory inventory;
+    private testPlayerInventory inventory;
 
     private PlayerStunInvincibleDie stunInvincibleDie;
     
@@ -59,7 +59,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerObjectPickup itemPickup;
     private PlayerItemUsage itemUsage;
-    private PlayerItemThrower itemThrower;
     
     
     private PlayerObjectThrower itemThrower;
@@ -71,7 +70,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        inventory = GetComponent<PlayerInventory>();
+        inventory = GetComponent<testPlayerInventory>();
 
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         

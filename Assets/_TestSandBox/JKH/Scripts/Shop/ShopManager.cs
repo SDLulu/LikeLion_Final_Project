@@ -184,7 +184,7 @@ public class ShopManager : NetworkBehaviour
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
-            PlayerInventory inventory = playerObject.GetComponent<PlayerInventory>();
+            testPlayerInventory inventory = playerObject.GetComponent<testPlayerInventory>();
             if (inventory != null)
             {
                 return inventory.Gold;
@@ -198,7 +198,7 @@ public class ShopManager : NetworkBehaviour
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
-            PlayerInventory inventory = playerObject.GetComponent<PlayerInventory>();
+            testPlayerInventory inventory = playerObject.GetComponent<testPlayerInventory>();
             if (inventory != null)
             {
                 inventory.Gold = newGold;
@@ -243,7 +243,7 @@ public class ShopManager : NetworkBehaviour
 
             // 3. 구매할 아이템과 구매자 인벤토리를 찾습니다.
             ShopItem purchasedShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
-            PlayerInventory playerInventory = Runner.GetPlayerObject(buyer)?.GetComponent<PlayerInventory>();
+            testPlayerInventory playerInventory = Runner.GetPlayerObject(buyer)?.GetComponent<testPlayerInventory>();
 
             // 4. 아이템과 인벤토리가 유효하고, 인벤토리에 공간이 있는지 최종 확인합니다.
             if (purchasedShopItem != null && playerInventory != null && playerInventory.CanPickupItem())
@@ -441,7 +441,7 @@ public class ShopManager : NetworkBehaviour
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
-            PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
+            testPlayerInventory playerInventory = playerObject.GetComponent<testPlayerInventory>();
             ShopItem actualShopItem = Runner.FindObject(itemNetworkId)?.GetComponent<ShopItem>();
 
             if (playerInventory != null && actualShopItem != null && playerInventory.CanPickupItem())
@@ -478,7 +478,7 @@ public class ShopManager : NetworkBehaviour
         NetworkObject playerObject = Runner.GetPlayerObject(player);
         if (playerObject != null)
         {
-            PlayerInventory playerInventory = playerObject.GetComponent<PlayerInventory>();
+            testPlayerInventory playerInventory = playerObject.GetComponent<testPlayerInventory>();
             if (playerInventory != null)
             {
                 // 3. 실제 드랍 로직을 실행합니다.

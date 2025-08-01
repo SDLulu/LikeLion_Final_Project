@@ -110,7 +110,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         if (Object.HasStateAuthority)
         {
             // FixedUpdateNetwork에서 _currentInteractingPlayer를 사용하는 로직은 기존과 동일합니다.
-            if (!_currentInteractingPlayer.IsNone && Runner.TryGetInputForPlayer(_currentInteractingPlayer, out SpelunkyPlayerData input))
+            if (!_currentInteractingPlayer.IsNone && Runner.TryGetInputForPlayer(_currentInteractingPlayer, out SpelunkyPlayerInputData input))
             {
                 const SpelunkyInputButtons PICKUP_BUTTON_MASK = SpelunkyInputButtons.pick;
                 const SpelunkyInputButtons BUY_BUTTON_MASK = SpelunkyInputButtons.buy;
@@ -152,6 +152,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             _shopItemVisual.UpdatePriceText(ItemData.Price); // 가격 업데이트
             _shopItemVisual.UpdateItemColorAndPriceTag(ItemData.IsAvailable, ItemData.IsPicked); // 색상 및 가격표 활성화/비활성화
         }
+        
 
         // ⭐️ 구매 UI 표시 로직 (로컬 플레이어에게만)
         // 로컬 플레이어가 현재 이 아이템과 충돌 중인지 확인합니다.
@@ -250,6 +251,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             OriginalPosition = ItemData.OriginalPosition,
             ItemName = ItemData.ItemName
         };
+        
 
         UpdatePhysicsState(false, true); // 시뮬레이션 비활성, 트리거 활성
 
@@ -276,7 +278,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             
         };
 
-        UpdatePhysicsState(true, true); // 시뮬레이션 활성, 트리거 비활성
+        UpdatePhysicsState(true, false); // 시뮬레이션 활성, 트리거 비활성
 
         Debug.Log($"Host: Item {ItemData.ItemName} dropped by Player {dropper.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
     }
