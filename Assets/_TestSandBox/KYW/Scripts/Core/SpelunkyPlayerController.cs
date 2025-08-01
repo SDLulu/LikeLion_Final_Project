@@ -54,6 +54,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private testPlayerInventory inventory;
 
     private PlayerStunInvincibleDie stunInvincibleDie;
+    private PlayerDeathHandler playerDeathHandler;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -81,6 +82,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         inventory = GetComponent<testPlayerInventory>();
 
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
+        playerDeathHandler = GetComponent<PlayerDeathHandler>();
         interaction = GetComponent<PlayerInteraction>();
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
@@ -267,12 +269,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     }
     
     // 🎮 상태 확인 헬퍼 프로퍼티들
-    public bool IsDead => stunInvincibleDie?.IsDead ?? false;
+    public bool IsDead => playerDeathHandler?.IsDead ?? false;
     public bool IsStunned => stunInvincibleDie?.IsStunned ?? false;
     public bool IsInvincible => stunInvincibleDie?.IsInvincible ?? false;
     public bool IsHeld => stunInvincibleDie?.IsHeld ?? false;
     public bool IsThrown => stunInvincibleDie?.IsThrown ?? false;
-    public bool IsNormal => !(stunInvincibleDie?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
+    public bool IsNormal => !(playerDeathHandler?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
     
     // 🎯 들린 상태에서 탈출 처리 (던지기와 동일한 로직)
     private void EscapeFromBeingHeld()

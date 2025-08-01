@@ -86,18 +86,6 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
         stunInvincible?.SetInvincible(value, duration);
     }
     
-    // 💀 죽음 처리 (외부에서 호출 가능)
-    public virtual void Die()
-    {
-        // 권한 확인 (호스트/서버에서만 실행)
-        if (!HasStateAuthority) return;
-        
-        // 사망 상태로 설정
-        stunInvincible?.Die();
-        
-        Debug.Log($"[{name}] 플레이어 사망 처리 완료!");
-    }
-    
     // IHoldable 인터페이스 구현
     public virtual void OnPickedUp()
     {

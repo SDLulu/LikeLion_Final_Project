@@ -1,7 +1,7 @@
 using Fusion;
 using UnityEngine;
 
-// 🛑 플레이어 스턴, 무적, 죽음, 들림 상태 관리 컴포넌트
+// 🛑 플레이어 스턴, 무적, 들림 상태 관리 컴포넌트
 public class PlayerStunInvincibleDie : NetworkBehaviour
 {
     // 🕐 타이머들 (실제 로직 처리용)
@@ -11,23 +11,13 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
     
     // 🛑 상태 관련 네트워크 프로퍼티들
     [Networked] public bool IsStunned { get; private set; }
-    [Networked] public bool IsDead { get; private set; }
     [Networked] public bool IsInvincible { get; private set; }
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
     [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
-    
-    // 📎 참조할 다른 컴포넌트들
-    private PlayerDeathHandler deathHandler;
+    [Networked] public bool IsDead { get; private set; } // 죽음 상태 (외부 참조용)
 
     public override void Spawned()
     {
-        // 죽음 처리 컴포넌트 찾기
-        deathHandler = GetComponent<PlayerDeathHandler>();
-        if (deathHandler == null)
-        {
-            Debug.LogError($"[{name}] PlayerDeathHandler 컴포넌트를 찾을 수 없습니다!");
-        }
-        
         Debug.Log($"🛑 PlayerStunInvincibleDie 초기화 완료!");
     }
 
@@ -122,48 +112,14 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
         Debug.Log($"[{name}] 던진 상태 설정: {duration}초");
     }
-
-    // 💀 죽음 처리
-    public void Die()
-    {
-        // 권한 확인 (호스트/서버에서만 실행)
-        if (!HasStateAuthority) return;
-        
-        // 이미 사망 상태라면 중복 처리 방지
-        if (IsDead) return;
-        
-        IsDead = true;
-        IsStunned = false;
-        IsInvincible = false;
-        IsHeld = false; // 사망 시 들림 상태 해제
-        IsThrown = false; // 사망 시 던진 상태 해제
-        
-        // 타이머들 초기화
-        StunTimer = TickTimer.None;
-        InvincibleTimer = TickTimer.None;
-        ThrownTimer = TickTimer.None;
-        
-        Debug.Log($"[{name}] 플레이어 사망 상태로 설정됨!");
-    }
     
-    // 🔄 부활 처리 (게임 재시작 등에서 사용)
-    public void Resurrect()
+    // 💀 죽음 상태 설정 (PlayerDeathHandler에서 호출)
+    public void SetDead(bool value)
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
         
-        // 사망 상태가 아니라면 처리 불필요
-        if (!IsDead) return;
-        
-        // 죽음 처리 컴포넌트에 부활 정리 요청
-        if (deathHandler != null)
-        {
-            deathHandler.OnResurrect();
-        }
-        
-        // 플레이어 부활
-        IsDead = false;
-        
-        Debug.Log($"[{name}] 플레이어 부활 처리됨!");
+        IsDead = value;
+        Debug.Log($"[{name}] 죽음 상태 설정: {value}");
     }
 } 
