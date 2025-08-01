@@ -3,7 +3,7 @@ using UnityEngine;
 using System.Collections.Generic; // List를 사용한다면 필요
 // using TMPro; // 골드 UI 표시용 (필요하다면)
 
-public class PlayerInventory : NetworkBehaviour
+public class testPlayerInventory : NetworkBehaviour
 {
     // ⭐️ 골드 Networked 변수 추가 (상점에서 사용)
     [Networked]
@@ -32,15 +32,15 @@ public class PlayerInventory : NetworkBehaviour
     [SerializeField] private Transform itemHoldPoint; // 아이템을 들고 있을 위치
 
     // 필요한 경우 다른 컴포넌트 참조
-    private PlayerItemPickup _playerItemPickup; // 아이템 픽업 담당 컴포넌트 (Hand 하위)
-    private PlayerItemThrower _playerItemThrower; // 아이템 던지기 담당 컴포넌트 (Hand 하위)
+    private PlayerObjectPickup _playerItemPickup; // 아이템 픽업 담당 컴포넌트 (Hand 하위)
+    private PlayerObjectThrower _playerItemThrower; // 아이템 던지기 담당 컴포넌트 (Hand 하위)
 
     public override void Spawned()
     {
         if (itemHoldPoint == null)
         {
             // 플레이어 Hand 하위의 PlayerItemPickup에서 아이템을 들고 있는 위치를 가져오는 방식
-            _playerItemPickup = GetComponentInChildren<PlayerItemPickup>();
+            _playerItemPickup = GetComponentInChildren<PlayerObjectPickup>();
             _shopManager = FindAnyObjectByType<ShopManager>();
             if (_playerItemPickup != null)
             {
@@ -52,7 +52,7 @@ public class PlayerInventory : NetworkBehaviour
             }
         }
 
-        _playerItemThrower = GetComponentInChildren<PlayerItemThrower>();
+        _playerItemThrower = GetComponentInChildren<PlayerObjectThrower>();
 
         // ⭐️ Host에서만 초기 골드 설정 (Spawned에서 이미 초기화되었으므로 필요 없을 수도 있음)
         if (Object.HasStateAuthority)
@@ -60,7 +60,7 @@ public class PlayerInventory : NetworkBehaviour
             Gold = 1000; // 게임 시작 시 초기 골드
         }
     }
-    public void ProcessInput(SpelunkyPlayerData input) // 또는 FixedUpdateNetwork()
+    public void ProcessInput(SpelunkyPlayerInputData input) // 또는 FixedUpdateNetwork()
     {
         // 이 인벤토리의 소유자가 아니면 입력을 처리하지 않습니다.
         if (!Object.HasInputAuthority) return;

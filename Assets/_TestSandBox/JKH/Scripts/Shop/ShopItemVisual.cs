@@ -1,4 +1,4 @@
-﻿using TMPro; // TextMeshPro 사용
+using TMPro; // TextMeshPro 사용
 using UnityEngine;
 using UnityEngine.UI; // UnityEngine.UI는 더 이상 필요 없을 수 있지만, 안전을 위해 유지
 
@@ -40,14 +40,17 @@ public class ShopItemVisual : MonoBehaviour // ⭐️ NetworkBehaviour 대신 Mo
             if (!isAvailable) // 판매됨 (또는 도난됨)
             {
                 itemRenderer.color = soldColor;
+                priceTag.SetActive(false);
             }
             else if (isPicked) // 들고 있는 중
             {
                 itemRenderer.color = pickedColor;
+                priceTag.SetActive(false);
             }
             else // 구매 가능 상태
             {
                 itemRenderer.color = availableColor;
+                priceTag.SetActive(true);
             }
         }
 

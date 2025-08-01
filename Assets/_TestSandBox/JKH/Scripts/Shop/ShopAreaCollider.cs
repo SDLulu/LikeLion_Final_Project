@@ -21,7 +21,7 @@ public class ShopAreaCollider : NetworkBehaviour
         }
 
         // 나간 콜라이더에서 PlayerInventory 컴포넌트를 찾습니다.
-        PlayerInventory playerInventory = other.GetComponentInParent<PlayerInventory>();
+        testPlayerInventory playerInventory = other.GetComponentInParent<testPlayerInventory>();
         if (playerInventory == null) return;
 
         // 플레이어가 들고 있는 아이템을 확인합니다.
