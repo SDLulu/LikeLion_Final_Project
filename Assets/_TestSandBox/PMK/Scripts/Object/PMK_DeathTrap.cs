@@ -2,39 +2,34 @@ using UnityEngine;
 using System.Collections.Generic;
 using Fusion;
 
-public class PMK_DeathTrap : NetworkBehaviour
+public class PMK_DeathTrap : MonoBehaviour
 {
-    private HashSet<NetworkObject> affectedPlayers = new HashSet<NetworkObject>();
+    private PMK_TileRPC_Manager tileRPC_Manager => PMK_TileRPC_Manager.Instance;
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (!Object.HasStateAuthority || collision.gameObject.layer != LayerMask.NameToLayer("Player"))
-            return;
+        if (!tileRPC_Manager.HasStateAuthority) return;
+        Debug.Log("들어옴");
 
-        NetworkObject netObj = collision.GetComponent<NetworkObject>();
-        Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
+        // 또는 collision.collider.gameObject 사용해도 됨
+        if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) return;
 
-        if (rb != null && !affectedPlayers.Contains(netObj))
-        {
-            // 중력 제거
-            rb.linearVelocity = Vector2.zero;
-            rb.gravityScale = 0.1f;
-            affectedPlayers.Add(netObj);
-        }
+        NetworkObject netObj = collision.gameObject.GetComponentInParent<NetworkObject>();
+        if (netObj == null) return;
+        Debug.Log("실행");
+        tileRPC_Manager.RPC_SetPlayerGravity(netObj.InputAuthority, 0.1f);
     }
 
     private void OnTriggerExit2D(Collider2D collision)
     {
-        if (!Object.HasStateAuthority || collision.gameObject.layer != LayerMask.NameToLayer("Player"))
-            return;
+        if (!tileRPC_Manager.HasStateAuthority) return;
+        Debug.Log("나감");
 
-        NetworkObject netObj = collision.GetComponent<NetworkObject>();
-        Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
-        if (rb != null && affectedPlayers.Contains(netObj))
-        {
-            // 중력 복원 (기본 1으로 설정)
-            rb.gravityScale = 1;
-            affectedPlayers.Remove(netObj);
-        }
+        if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) return;
+
+        NetworkObject netObj = collision.gameObject.GetComponentInParent<NetworkObject>();
+        if (netObj == null) return;
+
+        tileRPC_Manager.RPC_SetPlayerGravity(netObj.InputAuthority, 0.1f);
     }
 }

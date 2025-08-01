@@ -11,10 +11,9 @@ public class PlayerManager : NetworkBehaviour
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
     
-    [Header("설정")]
-    [SerializeField] private int minPlayersToStart = 2;                 // 게임 시작 최소 인원
 
     [Header("디버그용")]
+    [SerializeField] private int minPlayersToStart = 2;
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
@@ -22,6 +21,8 @@ public class PlayerManager : NetworkBehaviour
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
+
+    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
 
     public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
 
@@ -84,11 +85,9 @@ public class PlayerManager : NetworkBehaviour
     {
         IsSpawned = true;
         
-        var uiController = FindAnyObjectByType<UI_Controller>();
+        var uiController = FindAnyObjectByType<LobbyUI_Manager>();
         this.AddRenderingAction(uiController.UpdateData);
         DontDestroyOnLoad(this.gameObject);
-
-        NetworkEventSystem.Inst.OnSceneLoadStartEvent += (runner, sceneName) =>  StartSceneLoad(sceneName);
 
         if (Runner.IsServer)
         {
@@ -184,7 +183,7 @@ public class PlayerManager : NetworkBehaviour
     /// </summary>
     public bool AreAllPlayersReady()
     {
-        int requiredPlayers = minPlayersToStart;
+        int requiredPlayers = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
         if (Players.Count < requiredPlayers) 
             return false;
         
@@ -207,7 +206,7 @@ public class PlayerManager : NetworkBehaviour
 
     public override async void FixedUpdateNetwork()
     {
-        int requiredPlayers = minPlayersToStart;
+        int requiredPlayers = MinPlayersToStart;
         if (Runner.IsServer && Players.Count >= requiredPlayers && isGameSceneLoading == false && isInGame == false)
         {
             var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
@@ -286,21 +285,6 @@ public class PlayerManager : NetworkBehaviour
 
 
 
-    private CinemachineCamera _cinemachineCamera;
-    private CinemachineBrain _cinemachineBrain;
-    /// <summary>
-    /// Note - 씬로드 시작시 호출 / Both - Server, Client
-    /// 로비의 카메라 참조 저장
-    /// </summary>
-    public void StartSceneLoad(string sceneName)
-    {
-        if (sceneName == GlobalSetting.Inst.LobbyScenePath)
-        {
-            _cinemachineCamera = this.FindObjectByTypeAtCurScene<CinemachineCamera>();
-            _cinemachineBrain = this.FindObjectByTypeAtCurScene<CinemachineBrain>();
-        }
-    }
-
 
     /// <summary>
     /// Note - 게임씬 로드완료시 호출 / Only Server
@@ -320,18 +304,6 @@ public class PlayerManager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_MoveToGameScene()
     {
-        // 게임씬 카메라 제거
-        var gameSceneCamera = this.FindObjectsByTypeAtCurScene<Camera>().FirstOrDefault(x=> x.tag != "MainCamera");
-        if (gameSceneCamera == null)
-        {
-            Debug.LogError("게임씬 카메라를 찾을 수 없습니다.");
-            return;
-        }
-        else
-        {
-            GameObject.Destroy(gameSceneCamera.gameObject);
-        }
-
         foreach (var obj in this.Players.ToList().Select(x => x.Value.gameObject))
         {
             if (obj == null)
@@ -344,8 +316,6 @@ public class PlayerManager : NetworkBehaviour
                 continue;
             }
             Runner.MoveGameObjectToSameScene(obj, gameSceneObj);
-            Runner.MoveGameObjectToSameScene(_cinemachineCamera.gameObject, gameSceneObj);
-            Runner.MoveGameObjectToSameScene(_cinemachineBrain.gameObject, gameSceneObj);
 
             if (Runner.IsServer)
             {
@@ -411,7 +381,7 @@ public class PlayerManager : NetworkBehaviour
     public void RPC_FadeInUI()
     {
         UIEventSystem.Inst.TriggerGameUIActive(true);
-        UI_Controller.Inst.DeactiveAllLobbyUI();
+        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
         _= Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
 }

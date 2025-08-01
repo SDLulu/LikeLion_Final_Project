@@ -3,8 +3,8 @@ using UnityEngine;
 
 public class PMK_ArrowTrap : NetworkBehaviour
 {
-    [SerializeField] private Vector2 dir = Vector2.right; // 화살이 발사되는 방향
-    [SerializeField] private float ShotSpeed = 40f; // 발사 속도
+    [SerializeField] private Vector2 arrowDir = Vector2.right; // 화살이 발사되는 방향
+    [SerializeField] private float shotSpeed = 40f; // 발사 속도
     [SerializeField] private GameObject launchTrapPrefab; // 발사할 프리팹
     [SerializeField] private Transform launchPoint; // 발사 위치
     [field: SerializeField] public LayerMask targetLayer { get; private set; } // 충돌 레이어 감지
@@ -16,11 +16,11 @@ public class PMK_ArrowTrap : NetworkBehaviour
         // 권한이 없는 오브젝트는 처리하지 않음
         if (!Object.HasStateAuthority || !isTrapActive) return;
 
-        Vector2 origin = transform.position;
+        Vector2 origin = launchPoint.position;
         float maxDistance = 10f; // 최대 거리 설정
 
         // Raycast를 사용하여 충돌 감지
-        var hit = Runner.GetPhysicsScene2D().Raycast(origin, dir, maxDistance, targetLayer);
+        var hit = Runner.GetPhysicsScene2D().Raycast(origin, arrowDir, maxDistance, targetLayer);
 
         if (hit.collider != null)
         {
@@ -38,14 +38,14 @@ public class PMK_ArrowTrap : NetworkBehaviour
                     onBeforeSpawned: (runner, obj) =>
                     {
                         var rb = obj.GetComponent<Rigidbody2D>();
-                        rb.linearVelocity = dir * ShotSpeed; // 화살 속도 설정
+                        rb.linearVelocity = arrowDir * shotSpeed; // 화살 속도 설정
                     });
             }
         }
         else
         {
             // 충돌이 없을 경우, 최대 거리까지의 선을 그려서 디버그
-            Debug.DrawLine(origin, origin + dir * maxDistance, Color.green, 0.1f);
+            Debug.DrawLine(origin, origin + arrowDir * maxDistance, Color.green, 0.1f);
         }
     }
 }

@@ -8,6 +8,7 @@ TagManager:
   - PlayerHand
   - PlayerFoot
   - Tileitem
+  - Held
   layers:
   - Default
   - TransparentFX
@@ -27,10 +28,10 @@ TagManager:
   - 
   - 
   - 
+  - Trap
   - 
-  - 
-  - 
-  - 
+  - EnemyHitBox
+  - PlayerHitBox
   - 
   - 
   - 
@@ -77,6 +78,9 @@ TagManager:
     locked: 0
   - name: UI
     uniqueID: 450881263
+    locked: 0
+  - name: Logo
+    uniqueID: 3147737681
     locked: 0
   m_RenderingLayers:
   - Default

@@ -13,20 +13,24 @@ namespace LMCore
             var canvasRect = canvas.GetComponent<RectTransform>();
             Vector2 localPoint;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                canvasRect, 
-                screenPos, 
-                canvas.worldCamera, 
+                canvasRect,
+                screenPos,
+                canvas.worldCamera,
                 out localPoint);
             return localPoint;
         }
     }
-    
+
     public class Fader : BaseManager<Fader>
     {
         [Header("아이콘 팽창 페이드")]
-        [SerializeField] private RectTransform  _contentsRoot;
+        [SerializeField] private RectTransform _contentsRoot;
         [SerializeField] private RectTransform _imageRoot;
         [SerializeField] private Image _bgImage;
+
+        [Header("로딩 UI")]
+        [SerializeField] private RectTransform _loadingPanel;
+        [SerializeField] private RectTransform _loadingRotateIcon;
 
         [Header("FullScreen 페이드")]
         [SerializeField] private RectTransform _fullScreenImage;
@@ -37,11 +41,22 @@ namespace LMCore
         [SerializeField] private Vector2 _endSize = new Vector2(0, 0);
         [SerializeField] private Ease _fadeInEase = Ease.InOutSine;
         [SerializeField] private Ease _fadeOutEase = Ease.InOutSine;
+        [SerializeField] private float _loadingUiFadeDuration = 0.5f;
+        [SerializeField] private float _loadingIconRotateSpeed = 1.0f;
+
+        [Header("Test 페이드")]
+        [SerializeField] private RectTransform _testPanel;
+        [SerializeField] private RectTransform _startPoint;
+        [SerializeField] private RectTransform _centerPoint;
+        [SerializeField] private RectTransform _endPoint;
 
         private bool _isInitialized = false;
         private bool _isFading = false;
 
         public bool IsFading => _isFading;
+
+        private Tween _loadingRotateTween;
+        private Tween _loadingScaleTween;
 
         public void Awake()
         {
@@ -50,8 +65,56 @@ namespace LMCore
             DontDestroyOnLoad(this);
             InitializeFader();
         }
+
+        private void OnDestroy()
+        {
+            _loadingRotateTween?.Kill();
+            _loadingScaleTween?.Kill();
+        }
+
+        public void ActiveBGImage(bool isActive = true, Color color = default)
+        {
+            _fullScreenImage.gameObject.SetActive(isActive);
+            _fullScreenImage.GetComponent<Image>().color = color;
+        }
+
 #if UNITY_EDITOR
+
+
+        [ContextMenu("BGImage 활성화")]
+        private void ActiveBGImage()
+        {
+            ActiveBGImage(true, Color.black);
+        }
+
+        [ContextMenu("BGImage 비활성화")]
+        private void DeactiveBGImage()
+        {
+            ActiveBGImage(false, Color.black);
+        }
+
         bool _testFade = false;
+        [ContextMenu("테스트 Fade1")]
+        private async void WideFadeOut()
+        {
+            if (_testFade)
+                return;
+            _testFade = true;
+            await WideFadeOutAsync(1.5f);
+            _testFade = false;
+        }
+
+        [ContextMenu("테스트 Fade2")]
+        private async void WideFadeIn()
+        {
+            if (_testFade)
+                return;
+            _testFade = true;
+            await WideFadeInAsync(1.5f);
+            _testFade = false;
+        }
+
+
         [ContextMenu("기본 FadeIn")]
         private async void FadeIn()
         {
@@ -100,9 +163,12 @@ namespace LMCore
 
             if (_contentsRoot != null)
                 _contentsRoot.gameObject.SetActive(false);
-            
+
             if (_imageRoot != null)
                 _imageRoot.gameObject.SetActive(false);
+
+            if (_loadingPanel != null)
+                _loadingPanel.gameObject.SetActive(false);
 
             if (_bgImage != null)
             {
@@ -133,12 +199,12 @@ namespace LMCore
             await _contentsRoot.DOSizeDelta(_startSize, seconds)
                 .SetEase(_fadeInEase)
                 .SetUpdate(true)
-                .AsyncWaitForCompletion();     
+                .AsyncWaitForCompletion();
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
             await Awaitable.NextFrameAsync();
         }
-        
+
         // Note - AsyncWaitForCompletion / Task 사용중
         public async Awaitable FadeOutExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
@@ -148,7 +214,7 @@ namespace LMCore
 
             _isFading = true;
             _contentsRoot.sizeDelta = _startSize;
-            
+
             var canvas = this.GetComponent<Canvas>();
             _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
             _bgImage.color = color;
@@ -161,9 +227,9 @@ namespace LMCore
             _isFading = false;
             await Awaitable.NextFrameAsync();
         }
-        
 
-        public async Awaitable FadeInAsync(Color color = default, float seconds = 1f)
+
+        public async Awaitable FadeInAsync(Color color = default, float seconds = 0.5f)
         {
             CheckAndInitialize();
             if (_imageRoot == null || _contentsRoot == null || IsFading)
@@ -178,7 +244,7 @@ namespace LMCore
             image.color = new Color(color.r, color.g, color.b, 1f);
 
             // 더 정밀한 제어를 위해 더 많은 단계 사용
-            int steps = Mathf.Max(30, Mathf.RoundToInt(seconds * 60)); 
+            int steps = Mathf.Max(30, Mathf.RoundToInt(seconds * 60));
             float stepTime = seconds / steps;
             float currentAlpha = 1f;
             float alphaStep = 1f / steps;
@@ -196,8 +262,8 @@ namespace LMCore
             _isFading = false;
             await Awaitable.NextFrameAsync();
         }
-        
-        public async Awaitable FadeOutAsync(Color color = default, float seconds = 1f)
+
+        public async Awaitable FadeOutAsync(Color color = default, float seconds = 0.5f)
         {
             CheckAndInitialize();
             if (_imageRoot == null || _contentsRoot == null || IsFading)
@@ -212,7 +278,7 @@ namespace LMCore
             image.color = new Color(color.r, color.g, color.b, 0f);
 
             // 더 정밀한 제어를 위해 더 많은 단계 사용
-            int steps = Mathf.Max(30, Mathf.RoundToInt(seconds * 60)); 
+            int steps = Mathf.Max(30, Mathf.RoundToInt(seconds * 60));
             float stepTime = seconds / steps;
             float currentAlpha = 0f;
             float alphaStep = 1f / steps;
@@ -229,6 +295,55 @@ namespace LMCore
             await Awaitable.NextFrameAsync();
         }
 
+        public async Awaitable ShowLoadingAsync()
+        {
+            CheckAndInitialize();
+            
+            // 로딩 아이콘 회전
+            if (_loadingRotateIcon != null)
+            {
+                _loadingRotateTween?.Kill();
+                _loadingRotateIcon.localRotation = Quaternion.identity;
+                _loadingRotateTween = _loadingRotateIcon.DORotate(new Vector3(0, 0, -360), _loadingIconRotateSpeed, RotateMode.FastBeyond360)
+                    .SetLoops(-1, LoopType.Restart)
+                    .SetEase(Ease.Linear)
+                    .SetUpdate(true);
+            }
+
+            if (_loadingPanel != null)
+            {
+                _loadingPanel.gameObject.SetActive(true);
+                _loadingPanel.localScale = Vector3.zero;
+                _loadingScaleTween?.Kill();
+                _loadingScaleTween = _loadingPanel.DOScale(1f, _loadingUiFadeDuration).SetEase(Ease.OutBack).SetUpdate(true);
+                await _loadingScaleTween.AsyncWaitForCompletion();
+            }
+
+            await Awaitable.NextFrameAsync();
+        }
+
+        public async Awaitable HideLoadingAsync()
+        {
+            CheckAndInitialize();
+
+            if (_loadingPanel != null)
+            {
+                _loadingScaleTween?.Kill();
+                _loadingScaleTween = _loadingPanel.DOScale(0f, _loadingUiFadeDuration).SetEase(Ease.InBack).SetUpdate(true)
+                    .OnComplete(() =>
+                    {
+                        _loadingPanel.gameObject.SetActive(false);
+                        if (_loadingRotateIcon != null)
+                            _loadingRotateIcon.localRotation = Quaternion.identity;
+                    });
+                await _loadingScaleTween.AsyncWaitForCompletion();
+            }
+            
+            _loadingRotateTween?.Kill();
+            await Awaitable.NextFrameAsync();
+        }
+
+
         public void DeactiveAllChildren()
         {
             CheckAndInitialize();
@@ -239,5 +354,60 @@ namespace LMCore
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
         }
+
+        public async Awaitable WideFadeOutAsync(float duration = 1.0f)
+        {
+            CheckAndInitialize();
+            if (_testPanel == null || _startPoint == null || _centerPoint == null)
+                return;
+
+            _testPanel.gameObject.SetActive(true);
+
+            float elapsedTime = 0f;
+            Vector2 startPos = _startPoint.anchoredPosition;
+            Vector2 endPos = _centerPoint.anchoredPosition;
+
+            _testPanel.anchoredPosition = startPos;
+
+            while (elapsedTime < duration)
+            {
+                float progress = elapsedTime / duration;
+                float easedProgress = -(Mathf.Cos(Mathf.PI * progress) - 1) / 2;
+                _testPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, easedProgress);
+                elapsedTime += Time.deltaTime;
+                await Awaitable.NextFrameAsync(); 
+            }
+
+            _testPanel.anchoredPosition = endPos;
+        }
+
+        public async Awaitable WideFadeInAsync(float duration = 1.0f)
+        {
+            CheckAndInitialize();
+            if (_testPanel == null || _centerPoint == null || _endPoint == null)
+                return;
+
+            _testPanel.gameObject.SetActive(true);
+
+            float elapsedTime = 0f;
+            Vector2 startPos = _centerPoint.anchoredPosition;
+            Vector2 endPos = _endPoint.anchoredPosition;
+
+            _testPanel.anchoredPosition = startPos;
+
+            while (elapsedTime < duration)
+            {
+                float progress = elapsedTime / duration;
+                float easedProgress = -(Mathf.Cos(Mathf.PI * progress) - 1) / 2; 
+                _testPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, easedProgress);
+
+                elapsedTime += Time.deltaTime;
+                await Awaitable.NextFrameAsync();
+            }
+
+            _testPanel.anchoredPosition = endPos;
+        }
+
+
     }
 }

@@ -137,6 +137,17 @@ public class PlayerObjectPickup : NetworkBehaviour
                 }
             }
             
+            // 아이템인 경우 IItemInteraction 체크
+            if (obj.layer == LayerMask.NameToLayer("Item"))
+            {
+                var itemInteraction = obj.GetComponent<IItemInteraction>();
+                if (itemInteraction != null)
+                {
+                    // 아이템의 OnPickedUp 호출
+                    itemInteraction.OnPickedUp();
+                }
+            }
+            
             // 아이템/캐릭터 구분 없이 무조건 손에 든다
             bool picked = inventory.HoldObject(obj); 
             if (picked)
@@ -221,6 +232,18 @@ public class PlayerObjectPickup : NetworkBehaviour
     {
         Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
         
+        // 🎯 아이템인 경우 IItemInteraction 체크
+        if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
+        {
+            var itemInteraction = other.GetComponent<IItemInteraction>();
+            if (itemInteraction != null && !itemInteraction.IsHeld)
+            {
+                nearbyObjects.Add(other.gameObject);
+                Debug.Log($"[PlayerObjectPickup] 들 수 있는 아이템 감지: {other.gameObject.name}");
+            }
+            return;
+        }
+        
         // 플레이어 레이어인 경우 특별 처리
         if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
         {
@@ -231,7 +254,7 @@ public class PlayerObjectPickup : NetworkBehaviour
                 Debug.Log($"[PlayerObjectPickup] 들 수 있는 플레이어 감지: {other.gameObject.name}");
             }
         }
-        // 기존 아이템 처리
+        // 기타 레이어 처리
         else if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
         {
             nearbyObjects.Add(other.gameObject);

@@ -2,16 +2,13 @@ using Fusion;
 using UnityEngine;
 
 // 플레이어 상호작용 추상 클래스 예시 (IPlayerInteraction 구현)
-public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHoldable
+public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
 {
     // --- PlayerStunInvincibleDie 참조 ---
     protected PlayerStunInvincibleDie stunInvincible;
     protected PlayerHealth playerHealth;
     protected SpelunkyPlayerController playerController;
 
-    // 🚫 플레이어 들기 상태 관리 (PlayerStunInvincibleDie로 이동됨)
-    [Networked] public NetworkObject Holder { get; private set; }
-    
     // IHoldable 인터페이스 구현
     public bool IsHoldable => true; // 플레이어는 언제나 들 수 있음
 
@@ -35,6 +32,9 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHold
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
+        
+        // 무적 상태에서는 넉백 불가
+        if (stunInvincible?.IsInvincible == true) return;
         
         // 기본 스턴 지속시간 0.5초로 설정 (stunDuration이 0이면)
         if (stunDuration <= 0f) stunDuration = 0.5f;
@@ -62,6 +62,7 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHold
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
         
+        // 무적 상태에서는 스턴 불가
         if (stunInvincible?.IsInvincible == true) return;
         playerHealth?.TakeDamage(damage);
     }
@@ -70,6 +71,9 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHold
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
+        
+        // 무적 상태에서는 스턴 불가
+        if (stunInvincible?.IsInvincible == true) return;
         
         stunInvincible?.Stun(duration);
     }
@@ -92,11 +96,6 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction, IHold
         stunInvincible?.Die();
         
         Debug.Log($"[{name}] 플레이어 사망 처리 완료!");
-    }
-
-    public override void FixedUpdateNetwork()
-    {
-        // 상태 관리는 PlayerStunInvincibleDie에서 처리
     }
     
     // IHoldable 인터페이스 구현
