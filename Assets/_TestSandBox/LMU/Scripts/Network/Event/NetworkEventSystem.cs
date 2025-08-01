@@ -19,16 +19,17 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
     public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
 
-    public event Action<string> OnStageLoadDoneEvent;
+    public event Action<Stage.Data> OnStageLoadDoneEvent;
 
-    public void TriggerStageLoadDoneEvent(string stageInfo)    // 스테이지 정보 - "3-1 or 5-4"
+    public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)    // 스테이지 정보 - "3-1 or 5-4"
     {
         OnStageLoadDoneEvent?.Invoke(stageInfo);
     }
 
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         spawnHandler = this.GetOrAddComponent<PlayerSpawnHandler>();
         hostDisconnectHandler = this.GetOrAddComponent<HostDisconnectHandler>();
 

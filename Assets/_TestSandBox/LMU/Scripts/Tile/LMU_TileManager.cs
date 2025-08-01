@@ -1,10 +1,34 @@
 using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
 
-public partial class PMK_TileRogic : MonoBehaviour
+public partial class PMK_TileRogic : NetworkBehaviour
 {
+    public void RunTestMode()
+    {
+        if (IsStageTestNetwork && Runner.IsServer && HasStateAuthority)
+        {
+            Debug.Log("구독수행됨");
+            NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
+            {
+                Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName}");
+                SaveMapPos();
+                if (mapPrefabDict == null)
+                {
+                    mapPrefabDict = new Dictionary<string, GameObject[]>();
 
-
+                    foreach (var set in mapPrefabSets)
+                    {
+                        if (!mapPrefabDict.ContainsKey(set.mapType))
+                            mapPrefabDict.Add(set.mapType, set.prefabs);
+                    }
+                }
+                ResetMap();
+            };
+            return;
+        }
+    }
+    
     /// <summary>
     /// 전체 맵 삭제
     /// </summary>
@@ -184,18 +208,19 @@ public partial class PMK_TileRogic : MonoBehaviour
     private void InitializeForEditorTest()
     {
         Debug.Log("LMU 초기화 중...");
-        
+
         // 1. mapPrefabDict 초기화
-        mapPrefabDict = new Dictionary<string, GameObject[]>
+        if (mapPrefabDict == null)
         {
-            { "C", Clear_Map_Prefab },
-            { "LR", LR_Exit_Map_Prefab },
-            { "D", D_Exit_Map_Prefab },
-            { "W", W_Exit_Map_Prefab },
-            { "WD", WD_Exit_Map_Prefab },
-            { "S", Special_Map_Prefab }
-        };
-        
+            mapPrefabDict = new Dictionary<string, GameObject[]>();
+
+            foreach (var set in mapPrefabSets)
+            {
+                if (!mapPrefabDict.ContainsKey(set.mapType))
+                    mapPrefabDict.Add(set.mapType, set.prefabs);
+            }
+        }
+
         // 2. 기존 맵 정리
         if (mainTilemap != null)
         {

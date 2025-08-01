@@ -19,6 +19,10 @@ public class PlayerObjectThrower : NetworkBehaviour
     [Networked]
     private NetworkButtons ButtonsPrevious { get; set; }  // 🎮 이전 프레임 버튼 상태 (클릭 래칭용)
     
+    // 아이템 던질 때 부모 해제 지연용 타이머
+    [Networked] private TickTimer delayedParentReleaseTimer { get; set; }
+    private GameObject delayedParentReleaseObject;
+    
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
@@ -48,6 +52,19 @@ public class PlayerObjectThrower : NetworkBehaviour
         if (pressed.IsSet(SpelunkyInputButtons.ThrowItem) && inventory != null && inventory.CurrentHeldObject != null)
         {
             ThrowObjectRpc(input.MouseWorldPosition);
+        }
+    }
+    
+    public override void FixedUpdateNetwork()
+    {
+        // 지연된 부모 해제 타이머 체크 (TickTimer는 자동으로 시간이 흐름)
+        if (delayedParentReleaseTimer.Expired(Runner))
+        {
+            if (delayedParentReleaseObject != null)
+            {
+                delayedParentReleaseObject.transform.SetParent(null);
+                delayedParentReleaseObject = null;
+            }
         }
     }
     
@@ -127,6 +144,19 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
         }
         
+        // 아이템인 경우 IItemInteraction 체크
+        if (layer == LayerMask.NameToLayer("Item"))
+        {
+            var itemInteraction = obj.GetComponent<IItemInteraction>();
+            if (itemInteraction != null)
+            {
+                // 아이템의 OnReleased 호출
+                itemInteraction.OnReleased();
+            }
+            
+
+        }
+        
         // 🎮 InputAuthority 해제 (아이템만)
         if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
         {
@@ -138,7 +168,31 @@ public class PlayerObjectThrower : NetworkBehaviour
         
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
-        obj.transform.SetParent(null);
+        
+        // 🎯 캐릭터인 경우 로테이션만 초기화, 아이템은 부모만 해제
+        if (layer == LayerMask.NameToLayer("Player") || 
+            layer == LayerMask.NameToLayer("Enemy") || 
+            layer == LayerMask.NameToLayer("Npc"))
+        {
+            obj.transform.SetParent(null);
+            obj.transform.rotation = Quaternion.identity; // 🔄 로테이션만 0으로 초기화
+            Debug.Log($"[PlayerObjectThrower] 캐릭터 로테이션 초기화: {obj.name}");
+        }
+        else
+        {
+            // 아이템의 경우 부모 해제를 살짝 늦춰서 던진 직후 바로 맞는 것을 방지
+            if (applyForce)
+            {
+                // 던지기인 경우 TickTimer로 부모 해제를 지연
+                delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.05f);
+                delayedParentReleaseObject = obj;
+            }
+            else
+            {
+                // 일반 해제인 경우 즉시 부모 해제
+                obj.transform.SetParent(null);
+            }
+        }
 
         // 물리/충돌 복구
         if (applyForce)
@@ -171,4 +225,6 @@ public class PlayerObjectThrower : NetworkBehaviour
         if (collider != null)
             collider.isTrigger = false;
     }
+    
+
 } 

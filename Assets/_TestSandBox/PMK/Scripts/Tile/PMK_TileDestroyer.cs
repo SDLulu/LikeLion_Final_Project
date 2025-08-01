@@ -7,67 +7,49 @@ public class PMK_TileDestroyer : MonoBehaviour
     [SerializeField] private LayerMask whatisPlatform;
     [SerializeField] private TileBase ruleTile;
 
-    private Tilemap tilemap;
+    private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
+    private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance;
 
 
-
-    private void OnEnable()
+    private void Start()
     {
-        tilemap = PMK_TileRogic.Instance.mainTilemap;
-        StartCoroutine(DelayedTilePlacement());
+        StartCoroutine(DelayedTilePlace());
     }
 
-    private IEnumerator DelayedTilePlacement()
+    private IEnumerator DelayedTilePlace()
     {
-        yield return null; // ÇÑ ÇÁ·¹ÀÓ ´ë±â
+        yield return new WaitForSeconds(0.05f); // Physics2D ë°˜ì˜ì„ ê¸°ë‹¤ë¦¼
         TryPlaceTileIfEmpty();
     }
 
-    // ÇöÀç À§Ä¡¿¡ Å¸ÀÏÀÌ ¾øÀ¸¸é ·ê Å¸ÀÏÀ» ¹èÄ¡ÇÕ´Ï´Ù.
+    // ê³µê°„ì´ ë¹„ì–´ìˆìœ¼ë©´ íƒ€ì¼ì„ ë°°ì¹˜í•©ë‹ˆë‹¤.
     private void TryPlaceTileIfEmpty()
     {
         Vector2 pos = transform.position;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.01f, whatisPlatform);
 
-        Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
-        if (hits == null)
+        Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
+
+        // íƒ€ì¼ì´ ì—†ê³ , í•´ë‹¹ ì…€ì— íƒ€ì¼ì´ ì—†ìœ¼ë©´ íƒ€ì¼ì„ ë°°ì¹˜í•©ë‹ˆë‹¤.
+        if (hits.Length == 0 && tileRogic.mainTilemap.GetTile(cellPos) == null)
         {
-            Vector3Int cellPos = tilemap.WorldToCell(pos);
-
-            if (tilemap.GetTile(cellPos) == null)
+            if (tileRPCManager.HasStateAuthority)
             {
-                // Å¸ÀÏ ¼³Ä¡
-                tilemap.SetTile(cellPos, ruleTile);
-                Physics2D.SyncTransforms(); // ¹°¸® ÃÖ½ÅÈ­
-
-                PMK_TileRogic.Instance.Create_TileItem(cellPos); // ¾ÆÀÌÅÛ ·£´ı »ı¼º
-
-                Destroy(gameObject); // ÇöÀç ¾ÆÀÌÅÛ Á¦°Å
+                tileRPCManager.RPC_Create_Tile(cellPos);
             }
+
+            Destroy(gameObject);
         }
-    }
-
-
-    // º®ÀÌ ÀÖÀ»°æ¿ì º® »èÁ¦
-    private void OnTriggerStay2D(Collider2D collision)
-    {
-        // ½ÇÁ¦ Ãæµ¹ ÁöÁ¡ °è»ê
-        Vector2 contactPoint = collision.ClosestPoint(transform.position);
-
-        // ÇÃ·§Æû ·¹ÀÌ¾î¿¡ ÇØ´çÇÏ´Â Äİ¶óÀÌ´õ Å½»ö
-        Collider2D hit = Physics2D.OverlapCircle(contactPoint, 0.01f, whatisPlatform);
-        if (hit != null)
+        // íƒ€ì¼ì´ ìˆë‹¤ë©´ íŒŒê´´í•˜ê³ , ì•„ì´í…œ íƒ€ì¼ë„ ìˆë‹¤ë©´ ì´ê²ƒë„ íŒŒê´´í•©ë‹ˆë‹¤.
+        else
         {
-            PMK_TileRogic destroyTile = hit.GetComponent<PMK_TileRogic>();
-            if (destroyTile != null)
+            if (tileRPCManager.HasStateAuthority)
             {
-                destroyTile.DestoryTile(contactPoint); // ¿Ã¹Ù¸¥ ¿ùµå À§Ä¡ Àü´Ş
-
-                if (collision.CompareTag("Tileitem")) // º®¾È¿¡ ¾ÆÀÌÅÛÀÌ ÀÖÀ»°æ¿ì ¾ÆÀÌÅÛ »èÁ¦
-                {
-                    Destroy(collision.gameObject);
-                }
-                Destroy(gameObject); // º® Á¦°Å
+                tileRPCManager.Rpc_DestroyTile(cellPos);
+                tileRPCManager.Rpc_DestroyItem(pos);
             }
+
+            Destroy(gameObject);
         }
     }
 }

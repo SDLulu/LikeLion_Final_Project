@@ -1,3 +1,4 @@
+using System.Linq;
 using Fusion;
 using Fusion.Addons.FSM;
 using LMCore;
@@ -7,21 +8,46 @@ public class GameStagePlayingState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.GameStagePlayingState;
 
+    private int _stageDataIndex = -1;
+    public override void Spawned()
+    {
+        if (Runner.IsServer)
+        {
+            _stageDataIndex = DataManager.Inst.StageData.First().Key;
+        }
+    }
+
+    private bool _isFirstEnter = true;
     protected override async void OnEnterState()
     {
         if (Runner.IsServer)
         {
             await MapLoad();
-            GameStates.RPC_FadeInUI(this.Runner);
+
+            if (_isFirstEnter)
+            {
+                _isFirstEnter = false;
+                GameStates.RPC_FadeInUI(this.Runner);
+            }
+        }
+    }
+
+    protected override void OnExitState()
+    {
+        if (Runner.IsServer)
+        {
+            _stageDataIndex++;
         }
     }
 
     public async Awaitable MapLoad()
     {
         await Awaitable.NextFrameAsync();
-        NetEvent.TriggerStageLoadDoneEvent("1-1");
+        await Awaitable.WaitForSecondsAsync(2.0f);
+        var stageData = DataManager.Inst.GetStageData(_stageDataIndex);
+        NetEvent.TriggerStageLoadDoneEvent(stageData);
 
-        var startPos = Vector2.zero;
+        var startPos = new Vector2(15.0f, 15.0f);
         foreach (var player in PlayerM.Players)
         {
             var playerC = player.Value.GetComponent<PlayerStageController>();
@@ -35,7 +61,5 @@ public class GameStagePlayingState : BaseStateBehaviour
         // Todo - 2. 한명의 플레이어라도 완료했는지의 여부를 확인후 CompletedState로 이동
     }
 
-    protected override void OnExitState()
-    {
-    }
+
 }

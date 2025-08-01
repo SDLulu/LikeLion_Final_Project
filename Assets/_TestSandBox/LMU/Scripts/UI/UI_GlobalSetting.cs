@@ -39,6 +39,7 @@ public class UI_GlobalSetting : MonoBehaviour
 
     private void LoadSceneInfoList()
     {
+        #if UNITY_EDITOR
         if (_globalSetting.SettingData.IsLoadScenes)
         {
             _sceneDropdown.options.Clear();
@@ -66,10 +67,12 @@ public class UI_GlobalSetting : MonoBehaviour
         {
             _currentFocusSceneText.text = "None";
         }
+        #endif
     }
 
     private void OnSceneListRefreshButtonClick()
     {
+        #if UNITY_EDITOR
         _globalSetting.SettingData.RegisterAllSceneInfo();
         _sceneDropdown.options.Clear();
         foreach (var scene in _globalSetting.SettingData.SceneInfoList)
@@ -80,10 +83,12 @@ public class UI_GlobalSetting : MonoBehaviour
         // FocusScene으로 설정
         int value = _globalSetting.SettingData.SceneInfoList.IndexOf(_globalSetting.SettingData.FocusScene);
         OnSceneDropdownValueChanged(value);
+        #endif
     }
 
     private void OnSceneDropdownValueChanged(int value)
     {
+        #if UNITY_EDITOR
         if(value < 0 || value >= _globalSetting.SettingData.SceneInfoList.Count)
         {
             return;
@@ -91,6 +96,7 @@ public class UI_GlobalSetting : MonoBehaviour
         _globalSetting.SettingData.FocusScene = _globalSetting.SettingData.SceneInfoList[value];
         _currentFocusSceneText.text = $"{_sceneDropdown.options[value].text}";
         _globalSetting.SettingData.IsFocusScene = true;
+        #endif
     }
 
 
@@ -118,7 +124,7 @@ public class UI_GlobalSetting : MonoBehaviour
     {
         try
         {
-            var title = UI_Controller.Inst.UIEnterOnline;
+            var title = LobbyUI_Manager.Inst.UIEnterOnline;
             if (title == null)
             {
                 Debug.LogError("UI_Title 컴포넌트를 찾을 수 없습니다.");
@@ -215,9 +221,9 @@ public class UI_GlobalSetting : MonoBehaviour
     {
         try
         {
-            if (UI_Controller.Inst != null && UI_Controller.Inst.UILobby != null)
+            if (LobbyUI_Manager.Inst != null && LobbyUI_Manager.Inst.UILobby != null)
             {
-                UI_Controller.Inst.UILobby.gameObject.SetActive(active);
+                LobbyUI_Manager.Inst.UILobby.gameObject.SetActive(active);
                 Debug.Log($"로컬 UI 제어: 로비 UI {(active ? "활성화" : "비활성화")}");
             }
             else

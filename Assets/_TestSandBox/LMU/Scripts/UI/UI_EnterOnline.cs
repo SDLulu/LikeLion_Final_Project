@@ -69,7 +69,7 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                UI_Controller.Inst.ActiveLobbyOnLineUI();
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 preventPanel.gameObject.SetActive(false);
             }
         );
@@ -83,7 +83,7 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                UI_Controller.Inst.ActiveLobbyOnLineUI();
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 preventPanel.gameObject.SetActive(false);
             }
         );
@@ -97,7 +97,7 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                UI_Controller.Inst.ActiveLobbyOnLineUI();
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 preventPanel.gameObject.SetActive(false);
             }
         );

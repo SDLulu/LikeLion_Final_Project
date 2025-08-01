@@ -52,6 +52,9 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         // 사망 상태에서는 스턴 불가
         if (IsDead) return;
         
+        // 무적 상태에서는 스턴 불가
+        if (IsInvincible) return;
+        
         IsStunned = true;
         StunTimer = TickTimer.CreateFromSeconds(Runner, duration);
     }
@@ -86,6 +89,9 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         // 사망 상태에서는 들림 설정 불가
         if (IsDead) return;
         
+        // 무적 상태에서는 들림 설정 불가
+        if (IsInvincible) return;
+        
         IsHeld = value;
         Debug.Log($"[{name}] 들림 상태 설정: {value}");
     }
@@ -98,6 +104,9 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         
         // 사망 상태에서는 던진 상태 설정 불가
         if (IsDead) return;
+        
+        // 무적 상태에서는 던진 상태 설정 불가
+        if (IsInvincible) return;
         
         IsThrown = true;
         ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
