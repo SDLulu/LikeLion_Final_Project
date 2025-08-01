@@ -20,5 +20,5 @@ public enum GhostInputButtons
 {
     None = 0,
     LeftClick = 1,    // 마우스 좌클릭 - 입김
-    RightClick = 2,   // 마우스 우클릭 - 들기/던지기
+    Space = 2,        // 스페이스 - 대쉬
 } 

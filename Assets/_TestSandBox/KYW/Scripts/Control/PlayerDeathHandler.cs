@@ -17,6 +17,7 @@ public class PlayerDeathHandler : NetworkBehaviour
     [SerializeField] private float dropRadius = 2f; // 드롭 반경
     
     // 💀 죽음 처리 관련 변수들
+    [Networked] public bool IsDead { get; private set; } // 죽음 상태
     [Networked] private Vector3 DeathSpawnPosition { get; set; } // 시체/유령이 스폰될 원래 위치
     [Networked] private bool HasSpawnedDeathObjects { get; set; } // 죽음 오브젝트 스폰 여부
     [Networked] private NetworkObject GhostObject { get; set; } // 스폰된 유령 오브젝트 참조
@@ -51,23 +52,25 @@ public class PlayerDeathHandler : NetworkBehaviour
         Debug.Log($"[{name}] PlayerDeathHandler 초기화 완료!");
     }
     
-    public override void FixedUpdateNetwork()
-    {
-        // 💀 죽음 처리 로직 (한 번만 실행)
-        if (stunInvincibleDie != null && stunInvincibleDie.IsDead && !HasSpawnedDeathObjects && HasStateAuthority)
-        {
-            HandlePlayerDeath();
-        }
-    }
-    
-    // 💀 플레이어 죽음 처리 (한 번만 실행)
-    private void HandlePlayerDeath()
+    // 💀 죽음 처리 (외부에서 호출)
+    public void Die()
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
         
-        // 이미 처리되었다면 중복 실행 방지
-        if (HasSpawnedDeathObjects) return;
+        // 이미 사망 상태라면 중복 처리 방지
+        if (IsDead) return;
+        
+        // 죽음 상태 설정
+        IsDead = true;
+        
+        // 다른 상태들 초기화
+        if (stunInvincibleDie != null)
+        {
+            stunInvincibleDie.SetHeld(false); // 들림 상태 해제
+            stunInvincibleDie.SetInvincible(false, 0f); // 무적 상태 해제
+            stunInvincibleDie.SetDead(true); // 죽음 상태 설정 (외부 참조용)
+        }
         
         // 원래 위치 저장
         DeathSpawnPosition = transform.position;
@@ -76,7 +79,7 @@ public class PlayerDeathHandler : NetworkBehaviour
         DropAllItems();
         
         // 시체 프리팹 스폰 (원래 위치에서)
-        SpawnCorpse();
+        // SpawnCorpse();
         
         // 유령 플레이어 스폰 (원래 위치에서, 입력권한과 함께)
         SpawnGhostPlayer();
@@ -91,6 +94,49 @@ public class PlayerDeathHandler : NetworkBehaviour
         HasSpawnedDeathObjects = true;
         
         Debug.Log($"[{name}] 플레이어 죽음 처리 완료! 위치: {DeathSpawnPosition}");
+    }
+    
+    // 🔄 부활 처리 (외부에서 호출)
+    public void Resurrect()
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+        
+        // 사망 상태가 아니라면 처리 불필요
+        if (!IsDead) return;
+        
+        // 유령 제거
+        if (GhostObject != null)
+        {
+            var ghostController = GhostObject.GetComponent<PlayerGhostController>();
+            if (ghostController != null)
+            {
+                ghostController.DespawnGhost();
+            }
+            else
+            {
+                Runner.Despawn(GhostObject);
+            }
+            GhostObject = null;
+        }
+        
+        // 카메라를 원래 플레이어로 복귀
+        RPC_TransferCameraToPlayer();
+        
+        // 플레이어를 원래 위치로 복귀
+        transform.position = DeathSpawnPosition;
+        
+        // 상태 초기화
+        HasSpawnedDeathObjects = false;
+        IsDead = false;
+        
+        // PlayerStunInvincibleDie의 죽음 상태도 해제
+        if (stunInvincibleDie != null)
+        {
+            stunInvincibleDie.SetDead(false);
+        }
+        
+        Debug.Log($"[{name}] 플레이어 부활 처리 완료! 위치: {DeathSpawnPosition}");
     }
     
     // 💰 모든 아이템 드롭
@@ -208,31 +254,11 @@ public class PlayerDeathHandler : NetworkBehaviour
         }
     }
     
-    // 🔄 부활 시 정리 작업
+    // 🔄 부활 시 정리 작업 (외부에서 호출 가능한 메서드 - 호환성용)
     public void OnResurrect()
     {
-        // 유령 제거
-        if (GhostObject != null)
-        {
-            var ghostController = GhostObject.GetComponent<PlayerGhostController>();
-            if (ghostController != null)
-            {
-                ghostController.DespawnGhost();
-            }
-            else
-            {
-                Runner.Despawn(GhostObject);
-            }
-            GhostObject = null;
-        }
-        
-        // 카메라를 원래 플레이어로 복귀
-        RPC_TransferCameraToPlayer();
-        
-        // 상태 초기화
-        HasSpawnedDeathObjects = false;
-        
-        Debug.Log($"[{name}] 부활 시 정리 작업 완료!");
+        // Resurrect() 메서드를 호출
+        Resurrect();
     }
     
     // TODO: 패시브 아이템 드롭 (추후 구현)

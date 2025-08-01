@@ -8,6 +8,7 @@ public class PlayerStateDebugger : MonoBehaviour
     [SerializeField] private PlayerStunInvincibleDie stunInvincible;
     [SerializeField] private PlayerAnimation playerAnimation;
     [SerializeField] private PlayerInteractionBase playerInteraction;
+    [SerializeField] private PlayerDeathHandler playerDeathHandler;
     
     [Header("테스트 설정")]
     [SerializeField] private float testStunDuration = 2f;
@@ -26,6 +27,8 @@ public class PlayerStateDebugger : MonoBehaviour
             playerAnimation = FindObjectOfType<PlayerAnimation>();
         if (playerInteraction == null)
             playerInteraction = FindObjectOfType<PlayerInteractionBase>();
+        if (playerDeathHandler == null)
+            playerDeathHandler = FindObjectOfType<PlayerDeathHandler>();
             
         Debug.Log("🧪 PlayerStateDebugger 초기화 완료!");
     }
@@ -97,9 +100,9 @@ public class PlayerStateDebugger : MonoBehaviour
     
     private void TestDeath()
     {
-        if (playerInteraction != null)
+        if (playerDeathHandler != null)
         {
-            playerInteraction.Die();
+            playerDeathHandler.Die();
             Debug.Log("🧪 사망 테스트 실행!");
         }
     }
@@ -187,7 +190,7 @@ public class PlayerStateDebugger : MonoBehaviour
         
         GUILayout.Label($"스턴: {stunInvincible.IsStunned}");
         GUILayout.Label($"무적: {stunInvincible.IsInvincible}");
-        GUILayout.Label($"사망: {stunInvincible.IsDead}");
+        GUILayout.Label($"사망: {(playerDeathHandler != null ? playerDeathHandler.IsDead.ToString() : "N/A")}");
         GUILayout.Label($"들림: {stunInvincible.IsHeld}");
         
         GUILayout.Space(10);
