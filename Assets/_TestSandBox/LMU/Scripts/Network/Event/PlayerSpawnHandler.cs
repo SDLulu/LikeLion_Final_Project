@@ -204,8 +204,8 @@ public class PlayerSpawnHandler : MonoBehaviour
         var playerData = spawnedPlayer.GetComponent<PlayerData>();
         if (playerData != null)
         {
-            // Late Join 플레이어는 자동으로 준비 상태로 설정
-            playerData.SetReadyState(true);
+            // // Late Join 플레이어는 자동으로 준비 상태로 설정
+            // playerData.IsReady = true;
 
             // 게임이 이미 시작되었으면 플레이어 상태를 활성화
             if (currentState is GameStagePlayingState)

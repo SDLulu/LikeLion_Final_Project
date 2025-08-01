@@ -196,6 +196,9 @@ namespace LMCore
             _isFading = true;
             _bgImage.color = color;
             _contentsRoot.sizeDelta = _endSize;
+            var canvas = this.GetComponent<Canvas>();
+            _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+
             await _contentsRoot.DOSizeDelta(_startSize, seconds)
                 .SetEase(_fadeInEase)
                 .SetUpdate(true)

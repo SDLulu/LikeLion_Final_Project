@@ -9,6 +9,8 @@ using System.Reflection;
 public class GameStates : NetworkBehaviour, IStateMachineOwner
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
+    
+    private E_StateName _previousStateName = E_StateName.GameStageWaitingState;
 
     public void Collect()
     {
@@ -97,6 +99,25 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         {
             StateMachine.ForceActivateState(delayedState.Item1);
             delayedState = null;
+        }
+        
+        if (Runner.IsServer)
+        {
+            CheckStateChange();
+        }
+    }
+    
+    /// <summary>
+    /// 상태 변경 감지 및 이벤트 발생
+    /// </summary>
+    private void CheckStateChange()
+    {
+        var currentStateName = GetActiveStateName();
+        
+        if (_previousStateName != currentStateName)
+        {
+            NetworkEventSystem.Inst?.TriggerGameStateChangedEvent(_previousStateName, currentStateName);
+            _previousStateName = currentStateName;
         }
     }
 

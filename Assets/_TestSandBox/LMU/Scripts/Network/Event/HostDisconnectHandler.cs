@@ -16,8 +16,20 @@ public class HostDisconnectHandler : MonoBehaviour
 
         if (reason == ShutdownReason.DisconnectedByPluginLogic)
         {
+            await ShutDown_AtHostQuit();
+        }
+        else if (reason == ShutdownReason.ServerInRoom)
+        {
+            await ShotDown_AtServerInRoom();
+        }
+    }
+
+    public async Awaitable ShutDown_AtHostQuit()
+    {
+        try
+        {
             await Fader.Inst.FadeOutAsync(Color.black, 1.0f);
-            
+
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
             foreach (var scene in scenes)
@@ -34,10 +46,27 @@ public class HostDisconnectHandler : MonoBehaviour
             LobbyUI_Manager.Inst.ActiveTitleUI();
             await Fader.Inst.FadeInAsync(Color.black, 1.0f);
         }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"ShutDownAtHostQuit 오류: {e.Message}");
+        }
+    }
+
+
+    public async Awaitable ShotDown_AtServerInRoom()
+    {
+        try
+        {
+            Debug.Log("ShotDown_AtServerInRoom");
+            await Awaitable.NextFrameAsync();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"ShotDown_AtServerInRoom 오류: {e.Message}");
+        }
     }
 
 
 
 
-
-} 
+}
