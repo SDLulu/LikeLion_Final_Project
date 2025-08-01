@@ -20,13 +20,20 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
 
     public event Action<Stage.Data> OnStageLoadDoneEvent;
+    
+    // 게임 상태 변경 이벤트
+    public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
 
     public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)    // 스테이지 정보 - "3-1 or 5-4"
     {
         OnStageLoadDoneEvent?.Invoke(stageInfo);
     }
-
-
+    public void TriggerGameStateChangedEvent(E_StateName previousState, E_StateName currentState)
+    {
+        OnGameStateChangedEvent?.Invoke(previousState, currentState);
+        Debug.Log($"게임 상태 변경: {previousState} → {currentState}");
+    }
+    
     protected override void Awake()
     {
         base.Awake();
@@ -47,6 +54,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnShutdownEvent -= hostDisconnectHandler.OnShutdown;
 
         OnStageLoadDoneEvent = null;
+        OnGameStateChangedEvent = null;
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
