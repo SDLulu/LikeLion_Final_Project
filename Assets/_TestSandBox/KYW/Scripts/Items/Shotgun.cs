@@ -2,7 +2,7 @@ using UnityEngine;
 using Fusion;
 
 // 샷건
-public class Shotgun : NetworkBehaviour, IUsableItem
+public class Shotgun : NetworkBehaviour, IItemInteraction
 {
     [Header("References")]
     [SerializeField] private GameObject bulletPrefab; // 총알 프리팹
@@ -15,6 +15,9 @@ public class Shotgun : NetworkBehaviour, IUsableItem
     [SerializeField] private float spreadAngle = 30f; // 총알 퍼짐 각도 (도)
 
     [Networked] private TickTimer fireRateTimer { get; set; }
+    [Networked] private NetworkBool IsHeld { get; set; }
+
+    bool IItemInteraction.IsHeld => IsHeld;  // 인터페이스 구현 (명시적 구현)
 
     public override void Spawned()
     {
@@ -101,4 +104,26 @@ public class Shotgun : NetworkBehaviour, IUsableItem
         );
     }
 
+    public void OnPickedUp()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = true;
+    }
+
+    public void OnReleased()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = false;
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
+    {
+        if (!HasStateAuthority) return;
+        
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
 } 

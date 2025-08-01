@@ -7,8 +7,12 @@ using UnityEngine;
 public class PlayerGroundCheck : NetworkBehaviour
 {
     [Header("Ground Detection")]
-    [SerializeField] private LayerMask groundLayer = 1;
+    [SerializeField] private LayerMask groundLayer = 1;  // Ground + Platform 레이어 포함
     [SerializeField] private Vector2 groundCheckSize = new Vector2(0.8f, 0.1f);
+    
+    // 외부 접근용 프로퍼티
+    public LayerMask GroundLayer { get { return groundLayer; } }
+    public Vector2 GroundCheckSize { get { return groundCheckSize; } }
     
     // 🌐 네트워크 동기화
     [Networked] public bool IsGrounded { get; private set; }

@@ -54,7 +54,14 @@ public static class SpelunkyNetworkInitializer
     // 로컬 플레이어용 카메라 설정
     public static void SetupCameraForLocalPlayer(SpelunkyPlayerController player)
     {
-        var existingCamera = CameraMover.Inst.PlayerCamera;
+        // 기존 시네머신 카메라 찾기 (CameraMover 또는 씬에 있는 것)
+        var existingCamera = CameraMover.Inst?.PlayerCamera;
+        if (existingCamera == null)
+        {
+            // 씬에서 기존 시네머신 카메라 찾기
+            existingCamera = Object.FindAnyObjectByType<CinemachineCamera>();
+        }
+        
         if (existingCamera != null)
         {
             existingCamera.Follow = player.transform;
@@ -63,29 +70,61 @@ public static class SpelunkyNetworkInitializer
         }
         else
         {
-            var cameraGO = new GameObject("Player Virtual Camera");
-            var virtualCamera = cameraGO.AddComponent<CinemachineCamera>();
+            // 메인 카메라 확인 및 설정
+            var mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                var cameraGO = new GameObject("Main Camera");
+                mainCamera = cameraGO.AddComponent<Camera>();
+                cameraGO.tag = "MainCamera";
+                Debug.Log("📷 메인 카메라 생성");
+            }
+            
+            // 메인 카메라를 2D용으로 설정
+            mainCamera.orthographic = true;
+            mainCamera.orthographicSize = 5f;
+            
+            // 시네머신 브레인 확인 및 설정
+            var brain = mainCamera.GetComponent<CinemachineBrain>();
+            if (brain == null)
+            {
+                brain = mainCamera.gameObject.AddComponent<CinemachineBrain>();
+                Debug.Log("📷 시네머신 브레인 추가");
+            }
+            
+            // 새 2D 시네머신 카메라 생성
+            var virtualCameraGO = new GameObject("Player 2D Camera");
+            var virtualCamera = virtualCameraGO.AddComponent<CinemachineCamera>();
+            
+            // 기본 2D 카메라 설정
             virtualCamera.Follow = player.transform;
             virtualCamera.LookAt = player.transform;
-            try
+            virtualCamera.Priority = 10;  // 높은 우선순위
+            
+            // 2D 카메라 렌즈 설정 (사용자 카메라와 동일하게)
+            var lens = virtualCamera.Lens;
+            lens.OrthographicSize = 7f;  // 사용자 카메라와 동일한 크기
+            virtualCamera.Lens = lens;
+            
+            // Position Composer 컴포넌트 추가 (사용자 카메라와 동일하게)
+            var composer = virtualCameraGO.AddComponent<CinemachinePositionComposer>();
+            if (composer != null)
             {
-                var follow = virtualCamera.GetCinemachineComponent(CinemachineCore.Stage.Body) as CinemachineFollow;
-                if (follow != null)
-                {
-                    follow.FollowOffset = new Vector3(0, 2, -10);
-                }
-                
-                var lens = virtualCamera.Lens;
-                lens.FieldOfView = 60f;
-                lens.OrthographicSize = 5f;
-                virtualCamera.Lens = lens;
-                
-                Debug.Log("📷 새 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
+                // 기본 설정만 적용 (API 호환성 문제로 인해)
+                Debug.Log("📷 Position Composer 컴포넌트 추가");
             }
-            catch (System.Exception e)
+            
+            // 카메라 위치 설정 (2D 게임에 적합)
+            virtualCameraGO.transform.position = new Vector3(0, 0, -10);
+            
+            // 새로 생성한 카메라를 CameraMover에 할당
+            if (CameraMover.Inst != null)
             {
-                Debug.LogWarning($"📷 카메라 설정 실패: {e.Message}");
+                CameraMover.Inst.PlayerCamera = virtualCamera;
+                Debug.Log("📷 새로 생성한 카메라를 CameraMover에 할당");
             }
+            
+            Debug.Log("📷 새 2D 시네머신 카메라 생성 및 로컬 플레이어에게 연결");
         }
     }
 
