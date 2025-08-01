@@ -6,30 +6,49 @@ using UnityEngine;
 public class GameStageWaitingState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.GameStageWaitingState;
-    [Header("설정")]
-    [SerializeField] private float minWaitingTime = 1.5f;
-
+    
     [Header("디버그용")]
-    private TickTimer waitingTimer = TickTimer.None;
+    private bool _isMapLoadCompleted = false;
 
-    protected override void OnEnterState()
+    protected override async void OnEnterState()
     {
-        waitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
-        GameStates.RPC_FadeOutUI(this.Runner);
+        if (Runner.IsServer)
+        {
+            GameStates.RPC_FadeOutUI(this.Runner);
+            
+            try
+            {
+                var playingState = Machine.GetState<GameStageCompletedState>();
+                await playingState.LoadNextMapAsync();
+                
+                _isMapLoadCompleted = true;
+                Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("GameStageWaitingState 맵 로딩 중 오류 발생:");
+                Debug.LogError(e.Message);
+                _isMapLoadCompleted = true;
+            }
+        }
     }
 
     protected override void OnFixedUpdate()
     {
-        if(Runner.IsServer && waitingTimer.Expired(Runner))
+        if (Runner.IsServer && _isMapLoadCompleted)
         {
-            Debug.Log($"대기시간 {minWaitingTime}초가 초과되었습니다.");
+            Debug.Log("맵 로딩이 완료되어 GameStagePlayingState로 전환합니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
         }    
     }
 
+    /// <summary>
+    /// Note - 주의: 화면은 어두운 상태로 유지 (FadeIn 호출 안함)
+    /// </summary>
     protected override void OnExitState()
     {
-        GameStates.RPC_FadeInUI(this.Runner);
+        _isMapLoadCompleted = false;
+        base.OnExitState(); // 이벤트 발생을 위해 base 호출
     }
 
 
