@@ -5,8 +5,8 @@ using UnityEngine;
 public class SpeedCollisionHandler : NetworkBehaviour
 {
     [Header("Speed Attack Settings")]
-    [SerializeField] private float attackSpeedThreshold = 0.3f;  // 공격 콜라이더 활성화 속도 임계값 (더 낮춤)
-    [SerializeField] private float normalSpeedThreshold = 0.05f;  // 일반 콜라이더로 되돌릴 속도 임계값 (더 낮춤)
+    [SerializeField] private float attackSpeedThreshold = 3f;  // 공격 콜라이더 활성화 속도 임계값 (더 낮춤)
+    [SerializeField] private float normalSpeedThreshold = 1f;  // 일반 콜라이더로 되돌릴 속도 임계값 (더 낮춤)
     
     [Header("Collision Settings")]
     [SerializeField] private int speedAttackDamage = 1;        // 속도 공격 데미지

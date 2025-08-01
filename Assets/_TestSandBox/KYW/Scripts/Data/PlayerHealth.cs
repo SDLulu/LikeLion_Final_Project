@@ -51,6 +51,5 @@ public class PlayerHealth : NetworkBehaviour
         {
             stunInvincible.Die();
         }
-        // TODO: 사망 애니메이션, 리스폰 등
     }
 } 

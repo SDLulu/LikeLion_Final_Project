@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using System.Collections.Generic;
 
 // 🦘 플레이어 점프 컴포넌트
 // 점프, 중력, 속도 제한 담당
@@ -16,6 +17,14 @@ public class PlayerJump : NetworkBehaviour
     // 🦘 점프 상태 추적
     [Networked] public bool IsJumping { get; private set; }
     [Networked] public float JumpTime { get; private set; }
+    
+    // 🦘 밑점프 상태 추적 (로컬에서만)
+    private bool isDownJumping = false;
+    private float downJumpTimer = 0f;
+    [SerializeField] private float downJumpIgnoreTime = 0.5f;  // 플랫폼 무시 시간
+    
+    // 🦘 비활성화된 플랫폼 컴포넌트들 저장
+    private List<BoxCollider2D> disabledBoxColliders = new List<BoxCollider2D>();
     
     // Fusion 2 공식 패턴: 이전 버튼 상태 추적 (GetPressed 사용)
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }
@@ -55,6 +64,7 @@ public class PlayerJump : NetworkBehaviour
         }
         
         HandleJump(input);
+        UpdateDownJump();  // 밑점프 타이머 처리
         ApplyGravity();
         ClampVelocity();
         
@@ -79,20 +89,40 @@ public class PlayerJump : NetworkBehaviour
         // Fusion 2 공식 패턴: GetPressed로 점프 버튼 눌림 감지
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
+        bool downJumpPressed = input.NetworkButtons.IsSet(SpelunkyInputButtons.DownJump);
         
         // 이전 상태 업데이트 (공식 패턴)
         ButtonsPrevious = input.NetworkButtons;
         
-        // 🎮 점프 시작 (땅에 있을 때만, 한 번만 감지)
-        if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
+        // 🎮 밑점프 시작 (플랫폼 위에서 앉은 상태일 때)
+        if (pressed.IsSet(SpelunkyInputButtons.DownJump) && groundCheck.IsGrounded && 
+            movement != null && movement.IsDucking && !movement.IsLookingUp && !isDownJumping)
         {
-            // 점프 상태 시작
-            IsJumping = true;
-            JumpTime = 0f;
-            Debug.Log("🦘 점프 시작!");
+            // 기존 점프 상태 초기화
+            if (IsJumping)
+            {
+                IsJumping = false;
+                JumpTime = 0f;
+            }
+            
+            StartDownJump();
+            return; // 밑점프 실행 시 일반 점프 건너뛰기
         }
         
-        // 점프 중일 때 처리
+        // 🚫 밑점프 입력이 있으면 일반 점프 로직 수행하지 않음
+        if (downJumpPressed)
+        {
+            return;
+        }
+        
+        // 🎮 일반 점프 시작 (땅에 있을 때만, 한 번만 감지)
+        if (pressed.IsSet(SpelunkyInputButtons.Jump) && groundCheck.IsGrounded)
+        {
+            IsJumping = true;
+            JumpTime = 0f;
+        }
+        
+        // 일반 점프 중일 때 처리
         if (IsJumping)
         {
             // 점프 시간 업데이트
@@ -108,7 +138,6 @@ public class PlayerJump : NetworkBehaviour
             {
                 // 점프키를 떼거나 최대 시간 도달시 점프 종료
                 IsJumping = false;
-                Debug.Log($"🦘 점프 종료 - 시간: {JumpTime:F2}s, 높이: {JumpTime * jumpSpeed:F1}");
             }
         }
         
@@ -137,6 +166,144 @@ public class PlayerJump : NetworkBehaviour
         }
     }
     
+    // 🦘 밑점프 시작
+    private void StartDownJump()
+    {
+        isDownJumping = true;
+        downJumpTimer = downJumpIgnoreTime;
+        
+        // 이 플레이어만 플랫폼과 충돌 무시
+        IgnorePlatformCollisions();
+        
+        // 다른 클라이언트들에게도 밑점프 상태 알림
+        if (Object.HasInputAuthority)
+        {
+            RPC_StartDownJump();
+        }
+    }
+    
+    // 🌐 밑점프 시작 RPC (다른 클라이언트들에게 알림)
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_StartDownJump()
+    {
+        if (!Object.HasInputAuthority)
+        {
+            isDownJumping = true;
+            downJumpTimer = downJumpIgnoreTime;
+            IgnorePlatformCollisions();
+        }
+    }
+    
+    // 🦘 이 플레이어만 플랫폼과 충돌 무시
+    private void IgnorePlatformCollisions()
+    {
+        // 이 플레이어의 Collider2D들 가져오기
+        Collider2D[] playerColliders = GetComponents<Collider2D>();
+        int platformLayer = LayerMask.NameToLayer("Platform");
+        
+        // PlayerGroundCheck의 실제 위치와 감지 영역을 사용
+        Vector3 groundCheckPosition = groundCheck.transform.position;
+        Vector2 groundCheckSize = groundCheck.GroundCheckSize;
+        LayerMask groundLayer = groundCheck.GroundLayer;
+        
+        // 밑점프할 때는 감지 영역을 더 넓게 설정 (가로로 5배, 세로로 2배)
+        Vector2 downJumpCheckSize = new Vector2(groundCheckSize.x * 5f, groundCheckSize.y * 2f);
+        
+        // PlayerGroundCheck의 실제 위치에서 감지 (밑점프용 넓은 영역)
+        Collider2D[] groundedColliders = Physics2D.OverlapBoxAll(
+            groundCheckPosition, 
+            downJumpCheckSize,  // 밑점프용 넓은 영역 사용
+            0f, 
+            groundLayer
+        );
+        
+        foreach (var platformCollider in groundedColliders)
+        {
+            // Platform 레이어인지 확인
+            if (platformCollider.gameObject.layer == platformLayer)
+            {
+                // 이미 무시된 플랫폼인지 확인 (중복 처리 방지)
+                var boxCollider = platformCollider.GetComponent<BoxCollider2D>();
+                if (boxCollider != null && !disabledBoxColliders.Contains(boxCollider))
+                {
+                    // 이 플레이어의 모든 Collider2D와 이 플랫폼 간의 충돌 무시
+                    foreach (var playerCollider in playerColliders)
+                    {
+                        Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+                    }
+                    
+                    // 나중에 복구하기 위해 저장
+                    disabledBoxColliders.Add(boxCollider);
+                }
+            }
+        }
+    }
+    
+    // 🦘 밑점프 타이머 처리
+    private void UpdateDownJump()
+    {
+        if (isDownJumping)
+        {
+            downJumpTimer -= Runner.DeltaTime;
+            if (downJumpTimer <= 0f)
+            {
+                EndDownJump();
+            }
+        }
+    }
+    
+    // 🦘 밑점프 종료 (플랫폼 충돌 복구)
+    private void EndDownJump()
+    {
+        isDownJumping = false;
+        downJumpTimer = 0f;
+        
+        // 이 플레이어의 플랫폼 충돌 무시 복구
+        RestorePlatformCollisions();
+        
+        // 다른 클라이언트들에게도 밑점프 종료 알림
+        if (Object.HasInputAuthority)
+        {
+            RPC_EndDownJump();
+        }
+    }
+    
+    // 🌐 밑점프 종료 RPC (다른 클라이언트들에게 알림)
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_EndDownJump()
+    {
+        if (!Object.HasInputAuthority)
+        {
+            isDownJumping = false;
+            downJumpTimer = 0f;
+            RestorePlatformCollisions();
+        }
+    }
+    
+    // 🦘 이 플레이어의 플랫폼 충돌 무시 복구
+    private void RestorePlatformCollisions()
+    {
+        // 이 플레이어의 Collider2D들 가져오기
+        Collider2D[] playerColliders = GetComponents<Collider2D>();
+        
+        // 저장된 플랫폼 컴포넌트들을 통해 충돌 복구
+        for (int i = 0; i < disabledBoxColliders.Count; i++)
+        {
+            var boxCollider = disabledBoxColliders[i];
+            if (boxCollider != null)
+            {
+                // 이 플레이어의 모든 Collider2D와 이 플랫폼 간의 충돌 복구
+                foreach (var playerCollider in playerColliders)
+                {
+                    Physics2D.IgnoreCollision(playerCollider, boxCollider, false);
+                }
+            }
+        }
+        
+        // 저장된 컴포넌트들 초기화
+        disabledBoxColliders.Clear();
+    }
+    
     // 🔍 디버그 정보 표시
     private void OnGUI()
     {
@@ -148,6 +315,11 @@ public class PlayerJump : NetworkBehaviour
         GUILayout.Label($"점프 중: {IsJumping}");
         GUILayout.Label($"점프 시간: {JumpTime:F2}s / {maxJumpTime:F2}s");
         GUILayout.Label($"세로 속도: {rb.linearVelocity.y:F1}");
+        GUILayout.Label($"밑점프 중: {isDownJumping}");
+        if (isDownJumping)
+        {
+            GUILayout.Label($"밑점프 타이머: {downJumpTimer:F2}s");
+        }
         GUILayout.EndArea();
     }
 } 

@@ -63,13 +63,13 @@ public class PlayerObjectPickup : NetworkBehaviour
         var pressed = input.NetworkButtons.GetPressed(ButtonsPrevious);
         ButtonsPrevious = input.NetworkButtons;
 
-        // 🎮 오브젝트 픽업 조건: Space키 + 웅크린 상태 + 아무것도 안 들고 있을 때
+        // 🎮 오브젝트 픽업 조건: 우클릭 + 아무것도 안 들고 있을 때
         if (pressed.IsSet(SpelunkyInputButtons.PickupItem))
         {
             Debug.Log($"[PlayerObjectPickup] Pickup 입력 감지됨");
-            if (!HasHeldObject && playerMovement != null && playerMovement.IsDucking && !playerMovement.IsLookingUp)
+            if (!HasHeldObject)
             {
-                Debug.Log($"[PlayerObjectPickup] 웅크리기 상태, 손에 든 것 없음");
+                Debug.Log($"[PlayerObjectPickup] 손에 든 것 없음, 픽업 시도");
                 // 🔍 가장 가까운 픽업 대상 찾기
                 var nearest = FindNearestObject();
                 if (nearest != null)
@@ -94,30 +94,31 @@ public class PlayerObjectPickup : NetworkBehaviour
             }
             else
             {
-                Debug.Log($"[PlayerObjectPickup] 웅크리기 상태 아님 또는 이미 손에 든 것 있음");
+                Debug.Log($"[PlayerObjectPickup] 이미 손에 든 것 있음");
             }
         }
     }
     
-    
-    // 📡 RPC: InputAuthority → StateAuthority로 픽업 요청
-    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    // 📡 픽업 RPC (InputAuthority → StateAuthority)
+    [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void PickupObjectRpc(NetworkId objectId)
     {
         Debug.Log($"[PlayerObjectPickup] PickupObjectRpc 호출됨: {objectId}");
-        var netObj = Runner.FindObject(objectId);
-        if (netObj != null)
+        
+        // NetworkId로 오브젝트 찾기
+        if (Runner.TryFindObject(objectId, out var networkObject))
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 성공: {netObj.name}");
-            PickupObject(netObj.gameObject);
+            var obj = networkObject.gameObject;
+            Debug.Log($"[PlayerObjectPickup] 오브젝트 찾음: {obj.name}");
+            PickupObject(obj);
         }
         else
         {
-            Debug.Log($"[PlayerObjectPickup] Runner.FindObject 실패");
+            Debug.LogWarning($"[PlayerObjectPickup] NetworkId {objectId}에 해당하는 오브젝트를 찾을 수 없습니다!");
         }
     }
-
-    // 📦 실제 오브젝트 픽업 처리 (StateAuthority에서만 의미 있음)
+    
+    // 🎯 실제 픽업 처리 (StateAuthority에서만 실행)
     private void PickupObject(GameObject obj)
     {
         var networkObject = obj.GetComponent<NetworkObject>();
@@ -230,8 +231,6 @@ public class PlayerObjectPickup : NetworkBehaviour
     // 🚪 트리거 진입: 오브젝트가가 감지 범위에 들어왔을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
-        
         // 🎯 아이템인 경우 IItemInteraction 체크
         if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
         {

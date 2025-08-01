@@ -15,9 +15,19 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
     [Networked] public bool IsInvincible { get; private set; }
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
     [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
+    
+    // 📎 참조할 다른 컴포넌트들
+    private PlayerDeathHandler deathHandler;
 
     public override void Spawned()
     {
+        // 죽음 처리 컴포넌트 찾기
+        deathHandler = GetComponent<PlayerDeathHandler>();
+        if (deathHandler == null)
+        {
+            Debug.LogError($"[{name}] PlayerDeathHandler 컴포넌트를 찾을 수 없습니다!");
+        }
+        
         Debug.Log($"🛑 PlayerStunInvincibleDie 초기화 완료!");
     }
 
@@ -134,5 +144,26 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         ThrownTimer = TickTimer.None;
         
         Debug.Log($"[{name}] 플레이어 사망 상태로 설정됨!");
+    }
+    
+    // 🔄 부활 처리 (게임 재시작 등에서 사용)
+    public void Resurrect()
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+        
+        // 사망 상태가 아니라면 처리 불필요
+        if (!IsDead) return;
+        
+        // 죽음 처리 컴포넌트에 부활 정리 요청
+        if (deathHandler != null)
+        {
+            deathHandler.OnResurrect();
+        }
+        
+        // 플레이어 부활
+        IsDead = false;
+        
+        Debug.Log($"[{name}] 플레이어 부활 처리됨!");
     }
 } 
