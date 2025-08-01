@@ -231,8 +231,6 @@ public class PlayerObjectPickup : NetworkBehaviour
     // 🚪 트리거 진입: 오브젝트가가 감지 범위에 들어왔을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log($"[PlayerObjectPickup] OnTriggerEnter2D: {other.gameObject.name}, layer={other.gameObject.layer}");
-        
         // 🎯 아이템인 경우 IItemInteraction 체크
         if (other.gameObject.layer == LayerMask.NameToLayer("Item"))
         {
