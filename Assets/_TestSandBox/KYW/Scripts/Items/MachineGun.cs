@@ -2,7 +2,7 @@ using UnityEngine;
 using Fusion;
 
 // 기관단총
-public class MachineGun : NetworkBehaviour, IUsableItem
+public class MachineGun : NetworkBehaviour, IItemInteraction
 {
     [Header("References")]
     [SerializeField] private GameObject bulletPrefab; // 총알 프리팹
@@ -17,7 +17,9 @@ public class MachineGun : NetworkBehaviour, IUsableItem
     [Networked] private int currentAmmo { get; set; }
     [Networked] private TickTimer fireRateTimer { get; set; }
     [Networked] private TickTimer reloadTimer { get; set; }
+    [Networked] private NetworkBool IsHeld { get; set; }
 
+    bool IItemInteraction.IsHeld => IsHeld;  // 인터페이스 구현 (명시적 구현)
 
     public override void Spawned()
     {
@@ -28,10 +30,6 @@ public class MachineGun : NetworkBehaviour, IUsableItem
         }        
         // 물리 시뮬레이션 설정
         Runner.SetIsSimulated(Object, true);
-        // 렌더링 소스 설정 (보간 사용)
-        base.Object.RenderSource = RenderSource.Interpolated;
-        // 원격 렌더링 타임프레임 강제 설정
-        base.Object.ForceRemoteRenderTimeframe = true;
     }
 
     public override void FixedUpdateNetwork()
@@ -111,6 +109,29 @@ public class MachineGun : NetworkBehaviour, IUsableItem
                 bulletRb.linearVelocity = fireDirection * bulletSpeed;
             }
             
+        }
+    }
+
+    public void OnPickedUp()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = true;
+    }
+
+    public void OnReleased()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = false;
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
+    {
+        if (!HasStateAuthority) return;
+        
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
         }
     }
 } 

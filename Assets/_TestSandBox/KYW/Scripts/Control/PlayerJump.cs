@@ -201,18 +201,18 @@ public class PlayerJump : NetworkBehaviour
         Collider2D[] playerColliders = GetComponents<Collider2D>();
         int platformLayer = LayerMask.NameToLayer("Platform");
         
-        // 기존 저장된 컴포넌트들 초기화
-        disabledBoxColliders.Clear();
-        
         // PlayerGroundCheck의 실제 위치와 감지 영역을 사용
         Vector3 groundCheckPosition = groundCheck.transform.position;
         Vector2 groundCheckSize = groundCheck.GroundCheckSize;
         LayerMask groundLayer = groundCheck.GroundLayer;
         
-        // PlayerGroundCheck의 실제 위치에서 감지
+        // 밑점프할 때는 감지 영역을 더 넓게 설정 (가로로 5배, 세로로 2배)
+        Vector2 downJumpCheckSize = new Vector2(groundCheckSize.x * 5f, groundCheckSize.y * 2f);
+        
+        // PlayerGroundCheck의 실제 위치에서 감지 (밑점프용 넓은 영역)
         Collider2D[] groundedColliders = Physics2D.OverlapBoxAll(
             groundCheckPosition, 
-            groundCheckSize, 
+            downJumpCheckSize,  // 밑점프용 넓은 영역 사용
             0f, 
             groundLayer
         );
@@ -222,14 +222,19 @@ public class PlayerJump : NetworkBehaviour
             // Platform 레이어인지 확인
             if (platformCollider.gameObject.layer == platformLayer)
             {
-                // 이 플레이어의 모든 Collider2D와 이 플랫폼 간의 충돌 무시
-                foreach (var playerCollider in playerColliders)
+                // 이미 무시된 플랫폼인지 확인 (중복 처리 방지)
+                var boxCollider = platformCollider.GetComponent<BoxCollider2D>();
+                if (boxCollider != null && !disabledBoxColliders.Contains(boxCollider))
                 {
-                    Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+                    // 이 플레이어의 모든 Collider2D와 이 플랫폼 간의 충돌 무시
+                    foreach (var playerCollider in playerColliders)
+                    {
+                        Physics2D.IgnoreCollision(playerCollider, platformCollider, true);
+                    }
+                    
+                    // 나중에 복구하기 위해 저장
+                    disabledBoxColliders.Add(boxCollider);
                 }
-                
-                // 나중에 복구하기 위해 저장
-                disabledBoxColliders.Add(platformCollider.GetComponent<BoxCollider2D>());
             }
         }
     }

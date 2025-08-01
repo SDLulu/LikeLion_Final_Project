@@ -1,11 +1,13 @@
 using UnityEngine;
 using Fusion;
 
-// 단순화된 총알 - 발사 방향은 MachineGun에서 결정
+// 총알 생명주기 관리 - 최상위 부모에만 부착
 public class Bullets : NetworkBehaviour
 {
     [Header("Bullet Settings")]
-    [SerializeField] private float damage = 1f;
+    [SerializeField] private int maxCollisions = 5; // 최대 충돌 횟수
+    
+    [Networked] private int collisionCount { get; set; } // 충돌 횟수 (네트워크 동기화)
     
     private Rigidbody2D rb;
 
@@ -17,15 +19,23 @@ public class Bullets : NetworkBehaviour
         rb = GetComponent<Rigidbody2D>();
         if (rb == null) rb = gameObject.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
-
+        // 충돌 카운터 초기화
+        collisionCount = 0;
     }
 
-
-    private void OnTriggerEnter2D(Collider2D other)
+    // 물리적 충돌 (땅/벽과의 충돌) - Physics Material 적용됨
+    private void OnCollisionEnter2D(Collision2D collision)
     {
-        Debug.Log($"총알 명중: {other.name}에게 {damage} 데미지!");
-        Runner.Despawn(Object);
+        if (!HasStateAuthority) return;
+        
+        // 충돌 횟수 증가
+        collisionCount++;
+        
+        // 최대 충돌 횟수에 도달하면 despawn
+        if (collisionCount >= maxCollisions)
+        {
+            Debug.Log($"총알이 {maxCollisions}번 충돌하여 소멸됩니다.");
+            Runner.Despawn(Object);
+        }
     }
-
-    //todo: 총알 명중 시 로직 추가
 } 

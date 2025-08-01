@@ -315,7 +315,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   visualRoot: {fileID: 4573830555875214864}
   handRoot: {fileID: 6193883160231370673}
-  pickupToThrowDelay: 0.2
 --- !u!114 &7871896623240946892
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -420,7 +419,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   stunInvincible: {fileID: 4027465240240945382}
   playerAnimation: {fileID: 7368080279004501370}
-  playerInteraction: {fileID: 0}
+  playerInteraction: {fileID: 254836847344143782}
   testStunDuration: 2
   testInvincibleDuration: 3
   testKnockbackForce: 10
@@ -1031,6 +1030,10 @@ PrefabInstance:
       propertyPath: SortKey
       value: 971127308
       objectReference: {fileID: 0}
+    - target: {fileID: 3597694245438659254, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
+      propertyPath: 'NetworkedBehaviours.Array.data[2]'
+      value: 
+      objectReference: {fileID: 4628408801068809820}
     - target: {fileID: 3908651508869614236, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
       propertyPath: m_Name
       value: "\uC8FC\uBA39\uC190\uC7A1\uC774"
@@ -1089,6 +1092,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4628408801068809820 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5223453545016697367, guid: c2d2aa9b760e19c488511e219f5aef84, type: 3}
+  m_PrefabInstance: {fileID: 596170712726035531}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76d97d7a6940e46418a591d66c16e883, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!114 &7351558282718365556 stripped

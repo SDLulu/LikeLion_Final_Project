@@ -72,20 +72,20 @@ public class PlayerDeathHandler : NetworkBehaviour
         // 원래 위치 저장
         DeathSpawnPosition = transform.position;
         
-        // 플레이어를 죽음 위치로 이동
-        transform.position = deathPosition;
-        
-        // 💰 죽을 때 아이템 드롭 처리
+        // 💰 죽을 때 아이템 드롭 처리 (원래 위치에서)
         DropAllItems();
         
-        // 시체 프리팹 스폰
+        // 시체 프리팹 스폰 (원래 위치에서)
         SpawnCorpse();
         
-        // 유령 플레이어 스폰 (입력권한과 함께)
+        // 유령 플레이어 스폰 (원래 위치에서, 입력권한과 함께)
         SpawnGhostPlayer();
         
         // 카메라 전환 (RPC로 클라이언트에 알림)
         RPC_TransferCameraToGhost(GhostObject);
+        
+        // 플레이어를 죽음 위치로 이동 (마지막에)
+        transform.position = deathPosition;
         
         // 처리 완료 표시
         HasSpawnedDeathObjects = true;
