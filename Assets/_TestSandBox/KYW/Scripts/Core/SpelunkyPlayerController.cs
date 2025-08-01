@@ -32,6 +32,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private Vector2 mouseWorldPosition;
     private float mouseScrollWheel;     // 마우스 휠 스크롤 값 (아이템 스왑용)
     private bool jumpPressed;       // Space + !IsDucking
+    private bool downJumpPressed;   // Space + IsDucking (밑점프)
     private bool pickupPressed;     // Space + IsDucking  
     private bool pickitem;
     private bool buyitem;
@@ -210,7 +211,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
             inventory?.ProcessInput(input);
-
+            interaction?.ProcessInput(input);
         }
         
         // 1번 키 입력 체크 (InputAuthority에서만)
@@ -229,6 +230,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
                 Debug.Log("[SpelunkyPlayerController] PlayerInventory 컴포넌트를 찾을 수 없습니다.");
             }
         }
+#endif
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     }
