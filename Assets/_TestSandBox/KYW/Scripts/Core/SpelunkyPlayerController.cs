@@ -191,6 +191,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             useItemHeld = Input.GetMouseButton(0);           // 마우스 좌클릭
             interactPressed = Input.GetKey(KeyCode.F);       // F키 (상호작용)
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
+            deathPressed = Input.GetKey(KeyCode.K);          // K키 (테스트용 죽음 트리거)
             pickitem = Input.GetKey(KeyCode.C);
             buyitem = Input.GetKey(KeyCode.X);
             dropitem = Input.GetKey(KeyCode.V);
@@ -255,6 +256,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Interact, interactPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Death, deathPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.pick, pickitem);
             data.NetworkButtons.Set(SpelunkyInputButtons.buy, buyitem);
             data.NetworkButtons.Set(SpelunkyInputButtons.drop, dropitem);
