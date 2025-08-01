@@ -9,8 +9,8 @@ public class PlayerDeathHandler : NetworkBehaviour
 {
     [Header("💀 죽음 처리 설정")]
     [SerializeField] private Vector3 deathPosition = new Vector3(0, 10, 0); // 플레이어가 이동할 죽음 위치
-    [SerializeField] private NetworkPrefabId corpsePrefabId = NetworkPrefabId.FromRaw(100001); // 시체 프리팹 ID
-    [SerializeField] private NetworkPrefabId ghostPrefabId = NetworkPrefabId.FromRaw(100002); // 유령 프리팹 ID
+    [SerializeField] private NetworkPrefabRef corpsePrefabRef = NetworkPrefabRef.Empty; // 시체 프리팹 참조
+    [SerializeField] private NetworkPrefabRef ghostPrefabRef = NetworkPrefabRef.Empty; // 유령 프리팹 참조
     
     [Header("💰 아이템 드롭 설정")]
     [SerializeField] private float dropForce = 5f; // 아이템 드롭 시 힘
@@ -123,14 +123,14 @@ public class PlayerDeathHandler : NetworkBehaviour
         if (!HasStateAuthority) return;
         
         // 시체 프리팹 스폰
-        if (corpsePrefabId.IsValid)
+        if (corpsePrefabRef != NetworkPrefabRef.Empty)
         {
-            var corpse = Runner.Spawn(corpsePrefabId, DeathSpawnPosition, Quaternion.identity);
+            var corpse = Runner.Spawn(corpsePrefabRef, DeathSpawnPosition, Quaternion.identity);
             Debug.Log($"[{name}] 시체 프리팹 스폰됨: {corpse?.name ?? "null"}");
         }
         else
         {
-            Debug.LogWarning($"[{name}] 시체 프리팹 ID가 설정되지 않았습니다!");
+            Debug.LogWarning($"[{name}] 시체 프리팹이 설정되지 않았습니다!");
         }
     }
     
@@ -141,10 +141,12 @@ public class PlayerDeathHandler : NetworkBehaviour
         if (!HasStateAuthority) return;
         
         // 유령 플레이어 스폰 (입력권한과 함께)
-        if (ghostPrefabId.IsValid)
+        if (ghostPrefabRef != NetworkPrefabRef.Empty)
         {
             Vector3 ghostPosition = DeathSpawnPosition + Vector3.up * 0.5f; // 시체 위 0.5f 높이
-            var ghost = Runner.Spawn(ghostPrefabId, ghostPosition, Quaternion.identity, Object.InputAuthority);
+            
+            // PlayerRef를 직접 전달 (DevAutoStarter와 동일한 방식)
+            var ghost = Runner.Spawn(ghostPrefabRef, ghostPosition, Quaternion.identity, Object.InputAuthority);
             GhostObject = ghost;
             
             // 유령에 원래 플레이어 참조 전달
@@ -154,11 +156,11 @@ public class PlayerDeathHandler : NetworkBehaviour
                 ghostController.SetOriginalPlayer(Object);
             }
             
-            Debug.Log($"[{name}] 유령 플레이어 스폰됨: {ghost?.name ?? "null"}");
+            Debug.Log($"[{name}] 유령 플레이어 스폰됨: {ghost?.name ?? "null"} (PlayerRef: {Object.InputAuthority})");
         }
         else
         {
-            Debug.LogWarning($"[{name}] 유령 프리팹 ID가 설정되지 않았습니다!");
+            Debug.LogWarning($"[{name}] 유령 프리팹이 설정되지 않았습니다!");
         }
     }
     
