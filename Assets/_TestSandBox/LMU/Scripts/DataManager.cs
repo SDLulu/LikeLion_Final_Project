@@ -74,6 +74,7 @@ public class DataManager : BaseManager<DataManager>
             return data;
         }
         Debug.LogError($"스테이지 데이터를 찾을 수 없습니다. index: {index}");
-        return null;
+        var ret = StageData.First().Value;
+        return ret;
     }
 }

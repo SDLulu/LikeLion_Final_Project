@@ -41,8 +41,19 @@ public class UI_CharacterSlot : MonoBehaviour
         leftArrowButton.onClick.RemoveAllListeners();
     }
 
+    private float _lastReadyChangeTime = 0f;
+    private float _readyChangeCooldown = 0.3f;
+
     public void OnReadyChange()
     {
+        if (Time.time - _lastReadyChangeTime < _readyChangeCooldown)
+        {
+            Debug.Log("레디 변경이 너무빠름");
+            return;
+        }
+
+        _lastReadyChangeTime = Time.time;
+
         // 연결된 플레이어가 있고, 로컬 플레이어인 경우에만 Ready 상태 변경
         if (connectedPlayer != null && connectedPlayer.Object.HasInputAuthority)
         {
