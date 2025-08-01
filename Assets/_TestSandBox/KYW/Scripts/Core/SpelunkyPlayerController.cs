@@ -33,6 +33,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private float mouseScrollWheel;     // 마우스 휠 스크롤 값 (아이템 스왑용)
     private bool jumpPressed;       // Space + !IsDucking
     private bool pickupPressed;     // Space + IsDucking  
+    private bool pickitem;
+    private bool buyitem;
+    private bool dropitem;
     
     // 🔨 아이템 사용 입력
     private bool useItemHeld;           // 현재 클릭 유지 중
@@ -45,6 +48,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
+    private testPlayerInventory inventory;
+
     private PlayerStunInvincibleDie stunInvincibleDie;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
@@ -54,6 +59,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     // 📦 Hand 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerObjectPickup itemPickup;
     private PlayerItemUsage itemUsage;
+    
+    
     private PlayerObjectThrower itemThrower;
 
     public override void Spawned()
@@ -63,6 +70,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
+        inventory = GetComponent<testPlayerInventory>();
+
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
@@ -77,6 +86,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         
         Debug.Log($"🎮 플레이어 소환 완료! InputAuthority: {Object.HasInputAuthority}, " +
                  $"IsLocalPlayer: {Object.InputAuthority == Runner.LocalPlayer}");
+
+        
     }
     
     // 📦 하위 오브젝트들 설정 (Visual, Hand)
@@ -180,6 +191,9 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             useItemHeld = Input.GetMouseButton(0);       // 마우스 좌클릭
             throwItemPressed = Input.GetMouseButton(1);  // 마우스 우클릭
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
+            pickitem = Input.GetKey(KeyCode.C);
+            buyitem = Input.GetKey(KeyCode.X);
+            dropitem = Input.GetKey(KeyCode.V);
         }
     }
     
@@ -196,6 +210,8 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
+            inventory?.ProcessInput(input);
+
         }
         
         // 1번 키 입력 체크 (InputAuthority에서만)
@@ -237,6 +253,10 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.UseItemHold, useItemHeld);
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.pick, pickitem);
+            data.NetworkButtons.Set(SpelunkyInputButtons.buy, buyitem);
+            data.NetworkButtons.Set(SpelunkyInputButtons.drop, dropitem);
+            
         }
         
         return data;
