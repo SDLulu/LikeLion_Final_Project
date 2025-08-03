@@ -50,6 +50,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
 
 
+    [Header("PMK_ArrowTrap 설정")]
+    [field: SerializeField] public NetworkObject launchTrapPrefab { get; private set; } // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
+
+
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
     private bool[,] useMapXY; // 전체 맵의 위치가 사용되었는지 여부를 저장하기 위한 2차원 배열 (true: 사용됨, false: 사용되지 않음)
 

@@ -4,10 +4,12 @@ using UnityEngine;
 public class PMK_ArrowTrapObj : NetworkBehaviour
 {
     [Header("튕김 설정")]
-    [SerializeField] private float bounceForce = 3f;
     [SerializeField] private float detectRadius = 0.3f; // 감지 반지름
     [SerializeField] private LayerMask playerLayerMask; // 플레이어만 감지할 마스크
     [SerializeField] private float groundedVelocityThreshold = 7f; // 바닥에 닿았는지 판단할 속도 임계값
+
+
+    [Header("Attack Collision Handler")]
 
     private Rigidbody2D rb;
     private bool isGrounded = false;
@@ -15,6 +17,7 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
+
     }
 
     public override void FixedUpdateNetwork()

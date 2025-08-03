@@ -186,7 +186,18 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
 
 
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_SpawnArrow(Vector3 position, Vector2 velocity)
+    {
+        if (!Object.HasStateAuthority) return; // 클라이언트는 스폰 못 함
 
+        var arrowInstance = Runner.Spawn(tileRogic.launchTrapPrefab, position, Quaternion.identity);
+        var rb = arrowInstance.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.linearVelocity = velocity;
+        }
+    }
 
 
     // 즉사 트랩 플레이어 중력 설정 (미완 - 아마 플레이어 스크립트를 건드려서 해야 될 듯 함)
