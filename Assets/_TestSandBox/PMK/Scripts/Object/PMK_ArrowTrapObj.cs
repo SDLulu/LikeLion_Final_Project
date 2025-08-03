@@ -1,18 +1,34 @@
 using Fusion;
 using UnityEngine;
 
-public class PMK_ArrowTrapObj : NetworkBehaviour
+public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
 {
     [Header("튕김 설정")]
     [SerializeField] private float detectRadius = 0.3f; // 감지 반지름
     [SerializeField] private LayerMask playerLayerMask; // 플레이어만 감지할 마스크
     [SerializeField] private float groundedVelocityThreshold = 7f; // 바닥에 닿았는지 판단할 속도 임계값
 
+    [Header("Attack Collision Handler")]
+    [SerializeField] private AttackCollisionHandler AttackCollisionHandler;
+    private Collider2D attackCollider;
+
 
     [Header("Attack Collision Handler")]
 
     private Rigidbody2D rb;
     private bool isGrounded = false;
+
+    public bool IsHeld => true;
+
+    private void Awake()
+    {
+        if (AttackCollisionHandler != null)
+        {
+            attackCollider = AttackCollisionHandler.AttackCollider;
+        }
+
+        if (attackCollider != null) attackCollider.enabled = false;
+    }
 
     public override void Spawned()
     {
@@ -28,7 +44,12 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
         // 이동 방향 회전
         if (rb.linearVelocity.sqrMagnitude > 0.01f && rb.linearVelocity.sqrMagnitude > 2.5 * 2.5)
         {
+            attackCollider.enabled = true;
             RotateInDirection();
+        }
+        else
+        {
+            attackCollider.enabled = false;
         }
 
         if (isGrounded)
@@ -42,6 +63,7 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
 
             if (hit.gameObject.layer == LayerMask.NameToLayer("Player") && rb.linearVelocity.sqrMagnitude > groundedVelocityThreshold * groundedVelocityThreshold)
             {
+                rb.linearVelocity = Vector2.zero;
                 Debug.Log("피격됨");
             }
             else if (hit.gameObject.layer == LayerMask.NameToLayer("Ground"))
@@ -61,5 +83,35 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, detectRadius);
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0)
+    {
+        if (!HasStateAuthority) return;
+
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
+
+    public void OnPickedUp()
+    {
+    }
+
+    public void OnReleased()
+    {
+    }
+
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
     }
 }
