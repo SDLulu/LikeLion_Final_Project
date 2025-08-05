@@ -44,12 +44,17 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
         // 이동 방향 회전
         if (rb.linearVelocity.sqrMagnitude > 0.01f && rb.linearVelocity.sqrMagnitude > 2.5 * 2.5)
         {
-            attackCollider.enabled = true;
             RotateInDirection();
-        }
-        else
-        {
-            attackCollider.enabled = false;
+
+            // 공격 콜라이더 활성화
+            if (rb.linearVelocity.sqrMagnitude > 5 * 5)
+            {
+                attackCollider.enabled = true;
+            }
+            else
+            {
+                attackCollider.enabled = false;
+            }
         }
 
         if (isGrounded)

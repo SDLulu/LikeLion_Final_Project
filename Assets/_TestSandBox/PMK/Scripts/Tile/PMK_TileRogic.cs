@@ -238,37 +238,47 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 타일에 아이템 생성
-    // 호스트가 타일 랜덤값을 적용후 공유함
     public void Create_TileItem(Vector3Int targetPos)
     {
         if (!HasStateAuthority) return;
 
         if (Random.Range(0, 100) > itemSpawnChance) return;
 
-        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos); // 타일의 월드 좌표로 변환
+        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos);
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f); // 타일 위치에 있는 모든 콜라이더를 가져옴
-        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item")); // 아이템 레이어에 해당하는지 확인
+        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f);
+        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item"));
 
-        if (!hasSameTag)
+        if (hasSameTag) return;
+
+        int totalChance = tileItems.Sum(t => t.spawnChance);
+        int roll = Random.Range(0, totalChance);
+        int current = 0;
+
+        int selectedIndex = -1;
+
+        for (int i = 0; i < tileItems.Count; i++)
         {
-            int totalChance = tileItems.Sum(t => t.spawnChance);
-            int roll = Random.Range(0, totalChance);
-            int current = 0;
-
-            foreach (var item in tileItems)
+            current += tileItems[i].spawnChance;
+            if (roll < current)
             {
-                current += item.spawnChance;
-                if (roll < current)
-                {
-                    int index = tileItems.IndexOf(item);
-                    tileRPCManager.RPC_Create_TileItem(index, worldPos);
-                    break;
-                }
+                selectedIndex = i;
+                break;
             }
         }
 
+        Vector3Int cellPos = mainTilemap.WorldToCell(worldPos);
+        bool isSurrounded =
+            mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.right) != null;
+
+        bool spawnTrap = isSurrounded && Random.Range(0, 100) < 25;
+
+        tileRPCManager.RPC_Create_TileItem(selectedIndex, worldPos, spawnTrap);
     }
+
     #endregion
 
 
