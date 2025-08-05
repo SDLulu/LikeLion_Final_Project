@@ -36,7 +36,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     [Header("맵 프리팹 설정")]
-    [SerializeField] private MapPrefabSet[] mapPrefabSets;
+    public List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
     private Dictionary<string, GameObject[]> mapPrefabDict;
 
 
@@ -72,6 +72,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
         {
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
+
+        LoadMapPrefabsAutomatically();
     }
 
     public bool IsStageTestNetwork = false;
@@ -106,9 +108,47 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
+    private void LoadMapPrefabsAutomatically()
+    {
+        // 모든 맵 프리팹 불러오기
+        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps");
 
-    #region 맵 초기화 및 재생성
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
+
+        foreach (var prefab in loadedPrefabs)
+        {
+            // 파일명에서 맵 타입 추출 (예: Map_C_1 → C)
+            string[] parts = prefab.name.Split('_');
+            if (parts.Length >= 2)
+            {
+                string type = parts[1];
+
+                if (!tempMap.ContainsKey(type))
+                    tempMap[type] = new List<GameObject>();
+
+                tempMap[type].Add(prefab);
+            }
+        }
+
+        // mapPrefabSets 초기화
+        mapPrefabSets.Clear();
+
+        foreach (var kvp in tempMap)
+        {
+            mapPrefabSets.Add(new MapPrefabSet
+            {
+                mapType = kvp.Key,
+                prefabs = kvp.Value.ToArray()
+            });
+        }
+
+        // Dictionary로도 구성
+        mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
+
+#region 맵 초기화 및 재생성
+[Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_ResetMap()
     {
         ResetMap();
@@ -163,7 +203,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
+            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : randomIndex;
 
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }

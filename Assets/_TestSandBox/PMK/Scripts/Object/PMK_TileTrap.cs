@@ -23,20 +23,16 @@ public class PMK_TileTrap : MonoBehaviour, IItemInteraction
             attackCollider.enabled = false;
     }
 
-    private void Update()
-    {
-        if (rb.linearVelocity.y == 0)
-        {
-            attackCollider.enabled = false;
-        }
-    }
-
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Player") && rb != null && rb.linearVelocity.y < 0)
         {
             // 낙하 중일 때만 공격 처리
             attackCollider.enabled = true;
+        }
+        else
+        {
+            attackCollider.enabled = false;
         }
     }
 

@@ -1,9 +1,6 @@
 using System.Collections;
 using Fusion;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.UIElements;
-using static UnityEditor.PlayerSettings;
 
 public class PMK_TileRPC_Manager : NetworkBehaviour
 {
@@ -79,7 +76,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         {
             if (hit.CompareTag("Tileitem"))
             {
-                Debug.Log($"타일아이템 삭제");
                 Destroy(hit.gameObject);
             }
         }
@@ -145,9 +141,10 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
 
     // 위 아래 셀에 타일이 없을 때 돌 함정 생성 (빈 공간 방지)
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DelayedTileSpawn(Vector3Int cellPos)
+    public void DelayedTileSpawnBool(Vector3Int cellPos)
     {
+        if (!HasInputAuthority) return;
+
         bool isTileEmpty =
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
@@ -160,6 +157,13 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
         tileRogic.mainTilemap.GetTile(cellPos) == null;
 
+        RPC_DelayedTileSpawn(cellPos, isTileEmpty, isThreeAboveEmpty);
+    }
+
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty, bool isThreeAboveEmpty)
+    {
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
         Vector3Int tilePos = tileRogic.mainTilemap.WorldToCell(cellPos);
 
@@ -195,7 +199,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
     public void RPC_SetPlayerGravity([RpcTarget] PlayerRef player, float gravityScale)
     {
-        Debug.Log("RPC실행됨");
         var playerObj = Runner.GetPlayerObject(player);
         if (playerObj == null) return;
 
