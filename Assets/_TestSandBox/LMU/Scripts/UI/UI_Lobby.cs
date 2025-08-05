@@ -7,6 +7,7 @@ public enum E_LobbyType
     Online,
     Solo,
 }
+
 public class UI_Lobby : MonoBehaviour
 {
     [Header("인스펙터 참조")]
@@ -15,6 +16,7 @@ public class UI_Lobby : MonoBehaviour
     [SerializeField] private List<Button> _backButtons;
     [SerializeField] private Button _soloPlayBtn;
     [SerializeField] private UI_CharacterSlotContainer _characterSlotContainer;
+    
     [Header("디버그용")]
     [SerializeField] private E_LobbyType _lobbyType;
 

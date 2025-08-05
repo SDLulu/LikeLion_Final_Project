@@ -10,6 +10,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     [field: SerializeField] public UI_EnterOnline UIEnterOnline {get; private set;}
     [field: SerializeField] public UI_Lobby UILobby {get; private set;}
     [field: SerializeField] public UI_Title UITitle {get; private set;}
+    [field: SerializeField] public UI_Chating UIChatting {get; private set;}
 
     private static bool _inited = false;
     protected override async void Awake()
@@ -40,15 +41,17 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     {
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.ActiveOnlinePanel();
+        UIChatting.gameObject.SetActive(true);
     }
 
     public void DeactiveAllLobbyUI()
     {
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.gameObject.SetActive(false);
+        UIChatting.gameObject.SetActive(false);
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
+    public void UpdateData(NetworkDictionary<int, PlayerData> players)
     {
         UILobby?.UpdateData(players);
     }

@@ -4,19 +4,19 @@ using LMCore;
 
 public class UIEventSystem : BaseManager<UIEventSystem>
 {
-    // UI 이벤트들
+    // -- 로비 이벤트 목록록
     public event Action OnPauseUIToggleEvent;
     public event Action<bool> OnPauseUIActiveEvent;
     public event Action OnInventoryToggleEvent;
     public event Action<string> OnShowDialogEvent;
     public event Action OnHideDialogEvent;
     
-    // 게임 UI 전체 활성화/비활성화 이벤트 추가
     public event Action<bool> OnGameUIActiveEvent;
     
-    // 비동기 UI 이벤트들
     public event Func<Awaitable> OnPlayerSlotsFadeInEvent;
     public event Func<Awaitable> OnPlayerSlotsFadeOutEvent;
+
+    
 
     /// <summary>
     /// Pause UI 토글 이벤트 발생

@@ -98,13 +98,13 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
                     ""expectedControlType"": ""Vector2"",
                     ""processors"": """",
                     ""interactions"": """",
-                    ""initialStateCheck"": false
+                    ""initialStateCheck"": true
                 },
                 {
                     ""name"": ""Submit"",
                     ""type"": ""Button"",
                     ""id"": ""7607c7b6-cd76-4816-beef-bd0341cfe950"",
-                    ""expectedControlType"": ""Button"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -636,7 +636,7 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
             ""id"": ""6d58e419-283b-4d5d-97b6-b8dc60a58869"",
             ""actions"": [
                 {
-                    ""name"": ""New action"",
+                    ""name"": ""Enter"",
                     ""type"": ""Button"",
                     ""id"": ""ddb27234-ee21-4804-90b1-a4fd06ba16f9"",
                     ""expectedControlType"": """",
@@ -649,11 +649,11 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""271c883a-9bf6-4c09-8868-bec50fb691cb"",
-                    ""path"": """",
+                    ""path"": ""<Keyboard>/enter"",
                     ""interactions"": """",
                     ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""New action"",
+                    ""groups"": "";Keyboard&Mouse"",
+                    ""action"": ""Enter"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -740,7 +740,7 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
         m_Game_ESC = m_Game.FindAction("ESC", throwIfNotFound: true);
         // Shared
         m_Shared = asset.FindActionMap("Shared", throwIfNotFound: true);
-        m_Shared_Newaction = m_Shared.FindAction("New action", throwIfNotFound: true);
+        m_Shared_Enter = m_Shared.FindAction("Enter", throwIfNotFound: true);
     }
 
     ~@GameInputAction()
@@ -1114,7 +1114,7 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
     // Shared
     private readonly InputActionMap m_Shared;
     private List<ISharedActions> m_SharedActionsCallbackInterfaces = new List<ISharedActions>();
-    private readonly InputAction m_Shared_Newaction;
+    private readonly InputAction m_Shared_Enter;
     /// <summary>
     /// Provides access to input actions defined in input action map "Shared".
     /// </summary>
@@ -1127,9 +1127,9 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
         /// </summary>
         public SharedActions(@GameInputAction wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Shared/Newaction".
+        /// Provides access to the underlying input action "Shared/Enter".
         /// </summary>
-        public InputAction @Newaction => m_Wrapper.m_Shared_Newaction;
+        public InputAction @Enter => m_Wrapper.m_Shared_Enter;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1156,9 +1156,9 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_SharedActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_SharedActionsCallbackInterfaces.Add(instance);
-            @Newaction.started += instance.OnNewaction;
-            @Newaction.performed += instance.OnNewaction;
-            @Newaction.canceled += instance.OnNewaction;
+            @Enter.started += instance.OnEnter;
+            @Enter.performed += instance.OnEnter;
+            @Enter.canceled += instance.OnEnter;
         }
 
         /// <summary>
@@ -1170,9 +1170,9 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
         /// <seealso cref="SharedActions" />
         private void UnregisterCallbacks(ISharedActions instance)
         {
-            @Newaction.started -= instance.OnNewaction;
-            @Newaction.performed -= instance.OnNewaction;
-            @Newaction.canceled -= instance.OnNewaction;
+            @Enter.started -= instance.OnEnter;
+            @Enter.performed -= instance.OnEnter;
+            @Enter.canceled -= instance.OnEnter;
         }
 
         /// <summary>
@@ -1372,11 +1372,11 @@ public partial class @GameInputAction: IInputActionCollection2, IDisposable
     public interface ISharedActions
     {
         /// <summary>
-        /// Method invoked when associated input action "New action" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "Enter" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnNewaction(InputAction.CallbackContext context);
+        void OnEnter(InputAction.CallbackContext context);
     }
 }

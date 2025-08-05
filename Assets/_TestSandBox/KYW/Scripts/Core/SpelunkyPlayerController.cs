@@ -144,6 +144,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             Debug.LogWarning($"[{name}] Hand 오브젝트에 PlayerObjectThrower 컴포넌트가 없습니다.");
         }
     }
+
     
     // 🎮 입력 수집 (매 프레임)
     public void BeforeUpdate()
@@ -163,6 +164,13 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             interactPressed = false;
             skillPressed = false;
             deathPressed = false;
+            return;
+        }
+
+        // 채팅 중일 때 게임 입력 차단
+        if (UI_Chating.IsAnyChatActive)
+        {
+            ResetInput();
             return;
         }
 
@@ -297,4 +305,20 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         
         Debug.Log($"[{name}] 점프로 들린 상태에서 탈출!");
     }
+
+    public void ResetInput()
+    {
+        horizontalInput = 0f;
+        verticalInput = 0f;
+        mouseScrollWheel = 0f;
+        jumpPressed = false;
+        downJumpPressed = false;
+        pickupItemPressed = false;
+        throwItemPressed = false;
+        useItemHeld = false;
+        interactPressed = false;
+        skillPressed = false;
+        deathPressed = false;
+    }
+
 } 
