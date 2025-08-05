@@ -12,13 +12,13 @@
                     "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 },
                 {
                     "name": "Submit",
                     "type": "Button",
                     "id": "7607c7b6-cd76-4816-beef-bd0341cfe950",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -550,7 +550,7 @@
             "id": "6d58e419-283b-4d5d-97b6-b8dc60a58869",
             "actions": [
                 {
-                    "name": "New action",
+                    "name": "Enter",
                     "type": "Button",
                     "id": "ddb27234-ee21-4804-90b1-a4fd06ba16f9",
                     "expectedControlType": "",
@@ -563,11 +563,11 @@
                 {
                     "name": "",
                     "id": "271c883a-9bf6-4c09-8868-bec50fb691cb",
-                    "path": "",
+                    "path": "<Keyboard>/enter",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
-                    "action": "New action",
+                    "groups": ";Keyboard&Mouse",
+                    "action": "Enter",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

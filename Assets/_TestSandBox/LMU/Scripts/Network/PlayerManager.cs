@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Fusion;
 using LMCore;
-using Unity.Cinemachine;
 using UnityEngine;
 
-public class PlayerManager : NetworkBehaviour
+
+public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
@@ -17,7 +17,6 @@ public class PlayerManager : NetworkBehaviour
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
-    [SerializeField] public bool IsSpawned = false;
 
     [Networked, Capacity(4), UnitySerializeField]
     public NetworkDictionary<int, PlayerData> Players => default;
@@ -26,6 +25,7 @@ public class PlayerManager : NetworkBehaviour
 
     public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
 
+    public bool IsSpawned {get; set;}
     public async Awaitable<bool> IsPollingSpawned()
     {
         while (IsSpawned == false)
@@ -85,6 +85,7 @@ public class PlayerManager : NetworkBehaviour
     {
         IsSpawned = true;
         
+        // Note - 기획변경으로 더이상 사용하지않음
         var uiController = FindAnyObjectByType<LobbyUI_Manager>();
         this.AddRenderingAction(uiController.UpdateData);
         DontDestroyOnLoad(this.gameObject);

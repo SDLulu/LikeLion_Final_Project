@@ -29,5 +29,6 @@ public enum SpelunkyInputButtons
     buy = 7,
     drop = 8,
     DownJump = 9,       // 스페이스 (앉은 상태) - 밑점프
-    Interact = 10       // F키 - 상호작용
+    Interact = 10,      // F키 - 상호작용
+    Death = 11,         // 죽음 키 - 죽음
 } 

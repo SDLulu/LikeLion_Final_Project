@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Reflection;
 
 
-public class GameStates : NetworkBehaviour, IStateMachineOwner
+public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnable
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
     
@@ -30,8 +30,11 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private NetworkEventSystem networkEventSystem = null;
     [SerializeField] private StateBehaviour[] allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
+    public bool IsSpawned { get; set; }
+
     public override void Spawned()
     {
+        IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
@@ -203,5 +206,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         }
 
         refs.Clear();
+    }
+
+    public async Awaitable<bool> IsPollingSpawned()
+    {
+        while (IsSpawned == false)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+        return true;
     }
 } 
