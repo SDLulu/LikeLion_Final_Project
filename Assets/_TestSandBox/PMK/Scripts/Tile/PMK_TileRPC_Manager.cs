@@ -53,28 +53,19 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
     // 타일 아이템 생성
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_Create_TileItem(int itemIndex, Vector3 worldPos)
+    public void RPC_Create_TileItem(int itemIndex, Vector3 worldPos, bool tileTrap)
     {
         Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(worldPos);
 
-        bool isThreeAboveEmpty =
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null;
-
-
-        if (isThreeAboveEmpty && 25 > Random.Range(0, 100))
+        if (tileTrap)
         {
-            // 상 하 좌 우 셀에 타일이 없을 때 함정 생성
             tileRogic.mainTilemap.SetTile(cellPos, null);
             tileRogic.mainTilemap.RefreshTile(cellPos);
             Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
-            return;
         }
         else
         {
-            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans); // 타일 아이템 생성
+            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
     }
 
