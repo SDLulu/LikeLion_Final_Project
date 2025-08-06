@@ -54,13 +54,16 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     {
         Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(worldPos);
 
-        //if (tileTrap)
-        //{
-        //    tileRogic.mainTilemap.SetTile(cellPos, null);
-        //    tileRogic.mainTilemap.RefreshTile(cellPos);
-        //    Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
-        //}
+        if (tileTrap)
+        {
+            tileRogic.mainTilemap.SetTile(cellPos, null);
+            tileRogic.mainTilemap.RefreshTile(cellPos);
+            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+        }
+        else
+        {
             StartCoroutine(DelayedTileItemSpawn(itemIndex, cellPos));
+        }
     }
 
     private IEnumerator DelayedTileItemSpawn(int itemIndex, Vector3Int cellPos)
@@ -161,28 +164,29 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
         tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        //bool isThreeAboveEmpty =
-        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
-        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
-        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
-        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
-        //tileRogic.mainTilemap.GetTile(cellPos) == null;
+        bool isThreeAboveEmpty =
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
+        tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        RPC_DelayedTileSpawn(cellPos, isTileEmpty);
+        RPC_DelayedTileSpawn(cellPos, isTileEmpty, isThreeAboveEmpty);
     }
 
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty)
+    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty, bool isThreeAboveEmpty)
     {
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
         Vector3Int tilePos = tileRogic.mainTilemap.WorldToCell(cellPos);
 
-        //if (isThreeAboveEmpty)
-        //{
-        //    Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
-        //}
-        if (isTileEmpty)
+        if (isThreeAboveEmpty)
+        {
+            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+            Rpc_DestroyItem(worldPos);
+        }
+        else if (isTileEmpty)
         {
             RPC_Create_Tile(tilePos);
         }

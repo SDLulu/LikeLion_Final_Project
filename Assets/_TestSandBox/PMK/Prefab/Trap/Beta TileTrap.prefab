@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 7792049888097151186}
   - component: {fileID: 9183254586722025664}
   - component: {fileID: 2358217207250253850}
+  - component: {fileID: 1794360448395949436}
   m_Layer: 0
   m_Name: Beta TileTrap
   m_TagString: Untagged
@@ -124,7 +125,7 @@ BoxCollider2D:
     m_Bits: 4294967295
   m_IsTrigger: 0
   m_UsedByEffector: 0
-  m_CompositeOperation: 0
+  m_CompositeOperation: 1
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
@@ -150,8 +151,8 @@ Rigidbody2D:
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
-  m_Mass: 1
-  m_LinearDamping: 0
+  m_Mass: 10
+  m_LinearDamping: 1
   m_AngularDamping: 0.05
   m_GravityScale: 5
   m_Material: {fileID: 0}
@@ -201,6 +202,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AttackCollisionHandler: {fileID: 838784136367051297}
+--- !u!114 &1794360448395949436
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1280988488147050962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3292332435
+  ObjectInterest: 1
+  Flags: 1
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 9183254586722025664}
+  - {fileID: 838784136367051297}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &8848421957407531611
 GameObject:
   m_ObjectHideFlags: 0
