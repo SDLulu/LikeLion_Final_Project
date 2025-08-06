@@ -11,15 +11,14 @@ public class PlayerJump : NetworkBehaviour
     [SerializeField] private float maxJumpTime = 0.3f;      // 최대 점프 지속 시간
     [SerializeField] private float gravity = 20f;
     [SerializeField] private float maxFallSpeed = 15f;
-    [SerializeField] private bool showDebugInfo = true;     // 디버그 정보 표시
     public float VelocityY { get; private set; }
     
     [Header("Passive Items - Jump")]
-    [SerializeField] private float jumpShoesMultiplier = 1.5f; // 점프신발 배율
+    [SerializeField] private float jumpShoesMultiplier = 1.2f; // 점프신발 배율
     [SerializeField] private int wingsJumpCount = 2; // 날개 점프 횟수
     
     [Header("Passive Items - Rocket")]
-    [SerializeField] private float rocketThrust = 15f; // 로켓 추진력
+    [SerializeField] private float rocketThrust = 25f; // 로켓 추진력 (중력보다 강하게)
     [SerializeField] private float fuelConsumptionRate = 20f; // 연료 소모율 (초당)
     [SerializeField] private float maxRocketFuel = 100f; // 최대 연료량
     
@@ -28,6 +27,7 @@ public class PlayerJump : NetworkBehaviour
     [Networked] public float JumpTime { get; private set; }
     [Networked] public int CurrentJumpCount { get; private set; } // 현재 점프 횟수
     [Networked] public float RocketFuel { get; private set; } // 로켓 연료량
+    [Networked] public bool IsRocketThrusting { get; private set; } // 로켓 추진 중인지
     
     // 🦘 밑점프 상태 추적 (로컬에서만)
     private bool isDownJumping = false;
@@ -86,6 +86,8 @@ public class PlayerJump : NetworkBehaviour
         UpdateDownJump();  // 밑점프 타이머 처리
         ApplyGravity();
         ClampVelocity();
+        
+        // 비주얼 효과 업데이트는 PlayerPassiveItemVisual에서 처리
         
         // 수직 속도 업데이트
         VelocityY = rb.linearVelocity.y;
@@ -150,6 +152,8 @@ public class PlayerJump : NetworkBehaviour
             JumpTime = 0f;
             CurrentJumpCount++;
             Debug.Log($"[{name}] 공중 점프! ({CurrentJumpCount}/{GetMaxJumpCount()})");
+            
+            // 날개 펄럭임 애니메이션은 PlayerPassiveItemVisual에서 처리
         }
         
         // 일반 점프 중일 때 처리
@@ -210,25 +214,38 @@ public class PlayerJump : NetworkBehaviour
     {
         // 로켓이 없거나 연료가 없으면 처리하지 않음
         if (!playerInventory.hasRocket || RocketFuel <= 0)
+        {
+            IsRocketThrusting = false;
             return;
+        }
         
-        // 점프 중이 아니고 점프키를 누르고 있으면 로켓 추진
+        // 점프 중이 아니고 점프키를 누르고 있고, 땅에 있지 않으면 로켓 추진
         bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
         if (!IsJumping && !groundCheck.IsGrounded && jumpHeld)
         {
-            // 고정 추진력 적용
-            Vector2 rocketForce = Vector2.up * rocketThrust;
-            rb.AddForce(rocketForce);
+            // 고정 추진력 적용 (linearVelocity로 직접 속도 설정)
+            float currentVelocityY = rb.linearVelocity.y;
+            float newVelocityY = Mathf.Max(currentVelocityY, rocketThrust);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, newVelocityY);
             
             // 연료 소모
             RocketFuel -= fuelConsumptionRate * Runner.DeltaTime;
             RocketFuel = Mathf.Max(0, RocketFuel);
             
+            // 로켓 추진 상태 설정
+            IsRocketThrusting = true;
+            
             // 연료 소진 시 로그
             if (RocketFuel <= 0)
             {
                 Debug.Log($"[{name}] 로켓 연료 소진!");
+                IsRocketThrusting = false;
             }
+        }
+        else
+        {
+            // 로켓 추진 중이 아니면 상태 해제
+            IsRocketThrusting = false;
         }
     }
     
@@ -387,33 +404,5 @@ public class PlayerJump : NetworkBehaviour
         disabledBoxColliders.Clear();
     }
     
-    // 🔍 디버그 정보 표시
-    private void OnGUI()
-    {
-        if (!showDebugInfo || !Object.HasInputAuthority) return;
-        
-        GUILayout.BeginArea(new Rect(10, 510, 300, 150));
-        GUILayout.Box("🦘 점프 상태");
-        GUILayout.Label($"땅에 있음: {groundCheck?.IsGrounded}");
-        GUILayout.Label($"점프 중: {IsJumping}");
-        GUILayout.Label($"점프 시간: {JumpTime:F2}s / {maxJumpTime:F2}s");
-        GUILayout.Label($"점프 횟수: {CurrentJumpCount}/{GetMaxJumpCount()}");
-        GUILayout.Label($"세로 속도: {rb.linearVelocity.y:F1}");
-        GUILayout.Label($"밑점프 중: {isDownJumping}");
-        if (isDownJumping)
-        {
-            GUILayout.Label($"밑점프 타이머: {downJumpTimer:F2}s");
-        }
-        
-        // 패시브 아이템 상태
-        GUILayout.Box("🧩 패시브 아이템");
-        GUILayout.Label($"점프신발: {playerInventory?.hasJumpShoes}");
-        GUILayout.Label($"날개: {playerInventory?.hasWings}");
-        GUILayout.Label($"로켓: {playerInventory?.hasRocket}");
-        if (playerInventory?.hasRocket == true)
-        {
-            GUILayout.Label($"로켓 연료: {RocketFuel:F1}/{maxRocketFuel}");
-        }
-        GUILayout.EndArea();
-    }
+    // 디버그 GUI는 PlayerJumpDebugGUI 컴포넌트에서 처리
 } 

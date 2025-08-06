@@ -20,7 +20,7 @@ public class Sunglasses : NetworkBehaviour, IItemInteraction
         if (!Object.HasStateAuthority) return;
         
         // 자신을 들고 있는 플레이어의 인벤토리 찾기
-        var playerInventory = GetComponentInParent<PlayerInventory>();
+        var playerInventory = transform.parent.parent.GetComponentInChildren<PlayerInventory>();
         if (playerInventory != null)
         {
             // 선글라스 효과 적용 (인벤토리에 패시브 아이템 추가)
@@ -62,9 +62,15 @@ public class Sunglasses : NetworkBehaviour, IItemInteraction
         Debug.Log($"[Sunglasses] {itemName} 해제됨");
     }
     
-    public void ApplyKnockback(Vector2 direction, float force)
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
     {
-        // 패시브 아이템은 넉백 적용 안함
+        if (!HasStateAuthority) return;
+        
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
     }
     
     // 🎯 손에서 제거하는 메서드 (기존 던지기 시스템 활용)

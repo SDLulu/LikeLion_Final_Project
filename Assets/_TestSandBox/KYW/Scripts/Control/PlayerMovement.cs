@@ -10,6 +10,9 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float duckMoveSpeed = 2.5f;
     [Networked] public float NormalizedSpeed { get; private set; }
     
+    [Header("Passive Items - Speed")]
+    [SerializeField] private float speedShoesMultiplier = 1.5f; // 이속신발 배율
+    
     // 🌐 네트워크 동기화 상태
     [Networked] public bool IsDucking { get; private set; }
     [Networked] public bool IsLookingUp { get; private set; }
@@ -20,6 +23,8 @@ public class PlayerMovement : NetworkBehaviour
     private Rigidbody2D rb; // ⚠️ 순간이동 문제의 핵심 원인! 일반 Rigidbody2D 사용 중
     private PlayerClimbing climbing;
     private SpelunkyPlayerController playerController;
+    private PlayerInventory playerInventory;
+    private PlayerWallCheck wallCheck;
 
     public override void Spawned()
     {
@@ -28,6 +33,8 @@ public class PlayerMovement : NetworkBehaviour
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         climbing = GetComponent<PlayerClimbing>();
         playerController = GetComponent<SpelunkyPlayerController>();
+        playerInventory = GetComponentInChildren<PlayerInventory>();
+        wallCheck = GetComponentInChildren<PlayerWallCheck>();
         
         // 필수 컴포넌트 검증
         if (rb == null)
@@ -38,6 +45,10 @@ public class PlayerMovement : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerClimbing 컴포넌트를 찾을 수 없습니다!");
         if (playerController == null)
             Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+        if (playerInventory == null)
+            Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
+        if (wallCheck == null)
+            Debug.LogError($"[{name}] PlayerWallCheck 컴포넌트를 찾을 수 없습니다!");
     }
     
     // 이동 관련 모든 처리를 통합한 메서드
@@ -106,9 +117,32 @@ public class PlayerMovement : NetworkBehaviour
         
         // 🎮 웅크린 상태에 따라 속도 조절
         float currentMoveSpeed = IsDucking ? duckMoveSpeed : moveSpeed;
-        float targetSpeed = input.HorizontalInput * currentMoveSpeed;
         
-        if (input.HorizontalInput != 0)
+        // 이속신발 효과 적용
+        if (playerInventory.hasSpeedShoes)
+        {
+            currentMoveSpeed *= speedShoesMultiplier;
+        }
+        
+        // 벽에 붙어있을 때 해당 방향 입력 무시
+        float adjustedHorizontalInput = input.HorizontalInput;
+        if (wallCheck != null && !groundCheck.IsGrounded)
+        {
+            // 왼쪽 벽에 붙어있고 왼쪽으로 가려고 하면 입력 무시
+            if (wallCheck.IsTouchingWallLeft && input.HorizontalInput < 0)
+            {
+                adjustedHorizontalInput = 0f;
+            }
+            // 오른쪽 벽에 붙어있고 오른쪽으로 가려고 하면 입력 무시
+            else if (wallCheck.IsTouchingWallRight && input.HorizontalInput > 0)
+            {
+                adjustedHorizontalInput = 0f;
+            }
+        }
+        
+        float targetSpeed = adjustedHorizontalInput * currentMoveSpeed;
+        
+        if (adjustedHorizontalInput != 0)
         {
             rb.linearVelocity = new Vector2(targetSpeed, rb.linearVelocity.y);
         }
