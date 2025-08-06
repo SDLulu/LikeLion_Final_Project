@@ -54,16 +54,20 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     {
         Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(worldPos);
 
-        if (tileTrap)
-        {
-            tileRogic.mainTilemap.SetTile(cellPos, null);
-            tileRogic.mainTilemap.RefreshTile(cellPos);
-            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
-        }
-        else
-        {
-            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
-        }
+        //if (tileTrap)
+        //{
+        //    tileRogic.mainTilemap.SetTile(cellPos, null);
+        //    tileRogic.mainTilemap.RefreshTile(cellPos);
+        //    Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+        //}
+            StartCoroutine(DelayedTileItemSpawn(itemIndex, cellPos));
+    }
+
+    private IEnumerator DelayedTileItemSpawn(int itemIndex, Vector3Int cellPos)
+    {
+        yield return new WaitForSeconds(0.05f); // Physics2D 반영을 기다림
+        Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
+        Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
     }
 
 
@@ -71,6 +75,13 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void Rpc_DestroyItem(Vector3 pos)
     {
+        StartCoroutine(DelayedDestroyItem(pos));
+    }
+
+    private IEnumerator DelayedDestroyItem(Vector3 pos)
+    {
+        yield return new WaitForSeconds(0.07f); // Physics2D 반영을 기다림
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.05f);
         foreach (var hit in hits)
         {
@@ -150,30 +161,30 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
         tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        bool isThreeAboveEmpty =
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
-        tileRogic.mainTilemap.GetTile(cellPos) == null;
+        //bool isThreeAboveEmpty =
+        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+        //tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
+        //tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        RPC_DelayedTileSpawn(cellPos, isTileEmpty, isThreeAboveEmpty);
+        RPC_DelayedTileSpawn(cellPos, isTileEmpty);
     }
 
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty, bool isThreeAboveEmpty)
+    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty)
     {
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
         Vector3Int tilePos = tileRogic.mainTilemap.WorldToCell(cellPos);
 
+        //if (isThreeAboveEmpty)
+        //{
+        //    Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+        //}
         if (isTileEmpty)
         {
             RPC_Create_Tile(tilePos);
-        }
-        else if (isThreeAboveEmpty)
-        {
-            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
     }
     #endregion
