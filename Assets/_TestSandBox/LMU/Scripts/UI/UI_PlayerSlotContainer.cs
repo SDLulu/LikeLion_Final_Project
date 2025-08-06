@@ -37,7 +37,7 @@ public class UI_PlayerSlotContainer : MonoBehaviour
              var playerM = FindAnyObjectByType<PlayerManager>();
             if (playerM != null)
             {
-                playerM.AddRenderingAction(UpdateData);
+                playerM.AddPlayerDataAction(UpdateData);
                 break;
             }
             await Awaitable.WaitForSecondsAsync(0.2f);

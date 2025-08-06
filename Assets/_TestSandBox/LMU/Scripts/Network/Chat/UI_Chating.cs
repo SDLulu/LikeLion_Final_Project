@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.InputSystem;
+using Fusion;
 
 public enum E_ChatInputState
 {
@@ -17,11 +18,11 @@ public class UI_Chating : MonoBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private InputField _inputField;
-    [SerializeField] private Button _sendButton;
     [SerializeField] private ScrollRect _chatView;
     [SerializeField] private GameObject _contentPanel;
     [SerializeField] private GameObject _messagePrefab;
     [SerializeField] private InputActionReference _enterAction;
+    [SerializeField] private RectTransform _frameBG;
 
     [Header("채팅창 페이드 설정")]
     [SerializeField] private float _hideChatViewSeconds = 5f;
@@ -30,54 +31,108 @@ public class UI_Chating : MonoBehaviour
     [Header("디버그용")]
     [SerializeField] private string _curChatString;
     public string CurChatString => _curChatString = _inputField?.text;
-
-    /// <summary>
-    /// 전역 채팅 입력 상태
-    /// </summary>
-    public static bool IsAnyChatActive { get; private set; } = false;
-
     private ChatClient _chatClient;
     private List<string> _chatHistories = new List<string>();
     private CanvasGroup _chatViewCanvasGroup;
     private Coroutine _hideChatCoroutine;
 
-    private bool _isDelayNextFrame = false;
+    public static bool IsFocusChat { get; private set; } = false;
 
+    private PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
+
+    private void OnDestroy()
+    {
+        _chatClient = null;
+        _originTicks.Clear();
+        _inputField.onSubmit.RemoveAllListeners();
+    }
+
+    /// <summary>
+    /// Note - 로컬 ChatClient가 네트워크 초기화가 이루어질때 호출
+    /// </summary>
     public void OnInit(ChatClient chatClient)
     {
+        var localNickName = chatClient.GetComponentInParent<PlayerData>().NickName;
+        Debug.Log($"UI_Chating OnInit {localNickName}");
         _chatClient = chatClient;
         _inputField.onSubmit.AddListener((string text) =>
         {
-            _inputField.ActivateInputField();
-            UpdateChat(text);
-            _inputField.text = "";
+            if (_inputField.isFocused && _inputField.text.Length > 0)
+            {
+                SendChat(text);
+                ActiveChat();
+            }
+            else if (_inputField.isFocused && _inputField.text.Length <= 0)
+            {
+                DeactiveChat();
+            }
         });
 
         // 엔터키 입력시 채팅창만 활성화
         _enterAction.action.performed += (ctx) =>
         {
-            _inputField.ActivateInputField();
+            if (_inputField.isFocused == false)
+            {
+                ActiveChat();
+            }
         };
+
+        DeactiveChat();
+        ChatManager.Inst.AddChatAction(UpdateChatHistories);
+        SendChat(localNickName + "님이 입장하셨습니다!", ChatChannel.System);
     }
 
-    public void UpdateChat(string text)
+    public void ActiveChat()
+    {
+        _inputField.text = "";
+        _inputField.ActivateInputField();
+        _frameBG.gameObject.SetActive(true);
+        IsFocusChat = true;
+    }
+
+    public void DeactiveChat()
+    {
+        _inputField.text = "";
+        _inputField.DeactivateInputField();
+        _frameBG.gameObject.SetActive(false);
+        IsFocusChat = false;
+    }
+
+    public void SendChat(string text, ChatChannel channel = ChatChannel.None)
     {
         if (string.IsNullOrWhiteSpace(text))
             return;
 
-        var chatHistory = new ChatHistory()
-        {
-            Sender = default,
-            Message = text,
-            Channel = ChatChannel.All,
-        };
-        CreateMessageUI(chatHistory);
+        _chatClient.SendChatMessage(text, channel);
     }
 
-    private void OnDestroy()
+    private List<Tick> _originTicks = new List<Tick>();
+    public void UpdateChatHistories(ChatHistoryList chatHistories)
     {
-        _chatClient = null;
-        _inputField.onSubmit.RemoveAllListeners();
+        // // 서버의 틱정보가 로컬에 존재하지 않으면 추가
+        // List<Tick> ticks = new();
+        // foreach (var chat in chatHistories.ChatHistories)
+        // {
+        //     if (_originTicks.Contains(chat.TickTime) == false)
+        //         continue;
+        //     ticks.Add(chat.TickTime);
+        // }
+
+        // // 정렬 및 생성
+        // ticks.Sort();
+        // foreach (var t in ticks)
+        // {
+        //     var chat = chatHistories.Get(t);
+        //     CreateMessageUI(chat);
+        // }
+        // _originTicks.AddRange(ticks);
+
+        // // 스크롤을 맨 아래로 이동
+        // Canvas.ForceUpdateCanvases();
+        // _chatView.verticalNormalizedPosition = 0f;
+        // // // 새 메시지가 있으면 채팅창을 보이고 타이머 시작
+        // // ShowChatView();
+        // // HideChatViewAsync();
     }
 
     public void OnSend()
@@ -85,7 +140,7 @@ public class UI_Chating : MonoBehaviour
         if (_inputField == null || string.IsNullOrWhiteSpace(_inputField.text))
             return;
 
-        _chatClient?.SendChatMessage(_inputField.text);
+        //_chatClient?.SendChatMessage(chatHistory);
 
         HideChatViewAsync();
     }
@@ -103,35 +158,6 @@ public class UI_Chating : MonoBehaviour
         return inputText;
     }
 
-    public void UpdateChatHistories(Dictionary<int, ChatHistory> chatHistories)
-    {
-        if (chatHistories == null || _contentPanel == null)
-            return;
-
-        for (int i = _contentPanel.transform.childCount - 1; i >= 0; i--)
-        {
-            DestroyImmediate(_contentPanel.transform.GetChild(i).gameObject);
-        }
-
-        _chatHistories.Clear();
-
-        foreach (var kvp in chatHistories)
-        {
-            CreateMessageUI(kvp.Value);
-            _chatHistories.Add($"Player{kvp.Value.Sender}: {kvp.Value.Message}");
-        }
-
-        // 스크롤을 맨 아래로 이동
-        if (_chatView != null)
-        {
-            Canvas.ForceUpdateCanvases();
-            _chatView.verticalNormalizedPosition = 0f;
-        }
-
-        // 새 메시지가 있으면 채팅창을 보이고 타이머 시작
-        ShowChatView();
-        HideChatViewAsync();
-    }
 
     private void HideChatViewAsync()
     {
@@ -185,26 +211,8 @@ public class UI_Chating : MonoBehaviour
             return;
         }
 
-        string displayText = "";
-
-        switch (chatHistory.Channel)
-        {
-            case ChatChannel.All:
-                displayText = $"[전체] Player{chatHistory.Sender}: {chatHistory.Message}";
-                messageText.color = Color.black;
-                break;
-
-            case ChatChannel.Whisper:
-                displayText = $"[귓속말] Player{chatHistory.Sender} → Player{chatHistory.Receiver}: {chatHistory.Message}";
-                messageText.color = Color.yellow;
-                break;
-
-            case ChatChannel.Mine:
-                displayText = $"[나에게만] Player{chatHistory.Sender}: {chatHistory.Message}";
-                messageText.color = Color.blue;
-                break;
-        }
-
-        messageText.text = displayText;
+        var (inputText, msgColor) = _chatClient.GetMessage(chatHistory);
+        messageText.text = inputText;
+        messageText.color = msgColor;
     }
 }

@@ -168,7 +168,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         }
 
         // 채팅 중일 때 게임 입력 차단
-        if (UI_Chating.IsAnyChatActive)
+        if (UI_Chating.IsFocusChat)
         {
             ResetInput();
             return;

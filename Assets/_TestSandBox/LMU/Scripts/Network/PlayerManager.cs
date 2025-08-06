@@ -18,7 +18,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
 
-    [Networked, Capacity(4), UnitySerializeField]
+    [Networked, Capacity(4), UnitySerializeField, /*OnChangedRender(nameof(OnChangedPlayers)*/]
     public NetworkDictionary<int, PlayerData> Players => default;
 
     public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
@@ -87,7 +87,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         
         // Note - 기획변경으로 더이상 사용하지않음
         var uiController = FindAnyObjectByType<LobbyUI_Manager>();
-        this.AddRenderingAction(uiController.UpdateData);
+        this.AddPlayerDataAction(uiController.UpdateData);
         DontDestroyOnLoad(this.gameObject);
 
         if (Runner.IsServer)
@@ -99,7 +99,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         IsSpawned = false;
-        OnPlayerDataRendered = null;
+        OnPlayerDataChanged = null;
         playerFadingTCS.Clear();
         Players.Clear();
         _alivePlayers.Clear();
@@ -168,16 +168,19 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     }
 
     // --- 데이터 렌더링 액션
-    public Action<NetworkDictionary<int, PlayerData>> OnPlayerDataRendered;
-    public void AddRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public Action<NetworkDictionary<int, PlayerData>> OnPlayerDataChanged;
+    public void AddPlayerDataAction(Action<NetworkDictionary<int, PlayerData>> action)
     {
-        OnPlayerDataRendered += action;
+        OnPlayerDataChanged += action;
     }
-    public void RemoveRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public void RemovePlayerDataAction(Action<NetworkDictionary<int, PlayerData>> action)
     {
-        OnPlayerDataRendered -= action;
+        OnPlayerDataChanged -= action;
     }
-
+    private void OnChangedPlayers()
+    {
+        OnPlayerDataChanged?.Invoke(GetPlayers());
+    }
 
     /// <summary>
     /// 최소인원수 이상이면서 준비여부를 확인하는 함수 
@@ -195,14 +198,6 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         }
         
         return true;
-    }
-
-    public override void Render()
-    {
-        if (Players.Count >= 1)
-        {
-            OnPlayerDataRendered?.Invoke(GetPlayers());
-        }
     }
 
     public override async void FixedUpdateNetwork()
