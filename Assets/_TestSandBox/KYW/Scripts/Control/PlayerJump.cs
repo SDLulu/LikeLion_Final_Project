@@ -11,12 +11,23 @@ public class PlayerJump : NetworkBehaviour
     [SerializeField] private float maxJumpTime = 0.3f;      // 최대 점프 지속 시간
     [SerializeField] private float gravity = 20f;
     [SerializeField] private float maxFallSpeed = 15f;
-    [SerializeField] private bool showDebugInfo = true;     // 디버그 정보 표시
     public float VelocityY { get; private set; }
+    
+    [Header("Passive Items - Jump")]
+    [SerializeField] private float jumpShoesMultiplier = 1.2f; // 점프신발 배율
+    [SerializeField] private int wingsJumpCount = 2; // 날개 점프 횟수
+    
+    [Header("Passive Items - Rocket")]
+    [SerializeField] private float rocketThrust = 25f; // 로켓 추진력 (중력보다 강하게)
+    [SerializeField] private float fuelConsumptionRate = 20f; // 연료 소모율 (초당)
+    [SerializeField] private float maxRocketFuel = 100f; // 최대 연료량
     
     // 🦘 점프 상태 추적
     [Networked] public bool IsJumping { get; private set; }
     [Networked] public float JumpTime { get; private set; }
+    [Networked] public int CurrentJumpCount { get; private set; } // 현재 점프 횟수
+    [Networked] public float RocketFuel { get; private set; } // 로켓 연료량
+    [Networked] public bool IsRocketThrusting { get; private set; } // 로켓 추진 중인지
     
     // 🦘 밑점프 상태 추적 (로컬에서만)
     private bool isDownJumping = false;
@@ -34,6 +45,7 @@ public class PlayerJump : NetworkBehaviour
     private PlayerMovement movement;
     private Rigidbody2D rb;
     private SpelunkyPlayerController playerController;
+    private PlayerInventory playerInventory;
     
     public override void Spawned()
     {
@@ -42,6 +54,7 @@ public class PlayerJump : NetworkBehaviour
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
         movement = GetComponent<PlayerMovement>();
         playerController = GetComponent<SpelunkyPlayerController>();
+        playerInventory = GetComponentInChildren<PlayerInventory>();
         
         // 필수 컴포넌트 검증
         if (rb == null)
@@ -52,6 +65,11 @@ public class PlayerJump : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerMovement 컴포넌트를 찾을 수 없습니다!");
         if (playerController == null)
             Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+        if (playerInventory == null)
+            Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
+        
+        // 로켓 연료 초기화
+        RocketFuel = maxRocketFuel;
     }
     
     // 점프 관련 모든 처리를 통합한 메서드
@@ -64,9 +82,12 @@ public class PlayerJump : NetworkBehaviour
         }
         
         HandleJump(input);
+        HandleRocketThrust(input); // 로켓 추진 처리
         UpdateDownJump();  // 밑점프 타이머 처리
         ApplyGravity();
         ClampVelocity();
+        
+        // 비주얼 효과 업데이트는 PlayerPassiveItemVisual에서 처리
         
         // 수직 속도 업데이트
         VelocityY = rb.linearVelocity.y;
@@ -120,6 +141,19 @@ public class PlayerJump : NetworkBehaviour
         {
             IsJumping = true;
             JumpTime = 0f;
+            CurrentJumpCount = 1; // 첫 번째 점프
+        }
+        
+        // 🎮 공중 점프 (날개가 있을 때)
+        if (pressed.IsSet(SpelunkyInputButtons.Jump) && !groundCheck.IsGrounded && 
+            playerInventory.hasWings && CurrentJumpCount < GetMaxJumpCount())
+        {
+            IsJumping = true;
+            JumpTime = 0f;
+            CurrentJumpCount++;
+            Debug.Log($"[{name}] 공중 점프! ({CurrentJumpCount}/{GetMaxJumpCount()})");
+            
+            // 날개 펄럭임 애니메이션은 PlayerPassiveItemVisual에서 처리
         }
         
         // 일반 점프 중일 때 처리
@@ -131,8 +165,9 @@ public class PlayerJump : NetworkBehaviour
             // 점프키를 누르고 있고, 최대 시간을 넘지 않았으면 일정한 속도로 상승
             if (jumpHeld && JumpTime < maxJumpTime)
             {
-                // 일정한 속도로 상승 (가속 없음)
-                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
+                // 패시브 아이템 효과가 적용된 점프력으로 상승
+                float currentJumpForce = GetJumpForce();
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, currentJumpForce);
             }
             else
             {
@@ -141,11 +176,19 @@ public class PlayerJump : NetworkBehaviour
             }
         }
         
-        // 땅에 닿으면 점프 상태 초기화
+        // 땅에 닿으면 점프 상태 초기화 및 연료 충전
         if (groundCheck.IsGrounded && rb.linearVelocity.y <= 0)
         {
             IsJumping = false;
             JumpTime = 0f;
+            CurrentJumpCount = 0; // 점프 횟수 초기화
+            
+            // 로켓 연료 충전
+            if (playerInventory.hasRocket && RocketFuel < maxRocketFuel)
+            {
+                RocketFuel = maxRocketFuel;
+                Debug.Log($"[{name}] 로켓 연료 충전됨: {RocketFuel}");
+            }
         }
     }
     
@@ -164,6 +207,63 @@ public class PlayerJump : NetworkBehaviour
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
         }
+    }
+    
+    // 🚀 로켓 추진 처리
+    private void HandleRocketThrust(SpelunkyPlayerInputData input)
+    {
+        // 로켓이 없거나 연료가 없으면 처리하지 않음
+        if (!playerInventory.hasRocket || RocketFuel <= 0)
+        {
+            IsRocketThrusting = false;
+            return;
+        }
+        
+        // 점프 중이 아니고 점프키를 누르고 있고, 땅에 있지 않으면 로켓 추진
+        bool jumpHeld = input.NetworkButtons.IsSet(SpelunkyInputButtons.Jump);
+        if (!IsJumping && !groundCheck.IsGrounded && jumpHeld)
+        {
+            // 고정 추진력 적용 (linearVelocity로 직접 속도 설정)
+            float currentVelocityY = rb.linearVelocity.y;
+            float newVelocityY = Mathf.Max(currentVelocityY, rocketThrust);
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, newVelocityY);
+            
+            // 연료 소모
+            RocketFuel -= fuelConsumptionRate * Runner.DeltaTime;
+            RocketFuel = Mathf.Max(0, RocketFuel);
+            
+            // 로켓 추진 상태 설정
+            IsRocketThrusting = true;
+            
+            // 연료 소진 시 로그
+            if (RocketFuel <= 0)
+            {
+                Debug.Log($"[{name}] 로켓 연료 소진!");
+                IsRocketThrusting = false;
+            }
+        }
+        else
+        {
+            // 로켓 추진 중이 아니면 상태 해제
+            IsRocketThrusting = false;
+        }
+    }
+    
+    // 🦘 최대 점프 횟수 계산
+    private int GetMaxJumpCount()
+    {
+        if (playerInventory.hasWings)
+            return wingsJumpCount;
+        return 1; // 기본 점프 횟수
+    }
+    
+    // 🦘 점프력 계산
+    private float GetJumpForce()
+    {
+        float jumpForce = jumpSpeed;
+        if (playerInventory.hasJumpShoes)
+            jumpForce *= jumpShoesMultiplier;
+        return jumpForce;
     }
     
     // 🦘 밑점프 시작
@@ -304,22 +404,5 @@ public class PlayerJump : NetworkBehaviour
         disabledBoxColliders.Clear();
     }
     
-    // 🔍 디버그 정보 표시
-    private void OnGUI()
-    {
-        if (!showDebugInfo || !Object.HasInputAuthority) return;
-        
-        GUILayout.BeginArea(new Rect(10, 510, 300, 100));
-        GUILayout.Box("🦘 점프 상태");
-        GUILayout.Label($"땅에 있음: {groundCheck?.IsGrounded}");
-        GUILayout.Label($"점프 중: {IsJumping}");
-        GUILayout.Label($"점프 시간: {JumpTime:F2}s / {maxJumpTime:F2}s");
-        GUILayout.Label($"세로 속도: {rb.linearVelocity.y:F1}");
-        GUILayout.Label($"밑점프 중: {isDownJumping}");
-        if (isDownJumping)
-        {
-            GUILayout.Label($"밑점프 타이머: {downJumpTimer:F2}s");
-        }
-        GUILayout.EndArea();
-    }
+    // 디버그 GUI는 PlayerJumpDebugGUI 컴포넌트에서 처리
 } 

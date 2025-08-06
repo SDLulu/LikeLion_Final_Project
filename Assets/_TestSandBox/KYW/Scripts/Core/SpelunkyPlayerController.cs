@@ -217,24 +217,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             interaction?.ProcessInput(input);
         }
         
-        // 1번 키 입력 체크 (InputAuthority에서만)
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        if (Object.HasInputAuthority && Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            var inventory = GetComponentInChildren<PlayerInventory>();
-            if (inventory != null)
-            {
-                var held = inventory.CurrentHeldObject;
-                string heldName = held != null ? held.name : "없음";
-                Debug.Log($"[SpelunkyPlayerController] 현재 손에 든 오브젝트: {heldName}");
-            }
-            else
-            {
-                Debug.Log("[SpelunkyPlayerController] PlayerInventory 컴포넌트를 찾을 수 없습니다.");
-            }
-        }
-#endif
-        
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
     }
 
