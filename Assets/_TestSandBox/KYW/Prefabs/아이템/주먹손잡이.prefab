@@ -96,7 +96,8 @@ GameObject:
   - component: {fileID: 7335317480394317469}
   - component: {fileID: 7945472705208556351}
   - component: {fileID: 3597694245438659254}
-  - component: {fileID: 8321275198899851224}
+  - component: {fileID: 4988725899642136857}
+  - component: {fileID: 2372182561793394747}
   m_Layer: 8
   m_Name: "\uC8FC\uBA39\uC190\uC7A1\uC774"
   m_TagString: Untagged
@@ -154,10 +155,37 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 7945472705208556351}
-  - {fileID: 8321275198899851224}
+  - {fileID: 2372182561793394747}
   - {fileID: 5223453545016697367}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &8321275198899851224
+--- !u!50 &4988725899642136857
+Rigidbody2D:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3908651508869614236}
+  m_BodyType: 1
+  m_Simulated: 1
+  m_UseFullKinematicContacts: 0
+  m_UseAutoMass: 0
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_GravityScale: 0
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_Interpolate: 0
+  m_SleepingMode: 1
+  m_CollisionDetection: 0
+  m_Constraints: 4
+--- !u!114 &2372182561793394747
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -166,14 +194,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 3908651508869614236}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Script: {fileID: 11500000, guid: c5e690b5fb1084f5ab1c86457af401d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _stateAuthorityChangeErrorCorrectionDelta: 0.15
   SyncScale: 0
-  SyncParent: 0
-  _autoAOIOverride: 1
-  DisableSharedModeInterpolation: 0
+  SyncParent: 1
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01
 --- !u!1 &6864319371932517130
 GameObject:
   m_ObjectHideFlags: 0
