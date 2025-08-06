@@ -54,6 +54,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private testPlayerInventory inventory;
 
     private PlayerStunInvincibleDie stunInvincibleDie;
+    private PlayerDeathHandler playerDeathHandler;
     
     // 📦 시각적 컴포넌트 참조들 (하위 오브젝트에서 찾기)
     private PlayerAnimation playerAnimation;
@@ -81,6 +82,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         inventory = GetComponent<testPlayerInventory>();
 
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
+        playerDeathHandler = GetComponent<PlayerDeathHandler>();
         interaction = GetComponent<PlayerInteraction>();
         
         // 🎮 상태 관리는 PlayerStunInvincibleDie에서 처리됨
@@ -199,6 +201,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             useItemHeld = Input.GetMouseButton(0);           // 마우스 좌클릭
             interactPressed = Input.GetKey(KeyCode.F);       // F키 (상호작용)
             skillPressed = Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);  // 쉬프트키
+            deathPressed = Input.GetKey(KeyCode.K);          // K키 (테스트용 죽음 트리거)
             pickitem = Input.GetKey(KeyCode.C);
             buyitem = Input.GetKey(KeyCode.X);
             dropitem = Input.GetKey(KeyCode.V);
@@ -263,6 +266,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             data.NetworkButtons.Set(SpelunkyInputButtons.ThrowItem, throwItemPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Interact, interactPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.Skill, skillPressed);
+            data.NetworkButtons.Set(SpelunkyInputButtons.Death, deathPressed);
             data.NetworkButtons.Set(SpelunkyInputButtons.pick, pickitem);
             data.NetworkButtons.Set(SpelunkyInputButtons.buy, buyitem);
             data.NetworkButtons.Set(SpelunkyInputButtons.drop, dropitem);
@@ -273,12 +277,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     }
     
     // 🎮 상태 확인 헬퍼 프로퍼티들
-    public bool IsDead => stunInvincibleDie?.IsDead ?? false;
+    public bool IsDead => playerDeathHandler?.IsDead ?? false;
     public bool IsStunned => stunInvincibleDie?.IsStunned ?? false;
     public bool IsInvincible => stunInvincibleDie?.IsInvincible ?? false;
     public bool IsHeld => stunInvincibleDie?.IsHeld ?? false;
     public bool IsThrown => stunInvincibleDie?.IsThrown ?? false;
-    public bool IsNormal => !(stunInvincibleDie?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
+    public bool IsNormal => !(playerDeathHandler?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
     
     // 🎯 들린 상태에서 탈출 처리 (던지기와 동일한 로직)
     private void EscapeFromBeingHeld()

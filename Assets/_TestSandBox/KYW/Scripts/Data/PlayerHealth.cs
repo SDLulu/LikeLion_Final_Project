@@ -10,12 +10,12 @@ public class PlayerHealth : NetworkBehaviour
     public int MaxHealth => 4;
 
     // PlayerState 변경을 위한 상태 관리자 참조
-    private PlayerStunInvincibleDie stunInvincible;
+    private PlayerDeathHandler playerDeathHandler;
 
     public override void Spawned()
     {
         base.Spawned();
-        stunInvincible = GetComponentInParent<PlayerStunInvincibleDie>();
+        playerDeathHandler = GetComponentInParent<PlayerDeathHandler>();
     }
 
     // 데미지 처리
@@ -47,9 +47,9 @@ public class PlayerHealth : NetworkBehaviour
     private void OnDeath()
     {
         Debug.Log("[PlayerHealth] Player died!");
-        if (stunInvincible != null)
+        if (playerDeathHandler != null)
         {
-            stunInvincible.Die();
+            playerDeathHandler.Die();
         }
     }
 } 
