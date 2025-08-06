@@ -33,6 +33,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     {
         UIEnterOnline.gameObject.SetActive(true);
         UILobby.gameObject.SetActive(false);
+        UIChatting.gameObject.SetActive(false);
         if (showTitleTween)
             UITitle.Show();
     }

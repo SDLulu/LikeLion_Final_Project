@@ -61,6 +61,24 @@ public class UI_EnterOnline : MonoBehaviour
         // );
     }
 
+    /// <summary>
+    /// 풀백용 함수 진입함수
+    /// </summary>
+    public async Awaitable FallbackRun()
+    {
+        string roomName = "TestRoom" + Random.Range(1000, 9999);
+        preventPanel.gameObject.SetActive(true);
+        await LobbyManager.Inst.JoinOrCreateLobby(
+            mode: GameMode.AutoHostOrClient,
+            roomName: roomName,
+            OnEnterLobby: () =>
+            {
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+                preventPanel.gameObject.SetActive(false);
+            }
+        );
+    }
+
     public async Awaitable RunFastMode()
     {
         preventPanel.gameObject.SetActive(true);

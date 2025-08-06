@@ -57,7 +57,7 @@ public class HostDisconnectHandler : MonoBehaviour
     {
         try
         {
-            Debug.Log("ShotDown_AtServerInRoom");
+            await LobbyUI_Manager.Inst.UIEnterOnline.FallbackRun();
             await Awaitable.NextFrameAsync();
         }
         catch (System.Exception e)
@@ -65,8 +65,4 @@ public class HostDisconnectHandler : MonoBehaviour
             Debug.LogError($"ShotDown_AtServerInRoom 오류: {e.Message}");
         }
     }
-
-
-
-
 }

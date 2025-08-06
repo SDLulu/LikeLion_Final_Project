@@ -131,7 +131,7 @@ public class LobbyManager : BaseManager<LobbyManager>
                 return;
             }
 
-
+            LocalPlayer = netRunner.LocalPlayer;
             localGameMode = mode;
             localRoomName = roomName;
 
@@ -154,6 +154,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
+            LocalPlayer = default;
             await Fader.Inst.WideFadeOutAsync(1.5f);
 
             var runner = LobbyManager.Inst.NetRunner;
