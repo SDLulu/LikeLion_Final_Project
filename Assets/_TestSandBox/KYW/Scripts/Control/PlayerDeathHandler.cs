@@ -8,19 +8,19 @@ using Unity.Cinemachine;
 public class PlayerDeathHandler : NetworkBehaviour
 {
     [Header("💀 죽음 처리 설정")]
-    [SerializeField] private Vector3 deathPosition = new Vector3(0, 10, 0); // 플레이어가 이동할 죽음 위치
-    [SerializeField] private NetworkPrefabRef corpsePrefabRef = NetworkPrefabRef.Empty; // 시체 프리팹 참조
-    [SerializeField] private NetworkPrefabRef ghostPrefabRef = NetworkPrefabRef.Empty; // 유령 프리팹 참조
+    [SerializeField] public Vector3 deathPosition = new Vector3(0, 10, 0); // 플레이어가 이동할 죽음 위치
+    [SerializeField] public NetworkPrefabRef corpsePrefabRef = NetworkPrefabRef.Empty; // 시체 프리팹 참조
+    [SerializeField] public NetworkPrefabRef ghostPrefabRef = NetworkPrefabRef.Empty; // 유령 프리팹 참조
     
     [Header("💰 아이템 드롭 설정")]
-    [SerializeField] private float dropForce = 5f; // 아이템 드롭 시 힘
-    [SerializeField] private float dropRadius = 2f; // 드롭 반경
+    [SerializeField] public float dropForce = 5f; // 아이템 드롭 시 힘
+    [SerializeField] public float dropRadius = 2f; // 드롭 반경
     
     // 💀 죽음 처리 관련 변수들
     [Networked] public bool IsDead { get; private set; } // 죽음 상태
-    [Networked] private Vector3 DeathSpawnPosition { get; set; } // 시체/유령이 스폰될 원래 위치
-    [Networked] private bool HasSpawnedDeathObjects { get; set; } // 죽음 오브젝트 스폰 여부
-    [Networked] private NetworkObject GhostObject { get; set; } // 스폰된 유령 오브젝트 참조
+    [Networked] public Vector3 DeathSpawnPosition { get; set; } // 시체/유령이 스폰될 원래 위치
+    [Networked] public bool HasSpawnedDeathObjects { get; set; } // 죽음 오브젝트 스폰 여부
+    [Networked] public NetworkObject GhostObject { get; set; } // 스폰된 유령 오브젝트 참조
     
     // 📎 참조할 다른 컴포넌트들
     private PlayerInventory playerInventory;
@@ -30,7 +30,7 @@ public class PlayerDeathHandler : NetworkBehaviour
     public override void Spawned()
     {
         // 컴포넌트 참조 찾기
-        playerInventory = GetComponent<PlayerInventory>();
+        playerInventory = GetComponentInChildren<PlayerInventory>();
         playerThrower = GetComponentInChildren<PlayerObjectThrower>();
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         

@@ -1,7 +1,6 @@
 using UnityEngine;
 using Fusion;
 
-// 총알 생명주기 관리 - 최상위 부모에만 부착
 public class Bullets : NetworkBehaviour
 {
     [Header("Bullet Settings")]
