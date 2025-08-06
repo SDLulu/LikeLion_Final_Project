@@ -28,7 +28,8 @@ public class EnemyChaseState : EnemyStateBase
         }
 
         //타겟이 공격사정거리 안에 들어왔다면
-        if (Vector2.Distance(fsmRef.EnemyNetworkBehaviour.transform.position, fsmRef.EnemyNetworkBehaviour.TargetPlayer.transform.position) < fsmRef.EnemyNetworkBehaviour.enemyData.attackRange)
+        if (Vector2.Distance(fsmRef.EnemyNetworkBehaviour.transform.position, fsmRef.EnemyNetworkBehaviour.TargetPlayer.transform.position) < fsmRef.EnemyNetworkBehaviour.enemyData.attackRange
+        && fsmRef.EnemyNetworkBehaviour.AttackCooldownTimer.ExpiredOrNotRunning(Runner))
         {
             fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Attack;
             fsmRef.StateMachine.ForceActivateState<EnemyAttackState>();
