@@ -12,6 +12,9 @@ public class PlayerInteraction : NetworkBehaviour
     [SerializeField] private float interactionRange = 2f;          // 🔍 상호작용 범위
     [SerializeField] private bool showDebugInfo = true;            // 🔍 디버그 정보 표시
     
+    // 디버그용 public 프로퍼티
+    public float InteractionRange { get { return interactionRange; } }
+    
     // 🌐 네트워크 동기화 변수들
     [Networked] public NetworkButtons ButtonsPrevious { get; set; }  // 🎮 이전 프레임 버튼 상태
     
@@ -68,7 +71,7 @@ public class PlayerInteraction : NetworkBehaviour
     // 🎯 상호작용 실행
     private void InteractWithObject(GameObject interactable)
     {
-        // IInteractable 인터페이스를 구현한 컴포넌트 찾기
+        // IInteractable 인터페이스를 구현한 컴포넌트 찾기 여기에 이거대신 스크립트 연결해주면댐댐
         var interactableComponent = interactable.GetComponent<IInteractable>();
         if (interactableComponent != null)
         {
@@ -83,7 +86,7 @@ public class PlayerInteraction : NetworkBehaviour
     }
     
     // 🔍 가장 가까운 상호작용 가능한 오브젝트 찾기
-    private GameObject FindNearestInteractable()
+    public GameObject FindNearestInteractable()
     {
         GameObject nearest = null;
         float nearestDistance = float.MaxValue;
@@ -108,27 +111,8 @@ public class PlayerInteraction : NetworkBehaviour
         return nearest;
     }
     
-    // 🔍 디버그 정보 표시
-    private void OnGUI()
-    {
-        if (!showDebugInfo || !Object.HasInputAuthority) return;
-        
-        GUILayout.BeginArea(new Rect(10, 620, 300, 80));
-        GUILayout.Box("🎯 상호작용 상태");
-        GUILayout.Label($"상호작용 범위: {interactionRange}");
-        
-        var nearest = FindNearestInteractable();
-        if (nearest != null)
-        {
-            float distance = Vector2.Distance(playerTransform.position, nearest.transform.position);
-            GUILayout.Label($"가장 가까운 대상: {nearest.name} ({distance:F1}m)");
-        }
-        else
-        {
-            GUILayout.Label("상호작용 가능한 대상 없음");
-        }
-        GUILayout.EndArea();
-    }
+    // 🔍 디버그 정보 표시 (PlayerDebugManager로 통합됨)
+    // private void OnGUI() 메서드 제거됨
     
     // 🔍 디버그용 기즈모 표시
     private void OnDrawGizmosSelected()
