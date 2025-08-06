@@ -11,6 +11,8 @@ public class PlayerDebugManager : NetworkBehaviour
     [SerializeField] private bool showJumpInfo = true;
     [SerializeField] private bool showClimbingInfo = true;
     [SerializeField] private bool showAnimationInfo = true;
+    [SerializeField] private bool showPassiveItemInfo = true;
+    [SerializeField] private bool showInteractionInfo = true;
     
     // 참조 컴포넌트들
     private PlayerObjectPickup itemPickup;
@@ -18,10 +20,12 @@ public class PlayerDebugManager : NetworkBehaviour
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerGroundCheck groundCheck;
+    private PlayerWallCheck wallCheck;
     private PlayerClimbing climbing;
     private PlayerLadderCheck ladderCheck;
     private PlayerAnimation playerAnimation;
     private PlayerInventory inventory; // 인벤토리 참조 추가
+    private PlayerInteraction playerInteraction; // 상호작용 참조 추가
     
     private void Awake()
     {
@@ -50,8 +54,10 @@ public class PlayerDebugManager : NetworkBehaviour
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         groundCheck = GetComponentInChildren<PlayerGroundCheck>();
+        wallCheck = GetComponentInChildren<PlayerWallCheck>();
         climbing = GetComponent<PlayerClimbing>();
         ladderCheck = GetComponentInChildren<PlayerLadderCheck>();
+        playerInteraction = GetComponent<PlayerInteraction>();
     }
     
     private void OnGUI()
@@ -81,6 +87,16 @@ public class PlayerDebugManager : NetworkBehaviour
         if (showAnimationInfo)
         {
             DrawAnimationDebugInfo();
+        }
+        
+        if (showPassiveItemInfo)
+        {
+            DrawPassiveItemDebugInfo();
+        }
+        
+        if (showInteractionInfo)
+        {
+            DrawInteractionDebugInfo();
         }
     }
     
@@ -115,11 +131,13 @@ public class PlayerDebugManager : NetworkBehaviour
     {
         if (movement == null) return;
         
-        GUILayout.BeginArea(new Rect(10, 400, 300, 100));
+        GUILayout.BeginArea(new Rect(10, 400, 300, 120));
         GUILayout.Box("🏃 이동 상태");
         GUILayout.Label($"속도: {movement.NormalizedSpeed:F2}");
         GUILayout.Label($"웅크리기: {(movement.IsDucking ? "예" : "아니오")}");
         GUILayout.Label($"방향: {(movement.IsFacingLeft ? "왼쪽" : "오른쪽")}");
+        GUILayout.Label($"왼쪽벽: {(wallCheck?.IsTouchingWallLeft == true ? "붙음" : "없음")}");
+        GUILayout.Label($"오른쪽벽: {(wallCheck?.IsTouchingWallRight == true ? "붙음" : "없음")}");
         GUILayout.EndArea();
     }
     
@@ -127,11 +145,12 @@ public class PlayerDebugManager : NetworkBehaviour
     {
         if (jump == null) return;
         
-        GUILayout.BeginArea(new Rect(10, 510, 300, 100));
+        GUILayout.BeginArea(new Rect(10, 510, 300, 120));
         GUILayout.Box("🦘 점프 상태");
         GUILayout.Label($"땅에 있음: {groundCheck?.IsGrounded}");
         GUILayout.Label($"점프 중: {jump.IsJumping}");
         GUILayout.Label($"점프 시간: {jump.JumpTime:F2}s");
+        GUILayout.Label($"점프 횟수: {jump.CurrentJumpCount}");
         GUILayout.Label($"수직 속도: {jump.VelocityY:F1}");
         GUILayout.EndArea();
     }
@@ -157,6 +176,54 @@ public class PlayerDebugManager : NetworkBehaviour
         GUILayout.Label($"속도: {movement?.NormalizedSpeed:F2}");
         GUILayout.Label($"수직속도: {jump?.VelocityY:F2}");
         GUILayout.Label($"상태: {(groundCheck?.IsGrounded == true ? "지상" : "공중")}");
+        GUILayout.EndArea();
+    }
+    
+    private void DrawPassiveItemDebugInfo()
+    {
+        if (inventory == null || jump == null) return;
+        
+        GUILayout.BeginArea(new Rect(10, 870, 300, 140));
+        GUILayout.Box("🧩 패시브 아이템");
+        GUILayout.Label($"점프신발: {inventory.hasJumpShoes}");
+        GUILayout.Label($"이속신발: {inventory.hasSpeedShoes}");
+        GUILayout.Label($"날개: {inventory.hasWings}");
+        GUILayout.Label($"로켓: {inventory.hasRocket}");
+        
+        if (inventory.hasRocket)
+        {
+            GUILayout.Label($"로켓 연료: {jump.RocketFuel:F1}");
+            GUILayout.Label($"로켓 추진 중: {jump.IsRocketThrusting}");
+        }
+        
+        if (inventory.hasWings)
+        {
+            GUILayout.Label($"최대 점프 횟수: {jump.CurrentJumpCount}");
+        }
+        GUILayout.EndArea();
+    }
+    
+    private void DrawInteractionDebugInfo()
+    {
+        if (playerInteraction == null) return;
+        
+        GUILayout.BeginArea(new Rect(10, 1020, 300, 80));
+        GUILayout.Box("🎯 상호작용 상태");
+        
+        // 상호작용 범위 정보
+        GUILayout.Label($"상호작용 범위: {playerInteraction.InteractionRange:F1}");
+        
+        // 가장 가까운 상호작용 가능한 오브젝트 찾기
+        var nearest = playerInteraction.FindNearestInteractable();
+        if (nearest != null)
+        {
+            float distance = Vector2.Distance(transform.position, nearest.transform.position);
+            GUILayout.Label($"가장 가까운 대상: {nearest.name} ({distance:F1}m)");
+        }
+        else
+        {
+            GUILayout.Label("상호작용 가능한 대상 없음");
+        }
         GUILayout.EndArea();
     }
 } 
