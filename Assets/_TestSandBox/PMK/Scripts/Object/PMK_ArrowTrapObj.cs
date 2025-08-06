@@ -47,7 +47,7 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
             RotateInDirection();
 
             // 공격 콜라이더 활성화
-            if (rb.linearVelocity.sqrMagnitude > 5 * 5)
+            if (rb.linearVelocity.sqrMagnitude > 8 * 8)
             {
                 attackCollider.enabled = true;
             }
@@ -64,12 +64,9 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectRadius, playerLayerMask);
         if (hit != null)
         {
-            Debug.Log($"[ArrowTrap] Overlap 감지됨: {hit.gameObject.name}");
-
             if (hit.gameObject.layer == LayerMask.NameToLayer("Player") && rb.linearVelocity.sqrMagnitude > groundedVelocityThreshold * groundedVelocityThreshold)
             {
                 rb.linearVelocity = Vector2.zero;
-                Debug.Log("피격됨");
             }
             else if (hit.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
