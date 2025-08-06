@@ -47,7 +47,7 @@ public class PMK_TileZoneSpawner : MonoBehaviour
         {
             Vector2 pos = transform.position;
             Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
-            tileRPCManager.RPC_DelayedTileSpawn(cellPos);
+            tileRPCManager.DelayedTileSpawnBool(cellPos);
         }
         Destroy(gameObject);
     }

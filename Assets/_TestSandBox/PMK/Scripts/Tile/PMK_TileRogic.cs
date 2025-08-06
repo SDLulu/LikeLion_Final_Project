@@ -36,7 +36,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     [Header("맵 프리팹 설정")]
-    [SerializeField] private MapPrefabSet[] mapPrefabSets;
+    public List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
     private Dictionary<string, GameObject[]> mapPrefabDict;
 
 
@@ -48,6 +48,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [Header("TileZoneSpawner 설정")]
     [field: SerializeField] public TileBase ruleTile { get; private set; }// 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
     [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
+
+
+    [Header("PMK_ArrowTrap 설정")]
+    [field: SerializeField] public NetworkObject launchTrapPrefab { get; private set; } // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
 
 
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
@@ -68,6 +72,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
         {
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
+
+        LoadMapPrefabsAutomatically();
     }
 
     public bool IsStageTestNetwork = false;
@@ -102,9 +108,47 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
+    private void LoadMapPrefabsAutomatically()
+    {
+        // 모든 맵 프리팹 불러오기
+        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps");
 
-    #region 맵 초기화 및 재생성
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+        Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
+
+        foreach (var prefab in loadedPrefabs)
+        {
+            // 파일명에서 맵 타입 추출 (예: Map_C_1 → C)
+            string[] parts = prefab.name.Split('_');
+            if (parts.Length >= 2)
+            {
+                string type = parts[1];
+
+                if (!tempMap.ContainsKey(type))
+                    tempMap[type] = new List<GameObject>();
+
+                tempMap[type].Add(prefab);
+            }
+        }
+
+        // mapPrefabSets 초기화
+        mapPrefabSets.Clear();
+
+        foreach (var kvp in tempMap)
+        {
+            mapPrefabSets.Add(new MapPrefabSet
+            {
+                mapType = kvp.Key,
+                prefabs = kvp.Value.ToArray()
+            });
+        }
+
+        // Dictionary로도 구성
+        mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
+
+#region 맵 초기화 및 재생성
+[Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_ResetMap()
     {
         ResetMap();
@@ -159,7 +203,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
+            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : randomIndex;
 
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
@@ -234,37 +278,47 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 타일에 아이템 생성
-    // 호스트가 타일 랜덤값을 적용후 공유함
     public void Create_TileItem(Vector3Int targetPos)
     {
         if (!HasStateAuthority) return;
 
         if (Random.Range(0, 100) > itemSpawnChance) return;
 
-        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos); // 타일의 월드 좌표로 변환
+        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos);
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f); // 타일 위치에 있는 모든 콜라이더를 가져옴
-        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item")); // 아이템 레이어에 해당하는지 확인
+        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f);
+        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item"));
 
-        if (!hasSameTag)
+        if (hasSameTag) return;
+
+        int totalChance = tileItems.Sum(t => t.spawnChance);
+        int roll = Random.Range(0, totalChance);
+        int current = 0;
+
+        int selectedIndex = -1;
+
+        for (int i = 0; i < tileItems.Count; i++)
         {
-            int totalChance = tileItems.Sum(t => t.spawnChance);
-            int roll = Random.Range(0, totalChance);
-            int current = 0;
-
-            foreach (var item in tileItems)
+            current += tileItems[i].spawnChance;
+            if (roll < current)
             {
-                current += item.spawnChance;
-                if (roll < current)
-                {
-                    int index = tileItems.IndexOf(item);
-                    tileRPCManager.RPC_Create_TileItem(index, worldPos);
-                    break;
-                }
+                selectedIndex = i;
+                break;
             }
         }
 
+        Vector3Int cellPos = mainTilemap.WorldToCell(worldPos);
+        bool isSurrounded =
+            mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.right) != null;
+
+        bool spawnTrap = isSurrounded && Random.Range(0, 100) < 25;
+
+        tileRPCManager.RPC_Create_TileItem(selectedIndex, worldPos, spawnTrap);
     }
+
     #endregion
 
 
