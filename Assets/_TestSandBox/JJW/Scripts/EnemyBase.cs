@@ -49,7 +49,6 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             CurrentHealth = enemyData.maxHp;
             IsFacingRight = true;
             CurrentState = EnemyStateName.Idle;
-            fsm.StateMachine.ForceActivateState<EnemyIdleState>();
         }
     }
 
@@ -68,11 +67,8 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             return;
         }
 
+        UpdateTarget();
 
-        if (TargetPlayer == null)
-        {
-            CheckForPlayer();
-        }
         switch (CurrentState)
         {
             case EnemyStateName.Idle:
@@ -179,7 +175,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
 
     protected virtual void UpdateAttackState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, 0);
+        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
     }
     protected virtual void UpdateHitReactState()
     {
@@ -227,18 +223,36 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     }
 
     //매 틱마다 주변에 플레이어가 있는지 탐색
-    private void CheckForPlayer()
+    private void UpdateTarget()
     {
-        Collider2D hitCollider = Runner.GetPhysicsScene2D().OverlapCircle(transform.position, enemyData.searchDistance, enemyData.PlayerLayer);
+         Collider2D[] hitColliders = new Collider2D[5];
+        int hitCounts = Runner.GetPhysicsScene2D().OverlapCircle(transform.position, enemyData.searchDistance, hitColliders, enemyData.PlayerLayer);
 
-        if (hitCollider != null)
+        SpelunkyPlayerController closestPlayer = null;
+        float closestDistanceSqr = float.MaxValue;
+        if (hitCounts > 0)
         {
-            TargetPlayer = hitCollider.gameObject.GetComponent<SpelunkyPlayerController>();
+            // 감지된 모든 플레이어에 대해 반복
+            for(int i = 0; i < hitCounts; i++)
+            {
+                SpelunkyPlayerController player = hitColliders[i].GetComponent<SpelunkyPlayerController>();
+                if (player != null)
+                {
+                    // 몬스터와 플레이어 사이의 거리 제곱을 계산
+                    float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+
+                    // 더 가까운 플레이어를 찾으면, closestPlayer를 업데이트
+                    if (distanceSqr < closestDistanceSqr)
+                    {
+                        closestDistanceSqr = distanceSqr;
+                        closestPlayer = player;
+                    }
+                }
+            }
         }
-        else
-        {
-            TargetPlayer = null;
-        }
+
+        // 가장 가까운 플레이어를 최종 타겟으로 설정합니다.
+        TargetPlayer = closestPlayer;
     }
     public void DealDamage()
     {
@@ -276,10 +290,10 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
 
     protected virtual void OnDrawGizmos()
     {
-        if (attackCheck == null) return;
         Gizmos.color = Color.red;
         Gizmos.DrawLine(groundCheck.position, new Vector3(groundCheck.position.x, groundCheck.position.y - groundCheckDistance));
         Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y));
+        if (attackCheck == null) return;
         Gizmos.DrawWireSphere(attackCheck.position, attackCheckRadius);
     }
 }    
