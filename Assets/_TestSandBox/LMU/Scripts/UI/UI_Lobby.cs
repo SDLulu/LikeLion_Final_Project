@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Fusion;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,7 +16,7 @@ public class UI_Lobby : MonoBehaviour
     [SerializeField] private RectTransform _soloPanel;
     [SerializeField] private List<Button> _backButtons;
     [SerializeField] private Button _soloPlayBtn;
-    [SerializeField] private UI_CharacterSlotContainer _characterSlotContainer;
+    // [SerializeField] private UI_CharacterSlotContainer _characterSlotContainer;
     
     [Header("디버그용")]
     [SerializeField] private E_LobbyType _lobbyType;
@@ -68,8 +69,8 @@ public class UI_Lobby : MonoBehaviour
         this.gameObject.SetActive(false);
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
+    public void UpdateData(Fusion.NetworkDictionary<PlayerRef, PlayerData> players)
     {
-        _characterSlotContainer?.UpdateData(players);
+        // _characterSlotContainer?.UpdateData(players);
     }
 }

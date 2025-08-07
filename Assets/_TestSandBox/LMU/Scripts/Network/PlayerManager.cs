@@ -11,20 +11,18 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
     
-
     [Header("디버그용")]
     [SerializeField] private int minPlayersToStart = 2;
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
 
-    [Networked, Capacity(4), UnitySerializeField, /*OnChangedRender(nameof(OnChangedPlayers)*/]
-    public NetworkDictionary<int, PlayerData> Players => default;
+    [Networked, Capacity(4)]
+    public NetworkDictionary<PlayerRef, PlayerData> Players => default;
 
-    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
-
+    public Dictionary<PlayerRef, Action> OnPlayerDataChangedActions = new();
     public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
-
+    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
     public bool IsSpawned {get; set;}
     public async Awaitable<bool> IsPollingSpawned()
     {
@@ -48,7 +46,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     }
 
 
-    public NetworkDictionary<int, PlayerData> GetPlayers()
+    public NetworkDictionary<PlayerRef, PlayerData> GetPlayers()
     {
         foreach (var player in Players)
         {
@@ -58,6 +56,16 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             }
         }
         return Players;
+    }
+
+    public List<InputBlocker> GetPlayerInputBlockers()
+    {
+        var list = new List<InputBlocker>();
+        foreach (var player in Players)
+        {
+            list.Add(player.Value.GetComponent<InputBlocker>());
+        }
+        return list;
     }
 
     private List<PlayerData> _alivePlayers = new();
@@ -75,7 +83,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
 
     public bool IsValidPlayer(PlayerRef player)
     {
-        if (Players.ContainsKey(player.AsIndex))
+        if (Players.ContainsKey(player))
             return true;
         return false;
     }
@@ -86,8 +94,10 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         IsSpawned = true;
         
         // Note - 기획변경으로 더이상 사용하지않음
-        var uiController = FindAnyObjectByType<LobbyUI_Manager>();
-        this.AddPlayerDataAction(uiController.UpdateData);
+        // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
+        // this.AddPlayerDataAction(uiController.UpdateData);
+        // OnChangedPlayers();
+
         DontDestroyOnLoad(this.gameObject);
 
         if (Runner.IsServer)
@@ -100,7 +110,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     {
         IsSpawned = false;
         OnPlayerDataChanged = null;
-        playerFadingTCS.Clear();
+        playerFadingTCS.Clear();    
         Players.Clear();
         _alivePlayers.Clear();
     }
@@ -123,17 +133,18 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             Debug.LogError("플레이어를 추가하는데 실패했습니다. 플레이어가 존재하지 않습니다.");
             return;
         }
-
+        
         foreach (var tempPlayer in tempPlayers)
         {
+            
             if (tempPlayer.Object.InputAuthority == player)
             {
-                Players.Add(tempPlayer.Object.InputAuthority.AsIndex, tempPlayer);
+                Players.Add(player, tempPlayer);
                 return;
             }
         }
 
-        Debug.LogError("플레이어를 추가하는데 실패했습니다.");
+        Debug.LogError($"플레이어를 추가하는데 실패했습니다. 요청된 PlayerRef {player}와 일치하는 InputAuthority를 찾을 수 없습니다.");
     }
 
     public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()
@@ -156,7 +167,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
 
         foreach (var tempPlayer in Players)
         {
-            if (tempPlayer.Key == player.AsIndex)
+            if (tempPlayer.Key == player)
             {
                 Players.Remove(tempPlayer.Key);
                 return (tempPlayer.Value.Object.InputAuthority, tempPlayer.Value.Object);
@@ -168,18 +179,23 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     }
 
     // --- 데이터 렌더링 액션
-    public Action<NetworkDictionary<int, PlayerData>> OnPlayerDataChanged;
-    public void AddPlayerDataAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public Action<NetworkDictionary<PlayerRef, PlayerData>> OnPlayerDataChanged;
+    public void AddPlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
     {
         OnPlayerDataChanged += action;
     }
-    public void RemovePlayerDataAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public void RemovePlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
     {
         OnPlayerDataChanged -= action;
     }
     private void OnChangedPlayers()
     {
         OnPlayerDataChanged?.Invoke(GetPlayers());
+    }
+
+    public override void Render()
+    {
+        OnChangedPlayers();
     }
 
     /// <summary>
@@ -346,11 +362,11 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     /// <summary>
     /// 플레이어 데이터 가져오기
     /// </summary>
-    private PlayerData GetPlayerData(PlayerRef player)
+    public PlayerData GetPlayerData(PlayerRef player)
     {
-        if (Players.ContainsKey(player.AsIndex))
+        if (Players.ContainsKey(player))
         {
-            return Players[player.AsIndex];
+            return Players[player];
         }
         return null;
     }

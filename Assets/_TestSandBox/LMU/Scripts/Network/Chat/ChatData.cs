@@ -23,8 +23,8 @@ public struct ChatHistoryList : INetworkStruct
     {
         foreach (var chat in ChatHistories)
         {
-            // if (chat.Tick == tick)
-            //     return chat;
+            if (chat.TickTime == tick)
+                return chat;
         }
         return default;
     }
@@ -42,11 +42,11 @@ public struct ChatHistoryList : INetworkStruct
 
 public struct ChatHistory : INetworkStruct
 {
-    public ChatChannel Channel { get; set; }
+    [UnitySerializeField] public ChatChannel Channel { get; set; }
     public PlayerRef Sender { get; set; }
     public PlayerRef Receiver { get; set; }
-    public NetworkString<_32> Message { get; set; }
-    public int TickTime { get; set; }
+    [UnitySerializeField] public NetworkString<_32> Message { get; set; }
+    [UnitySerializeField] public int TickTime { get; set; }
 
     public ChatHistory(ChatChannel channel, PlayerRef sender, PlayerRef receiver, string message)
     {

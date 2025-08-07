@@ -16,6 +16,8 @@ public class LobbyManager : BaseManager<LobbyManager>
 
     public Func<Awaitable> OnEnterLobbyAction { get; set; }
     private byte[] connectionToken;
+    private bool _isCancel = false;
+
     protected override void Awake()
     {
         connectionToken = ConnectionTokens.NewToken();
@@ -64,6 +66,7 @@ public class LobbyManager : BaseManager<LobbyManager>
         return runner;
     }
 
+
     /// <summary>
     /// 게임 시작
     /// </summary>
@@ -91,21 +94,36 @@ public class LobbyManager : BaseManager<LobbyManager>
         return ret;
     }
 
-    [field: SerializeField] public bool IsSoloPlay {get; private set;}
+    [field: SerializeField] public bool IsSoloPlay { get; private set; }
 
+    private async Awaitable<bool> CheckCancleGame(Action OnCancel = default)
+    {
+        if (_isCancel)
+        {
+            await Fader.Inst.HideLoadingAsync();
+            OnCancel?.Invoke();
+            await LeaveGame(isShowWideFade: false);
+            return true;
+        }
+
+        return false;
+    }
     /// <summary>
     /// 로비 입장
     /// </summary>
     /// <param name="OnEnterLobby"> 네트워크 접속의 성공, 실패 여부와는 무관하게 실행되는 델리게이트 </param>
     public async Awaitable JoinOrCreateLobby(bool isSoloPlay = false, GameMode mode = GameMode.AutoHostOrClient,
                                             string roomName = "TestRoom",
-                                            Action OnEnterLobby = default)
+                                            Action OnEnterLobby = default,
+                                            Action OnCancel = default)
     {
         try
         {
+            _isCancel = false;
             IsSoloPlay = isSoloPlay;
-            
-            await Fader.Inst.ShowLoadingAsync();
+
+            await Fader.Inst.ShowLoadingAsync(() => _isCancel = true);
+
             if (NetRunner == null)
             {
                 Debug.LogError("네트워크 러너가 존재하지 않습니다.");
@@ -114,10 +132,15 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             NetRunner.AddCallbacks(NetworkEventSystem.Inst);
             NetRunner.ProvideInput = true;
-            
-            // 게임시작결과에 따른 처리
+            if (await CheckCancleGame(OnCancel))
+                return;
+
             var startGameResult = await StartGameAsync(NetRunner, mode, roomName, this.connectionToken);
+            if (await CheckCancleGame(OnCancel))
+                return;
             await Fader.Inst.HideLoadingAsync();
+
+            // 게임시작결과에 따른 처리
             if (startGameResult.Ok)
             {
                 await Fader.Inst.WideFadeOutAsync();
@@ -150,19 +173,21 @@ public class LobbyManager : BaseManager<LobbyManager>
     /// <summary>
     /// 게임 종료 / 로비이동
     /// </summary>
-    public async Awaitable LeaveGame()
+    public async Awaitable LeaveGame(bool isShowWideFade = true)
     {
         try
         {
             LocalPlayer = default;
-            await Fader.Inst.WideFadeOutAsync(1.5f);
+            if (isShowWideFade)
+                await Fader.Inst.WideFadeOutAsync(1.5f);
 
             var runner = LobbyManager.Inst.NetRunner;
             if (runner == null || runner.IsRunning == false)
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
                 LobbyUI_Manager.Inst.ActiveTitleUI();
-                await Fader.Inst.WideFadeInAsync(1.5f);
+                if (isShowWideFade)
+                    await Fader.Inst.WideFadeInAsync(1.5f);
                 return;
             }
 
@@ -185,7 +210,9 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             localGameMode = default;
             localRoomName = default;
-            await Fader.Inst.WideFadeInAsync(1.5f);
+
+            if (isShowWideFade)
+                await Fader.Inst.WideFadeInAsync(1.5f);
         }
         catch (Exception e)
         {

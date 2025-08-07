@@ -36,6 +36,16 @@ public class LevelManager : NetworkSceneManagerDefault
     protected override IEnumerator LoadSceneCoroutine(SceneRef sceneRef, NetworkLoadSceneParameters sceneParams)
     {
         yield return base.LoadSceneCoroutine(sceneRef, sceneParams);
+
+        var scene = SceneManager.GetSceneByBuildIndex(sceneRef.AsIndex);
+        if (scene.name == "DevLobby" || scene.name == "DevMain")
+        {
+            CameraMover.Inst.SetSolidColorEnv();
+        }
+        else
+        {
+            CameraMover.Inst.SetSkyBoxEnv();
+        }
     }
 
     protected override IEnumerator UnloadSceneCoroutine(SceneRef sceneRef)

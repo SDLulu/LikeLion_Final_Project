@@ -44,7 +44,7 @@ public class UI_PlayerSlotContainer : MonoBehaviour
         }
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<int, PlayerData> players)
+    public void UpdateData(Fusion.NetworkDictionary<Fusion.PlayerRef, PlayerData> players)
     {
         if (GlobalSetting.Inst.IsShowGameUI == false)
         {
@@ -58,8 +58,8 @@ public class UI_PlayerSlotContainer : MonoBehaviour
 
         foreach (var player in players)
         {
-            _playerSlots[player.Key].UpdateData(player.Value);
-            _playerSlots[player.Key].gameObject.SetActive(true);
+            _playerSlots[player.Key.AsIndex].UpdateData(player.Value);
+            _playerSlots[player.Key.AsIndex].gameObject.SetActive(true);
         }
     }
 

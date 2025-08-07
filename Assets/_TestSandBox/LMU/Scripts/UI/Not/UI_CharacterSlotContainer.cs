@@ -3,6 +3,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
+/// <summary>
+/// 기획변경으로 더이상사용하지않음.
+/// </summary>
 public class UI_CharacterSlotContainer : MonoBehaviour
 {
     [Header("설정")]
