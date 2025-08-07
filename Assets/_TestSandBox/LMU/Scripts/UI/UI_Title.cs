@@ -107,7 +107,7 @@ public class UI_Title : MonoBehaviour
 
     private async void OnClickSoloPlayBtn()
     {
-        UIGlobalSetting.ActiveUI(false);
+        UIGlobalSetting?.ActiveUI(false);
         _preventPanel.gameObject.SetActive(true);
         await LobbyManager.Inst.JoinOrCreateLobby(
             isSoloPlay: true,
@@ -134,7 +134,7 @@ public class UI_Title : MonoBehaviour
             AnimateNicknamePanelIn(_uiCreateNickName.Holder);
             ShowTitlePanel_FromOutBottomToCenter();
         });
-        UIGlobalSetting.ActiveUI(true);
+        UIGlobalSetting?.ActiveUI(true);
     }
 
     private void OnClickOnlinePlayBtn()
@@ -143,7 +143,7 @@ public class UI_Title : MonoBehaviour
         HideTitlePanel_FromCenterToOutTop(() =>
         {
             ShowOnlinePanel_FromOutBottomToCenter();
-            UIGlobalSetting.ActiveUI(false);
+            UIGlobalSetting?.ActiveUI(false);
         });
     }
 

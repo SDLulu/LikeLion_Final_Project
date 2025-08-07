@@ -16,9 +16,7 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     // 서버 - 백그라운드 작업진행 - 컷신 재생과 맵 로딩을 병렬실행 - 0: 컷신, 1: 맵 로딩
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;
-    
     private TickTimer minWaitingTimer = TickTimer.None;
-
     private int _stageDataIndex = -1;
     public override void Spawned()
     {
@@ -35,10 +33,11 @@ public class GameStageCompletedState : BaseStateBehaviour
         base.Despawned(runner, hasState);
     }
 
-    protected override void OnEnterState()
+    protected override async void OnEnterState()
     {
         if (Runner.IsServer)
         {
+            await Awaitable.NextFrameAsync();
             var players = PlayerM.GetPlayers();
 
             _bgTaskTCS = new();

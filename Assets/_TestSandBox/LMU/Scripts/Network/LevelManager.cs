@@ -38,7 +38,9 @@ public class LevelManager : NetworkSceneManagerDefault
         yield return base.LoadSceneCoroutine(sceneRef, sceneParams);
 
         var scene = SceneManager.GetSceneByBuildIndex(sceneRef.AsIndex);
-        if (scene.name == "DevLobby" || scene.name == "DevMain")
+        string lobbyName = GlobalSetting.Inst.LobbyScenePath;
+        string gameName = GlobalSetting.Inst.GameScenePath;
+        if (scene.name == lobbyName || scene.name == gameName)
         {
             CameraMover.Inst.SetSolidColorEnv();
         }

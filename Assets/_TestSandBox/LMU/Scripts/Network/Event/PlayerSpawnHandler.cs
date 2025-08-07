@@ -127,8 +127,7 @@ public class PlayerSpawnHandler : MonoBehaviour
     {
         return gameStates != null &&
                gameStates.StateMachine != null &&
-               gameStates.StateMachine.ActiveState != null &&
-               !(gameStates.StateMachine.ActiveState is LobbyState);
+               gameStates.StateMachine.ActiveState != null;
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)

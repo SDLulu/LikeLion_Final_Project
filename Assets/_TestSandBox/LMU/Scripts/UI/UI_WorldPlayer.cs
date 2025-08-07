@@ -42,7 +42,7 @@ public class UI_WorldPlayer : NetworkBehaviour
                 {
                     OnSceneLoadDone(sceneName);
                 };
-                OnSceneLoadDone("DevLobby");
+                OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
                 break;
             }
         }
@@ -50,7 +50,7 @@ public class UI_WorldPlayer : NetworkBehaviour
 
     public void OnSceneLoadDone(string sceneName)
     {
-        if (sceneName == "DevLobby")
+        if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
             _readyButton = FindObjectsByType<Button>(FindObjectsSortMode.None)
                             .FirstOrDefault((button) =>

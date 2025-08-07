@@ -21,6 +21,7 @@ namespace LMCore
         }
     }
 
+    [DefaultExecutionOrder(-1000)]
     public class Fader : BaseManager<Fader>
     {
         [Header("아이콘 팽창 페이드")]

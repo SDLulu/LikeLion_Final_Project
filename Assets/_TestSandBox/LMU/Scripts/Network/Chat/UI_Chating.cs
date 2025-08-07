@@ -63,7 +63,7 @@ public class UI_Chating : MonoBehaviour
         
         // InputField 설정 - 자동 활성화 방지
         _inputField.shouldHideMobileInput = true;
-        
+
         _inputField.onSubmit.AddListener((string text) =>
         {
             if (_inputField.isFocused && _inputField.text.Length > 0)
@@ -141,10 +141,8 @@ public class UI_Chating : MonoBehaviour
         if (newMessages.Count == 0)
             return;
 
-        // 틱 시간 기준으로 정렬
+        // 틱 시간 기준으로 정렬후 메시지를 생성
         newMessages.Sort((a, b) => a.TickTime.CompareTo(b.TickTime));
-
-        // 새 메시지들을 UI에 생성
         foreach (var chat in newMessages)
         {
             CreateMessageUI(chat);
@@ -155,7 +153,6 @@ public class UI_Chating : MonoBehaviour
         Canvas.ForceUpdateCanvases();
         _chatView.verticalNormalizedPosition = 0f;
 
-        // // 새 메시지가 있으면 채팅창을 보이고 타이머 시작
         // ShowChatView();
         // HideChatViewAsync();
     }
@@ -170,9 +167,6 @@ public class UI_Chating : MonoBehaviour
         HideChatViewAsync();
     }
 
-    /// <summary>
-    /// 텍스트 입력 처리 함수
-    /// </summary>
     public string InputText(string inputText)
     {
         if (_inputField != null)

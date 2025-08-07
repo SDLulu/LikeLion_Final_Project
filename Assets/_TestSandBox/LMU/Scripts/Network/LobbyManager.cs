@@ -32,6 +32,8 @@ public class LobbyManager : BaseManager<LobbyManager>
         localRoomName = default;
     }
 
+    public string NetworkRunnerPath => "Prefabs/TitleBatchModule/@NetworkRunner";
+    public GameObject NetworkRunnerPrefab => Resources.Load<GameObject>(NetworkRunnerPath);
     [SerializeField] private NetworkRunner netRunner;
     public NetworkRunner NetRunner
     {
@@ -44,8 +46,7 @@ public class LobbyManager : BaseManager<LobbyManager>
 
             if (netRunner == null)
             {
-                var obj = Resources.Load<GameObject>("Prefabs/LobbyBatchModule/@NetworkRunner");
-                netRunner = Instantiate(obj).GetComponent<NetworkRunner>();
+                netRunner = Instantiate(NetworkRunnerPrefab).GetComponent<NetworkRunner>();
             }
 
             return netRunner;
@@ -57,8 +58,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     /// </summary>
     public NetworkRunner SetForcingRunner(string runnerID, INetworkRunnerCallbacks callbacks)
     {
-        var obj = Resources.Load<GameObject>("Prefabs/LobbyBatchModule/@NetworkRunner");
-        var runner = Instantiate(obj).GetComponent<NetworkRunner>();
+        var runner = Instantiate(NetworkRunnerPrefab).GetComponent<NetworkRunner>();
         runner.name += $"_{runnerID}";
         runner.AddCallbacks(callbacks);
         runner.ProvideInput = true;
@@ -144,7 +144,8 @@ public class LobbyManager : BaseManager<LobbyManager>
             if (startGameResult.Ok)
             {
                 await Fader.Inst.WideFadeOutAsync();
-                await LocalSceneManager.Inst.LoadSceneAsync("DevLobby", LoadSceneMode.Additive, true);
+                string sceneName = GlobalSetting.Inst.LobbyScenePath;
+                await LocalSceneManager.Inst.LoadSceneAsync(sceneName, LoadSceneMode.Additive, true);
                 OnEnterLobby?.Invoke();
             }
             else
@@ -166,6 +167,7 @@ public class LobbyManager : BaseManager<LobbyManager>
         {
             Debug.LogWarning("JoinOrCreateLobby - 로비입장중 오류");
             Debug.LogError(ex);
+            OnCancel?.Invoke();
             await LeaveGame();
         }
     }
@@ -197,11 +199,13 @@ public class LobbyManager : BaseManager<LobbyManager>
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
             foreach (var scene in scenes)
             {
-                if (scene.name == "DevLobby")
+                string lobbyName = GlobalSetting.Inst.LobbyScenePath;
+                string gameName = GlobalSetting.Inst.GameScenePath;
+                if (scene.name == lobbyName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
-                else if (scene.name == "DevGame")
+                else if (scene.name == gameName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
@@ -218,6 +222,8 @@ public class LobbyManager : BaseManager<LobbyManager>
         {
             Debug.LogWarning("LeaveGame - 게임종료중 오류");
             Debug.LogError(e);
+            await Fader.Inst.HideLoadingAsync();
+            await Fader.Inst.WideFadeInAsync(1.5f);
         }
     }
 }
