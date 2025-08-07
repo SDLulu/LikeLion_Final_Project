@@ -3,10 +3,12 @@ using LMCore;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-using UnityEngine.SceneManagement;
 
+[DefaultExecutionOrder(-1000)]
 public class GlobalSetting : BaseManager<GlobalSetting>
 {
+    [SerializeField] public bool _isShowGlobalSettingUI = false;
+
     [SerializeField] private SO_GlobalSetting _settingData;
     public SO_GlobalSetting SettingData => _settingData;
 

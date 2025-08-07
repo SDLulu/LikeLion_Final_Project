@@ -34,11 +34,13 @@ public class HostDisconnectHandler : MonoBehaviour
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
             foreach (var scene in scenes)
             {
-                if (scene.name == "DevLobby")
+                string lobbyName = GlobalSetting.Inst.LobbyScenePath;
+                string gameName = GlobalSetting.Inst.GameScenePath;
+                if (scene.name == lobbyName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
-                else if (scene.name == "DevGame")
+                else if (scene.name == gameName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
@@ -57,7 +59,7 @@ public class HostDisconnectHandler : MonoBehaviour
     {
         try
         {
-            Debug.Log("ShotDown_AtServerInRoom");
+            await LobbyUI_Manager.Inst.UIEnterOnline.FallbackRun();
             await Awaitable.NextFrameAsync();
         }
         catch (System.Exception e)
@@ -65,8 +67,4 @@ public class HostDisconnectHandler : MonoBehaviour
             Debug.LogError($"ShotDown_AtServerInRoom 오류: {e.Message}");
         }
     }
-
-
-
-
 }

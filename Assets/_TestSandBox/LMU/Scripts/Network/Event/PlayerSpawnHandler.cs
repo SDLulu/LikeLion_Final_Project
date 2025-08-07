@@ -1,17 +1,37 @@
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
+public interface IsPollingSpawnable
+{
+    public bool IsSpawned {get; set;}
+    Awaitable<bool> IsPollingSpawned();
+}
+
 public class PlayerSpawnHandler : MonoBehaviour
 {
-    [Header("프리팹 참조")]
-    [SerializeField] private GameObject playerMPrefab;
-    [SerializeField] private GameObject gameStatesPrefab;
-
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private PlayerManager hostPlayerManage;
     [SerializeField] private GameStates gameStates;
+    [SerializeField] private ChatManager chatManager;
 
+    private List<IsPollingSpawnable> _pollingSpawnables = new List<IsPollingSpawnable>();
+
+    private const string PLAYER_MANAGER_PREFAB_PATH = "Prefabs/PlayerManager";
+    private const string GAME_STATES_PREFAB_PATH = "Prefabs/GameStates";
+    private const string CHAT_MANAGER_PREFAB_PATH = "Prefabs/ChatManager";
+    public GameObject PlayerManagerPrefab => Resources.Load<GameObject>(PLAYER_MANAGER_PREFAB_PATH);
+    public GameObject GameStatesPrefab => Resources.Load<GameObject>(GAME_STATES_PREFAB_PATH);
+    public GameObject ChatManagerPrefab => Resources.Load<GameObject>(CHAT_MANAGER_PREFAB_PATH);
+
+    private void OnDestroy()
+    {
+        _pollingSpawnables.Clear();
+        hostPlayerManage = null;
+        gameStates = null;
+        chatManager = null;
+    }
 
 
 #region 플레이어 입장 및 퇴장
@@ -58,17 +78,28 @@ public class PlayerSpawnHandler : MonoBehaviour
         await runner.SpawnAsync(id, playerSpawnPos, Quaternion.identity, player,
             onCompleted: (info) =>
             {
-                var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
+                var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
                 hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
+                if (hostPlayerManage is IsPollingSpawnable h1)
+                    _pollingSpawnables.Add(h1);
 
-                var gameStatesObj = runner.Spawn(gameStatesPrefab, Vector3.zero, Quaternion.identity, player);
+                var chatManagerObj = runner.Spawn(ChatManagerPrefab, Vector3.zero, Quaternion.identity, player);
+                chatManager = chatManagerObj.GetComponent<ChatManager>();
+                if (chatManager is IsPollingSpawnable c1)
+                    _pollingSpawnables.Add(c1);
+
+                var gameStatesObj = runner.Spawn(GameStatesPrefab, Vector3.zero, Quaternion.identity, player);
                 gameStates = gameStatesObj.GetComponent<GameStates>();
+                if (gameStates is IsPollingSpawnable g1)
+                    _pollingSpawnables.Add(g1);
 
                 runner.SetPlayerObject(player, info.Object);
             });
         
-        // PlayerManager 네트워크 등록까지 대기
-        await hostPlayerManage.IsPollingSpawned();
+        // 네트워크 등록까지 대기
+        foreach (var pollingSpawnable in _pollingSpawnables)
+            await pollingSpawnable.IsPollingSpawned();
+
         hostPlayerManage.AddPlayer(player);
     }
 
@@ -96,8 +127,7 @@ public class PlayerSpawnHandler : MonoBehaviour
     {
         return gameStates != null &&
                gameStates.StateMachine != null &&
-               gameStates.StateMachine.ActiveState != null &&
-               !(gameStates.StateMachine.ActiveState is LobbyState);
+               gameStates.StateMachine.ActiveState != null;
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)

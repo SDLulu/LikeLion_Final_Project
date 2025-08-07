@@ -43,7 +43,7 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
     }
 
     /// <summary>
-    /// 현재 로드된 모든 씬 정보를 가져옵니다.
+    /// 현재 로드된 모든 씬 정보를 가져오는 함수
     /// </summary>
     public List<Scene> GetAllLoadedScenes()
     {

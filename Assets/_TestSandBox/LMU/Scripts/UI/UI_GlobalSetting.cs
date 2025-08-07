@@ -15,19 +15,39 @@ public class UI_GlobalSetting : MonoBehaviour
 
     public void ActiveUI(bool active)
     {
-        gameObject.SetActive(active);
+        if (_globalSetting._isShowGlobalSettingUI == false)
+        {
+            this.gameObject.SetActive(false);
+            return;
+        }
+
+#if UNITY_EDITOR
+        this.gameObject.SetActive(active);
+#else
+        this.gameObject.SetActive(false);
+#endif
     }
 
     private void Awake()
     {
         _globalSetting = GetComponentInParent<GlobalSetting>();
+        if (_globalSetting._isShowGlobalSettingUI == false)
+        {
+            this.gameObject.SetActive(false);
+            return;
+        }
+
+#if UNITY_EDITOR
+        this.gameObject.SetActive(true);
+#else
+        this.gameObject.SetActive(false);
+#endif
         _fastTestHolder.gameObject.SetActive(true);
 
         _sceneListRefreshbutton.onClick.AddListener(OnSceneListRefreshButtonClick);
         _sceneDropdown.onValueChanged.AddListener(OnSceneDropdownValueChanged);
 
         LoadSceneInfoList();
-
     }
 
     private void OnDestroy()
