@@ -4,6 +4,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 기획 변경으로 더이상 사용하지 않음.
+/// </summary>
 public class UI_CharacterSlot : MonoBehaviour
 {
     public UI_CharacterSlotContainer Holder {get; set;}
@@ -26,7 +29,6 @@ public class UI_CharacterSlot : MonoBehaviour
     [SerializeField] private bool isReady = false;
     [SerializeField] private PlayerData connectedPlayer;
     
-    // 외부에서 접근 가능한 프로퍼티
     public PlayerData ConnectedPlayer => connectedPlayer;
 
     private void Awake()
@@ -54,11 +56,11 @@ public class UI_CharacterSlot : MonoBehaviour
 
         _lastReadyChangeTime = Time.time;
 
-        // 연결된 플레이어가 있고, 로컬 플레이어인 경우에만 Ready 상태 변경
-        if (connectedPlayer != null && connectedPlayer.Object.HasInputAuthority)
-        {
-            connectedPlayer.RPC_ToggleReady();
-        }
+        // // 연결된 플레이어가 있고, 로컬 플레이어인 경우에만 Ready 상태 변경
+        // if (connectedPlayer != null && connectedPlayer.Object.HasInputAuthority)
+        // {
+        //     connectedPlayer.RPC_ToggleReady(connectedPlayer.IsReady == false);
+        // }
     }
 
     private void OnClickRightArrowButton()
@@ -73,9 +75,6 @@ public class UI_CharacterSlot : MonoBehaviour
         UpdateUI();
     }
 
-    /// <summary>
-    /// 플레이어 데이터 업데이트 (새로운 구조)
-    /// </summary>
     public void UpdatePlayerData(PlayerData player)
     {
         connectedPlayer = player;
@@ -86,9 +85,6 @@ public class UI_CharacterSlot : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 슬롯 데이터 초기화
-    /// </summary>
     public void ClearSlotData()
     {
         connectedPlayer = null;

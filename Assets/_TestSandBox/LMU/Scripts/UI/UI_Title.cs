@@ -117,6 +117,10 @@ public class UI_Title : MonoBehaviour
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 _preventPanel.gameObject.SetActive(false);
+            },
+            OnCancel: () =>
+            {
+                _preventPanel.gameObject.SetActive(false);
             }
         );
     }

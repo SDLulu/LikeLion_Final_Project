@@ -8,7 +8,7 @@ public class ChatManager : NetworkBehaviour, IsPollingSpawnable
     public static ChatManager Inst => BaseManager<ChatManager>.Inst;
     public static bool HasInstance => BaseManager<ChatManager>.HasInstance;
 
-    [Networked, OnChangedRender(nameof(OnChangedChatHistories))]
+    [Networked, OnChangedRender(nameof(OnChangedChatHistories)), UnitySerializeField]
     public ref ChatHistoryList ChatHistories => ref MakeRef<ChatHistoryList>();
     public bool IsSpawned { get; set; }
 
@@ -18,6 +18,7 @@ public class ChatManager : NetworkBehaviour, IsPollingSpawnable
         {
             await Awaitable.NextFrameAsync();
         }
+        
         return true;
     }
 
@@ -51,12 +52,12 @@ public class ChatManager : NetworkBehaviour, IsPollingSpawnable
 
 
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
-    public static void RPC_SendChatMessage(NetworkRunner runner, string message, ChatChannel channel = ChatChannel.None)
+    public static void RPC_SendChatMessage(NetworkRunner runner, PlayerRef sender, string message, ChatChannel channel = ChatChannel.None, RpcInfo rpcInfo = default)
     {
         if (runner.IsServer == false)
             return;
 
-        var chat = new ChatHistory(channel, runner.LocalPlayer, default, message); 
+        var chat = new ChatHistory(channel, sender, default, message); 
         chat.TickTime = runner.Tick;
         Inst.ChatHistories.Add(chat);
     }

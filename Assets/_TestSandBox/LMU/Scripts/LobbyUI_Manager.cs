@@ -52,7 +52,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
         UIChatting.gameObject.SetActive(false);
     }
 
-    public void UpdateData(NetworkDictionary<int, PlayerData> players)
+    public void UpdateData(NetworkDictionary<PlayerRef, PlayerData> players)
     {
         UILobby?.UpdateData(players);
     }

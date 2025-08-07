@@ -43,7 +43,8 @@ public class PlayerData : NetworkBehaviour
 
     [Networked, UnitySerializeField]
     public ref DynamicCharacterData Dynamic_CharacterData => ref MakeRef<DynamicCharacterData>();
-    [Networked, OnChangedRender(nameof(OnReadyChanged))] public bool IsReady {get; private set;} = false;
+
+    [Networked] public bool IsReady {get; private set;} = false;
 
     [Header("로컬 데이터")]
     [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
@@ -52,7 +53,6 @@ public class PlayerData : NetworkBehaviour
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
     public string SkinPath => Dynamic_CharacterData.SkinPath.ToString();
-
 
     public override void Spawned()
     {
@@ -72,13 +72,13 @@ public class PlayerData : NetworkBehaviour
             // 게임 상태변경시 Ready 상태 초기화
             NetworkEventSystem.Inst.OnGameStateChangedEvent += (previousState, currentState) => 
             {
-                if (currentState != E_StateName.GameStagePlayingState)
-                    return;
+                // if (currentState != E_StateName.GameStagePlayingState)
+                //     return;
 
-                if (_readyText?.IsReady == false)
-                    return;
+                // if (_readyText?.IsReady == false)
+                //     return;
 
-                RPC_ReadyTween(false);
+                // RPC_ReadyTween(false);
             };
         }
 
@@ -94,9 +94,6 @@ public class PlayerData : NetworkBehaviour
         };
     }
 
-    /// <summary>
-    /// 캐릭터/스킨 변경
-    /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_ChangeCharacter(NetworkString<_16> characterName, NetworkString<_64> skinPath)
     {
@@ -108,31 +105,10 @@ public class PlayerData : NetworkBehaviour
         Debug.Log($"플레이어 {Static_PlayerData.NickName} 캐릭터 변경: {characterName}");
     }
 
-    /// <summary>
-    /// Ready 상태 토글
-    /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_ToggleReady()
+    public void RPC_ToggleReady(bool isReady)
     {
-        IsReady = !IsReady;
+        IsReady = isReady;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
-    }
-
-    private void OnReadyChanged()
-    {
-        if (_readyText?.IsReady == IsReady)
-            return;
-
-        if (Runner.IsServer)
-        {
-            _readyText.SetReady(IsReady);
-            RPC_ReadyTween(IsReady);
-        }
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_ReadyTween(bool isReady)
-    {
-        _readyText.SetReady(isReady);
     }
 }

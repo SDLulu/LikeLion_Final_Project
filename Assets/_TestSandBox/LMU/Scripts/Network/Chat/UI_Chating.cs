@@ -40,8 +40,12 @@ public class UI_Chating : MonoBehaviour
 
     private PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
 
-    private void OnDestroy()
+    private void OnDestroy() => OnReset();
+    public void OnDisable() => OnReset();
+
+    public void OnReset()
     {
+        RemoveAllMessageUI();
         _chatClient = null;
         _originTicks.Clear();
         _inputField.onSubmit.RemoveAllListeners();
@@ -52,15 +56,20 @@ public class UI_Chating : MonoBehaviour
     /// </summary>
     public void OnInit(ChatClient chatClient)
     {
+        OnReset();
         var localNickName = chatClient.GetComponentInParent<PlayerData>().NickName;
         Debug.Log($"UI_Chating OnInit {localNickName}");
         _chatClient = chatClient;
+        
+        // InputField 설정 - 자동 활성화 방지
+        _inputField.shouldHideMobileInput = true;
+        
         _inputField.onSubmit.AddListener((string text) =>
         {
             if (_inputField.isFocused && _inputField.text.Length > 0)
             {
                 SendChat(text);
-                ActiveChat();
+                DeactiveChat();
             }
             else if (_inputField.isFocused && _inputField.text.Length <= 0)
             {
@@ -85,6 +94,7 @@ public class UI_Chating : MonoBehaviour
     public void ActiveChat()
     {
         _inputField.text = "";
+        _inputField.interactable = true;
         _inputField.ActivateInputField();
         _frameBG.gameObject.SetActive(true);
         IsFocusChat = true;
@@ -94,6 +104,7 @@ public class UI_Chating : MonoBehaviour
     {
         _inputField.text = "";
         _inputField.DeactivateInputField();
+        _inputField.interactable = false;
         _frameBG.gameObject.SetActive(false);
         IsFocusChat = false;
     }
@@ -103,36 +114,50 @@ public class UI_Chating : MonoBehaviour
         if (string.IsNullOrWhiteSpace(text))
             return;
 
+        if (channel == ChatChannel.None)
+            channel = ChatChannel.All;
+
         _chatClient.SendChatMessage(text, channel);
     }
 
     private List<Tick> _originTicks = new List<Tick>();
+    
+    /// <summary>
+    /// 채팅 히스토리 업데이트 처리
+    /// </summary>
     public void UpdateChatHistories(ChatHistoryList chatHistories)
     {
-        // // 서버의 틱정보가 로컬에 존재하지 않으면 추가
-        // List<Tick> ticks = new();
-        // foreach (var chat in chatHistories.ChatHistories)
-        // {
-        //     if (_originTicks.Contains(chat.TickTime) == false)
-        //         continue;
-        //     ticks.Add(chat.TickTime);
-        // }
+        // 새로운 메시지만 필터링
+        List<ChatHistory> newMessages = new List<ChatHistory>();
+        foreach (var chat in chatHistories.ChatHistories)
+        {
+            if (_originTicks.Contains(chat.TickTime) == false)
+            {
+                newMessages.Add(chat);
+                _originTicks.Add(chat.TickTime);
+            }
+        }
 
-        // // 정렬 및 생성
-        // ticks.Sort();
-        // foreach (var t in ticks)
-        // {
-        //     var chat = chatHistories.Get(t);
-        //     CreateMessageUI(chat);
-        // }
-        // _originTicks.AddRange(ticks);
+        if (newMessages.Count == 0)
+            return;
 
-        // // 스크롤을 맨 아래로 이동
-        // Canvas.ForceUpdateCanvases();
-        // _chatView.verticalNormalizedPosition = 0f;
-        // // // 새 메시지가 있으면 채팅창을 보이고 타이머 시작
-        // // ShowChatView();
-        // // HideChatViewAsync();
+        // 틱 시간 기준으로 정렬
+        newMessages.Sort((a, b) => a.TickTime.CompareTo(b.TickTime));
+
+        // 새 메시지들을 UI에 생성
+        foreach (var chat in newMessages)
+        {
+            CreateMessageUI(chat);
+            _chatHistories.Add($"Player{chat.Sender}: {chat.Message}");
+        }
+
+        // 스크롤을 맨 아래로 이동
+        Canvas.ForceUpdateCanvases();
+        _chatView.verticalNormalizedPosition = 0f;
+
+        // // 새 메시지가 있으면 채팅창을 보이고 타이머 시작
+        // ShowChatView();
+        // HideChatViewAsync();
     }
 
     public void OnSend()
@@ -198,6 +223,8 @@ public class UI_Chating : MonoBehaviour
         }
     }
 
+
+
     private void CreateMessageUI(ChatHistory chatHistory)
     {
         if (_messagePrefab == null || _contentPanel == null)
@@ -215,4 +242,13 @@ public class UI_Chating : MonoBehaviour
         messageText.text = inputText;
         messageText.color = msgColor;
     }
+
+    private void RemoveAllMessageUI()
+    {
+        foreach (Transform child in _contentPanel.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+    }
+
 }

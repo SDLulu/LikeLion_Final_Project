@@ -8,17 +8,19 @@ public class ChatClient : NetworkBehaviour
 
     private const string WHISPER_COMMAND = "/w";
 
-    public override void Spawned()
+    public async override void Spawned()
     {
         if (Object.HasInputAuthority)
         {
+            await Awaitable.WaitForSecondsAsync(2.0f);
             _uiChating = LobbyUI_Manager.Inst.UIChatting;
             _uiChating.OnInit(this);
         }
     }
 
-    private void OnDestroy()
+    public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        _uiChating?.OnReset();
         _uiChating = null;
     }
 
@@ -62,22 +64,26 @@ public class ChatClient : NetworkBehaviour
         // 보내는 사람의 닉네임초기화
         string senderName = "";
         var players = PlayerManager.Inst.GetPlayers();
-        foreach (var player in players)
+        if (players.ContainsKey(chatHistory.Sender))
         {
-            if (player.Value.Object.InputAuthority == chatHistory.Sender)
-            {
-                senderName = player.Value.NickName;
-            }
+            senderName = players[chatHistory.Sender].NickName;
         }
 
         // 받는 사람의 닉네임초기화
         string receiverName = "";
-        foreach (var player in players)
+        if (chatHistory.Receiver != default && players.ContainsKey(chatHistory.Receiver))
         {
-            if (player.Value.Object.InputAuthority == chatHistory.Receiver)
-            {
-                receiverName = player.Value.NickName;
-            }
+            receiverName = players[chatHistory.Receiver].NickName;
+        }
+
+        // 닉네임이 비어있으면 기본값 사용
+        if (string.IsNullOrEmpty(senderName))
+        {
+            senderName = $"Player{chatHistory.Sender.AsIndex}";
+        }
+        if (string.IsNullOrEmpty(receiverName) && chatHistory.Receiver != default)
+        {
+            receiverName = $"Player{chatHistory.Receiver.AsIndex}";
         }
 
         switch (chatHistory.Channel)
@@ -96,6 +102,11 @@ public class ChatClient : NetworkBehaviour
                 inputText = $"[나에게만] : {chatHistory.Message}";
                 msgColor = Color.blue;
                 break;
+
+            case ChatChannel.System:
+                inputText = $"{chatHistory.Message}";
+                msgColor = Color.green;
+                break;
         }
 
         return (inputText, msgColor);
@@ -108,12 +119,7 @@ public class ChatClient : NetworkBehaviour
         if (Object.HasInputAuthority == false)
             return;
 
-        if (ChatManager.HasInstance == false || _uiChating == null)
-        {
-            Debug.LogError("ChatManager 또는 UI_Chating이 존재하지 않습니다.");
-            return;
-        }
-        
-        // ChatManager.RPC_SendChatMessage(Runner, message, channel);
+        PlayerRef localPlayer = Object.InputAuthority;
+        ChatManager.RPC_SendChatMessage(Runner, localPlayer, message, channel);
     }
 }
