@@ -5,8 +5,8 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
-
-public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
+[RequiredManager(typeof(PlayerManager))]
+public class PlayerManager : NetworkBehaviour, IPlayerJoined, IAfterSpawned
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
@@ -23,15 +23,6 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     public Dictionary<PlayerRef, Action> OnPlayerDataChangedActions = new();
     public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
     public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
-    public bool IsSpawned {get; set;}
-    public async Awaitable<bool> IsPollingSpawned()
-    {
-        while (IsSpawned == false)
-        {
-            await Awaitable.NextFrameAsync();
-        }
-        return true;
-    }
 
     /// <summary>
     /// Note - 중간에 플레이어가 나가는 경우에 대한 예외처리를 하지않음
@@ -89,10 +80,18 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     }
 
 
-    public override void Spawned()
+    public void PlayerJoined(PlayerRef player)
     {
-        IsSpawned = true;
-        
+        if (Runner.IsServer)
+            AddPlayer(player);
+    }
+
+    public async override void Spawned()
+    {
+        await Awaitable.WaitForSecondsAsync(5.0f);
+        if (Runner.IsServer)
+            AddPlayer(Runner.LocalPlayer);
+
         // Note - 기획변경으로 더이상 사용하지않음
         // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
         // this.AddPlayerDataAction(uiController.UpdateData);
@@ -106,10 +105,13 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         }
     }
 
+    public void AfterSpawned()
+    {
+        NetworkEventSystem.Inst.RegisterManager(this);
+    }
+
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        IsSpawned = false;
-        OnPlayerDataChanged = null;
         playerFadingTCS.Clear();    
         Players.Clear();
         _alivePlayers.Clear();
@@ -118,33 +120,33 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     // -- 플레이어 관리
     public void AddPlayer(PlayerRef player)
     {
-        if (IsSpawned == false)
-        {
-            Debug.LogError("플레이어 매니저가 스폰되지 않았습니다.");
-            return;
-        }
-
         if (Runner.IsServer == false)
             return;
 
-        var tempPlayers = FindObjectsByType<PlayerData>(FindObjectsSortMode.None);
-        if (tempPlayers == null || tempPlayers.Length <= 0)
+        if (Players.ContainsKey(player))
         {
-            Debug.LogError("플레이어를 추가하는데 실패했습니다. 플레이어가 존재하지 않습니다.");
+            Debug.LogError($"이미 존재하는 플레이어 입니다 {player}");
             return;
         }
-        
-        foreach (var tempPlayer in tempPlayers)
+
+        var playerObj = Runner.GetPlayerObject(player);
+        if (playerObj == null)
         {
-            
-            if (tempPlayer.Object.InputAuthority == player)
+            foreach (var activePlayer in Runner.ActivePlayers)
             {
-                Players.Add(player, tempPlayer);
+                if (Players.ContainsKey(activePlayer))
+                    continue;
+
+                playerObj = Runner.TryGetPlayerObject(activePlayer, out var obj) ? obj : null;
+                if (playerObj == null)
+                    continue;
+
+                Players.Add(activePlayer, playerObj.GetComponent<PlayerData>());
                 return;
             }
         }
 
-        Debug.LogError($"플레이어를 추가하는데 실패했습니다. 요청된 PlayerRef {player}와 일치하는 InputAuthority를 찾을 수 없습니다.");
+        Players.Add(player, playerObj.GetComponent<PlayerData>());
     }
 
     public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()

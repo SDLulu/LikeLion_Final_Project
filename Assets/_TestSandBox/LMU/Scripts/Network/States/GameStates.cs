@@ -6,7 +6,8 @@ using UnityEngine;
 using System.Reflection;
 
 
-public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnable
+[RequiredManager(typeof(GameStates))]
+public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
     
@@ -14,8 +15,8 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
 
     public void Collect()
     {
-        if (allStates == null || allStates.Length <= 0)
-            allStates = GetComponentsInChildren<StateBehaviour>();
+        if (_allStates == null || _allStates.Length <= 0)
+            _allStates = GetComponentsInChildren<StateBehaviour>();
     }
 
     private void OnValidate() => Collect();
@@ -28,7 +29,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
     [SerializeField] private CutSceneController _cutSceneController = null;
     [SerializeField] private PlayerManager _playerManager = null;
     [SerializeField] private NetworkEventSystem _networkEventSystem = null;
-    [SerializeField] private StateBehaviour[] allStates;
+    [SerializeField] private StateBehaviour[] _allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
     public bool IsSpawned { get; set; }
 
@@ -38,6 +39,11 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
         base.Spawned();
         DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
+    }
+
+    public void AfterSpawned()
+    {
+        NetworkEventSystem.Inst.RegisterManager(this);
     }
 
     // Note - CutSceneController가 GameScene에 존재해서 게임씬 로드시점까지 대기후 Inject 처리
@@ -56,7 +62,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
     public void CollectStateMachines(List<IStateMachine> stateMachines)
     {
         Collect();
-        StateMachine = new StateMachine<StateBehaviour>("GameState", allStates);
+        StateMachine = new StateMachine<StateBehaviour>("GameState", _allStates);
         stateMachines.Add(StateMachine);
     }
 
@@ -163,7 +169,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
             { typeof(NetworkEventSystem), _networkEventSystem != null ? _networkEventSystem : NetworkEventSystem.Inst }
         };
 
-        foreach (var state in allStates)
+        foreach (var state in _allStates)
         {
             if (state == null) 
             {
@@ -190,7 +196,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
         if (refs == null || refs.Count <= 0) 
             return;
 
-        foreach (var state in allStates)
+        foreach (var state in _allStates)
         {
             if (state == null) 
                 continue;
@@ -216,4 +222,6 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnab
         }
         return true;
     }
+
+
 } 
