@@ -1,8 +1,9 @@
-using UnityEngine;
-using UnityEngine.Tilemaps;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Fusion;
+using UnityEngine;
+using UnityEngine.Tilemaps;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -22,6 +23,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
     public static PMK_TileRogic Instance { get; private set; }
     private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance; // 타일 RPC 매니저 인스턴스 (타일 아이템 생성 및 파괴를 담당)
 
+    // 맵 프리팹 세트 (맵 타입별로 프리팹을 저장하는 리스트)
+    private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
+    private Dictionary<string, GameObject[]> mapPrefabDict;
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
     [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 메인 타일맵 (맵 생성시 타일을 추가하는 타일맵)
@@ -34,24 +38,24 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [SerializeField] private float nextTileX = 17; // 다음 타일까지 넘어갈 x위치
     [SerializeField] private float nextTileY = 11; // 다음 타일까지 넘어갈 y위치
 
-
-    [Header("맵 프리팹 설정")]
-    public List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
-    private Dictionary<string, GameObject[]> mapPrefabDict;
-
-
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
     [field: SerializeField] public List<PMK_TileTable> tileItems { get; private set; }
 
 
     [Header("TileZoneSpawner 설정")]
-    [field: SerializeField] public TileBase ruleTile { get; private set; }// 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    [SerializeField] public TileBase RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    public TileBase ruleTile => RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
     [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
 
 
     [Header("PMK_ArrowTrap 설정")]
-    [field: SerializeField] public NetworkObject launchTrapPrefab { get; private set; } // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
+    [SerializeField] private NetworkObject LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
+    public NetworkObject launchTrapPrefab => LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨, 네트워크 오브젝트)
+
+
+    [Header("PMK_NextStageDoor 설정")]
+    [Networked] public int ClearCount { get; set; } = 0; // 클리어 횟수 (PMK_NextStageDoor에서 사용됨, 네트워크 동기화됨)
 
 
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
@@ -147,8 +151,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
 
 
-#region 맵 초기화 및 재생성
-[Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    #region 맵 초기화 및 재생성
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_ResetMap()
     {
         ResetMap();
@@ -159,13 +163,13 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         mainTilemap.ClearAllTiles();
 
-        foreach (Transform child in parentTrans)
+        foreach (Transform child in parentTrans) // 모든 자식 오브젝트를 제거합니다.
         {
-            if (child.GetComponent<PMK_TileRogic>() != null)
-                continue;
-
             Destroy(child.gameObject);
         }
+        // 오브젝트 제거
+        tileRPCManager.ClearAllArrows(); // 발사된 화살들을 모두 제거합니다.
+
 
         // 초기화
         SaveMapPos();
@@ -234,10 +238,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
                         {
                             Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
                             Vector3Int targetPos = sourcePos + offset;
-                            mainTilemap.SetTile(targetPos, tile);
 
-                            // 랜덤한 확률로 아이템 생성
-                            Create_TileItem(targetPos);
+                            // 타일 생성 및 랜덤한 확률로 아이템 생성
+                            StartCoroutine(DelayedTileSpawn(targetPos, tile));
                         }
                     }
                 }
@@ -273,6 +276,14 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 }
             }
         }
+    }
+
+    // 타일과 타일 아이템을 생성하는 코루틴
+    private IEnumerator DelayedTileSpawn(Vector3Int targetPos, TileBase tile)
+    {
+        yield return new WaitForSeconds(0.1f);
+        mainTilemap.SetTile(targetPos, tile);
+        Create_TileItem(targetPos);
     }
     #endregion
 
