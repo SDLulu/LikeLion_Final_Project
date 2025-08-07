@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Fusion;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -22,20 +21,30 @@ public class InputBlocker : MonoBehaviour
     }
     public async void ReSearchAsync(int intervalSec, int maxCount, CancellationTokenSource cts)
     {
-        while (true)
+        try
         {
-            if (cts.IsCancellationRequested)
-                break;
+            while (true)
+            {
+                if (cts.IsCancellationRequested)
+                    break;
 
-            _cacheEvt = null;
-            _cacheEvt = new PointerEventData(this._eventSystem);
-            _eventSystem = FindAnyObjectByType<EventSystem>();
-            _graphicRaycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None).ToList();
-            await Awaitable.WaitForSecondsAsync(intervalSec, cts.Token);
-            maxCount--;
-            if (maxCount <= 0)
-                break;
+                _cacheEvt = null;
+                _cacheEvt = new PointerEventData(this._eventSystem);
+                _eventSystem = FindAnyObjectByType<EventSystem>();
+                _graphicRaycasters = FindObjectsByType<GraphicRaycaster>(FindObjectsSortMode.None).ToList();
+                await Awaitable.WaitForSecondsAsync(intervalSec, cts.Token);
+                maxCount--;
+                if (maxCount <= 0)
+                    break;
+            }
         }
+        catch (System.Exception)
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            throw;
+        }
+
     }
 
     private void OnDestroy()
@@ -58,7 +67,7 @@ public class InputBlocker : MonoBehaviour
 
         _cacheEvt.position = Mouse.current.position.ReadValue();
 
-        for (int i = _graphicRaycasters.Count - 1; i >= 0 ; i--)
+        for (int i = _graphicRaycasters.Count - 1; i >= 0; i--)
         {
             if (_graphicRaycasters[i] == null)
             {

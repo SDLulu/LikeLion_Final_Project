@@ -47,7 +47,7 @@ MonoBehaviour:
   _priority: 0
   _checkPriorityOnExit: 1
   minWaitingTime: 3
---- !u!1 &4704860501897767613
+--- !u!1 &4623484945701494307
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -55,22 +55,22 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 941916356731169141}
-  - component: {fileID: 209568226087452626}
+  - component: {fileID: 264942593826201398}
+  - component: {fileID: 600183304321924882}
   m_Layer: 0
-  m_Name: LobbyState
+  m_Name: EmptyState
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &941916356731169141
+--- !u!4 &264942593826201398
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4704860501897767613}
+  m_GameObject: {fileID: 4623484945701494307}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -79,16 +79,16 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5153706847647877329}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &209568226087452626
+--- !u!114 &600183304321924882
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4704860501897767613}
+  m_GameObject: {fileID: 4623484945701494307}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 19aeda0bf1921374888d68d71f49aaba, type: 3}
+  m_Script: {fileID: 11500000, guid: dd920da3c20cdda4dbc7e3482e40d6ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   _priority: 0
@@ -281,7 +281,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  minWaitingTime: 1.5
 --- !u!1 &8691710846094561082
 GameObject:
   m_ObjectHideFlags: 0
@@ -314,7 +313,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 941916356731169141}
+  - {fileID: 264942593826201398}
   - {fileID: 139470407722502232}
   - {fileID: 4301231840574772451}
   - {fileID: 7671985366890343227}
@@ -341,7 +340,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 6680545551392477647}
   - {fileID: 1670260254729265304}
-  - {fileID: 209568226087452626}
+  - {fileID: 600183304321924882}
   - {fileID: 665137752505329659}
   - {fileID: 902514079028123560}
   - {fileID: 3097246407220455528}
@@ -373,13 +372,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7387ff0f9e5119342aaa228d735b2361, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  uiController: {fileID: 0}
-  fader: {fileID: 0}
-  cutSceneController: {fileID: 0}
-  playerManager: {fileID: 0}
-  tileRogicManager: {fileID: 0}
+  _uiController: {fileID: 0}
+  _fader: {fileID: 0}
+  _cutSceneController: {fileID: 0}
+  _playerManager: {fileID: 0}
+  _networkEventSystem: {fileID: 0}
   allStates:
-  - {fileID: 209568226087452626}
+  - {fileID: 600183304321924882}
   - {fileID: 665137752505329659}
   - {fileID: 902514079028123560}
   - {fileID: 3097246407220455528}

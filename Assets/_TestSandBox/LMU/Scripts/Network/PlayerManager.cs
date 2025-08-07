@@ -273,7 +273,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             RPC_FadeOutUI();
             await WaitForAllPlayerFading();
 
-            var gameScenePath = GlobalSetting.Inst.FocusScenePath;
+            var gameScenePath = GlobalSetting.Inst.GameScenePath;
             await LevelManager.LoadSceneAsync(
                 gameScenePath, 
                 UnityEngine.SceneManagement.LoadSceneMode.Additive, 
