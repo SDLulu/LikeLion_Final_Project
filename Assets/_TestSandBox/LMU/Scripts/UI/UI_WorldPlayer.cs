@@ -24,37 +24,41 @@ public class UI_WorldPlayer : NetworkBehaviour
     [Header("디버그용")]
     [SerializeField] private Button _readyButton;
 
-    public override async void Spawned()
+    public override void Spawned()
     {
-        while (true)
+        if (NetworkEventSystem.Inst.IsReady)
+            OnInit();
+        else
+            NetworkEventSystem.Inst.OnAllManagersReady += OnInit;
+    }
+    public void OnInit()
+    {
+        if (this.Object.HasInputAuthority)
         {
-            if (PlayerManager.HasInstance == false)
-            {
-                await Awaitable.NextFrameAsync();
-                continue;
-            }
+            PlayerManager.Inst.AddPlayerDataAction(UpdateData);
 
-            if (this.Object.HasInputAuthority)
+            NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
             {
-                PlayerManager.Inst.AddPlayerDataAction(UpdateData);
-
-                NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
-                {
-                    OnSceneLoadDone(sceneName);
-                };
-                OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
-                break;
-            }
+                OnSceneLoadDone(sceneName);
+            };
+            OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
         }
     }
 
-    public void OnSceneLoadDone(string sceneName)
+    public async void OnSceneLoadDone(string sceneName)
     {
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
-            _readyButton = FindObjectsByType<Button>(FindObjectsSortMode.None)
-                            .FirstOrDefault((button) =>
-                            button.tag == "LobbyReady");
+            _readyButton?.onClick.RemoveAllListeners();
+            while (_readyButton == null)
+            {
+                _readyButton = FindObjectsByType<Button>(FindObjectsSortMode.None)
+                                .FirstOrDefault((button) =>
+                                button.tag == "LobbyReady");
+
+                await Awaitable.WaitForSecondsAsync(0.1f);
+            }
+
             _readyButton.onClick.AddListener(OnReadyButtonClicked);
         }
     }
@@ -66,7 +70,7 @@ public class UI_WorldPlayer : NetworkBehaviour
 
     private void OnReadyButtonClicked()
     {
-        var playerData = PlayerManager.Inst.GetPlayerData(this.Object.InputAuthority);
+        var playerData = GetComponentsInParent<PlayerData>().FirstOrDefault();
         playerData.RPC_ToggleReady(playerData.IsReady == false);
     }
 

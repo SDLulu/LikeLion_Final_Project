@@ -8,14 +8,22 @@ public class ChatClient : NetworkBehaviour
 
     private const string WHISPER_COMMAND = "/w";
 
-    public async override void Spawned()
+    public override void Spawned()
     {
-        if (Object.HasInputAuthority)
+        base.Spawned();
+        if (NetworkEventSystem.Inst.IsReady)
         {
-            await Awaitable.WaitForSecondsAsync(2.0f);
-            _uiChating = LobbyUI_Manager.Inst.UIChatting;
-            _uiChating.OnInit(this);
+            OnInit();
         }
+        else
+        {
+            NetworkEventSystem.Inst.OnAllManagersReady += OnInit;
+        }
+    }
+    public void OnInit()
+    {
+        _uiChating = LobbyUI_Manager.Inst.UIChatting;
+        _uiChating.OnInit(this);
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
