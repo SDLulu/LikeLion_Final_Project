@@ -3,29 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using Fusion;
 using LMCore;
-using Unity.Cinemachine;
 using UnityEngine;
 
-public class PlayerManager : NetworkBehaviour
+
+public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
     
-
     [Header("디버그용")]
     [SerializeField] private int minPlayersToStart = 2;
     [SerializeField] private bool isInGame = false;
     [SerializeField] private bool isGameSceneLoading = false;
     [SerializeField] private bool isGameSceneLoaded = false;
-    [SerializeField] public bool IsSpawned = false;
 
-    [Networked, Capacity(4), UnitySerializeField]
-    public NetworkDictionary<int, PlayerData> Players => default;
+    [Networked, Capacity(4)]
+    public NetworkDictionary<PlayerRef, PlayerData> Players => default;
 
-    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
-
+    public Dictionary<PlayerRef, Action> OnPlayerDataChangedActions = new();
     public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
-
+    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
+    public bool IsSpawned {get; set;}
     public async Awaitable<bool> IsPollingSpawned()
     {
         while (IsSpawned == false)
@@ -48,7 +46,7 @@ public class PlayerManager : NetworkBehaviour
     }
 
 
-    public NetworkDictionary<int, PlayerData> GetPlayers()
+    public NetworkDictionary<PlayerRef, PlayerData> GetPlayers()
     {
         foreach (var player in Players)
         {
@@ -58,6 +56,16 @@ public class PlayerManager : NetworkBehaviour
             }
         }
         return Players;
+    }
+
+    public List<InputBlocker> GetPlayerInputBlockers()
+    {
+        var list = new List<InputBlocker>();
+        foreach (var player in Players)
+        {
+            list.Add(player.Value.GetComponent<InputBlocker>());
+        }
+        return list;
     }
 
     private List<PlayerData> _alivePlayers = new();
@@ -75,7 +83,7 @@ public class PlayerManager : NetworkBehaviour
 
     public bool IsValidPlayer(PlayerRef player)
     {
-        if (Players.ContainsKey(player.AsIndex))
+        if (Players.ContainsKey(player))
             return true;
         return false;
     }
@@ -85,8 +93,11 @@ public class PlayerManager : NetworkBehaviour
     {
         IsSpawned = true;
         
-        var uiController = FindAnyObjectByType<LobbyUI_Manager>();
-        this.AddRenderingAction(uiController.UpdateData);
+        // Note - 기획변경으로 더이상 사용하지않음
+        // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
+        // this.AddPlayerDataAction(uiController.UpdateData);
+        // OnChangedPlayers();
+
         DontDestroyOnLoad(this.gameObject);
 
         if (Runner.IsServer)
@@ -98,8 +109,8 @@ public class PlayerManager : NetworkBehaviour
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         IsSpawned = false;
-        OnPlayerDataRendered = null;
-        playerFadingTCS.Clear();
+        OnPlayerDataChanged = null;
+        playerFadingTCS.Clear();    
         Players.Clear();
         _alivePlayers.Clear();
     }
@@ -122,17 +133,18 @@ public class PlayerManager : NetworkBehaviour
             Debug.LogError("플레이어를 추가하는데 실패했습니다. 플레이어가 존재하지 않습니다.");
             return;
         }
-
+        
         foreach (var tempPlayer in tempPlayers)
         {
+            
             if (tempPlayer.Object.InputAuthority == player)
             {
-                Players.Add(tempPlayer.Object.InputAuthority.AsIndex, tempPlayer);
+                Players.Add(player, tempPlayer);
                 return;
             }
         }
 
-        Debug.LogError("플레이어를 추가하는데 실패했습니다.");
+        Debug.LogError($"플레이어를 추가하는데 실패했습니다. 요청된 PlayerRef {player}와 일치하는 InputAuthority를 찾을 수 없습니다.");
     }
 
     public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()
@@ -155,7 +167,7 @@ public class PlayerManager : NetworkBehaviour
 
         foreach (var tempPlayer in Players)
         {
-            if (tempPlayer.Key == player.AsIndex)
+            if (tempPlayer.Key == player)
             {
                 Players.Remove(tempPlayer.Key);
                 return (tempPlayer.Value.Object.InputAuthority, tempPlayer.Value.Object);
@@ -167,16 +179,24 @@ public class PlayerManager : NetworkBehaviour
     }
 
     // --- 데이터 렌더링 액션
-    public Action<NetworkDictionary<int, PlayerData>> OnPlayerDataRendered;
-    public void AddRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public Action<NetworkDictionary<PlayerRef, PlayerData>> OnPlayerDataChanged;
+    public void AddPlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
     {
-        OnPlayerDataRendered += action;
+        OnPlayerDataChanged += action;
     }
-    public void RemoveRenderingAction(Action<NetworkDictionary<int, PlayerData>> action)
+    public void RemovePlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
     {
-        OnPlayerDataRendered -= action;
+        OnPlayerDataChanged -= action;
+    }
+    private void OnChangedPlayers()
+    {
+        OnPlayerDataChanged?.Invoke(GetPlayers());
     }
 
+    public override void Render()
+    {
+        OnChangedPlayers();
+    }
 
     /// <summary>
     /// 최소인원수 이상이면서 준비여부를 확인하는 함수 
@@ -194,14 +214,6 @@ public class PlayerManager : NetworkBehaviour
         }
         
         return true;
-    }
-
-    public override void Render()
-    {
-        if (Players.Count >= 1)
-        {
-            OnPlayerDataRendered?.Invoke(GetPlayers());
-        }
     }
 
     public override async void FixedUpdateNetwork()
@@ -261,7 +273,7 @@ public class PlayerManager : NetworkBehaviour
             RPC_FadeOutUI();
             await WaitForAllPlayerFading();
 
-            var gameScenePath = GlobalSetting.Inst.FocusScenePath;
+            var gameScenePath = GlobalSetting.Inst.GameScenePath;
             await LevelManager.LoadSceneAsync(
                 gameScenePath, 
                 UnityEngine.SceneManagement.LoadSceneMode.Additive, 
@@ -350,11 +362,11 @@ public class PlayerManager : NetworkBehaviour
     /// <summary>
     /// 플레이어 데이터 가져오기
     /// </summary>
-    private PlayerData GetPlayerData(PlayerRef player)
+    public PlayerData GetPlayerData(PlayerRef player)
     {
-        if (Players.ContainsKey(player.AsIndex))
+        if (Players.ContainsKey(player))
         {
-            return Players[player.AsIndex];
+            return Players[player];
         }
         return null;
     }

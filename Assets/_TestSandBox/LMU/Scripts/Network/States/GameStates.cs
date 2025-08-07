@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Reflection;
 
 
-public class GameStates : NetworkBehaviour, IStateMachineOwner
+public class GameStates : NetworkBehaviour, IStateMachineOwner, IsPollingSpawnable
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
     
@@ -23,15 +23,18 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
 
     [Header("디버그용")]
-    [SerializeField] private LobbyUI_Manager uiController = null;
-    [SerializeField] private Fader fader = null;
-    [SerializeField] private CutSceneController cutSceneController = null;
-    [SerializeField] private PlayerManager playerManager = null;
-    [SerializeField] private NetworkEventSystem networkEventSystem = null;
+    [SerializeField] private LobbyUI_Manager _uiController = null;
+    [SerializeField] private Fader _fader = null;
+    [SerializeField] private CutSceneController _cutSceneController = null;
+    [SerializeField] private PlayerManager _playerManager = null;
+    [SerializeField] private NetworkEventSystem _networkEventSystem = null;
     [SerializeField] private StateBehaviour[] allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
+    public bool IsSpawned { get; set; }
+
     public override void Spawned()
     {
+        IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
@@ -153,11 +156,11 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
-            { typeof(LobbyUI_Manager), uiController != null ? uiController : LobbyUI_Manager.Inst },
-            { typeof(Fader), fader != null ? fader : Fader.Inst },
-            { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
-            { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
-            { typeof(NetworkEventSystem), networkEventSystem != null ? networkEventSystem : NetworkEventSystem.Inst }
+            { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
+            { typeof(Fader), _fader != null ? _fader : Fader.Inst },
+            { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },
+            { typeof(CutSceneController), _cutSceneController != null ? _cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
+            { typeof(NetworkEventSystem), _networkEventSystem != null ? _networkEventSystem : NetworkEventSystem.Inst }
         };
 
         foreach (var state in allStates)
@@ -203,5 +206,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         }
 
         refs.Clear();
+    }
+
+    public async Awaitable<bool> IsPollingSpawned()
+    {
+        while (IsSpawned == false)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+        return true;
     }
 } 

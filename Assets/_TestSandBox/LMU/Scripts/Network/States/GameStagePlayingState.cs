@@ -13,6 +13,12 @@ public class GameStagePlayingState : BaseStateBehaviour
         if (Runner.IsServer)
         {
             var startPos = GameObject.FindGameObjectsWithTag("StartPos").ToList();
+            if (startPos == null || startPos.Count <= 0)
+            {
+                Debug.LogError("시작 위치가 없습니다.");
+                return;
+            }
+
             var players = PlayerM.Players.ToList();
             foreach (var player in players)
             {
