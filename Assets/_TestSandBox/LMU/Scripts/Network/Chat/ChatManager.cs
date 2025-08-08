@@ -3,17 +3,28 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
-public class ChatManager : NetworkBehaviour, IAfterSpawned
+public class ChatManager : NetworkBehaviour, IsPollingSpawnable
 {
     public static ChatManager Inst => BaseManager<ChatManager>.Inst;
     public static bool HasInstance => BaseManager<ChatManager>.HasInstance;
 
     [Networked, OnChangedRender(nameof(OnChangedChatHistories)), UnitySerializeField]
     public ref ChatHistoryList ChatHistories => ref MakeRef<ChatHistoryList>();
-    
-    public void AfterSpawned()
+    public bool IsSpawned { get; set; }
+
+    public async Awaitable<bool> IsPollingSpawned()
     {
-        NetworkEventSystem.Inst.RegisterManager(this);
+        while (IsSpawned == false)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+        
+        return true;
+    }
+
+    public override void Spawned()
+    {
+        IsSpawned = true;
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -46,10 +57,8 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
         if (runner.IsServer == false)
             return;
 
-        Debug.Log($"RPC_SendChatMessage: {sender} {message} {channel}");
-        var chat = new ChatHistory(channel, sender, default, message);
+        var chat = new ChatHistory(channel, sender, default, message); 
         chat.TickTime = runner.Tick;
         Inst.ChatHistories.Add(chat);
     }
-
 }

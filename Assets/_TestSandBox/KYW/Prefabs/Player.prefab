@@ -317,6 +317,7 @@ MonoBehaviour:
   - {fileID: 400892960013748399}
   - {fileID: 5433501543160398299}
   - {fileID: 3765344478471271946}
+  - {fileID: 8882726418928573773}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3832846567861602017
 MonoBehaviour:
@@ -628,6 +629,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8734abc9f3eea1b4398dd6e282821007, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _readyText: {fileID: 0}
   _Static_PlayerData:
     NickName:
       _length: 0
@@ -1927,10 +1929,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2893720591995745446}
     m_Modifications:
-    - target: {fileID: 371224185343180218, guid: b595421b022c73641a881e67c50ebcb3, type: 3}
-      propertyPath: _ownerPlayerData
-      value: 
-      objectReference: {fileID: 919117524012339033}
     - target: {fileID: 3321940820645882089, guid: b595421b022c73641a881e67c50ebcb3, type: 3}
       propertyPath: m_Name
       value: UI_Player
@@ -2025,3 +2023,14 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 8485770587558172035, guid: b595421b022c73641a881e67c50ebcb3, type: 3}
   m_PrefabInstance: {fileID: 9107143708613992695}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &8882726418928573773 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 371224185343180218, guid: b595421b022c73641a881e67c50ebcb3, type: 3}
+  m_PrefabInstance: {fileID: 9107143708613992695}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 094b3e92213ffd04e9e765dab61a348b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
