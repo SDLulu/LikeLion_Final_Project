@@ -27,6 +27,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
     private Dictionary<string, GameObject[]> mapPrefabDict;
 
+    private int bossStage = 0;
+
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
     [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 메인 타일맵 (맵 생성시 타일을 추가하는 타일맵)
 
@@ -41,6 +43,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
     [field: SerializeField] public List<PMK_TileTable> tileItems { get; private set; }
+
+
+    [Header("특별한 맵 생성 확률 설정")]
+    [SerializeField] private int special_Map_Chance = 20; // 특별한 맵 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
 
 
     [Header("TileZoneSpawner 설정")]
@@ -175,9 +181,22 @@ public partial class PMK_TileRogic : NetworkBehaviour
         SaveMapPos();
         SpawnMap_Instantiate();
         DownExit_Map_Instantiate(removeMapX);
-        Create_Special_Map(0, 10);
+        Create_Special_Map(0, special_Map_Chance);
         Create_EmptyMap();
         mainTilemap.RefreshAllTiles();
+    }
+
+
+    public void ResetBoosMap()
+    {
+        mainTilemap.ClearAllTiles();
+
+        foreach (Transform child in parentTrans) // 모든 자식 오브젝트를 제거합니다.
+        {
+            Destroy(child.gameObject);
+        }
+        // 오브젝트 제거
+        tileRPCManager.ClearAllArrows(); // 발사된 화살들을 모두 제거합니다.
     }
     #endregion
 
@@ -207,7 +226,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : randomIndex;
+            if (mapType != "B" && mapType != "C")
+            {
+                randomIndex = Random.Range(0, prefabs.Length);
+            }
 
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
