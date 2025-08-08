@@ -46,6 +46,7 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
         if (runner.IsServer == false)
             return;
 
+        Debug.Log($"RPC_SendChatMessage: {sender} {message} {channel}");
         var chat = new ChatHistory(channel, sender, default, message);
         chat.TickTime = runner.Tick;
         Inst.ChatHistories.Add(chat);

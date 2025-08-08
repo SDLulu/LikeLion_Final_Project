@@ -44,14 +44,10 @@ public class LevelManager : NetworkSceneManagerDefault
         {
             CameraMover.Inst.SetSolidColorEnv();
         }
-        else
-        {
-            CameraMover.Inst.SetSkyBoxEnv();
-        }
     }
 
     protected override IEnumerator UnloadSceneCoroutine(SceneRef sceneRef)
     {
-        return base.UnloadSceneCoroutine(sceneRef);
+        yield return base.UnloadSceneCoroutine(sceneRef);
     }
 }
