@@ -5,32 +5,161 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
-
-public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
+[RequiredManager(typeof(PlayerManager))]
+public class PlayerManager : NetworkBehaviour, IPlayerJoined
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
-    
+
     [Header("디버그용")]
-    [SerializeField] private int minPlayersToStart = 2;
-    [SerializeField] private bool isInGame = false;
-    [SerializeField] private bool isGameSceneLoading = false;
-    [SerializeField] private bool isGameSceneLoaded = false;
+    [SerializeField] private int _minPlayersToStart = 2;
+    [SerializeField] private bool _isInGame = false;
+    [SerializeField] private bool _isGameSceneLoading = false;
+    [SerializeField] private bool _isGameSceneLoaded = false;
+    public int MinPlayersToStart => _minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
 
+    // -- 서버 전용 필드
+    private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
+    private List<NetworkObject> _alivePlayers = new();
+    private Dictionary<PlayerRef, ChangeDetector> _changeDetectors = new();
+
+    // -- 네트워크 필드
     [Networked, Capacity(4)]
-    public NetworkDictionary<PlayerRef, PlayerData> Players => default;
+    public NetworkDictionary<PlayerRef, NetworkObject> Players => default;
 
-    public Dictionary<PlayerRef, Action> OnPlayerDataChangedActions = new();
-    public Dictionary<PlayerRef, AwaitableCompletionSource> playerFadingTCS = new();
-    public int MinPlayersToStart => minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
-    public bool IsSpawned {get; set;}
-    public async Awaitable<bool> IsPollingSpawned()
+    async void IPlayerJoined.PlayerJoined(PlayerRef player)
     {
-        while (IsSpawned == false)
+        await Awaitable.WaitForSecondsAsync(5.0f);
+        if (Runner.IsServer)
+            AddPlayer(player);
+    }
+
+    public async override void Spawned()
+    {
+        DontDestroyOnLoad(this.gameObject);
+        NetworkEventSystem.Inst.RegisterManager(this);
+
+        await Awaitable.WaitForSecondsAsync(5.0f);
+        if (Runner.IsServer)
+            AddPlayer(Runner.LocalPlayer);
+
+        // Note - 기획변경으로 더이상 사용하지않음
+        // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
+        // this.AddPlayerDataAction(uiController.UpdateData);
+        // OnChangedPlayers();
+
+        if (Runner.IsServer)
         {
-            await Awaitable.NextFrameAsync();
+            NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => MoveToGameScene(sceneName);
         }
-        return true;
+    }
+
+    public override void Despawned(NetworkRunner runner, bool hasState)
+    {
+        _fadingTCS.Clear();
+        Players.Clear();
+        _alivePlayers.Clear();
+        _changeDetectors.Clear();
+    }
+
+    public override async void FixedUpdateNetwork()
+    {
+        // 조건을 만족하면 게임 시작 - 씬변경후 게임의 상태를 PlayingState로 변경
+        bool startCondition = Runner.IsServer &&
+                                Players.Count >= MinPlayersToStart &&
+                                _isGameSceneLoading == false &&
+                                _isInGame == false;
+
+        if (startCondition == false)
+            return;
+
+        var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
+        if (result)
+            GameStates.Inst.DelayForceActiveState<GameStagePlayingState>();
+    }
+
+    public override void Render()
+    {
+        if (CheckPlayerDataChanged())
+            OnChangedPlayers();
+    }
+
+    #region 유틸리티
+    public void AddPlayer(PlayerRef player)
+    {
+        if (Runner.IsServer == false)
+            return;
+
+        if (Players.ContainsKey(player))
+        {
+            Debug.LogError($"이미 존재하는 플레이어 입니다 {player}");
+            return;
+        }
+
+        var playerObj = Runner.GetPlayerObject(player);
+        if (playerObj == null)
+        {
+            foreach (var activePlayer in Runner.ActivePlayers)
+            {
+                if (Players.ContainsKey(activePlayer))
+                    continue;
+
+                playerObj = Runner.TryGetPlayerObject(activePlayer, out var obj) ? obj : null;
+                if (playerObj == null)
+                    continue;
+
+                Players.Add(activePlayer, playerObj);
+                if (_changeDetectors.ContainsKey(activePlayer) == false)
+                {
+                    _changeDetectors[activePlayer] = playerObj.GetComponent<PlayerData>().GetChangeDetector(ChangeDetector.Source.SimulationState);
+                }
+                return;
+            }
+        }
+
+        Players.Add(player, playerObj);
+        if (_changeDetectors.ContainsKey(player) == false)
+        {
+            _changeDetectors[player] = playerObj.GetComponent<PlayerData>().GetChangeDetector(ChangeDetector.Source.SimulationState);
+        }
+
+        // 플레이어 추가시 데이터 변경 이벤트 발생
+        OnChangedPlayers();
+    }
+
+    public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()
+    {
+        var list = new List<(PlayerRef, NetworkObject)>();
+        foreach (var player in Players)
+        {
+            list.Add(TryRemovePlayer(player.Key));
+        }
+        return list;
+    }
+
+    public (PlayerRef, NetworkObject) TryRemovePlayer(PlayerRef player)
+    {
+        if (Players.Count <= 0)
+        {
+            Debug.LogError("플레이어를 제거하는데 실패했습니다. 등록된 플레이어가 존재하지 않습니다.");
+            return (PlayerRef.None, null);
+        }
+
+        foreach (var tempPlayer in Players)
+        {
+            if (tempPlayer.Key == player)
+            {
+                Players.Remove(tempPlayer.Key);
+                if (_changeDetectors.ContainsKey(tempPlayer.Key))
+                {
+                    _changeDetectors.Remove(tempPlayer.Key);
+                }
+                return (tempPlayer.Key, tempPlayer.Value);
+            }
+        }
+
+        Debug.LogError("플레이어를 제거하는데 실패했습니다.");
+        return (PlayerRef.None, null);
     }
 
     /// <summary>
@@ -38,15 +167,33 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     /// </summary>
     public async Awaitable<bool> WaitForAllPlayerFading()
     {
-        foreach (var player in playerFadingTCS)
+        foreach (var player in _fadingTCS)
         {
             await player.Value.Awaitable;
         }
         return true;
     }
 
+    public PlayerData GetPlayerData(PlayerRef player)
+    {
+        if (Players.ContainsKey(player))
+        {
+            return Players[player].GetComponent<PlayerData>();
+        }
+        return null;
+    }
 
-    public NetworkDictionary<PlayerRef, PlayerData> GetPlayers()
+    public Dictionary<PlayerRef, PlayerData> GetPlayerDatas()
+    {
+        var dict = new Dictionary<PlayerRef, PlayerData>();
+        foreach (var player in Players)
+        {
+            dict.Add(player.Key, player.Value.GetComponent<PlayerData>());
+        }
+        return dict;
+    }
+
+    public NetworkDictionary<PlayerRef, NetworkObject> GetPlayers()
     {
         foreach (var player in Players)
         {
@@ -68,11 +215,10 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         return list;
     }
 
-    private List<PlayerData> _alivePlayers = new();
-    public List<PlayerData> GetAlivePlayers()
+    public List<NetworkObject> GetAlivePlayers()
     {
         _alivePlayers.Clear();
-        foreach (var player in Players) 
+        foreach (var player in Players)
         {
             var p = player.Value.GetComponent<PlayerStageController>();
             if (p.IsAlive())
@@ -87,147 +233,68 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             return true;
         return false;
     }
+    #endregion
 
-
-    public override void Spawned()
-    {
-        IsSpawned = true;
-        
-        // Note - 기획변경으로 더이상 사용하지않음
-        // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
-        // this.AddPlayerDataAction(uiController.UpdateData);
-        // OnChangedPlayers();
-
-        DontDestroyOnLoad(this.gameObject);
-
-        if (Runner.IsServer)
-        {
-            NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>  MoveToGameScene(sceneName);
-        }
-    }
-
-    public override void Despawned(NetworkRunner runner, bool hasState)
-    {
-        IsSpawned = false;
-        OnPlayerDataChanged = null;
-        playerFadingTCS.Clear();    
-        Players.Clear();
-        _alivePlayers.Clear();
-    }
-
-    // -- 플레이어 관리
-    public void AddPlayer(PlayerRef player)
-    {
-        if (IsSpawned == false)
-        {
-            Debug.LogError("플레이어 매니저가 스폰되지 않았습니다.");
-            return;
-        }
-
-        if (Runner.IsServer == false)
-            return;
-
-        var tempPlayers = FindObjectsByType<PlayerData>(FindObjectsSortMode.None);
-        if (tempPlayers == null || tempPlayers.Length <= 0)
-        {
-            Debug.LogError("플레이어를 추가하는데 실패했습니다. 플레이어가 존재하지 않습니다.");
-            return;
-        }
-        
-        foreach (var tempPlayer in tempPlayers)
-        {
-            
-            if (tempPlayer.Object.InputAuthority == player)
-            {
-                Players.Add(player, tempPlayer);
-                return;
-            }
-        }
-
-        Debug.LogError($"플레이어를 추가하는데 실패했습니다. 요청된 PlayerRef {player}와 일치하는 InputAuthority를 찾을 수 없습니다.");
-    }
-
-    public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()
-    {
-        var list = new List<(PlayerRef, NetworkObject)>();
-        foreach (var player in Players)
-        {
-            list.Add(TryRemovePlayer(player.Value.Object.InputAuthority));
-        }
-        return list;
-    }
-
-    public (PlayerRef, NetworkObject) TryRemovePlayer(PlayerRef player)
-    {
-        if (Players.Count <= 0)
-        {
-            Debug.LogError("플레이어를 제거하는데 실패했습니다. 등록된 플레이어가 존재하지 않습니다.");
-            return (PlayerRef.None, null);
-        }
-
-        foreach (var tempPlayer in Players)
-        {
-            if (tempPlayer.Key == player)
-            {
-                Players.Remove(tempPlayer.Key);
-                return (tempPlayer.Value.Object.InputAuthority, tempPlayer.Value.Object);
-            }
-        }
-
-        Debug.LogError("플레이어를 제거하는데 실패했습니다.");
-        return (PlayerRef.None, null);
-    }
-
-    // --- 데이터 렌더링 액션
-    public Action<NetworkDictionary<PlayerRef, PlayerData>> OnPlayerDataChanged;
-    public void AddPlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
+    #region 데이터 변경 알림
+    public Action<Dictionary<PlayerRef, PlayerData>> OnPlayerDataChanged;
+    public void AddPlayerDataAction(Action<Dictionary<PlayerRef, PlayerData>> action)
     {
         OnPlayerDataChanged += action;
     }
-    public void RemovePlayerDataAction(Action<NetworkDictionary<PlayerRef, PlayerData>> action)
+    public void RemovePlayerDataAction(Action<Dictionary<PlayerRef, PlayerData>> action)
     {
         OnPlayerDataChanged -= action;
     }
     private void OnChangedPlayers()
     {
-        OnPlayerDataChanged?.Invoke(GetPlayers());
+        OnPlayerDataChanged?.Invoke(GetPlayerDatas());
     }
 
-    public override void Render()
+    /// <summary>
+    /// 데이터 변경을 감지하고 결과값을 반환하는 함수
+    /// </summary>
+    private bool CheckPlayerDataChanged()
     {
-        OnChangedPlayers();
-    }
+        foreach (var kvp in Players)
+        {
+            var playerData = kvp.Value;
+            if (playerData == null)
+            {
+                continue;
+            }
 
+            if (_changeDetectors.ContainsKey(kvp.Key) == false)
+            {
+                _changeDetectors[kvp.Key] = kvp.Value.GetComponent<PlayerData>().GetChangeDetector(ChangeDetector.Source.SimulationState);
+            }
+
+            var detector = _changeDetectors[kvp.Key];
+            foreach (var _ in detector.DetectChanges(kvp.Value.GetComponent<PlayerData>()))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    #endregion
+
+    #region 게임 시작
     /// <summary>
     /// 최소인원수 이상이면서 준비여부를 확인하는 함수 
     /// </summary>
     public bool AreAllPlayersReady()
     {
-        int requiredPlayers = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
-        if (Players.Count < requiredPlayers) 
+        int requiredPlayers = MinPlayersToStart;
+        if (Players.Count < requiredPlayers)
             return false;
-        
+
         foreach (var kvp in Players)
         {
-            if (kvp.Value.IsReady == false) 
+            if (kvp.Value.GetComponent<PlayerData>().IsReady == false)
                 return false;
         }
-        
-        return true;
-    }
 
-    public override async void FixedUpdateNetwork()
-    {
-        int requiredPlayers = MinPlayersToStart;
-        if (Runner.IsServer && Players.Count >= requiredPlayers && isGameSceneLoading == false && isInGame == false)
-        {
-            var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
-            if (result)
-            {
-                // 게임 상태 StagePlaying 변경
-                GameStates.Inst.DelayForceActiveState<GameStagePlayingState>();
-            }
-        }
+        return true;
     }
 
 
@@ -237,7 +304,6 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         if (isStart == false)
         {
             //Debug.Log("아직 준비되지 않은 플레이어가 있습니다.");
-            await Awaitable.NextFrameAsync();
             return false;
         }
 
@@ -245,9 +311,9 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         if (Runner.GameMode == GameMode.Client)
         {
             Debug.Log("클라이언트 접속완료");
-            isGameSceneLoading = false;
-            isInGame = true;
-            isGameSceneLoaded = true;   
+            _isGameSceneLoading = false;
+            _isInGame = true;
+            _isGameSceneLoaded = true;
             RPC_MoveToGameScene();
             return false;
         }
@@ -255,15 +321,15 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
         // 서버인 경우
         try
         {
-            isGameSceneLoading = true;
-            isGameSceneLoaded = false;
-            isInGame = false;
+            _isGameSceneLoading = true;
+            _isGameSceneLoaded = false;
+            _isInGame = false;
 
-            playerFadingTCS.Clear();
+            _fadingTCS.Clear();
             foreach (var player in Players)
             {
-                var playerRef = player.Value.Object.InputAuthority;
-                playerFadingTCS.Add(playerRef, new());
+                var playerRef = player.Key;
+                _fadingTCS.Add(playerRef, new());
             }
 
             Debug.Log("모든 플레이어가 준비되었습니다!");
@@ -275,14 +341,14 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
 
             var gameScenePath = GlobalSetting.Inst.GameScenePath;
             await LevelManager.LoadSceneAsync(
-                gameScenePath, 
-                UnityEngine.SceneManagement.LoadSceneMode.Additive, 
+                gameScenePath,
+                UnityEngine.SceneManagement.LoadSceneMode.Additive,
                 onLoadComplete: () =>
                 {
                     Debug.Log("게임 씬 로드 완료");
-                    isGameSceneLoading = false;
-                    isInGame = true;
-                    isGameSceneLoaded = true;   
+                    _isGameSceneLoading = false;
+                    _isInGame = true;
+                    _isGameSceneLoaded = true;
                 });
 
             return true;
@@ -293,11 +359,9 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             return false;
         }
     }
+    #endregion
 
-
-
-
-
+    #region 씬이동 및 RPC
     /// <summary>
     /// Note - 게임씬 로드완료시 호출 / Only Server
     /// </summary>
@@ -308,7 +372,6 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             RPC_MoveToGameScene();
         }
     }
-
 
     /// <summary>
     /// 게임오브젝트를 특정씬으로 이동시키는 함수
@@ -336,7 +399,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             }
         }
     }
-    
+
     /// <summary>
     /// 특정 플레이어를 게임 씬으로 이동
     /// </summary>
@@ -358,18 +421,6 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
             }
         }
     }
-    
-    /// <summary>
-    /// 플레이어 데이터 가져오기
-    /// </summary>
-    public PlayerData GetPlayerData(PlayerRef player)
-    {
-        if (Players.ContainsKey(player))
-        {
-            return Players[player];
-        }
-        return null;
-    }
 
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -385,7 +436,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_FadeOutCompleted(PlayerRef player)
     {
-        playerFadingTCS[player].SetResult();
+        _fadingTCS[player].SetResult();
     }
 
 
@@ -394,6 +445,7 @@ public class PlayerManager : NetworkBehaviour, IsPollingSpawnable
     {
         UIEventSystem.Inst.TriggerGameUIActive(true);
         LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
-        _= Fader.Inst.FadeInAsync(Color.black, 1.0f);
+        _ = Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
+    #endregion
 }
