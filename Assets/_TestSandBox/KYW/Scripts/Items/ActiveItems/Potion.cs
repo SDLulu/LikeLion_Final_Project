@@ -84,30 +84,13 @@ public class Potion : NetworkBehaviour, IItemInteraction
         // 포션은 Release 기능이 없으므로 빈 구현
     }
     
-    // 🎯 플레이어 상호작용 컴포넌트 찾기 (개선된 버전)
+    // 🎯 플레이어 상호작용 컴포넌트 찾기 (단순화)
     private PlayerInteractionBase FindPlayerInteraction()
     {
-        // 현재 포션을 들고 있는 플레이어 찾기
-        var allPlayers = FindObjectsByType<PlayerInteractionBase>(FindObjectsSortMode.None);
-        foreach (var player in allPlayers)
+        // 아이템을 들고 있을 때: transform.parent.parent에서 플레이어 찾기
+        if (transform.parent != null && transform.parent.parent != null)
         {
-            var inventory = player.GetComponentInChildren<PlayerInventory>();
-            if (inventory != null && inventory.CurrentHeldObject == this.gameObject)
-            {
-                return player;
-            }
-        }
-        
-        // 만약 찾지 못했다면, 포션의 부모 오브젝트를 통해 찾기 시도
-        var parent = transform.parent;
-        while (parent != null)
-        {
-            var playerInteraction = parent.GetComponent<PlayerInteractionBase>();
-            if (playerInteraction != null)
-            {
-                return playerInteraction;
-            }
-            parent = parent.parent;
+            return transform.parent.parent.GetComponent<PlayerInteractionBase>();
         }
         
         return null;
