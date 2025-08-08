@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ public class PlayerHealth : NetworkBehaviour
     public int Health { get; private set; } = 4;
 
     public int MaxHealth => 4;
+
+    public event Action OnHealthChangedEvent; // 인자 없는 알림 (인벤토리 방식과 통일)
 
     // PlayerState 변경을 위한 상태 관리자 참조
     private PlayerDeathHandler playerDeathHandler;
@@ -40,7 +43,8 @@ public class PlayerHealth : NetworkBehaviour
     private void OnHealthChanged()
     {
         Debug.Log($"[PlayerHealth] Health changed to: {Health}");
-        // TODO: UI 갱신, 이펙트 등
+        // UI 갱신 이벤트 알림 (값은 구독자 측에서 조회)
+        OnHealthChangedEvent?.Invoke();
     }
 
     // 사망 처리
