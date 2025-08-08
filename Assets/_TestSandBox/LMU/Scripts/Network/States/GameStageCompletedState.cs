@@ -43,7 +43,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             _bgTaskTCS = new();
             foreach (var player in players)
             {
-                PlayerRef @ref = player.Value.Object.InputAuthority;
+                PlayerRef @ref = player.Key;
                 _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
                 {
                     Tuple.Create(0, new AwaitableCompletionSource()),
@@ -190,7 +190,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
-            await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers(), cutDuration);
+            await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
             onCompleted?.Invoke();
         }
