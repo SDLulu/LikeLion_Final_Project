@@ -4,15 +4,27 @@ using UnityEngine;
 
 public class ChatClient : NetworkBehaviour
 {
-    private UI_Chating _uiChating;
+    [Header("디버그용")]
+    [SerializeField] private UI_Chating _uiChating;
 
     private const string WHISPER_COMMAND = "/w";
 
-    public async override void Spawned()
+    public override void Spawned()
+    {
+        base.Spawned();
+        if (NetworkEventSystem.Inst.IsReady)
+        {
+            OnInit();
+        }
+        else
+        {
+            NetworkEventSystem.Inst.OnAllManagersReady += OnInit;
+        }
+    }
+    public void OnInit()
     {
         if (Object.HasInputAuthority)
         {
-            await Awaitable.WaitForSecondsAsync(2.0f);
             _uiChating = LobbyUI_Manager.Inst.UIChatting;
             _uiChating.OnInit(this);
         }
@@ -63,7 +75,7 @@ public class ChatClient : NetworkBehaviour
 
         // 보내는 사람의 닉네임초기화
         string senderName = "";
-        var players = PlayerManager.Inst.GetPlayers();
+        var players = PlayerManager.Inst.GetPlayerDatas();
         if (players.ContainsKey(chatHistory.Sender))
         {
             senderName = players[chatHistory.Sender].NickName;

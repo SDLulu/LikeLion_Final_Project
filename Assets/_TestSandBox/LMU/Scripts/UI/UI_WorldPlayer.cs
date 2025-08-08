@@ -1,19 +1,13 @@
+using System.Collections.Generic;
 using System.Linq;
-using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum E_WorldPlayerForm
-{
-    None,
-    Lobby,
-    World,
-}
-
-public class UI_WorldPlayer : NetworkBehaviour
+public class UI_WorldPlayer : MonoBehaviour
 {
     [Header("인스펙터 참조")]
+    [SerializeField] private PlayerData _ownerPlayerData;
     [SerializeField] private TMP_Text _playerName;
     [SerializeField] private Image _playerReadyIcon;
 
@@ -24,72 +18,70 @@ public class UI_WorldPlayer : NetworkBehaviour
     [Header("디버그용")]
     [SerializeField] private Button _readyButton;
 
-    public override async void Spawned()
+
+    public void Awake()
     {
-        while (true)
+        if (NetworkEventSystem.Inst.IsReady)
         {
-            if (PlayerManager.HasInstance == false)
-            {
-                await Awaitable.NextFrameAsync();
-                continue;
-            }
-
-            if (this.Object.HasInputAuthority)
-            {
-                PlayerManager.Inst.AddPlayerDataAction(UpdateData);
-
-                NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
-                {
-                    OnSceneLoadDone(sceneName);
-                };
-                OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
-                break;
-            }
+            OnInit();
+        }
+        else
+        {
+            NetworkEventSystem.Inst.OnAllManagersReady += OnInit;
         }
     }
 
-    public void OnSceneLoadDone(string sceneName)
-    {
-        if (sceneName == GlobalSetting.Inst.LobbyScenePath)
-        {
-            _readyButton = FindObjectsByType<Button>(FindObjectsSortMode.None)
-                            .FirstOrDefault((button) =>
-                            button.tag == "LobbyReady");
-            _readyButton.onClick.AddListener(OnReadyButtonClicked);
-        }
-    }
-
-    public override void Despawned(NetworkRunner runner, bool hasState)
+    public void OnDestroy()
     {
         _readyButton?.onClick.RemoveAllListeners();
     }
 
+    public void OnInit()
+    {
+        PlayerManager.Inst.AddPlayerDataAction(UpdateData);
+        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
+        {
+            OnSceneLoadDone(sceneName);
+        };
+        OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
+    }
+
+    public async void OnSceneLoadDone(string sceneName)
+    {
+        if (sceneName == GlobalSetting.Inst.LobbyScenePath)
+        {
+            _readyButton?.onClick.RemoveAllListeners();
+            while (_readyButton == null)
+            {
+                var buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
+                _readyButton = buttons.FirstOrDefault((button) => button.tag == "LobbyReady");
+
+                await Awaitable.WaitForSecondsAsync(0.1f);
+            }
+
+            _readyButton.onClick.AddListener(OnReadyButtonClicked);
+        }
+    }
+
     private void OnReadyButtonClicked()
     {
-        var playerData = PlayerManager.Inst.GetPlayerData(this.Object.InputAuthority);
-        playerData.RPC_ToggleReady(playerData.IsReady == false);
+        _ownerPlayerData.RPC_ToggleReady(_ownerPlayerData.IsReady == false);
     }
 
-    public void SetPlayerName(string name)
+    /// <summary>
+    /// Note - 데이터가 변경이 될때 호출 / 매개변수의 players를 사용하지는 않음. 
+    /// </summary>
+    public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
-        _playerName.text = name;
-    }
+        bool hasNick = string.IsNullOrEmpty(_ownerPlayerData.NickName) == false;
+        bool hasChar = string.IsNullOrEmpty(_ownerPlayerData.CharacterName) == false;
+        bool hasSkin = string.IsNullOrEmpty(_ownerPlayerData.SkinPath) == false;
+        bool isInitialized = hasNick && hasChar && hasSkin;
 
-    public void SetPlayerReadyIcon(bool isReady)
-    {
-        _playerReadyIcon.color = isReady ? _readyColor : _unReadyColor;
-    }
-
-    public void UpdateData(Fusion.NetworkDictionary<Fusion.PlayerRef, PlayerData> players)
-    {
-        foreach (var player in players)
+        if (isInitialized)
         {
-            if (player.Value.Object.InputAuthority != this.Object.InputAuthority)
-                continue;
-
-            SetPlayerName(player.Value.NickName);
-            SetPlayerReadyIcon(player.Value.IsReady);
-            break;
+            _playerName.text = _ownerPlayerData.NickName;
+            _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
         }
     }
 }

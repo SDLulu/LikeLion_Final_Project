@@ -44,7 +44,7 @@ public class UI_PlayerSlotContainer : MonoBehaviour
         }
     }
 
-    public void UpdateData(Fusion.NetworkDictionary<Fusion.PlayerRef, PlayerData> players)
+    public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
         if (GlobalSetting.Inst.IsShowGameUI == false)
         {
