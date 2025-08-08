@@ -33,11 +33,6 @@ public struct DynamicCharacterData : INetworkInput
 
 public class PlayerData : NetworkBehaviour
 {
-    [Header("인스펙터 참조")]
-    [SerializeField] private UI_ReadyText _readyText;
-
-    public GameMode GameMode {get; set;}
-
     [Networked, UnitySerializeField]
     public ref StaticPlayerData Static_PlayerData => ref MakeRef<StaticPlayerData>();
 
@@ -62,46 +57,30 @@ public class PlayerData : NetworkBehaviour
             FakeClientData = UI_CreateNickName.FakeClientData;
             RPC_SetNickName(FakeClientData.NickName);
         }
+        else
+        {
+            FakeClientData = null;
+        }
 
         // 데이터 서버에서 생성후 전파
         if (Runner.IsServer && Object.HasStateAuthority)
         {
             SkinData = DataManager.Inst.GetSkinData(10000);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
-            
-            // 게임 상태변경시 Ready 상태 초기화
-            NetworkEventSystem.Inst.OnGameStateChangedEvent += (previousState, currentState) => 
-            {
-                // if (currentState != E_StateName.GameStagePlayingState)
-                //     return;
-
-                // if (_readyText?.IsReady == false)
-                //     return;
-
-                // RPC_ReadyTween(false);
-            };
         }
-
-        FakeClientData = null;
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_SetNickName(NetworkString<_16> nickName)
     {
-        Static_PlayerData = new StaticPlayerData()
-        {
-            NickName = nickName
-        };
+        Static_PlayerData.NickName = nickName;
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_ChangeCharacter(NetworkString<_16> characterName, NetworkString<_64> skinPath)
     {
-        Dynamic_CharacterData = new DynamicCharacterData()
-        {
-            CharacterName = characterName,
-            SkinPath = skinPath
-        };
+        Dynamic_CharacterData.CharacterName = characterName;
+        Dynamic_CharacterData.SkinPath = skinPath;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} 캐릭터 변경: {characterName}");
     }
 

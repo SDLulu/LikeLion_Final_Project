@@ -35,6 +35,13 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
     public async Awaitable UnloadSceneAsync(string sceneName)
     {
         await SceneManager.UnloadSceneAsync(sceneName);
+
+        // 게임씬 종료시 카메라 SkyBox 복구
+        string gameName = GlobalSetting.Inst.GameScenePath;
+        if (sceneName == gameName)
+        {
+            CameraMover.Inst.SetSkyBoxEnv();
+        }
     }
 
     public Scene GetActiveScene()
