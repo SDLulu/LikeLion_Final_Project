@@ -3,8 +3,14 @@ using Fusion.Sockets;
 using LMCore;
 using UnityEngine;
 
-public class HostDisconnectHandler : MonoBehaviour
+public class ConnectionHandler : MonoBehaviour
 {
+    public void OnConnectRequest(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request, byte[] token)
+    {
+        Debug.Log($"OnConnectRequest 연결요청 - {request.RemoteAddress}");
+        CheckGameFlowControl(runner, request);
+    }
+
     public void OnDisconnectedFromServer(NetworkRunner runner, NetDisconnectReason reason)
     {
         Debug.Log($"OnDisconnectedFromServer - 호스트가 연결이 끊겼어요. - {reason}");
@@ -66,5 +72,33 @@ public class HostDisconnectHandler : MonoBehaviour
         {
             Debug.LogError($"ShotDown_AtServerInRoom 오류: {e.Message}");
         }
+    }
+
+
+    private void CheckGameFlowControl(NetworkRunner runner, NetworkRunnerCallbackArgs.ConnectRequest request)
+    {
+        if (runner == null || runner.IsServer == false || PlayerManager.HasInstance == false)
+        {
+            request.Refuse();
+            return;
+        }
+
+        bool isGameBlocked = false;
+        bool inGame = PlayerManager.Inst.IsInGame;
+        bool loadingGame = PlayerManager.Inst.IsGameSceneLoading;
+
+        if (inGame || loadingGame)
+        {
+            isGameBlocked = true;
+        }
+
+        if (isGameBlocked)
+        {
+            Debug.Log("진행 중인 게임 세션입니다. 새로운 접속을 거부합니다.");
+            request.Refuse();
+            return;
+        }
+
+        request.Accept();
     }
 }

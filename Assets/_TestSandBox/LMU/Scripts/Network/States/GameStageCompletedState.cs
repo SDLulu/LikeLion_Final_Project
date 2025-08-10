@@ -236,6 +236,11 @@ public class GameStageCompletedState : BaseStateBehaviour
             Debug.LogError("LoadNextMapAsync 오류");
             Debug.LogError(e.Message);  
         }
+        finally
+        {
+            _stageDataIndex++;
+            Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
+        }
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]

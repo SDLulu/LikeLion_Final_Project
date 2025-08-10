@@ -3,6 +3,10 @@ using System.Linq;
 using DG.Tweening;
 using UnityEngine;
 
+
+/// <summary>
+/// 개발 기획 변경으로 사용되지 않음.
+/// </summary>
 public class UI_PlayerSlotContainer : MonoBehaviour
 {
     [Header("설정")]
@@ -17,33 +21,17 @@ public class UI_PlayerSlotContainer : MonoBehaviour
 
     private void Awake()
     {
-        var slots = GetComponentsInChildren<UI_PlayerSlot>().ToList();
-        _playerSlots = slots;
-        foreach (var slot in _playerSlots)
-        {
-            slot.gameObject.SetActive(false);
-        }
-
-        _ = PollingDataAction();
+        // var slots = GetComponentsInChildren<UI_PlayerSlot>().ToList();
+        // _playerSlots = slots;
+        // foreach (var slot in _playerSlots)
+        // {
+        //     slot.gameObject.SetActive(false);
+        // }
     }
 
     /// <summary>
-    /// 플레이어 데이터 구독 Polling 
+    /// 기획 변경으로 사용되지 않음
     /// </summary>
-    public async Awaitable PollingDataAction()
-    {
-        while (true)
-        {
-             var playerM = FindAnyObjectByType<PlayerManager>();
-            if (playerM != null)
-            {
-                playerM.AddPlayerDataAction(UpdateData);
-                break;
-            }
-            await Awaitable.WaitForSecondsAsync(0.2f);
-        }
-    }
-
     public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
         if (GlobalSetting.Inst.IsShowGameUI == false)

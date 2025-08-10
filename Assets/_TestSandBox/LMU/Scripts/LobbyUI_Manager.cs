@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using Fusion;
 using LMCore;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
 {
@@ -11,10 +13,17 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     [field: SerializeField] public UI_Lobby UILobby {get; private set;}
     [field: SerializeField] public UI_Title UITitle {get; private set;}
     [field: SerializeField] public UI_Chating UIChatting {get; private set;}
+    [SerializeField] private TMP_Text _curSceneNameText;
 
     private static bool _inited = false;
     protected override async void Awake()
     {
+#if UNITY_EDITOR
+        _curSceneNameText.text = "현재 씬 : " + SceneManager.GetActiveScene().name;
+#else
+        _curSceneNameText.gameObject.SetActive(false);
+#endif
+
         if (_inited == false)
         {
             DontDestroyOnLoad(this);
@@ -29,13 +38,16 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
         }
     }
 
+    /// <summary>
+    /// 메인 타이틀 화면 활성화
+    /// </summary>
     public void ActiveTitleUI(bool showTitleTween = false)
     {
         UIEnterOnline.gameObject.SetActive(true);
         UILobby.gameObject.SetActive(false);
         UIChatting.gameObject.SetActive(false);
         if (showTitleTween)
-            UITitle.Show();
+            UITitle.ShowTitle();
     }
 
     public void ActiveLobbyOnLineUI()
