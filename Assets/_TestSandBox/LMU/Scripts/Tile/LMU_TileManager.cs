@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using UnityEditor;
 using UnityEngine;
 
 public partial class PMK_TileRogic : NetworkBehaviour
@@ -11,7 +12,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Debug.Log("구독수행됨");
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
             {
-                Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName}");
+                Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
@@ -23,9 +24,25 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             mapPrefabDict.Add(set.mapType, set.prefabs);
                     }
                 }
-                RPC_ResetMap();
+
+                //스테이지 로더 추가 할 곳
             };
             return;
         }
     }
 }
+
+// 민웅님 허락받고 추가하기
+//if (stageInfo.IsBossStage == 1)
+//{
+//    Debug.Log("보스 스테이지 로드");
+//    ResetBoosMap();
+//    Create_Map("B", bossStage, 0, 0);
+//    bossStage++;
+//    return;
+//}
+//else if (stageInfo.IsBossStage == 0)
+//{
+//    Debug.Log("일반 스테이지 로드");
+//    RPC_ResetMap();
+//}

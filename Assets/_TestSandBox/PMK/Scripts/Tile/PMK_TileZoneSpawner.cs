@@ -41,7 +41,7 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
     private IEnumerator DelayedTileSpawn()
     {
-        yield return new WaitForSeconds(0.05f);
+        yield return null;
 
         if (tileRPCManager.HasStateAuthority)
         {

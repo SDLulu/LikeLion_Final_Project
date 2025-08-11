@@ -65,7 +65,7 @@ GameObject:
   - component: {fileID: 4055363432359766617}
   - component: {fileID: 3015196361276702596}
   - component: {fileID: 967516147877385817}
-  - component: {fileID: 2024228497605858177}
+  - component: {fileID: 4288086619771486996}
   - component: {fileID: 7456059345074942352}
   - component: {fileID: 703647828870867153}
   - component: {fileID: 5751978690978429252}
@@ -326,7 +326,7 @@ CompositeCollider2D:
   m_GenerationType: 0
   m_EdgeRadius: 0
   m_ColliderPaths:
-  - m_Collider: {fileID: 2024228497605858177}
+  - m_Collider: {fileID: 4288086619771486996}
     m_ColliderPaths: []
   m_CompositePaths:
     m_Paths: []
@@ -334,7 +334,7 @@ CompositeCollider2D:
   m_OffsetDistance: 0.00005
   m_UseDelaunayMesh: 0
   m_CompositeGameObject: {fileID: 5523969648053472459}
---- !u!19719996 &2024228497605858177
+--- !u!19719996 &4288086619771486996
 TilemapCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -429,45 +429,17 @@ MonoBehaviour:
   maxTileY: 5
   nextTileX: 17
   nextTileY: 11
-  mapPrefabSets:
-  - mapType: C
-    prefabs:
-    - {fileID: 2777085221984976620, guid: 3ab09186f9d338b498b7d538397f74bf, type: 3}
-    - {fileID: 4675249073432161324, guid: 28f9115fd6c3519488e9806a403483d1, type: 3}
-  - mapType: LR
-    prefabs:
-    - {fileID: 7977107586126641711, guid: 1e85d83a7a36ca249865f786e12195a4, type: 3}
-    - {fileID: 7977107586126641711, guid: 0b5f1c00dc2750c429adccc48b3ed730, type: 3}
-    - {fileID: 7977107586126641711, guid: 3409d972621eba54aa3549b5371eb6b1, type: 3}
-    - {fileID: 7977107586126641711, guid: 5363bf327e947d34882d1f0a1a3506f9, type: 3}
-    - {fileID: 7977107586126641711, guid: 714b27b30c322754aa694c6491b4228d, type: 3}
-    - {fileID: 7977107586126641711, guid: 44b29076d3058be41bf9c73b0297233e, type: 3}
-  - mapType: D
-    prefabs:
-    - {fileID: 806208410943904702, guid: 6d4956d9c9a83eb48b71b0e1d0e20b6e, type: 3}
-    - {fileID: 806208410943904702, guid: fed27ecc4892ff64eb6094030f17997a, type: 3}
-    - {fileID: 3423471306990053970, guid: b39418135094cf549acea712fd3cc819, type: 3}
-    - {fileID: 3423471306990053970, guid: 7faa5a7f928008d46912f7d390ef74ac, type: 3}
-    - {fileID: 3423471306990053970, guid: 708ee465af63fb5429cec4cc3a8f6357, type: 3}
-    - {fileID: 5709646858404545092, guid: 5b0240b4c42b1634ea706a9a49bcec34, type: 3}
-  - mapType: W
-    prefabs:
-    - {fileID: 7785704958135451157, guid: 6bef849a0cae62e498f28d604b505eb5, type: 3}
-  - mapType: WD
-    prefabs:
-    - {fileID: 3710340501844651436, guid: 14ca8e19f217f20429556c31378db9af, type: 3}
-    - {fileID: 3710340501844651436, guid: 3209542fc917b6e419a34ca8cca38832, type: 3}
-  - mapType: S
-    prefabs:
-    - {fileID: 7374161544316796849, guid: 88f855dd6b176264faaa09ce63b6ca81, type: 3}
-  itemSpawnChance: 35
+  itemSpawnChance: 15
   <tileItems>k__BackingField:
   - {fileID: 11400000, guid: 1777164a16c2af946b715a3b1db80a9a, type: 2}
-  <ruleTile>k__BackingField: {fileID: 11400000, guid: e5bfaeb1773fadf408135faf6502512a, type: 2}
+  - {fileID: 11400000, guid: 109d99ec14aa3a14bba56c53ebf1cef0, type: 2}
+  - {fileID: 11400000, guid: cf9038bac35eef0489a8637297e4a45e, type: 2}
+  RuleTile: {fileID: 11400000, guid: e5bfaeb1773fadf408135faf6502512a, type: 2}
   <trap>k__BackingField:
   - {fileID: 2285204622532898624, guid: b9649cb108cb38b49a1a3422a2170762, type: 3}
   - {fileID: 1280988488147050962, guid: 0cae3d72db7732d439d05d3a3de3e0dd, type: 3}
-  <launchTrapPrefab>k__BackingField: {fileID: 7015154416482876505, guid: cb7f0f943c6766f45acacea309377768, type: 3}
+  LaunchTrapPrefab: {fileID: 7015154416482876505, guid: cb7f0f943c6766f45acacea309377768, type: 3}
+  _ClearCount: 0
   IsStageTestNetwork: 0
 --- !u!1 &6023215706384045932
 GameObject:
