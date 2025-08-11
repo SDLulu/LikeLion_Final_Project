@@ -69,7 +69,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private int removeMapX; // 선택할 맵의 기준이 되는 x좌표
     private List<int> LR_Choose = new List<int>(); // 왼쪽, 오른쪽 선택을 위한 리스트 (탈출 맵 생성 시 좌우를 선택하기 위한 리스트)
 
-
+    private List<Item.Data> partialItems;
 
     private void Awake()
     {
@@ -82,6 +82,11 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
+        partialItems = DataManager.Inst.ItemData
+        .OrderBy(kvp => kvp.Key)   // 딕셔너리 키 순 정렬
+        .Take(3)                   // 3개만 추출
+        .Select(kvp => kvp.Value) // Value(Item.Data)만 뽑음
+        .ToList();                // 리스트로 변환
         LoadMapPrefabsAutomatically();
     }
 
@@ -273,9 +278,23 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (child.GetComponent<Tilemap>() == null)
                 {
                     Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
+                    GameObject prefab = child.gameObject;
 
-                    Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
-                    child.name = child.name; // 이름을 원본과 동일하게 설정
+                    if (prefab.GetComponent<NetworkObject>() != null)
+                    {
+                        // 네트워크 오브젝트일 경우
+                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                        {
+                            obj.transform.SetParent(parentTrans);
+                            obj.name = prefab.name;
+                        });
+                    }
+                    else
+                    {
+                        // 일반 오브젝트일 경우
+                        GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
+                        obj.name = prefab.name;
+                    }
                 }
             }
 
@@ -322,12 +341,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
         bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item"));
 
         if (hasSameTag) return;
-
-        var partialItems = DataManager.Inst.ItemData
-        .OrderBy(kvp => kvp.Key) // 키 순서대로 정렬 (ID 순)
-        .Take(3)                  // 처음 3개만 가져오기
-        .Select(kvp => kvp.Value) // Item.Data만 추출
-        .ToList(); // 리스트 변환
 
         int totalChance = partialItems.Sum(item => item.SpawnChance);
         int roll = Random.Range(0, totalChance);
