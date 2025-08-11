@@ -10,7 +10,7 @@ public class EnemyData : ScriptableObject
     public string description; //몬스터 설명
 
     [Header("Stats")]
-    public float maxHp; //최대 체력
+    public int maxHp; //최대 체력
     public float moveSpeed; //이동속도
     public float attackDamage; //공격력
     public float attackRange; //공격 사거리
