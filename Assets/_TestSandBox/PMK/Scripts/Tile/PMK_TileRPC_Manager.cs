@@ -66,7 +66,9 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
         else
         {
-            Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
+            var item = DataManager.Inst.ItemData[itemIndex].PrefabPath;
+            var prefab = Resources.Load<GameObject>(item);
+            Instantiate(prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
     }
 
