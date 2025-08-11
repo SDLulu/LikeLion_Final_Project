@@ -1,27 +1,51 @@
+using System;
 using BackEnd;
 using LMCore;
 using UnityEngine;
 
-public class BackEndWorkFlow : MonoBehaviour
+public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
     [ContextMenu("로컬 뒤끝 정보 삭제")]
-    private void DeleteLocalBackend()
+    public void DeleteLocalBackend()
     {
-        Debug.Log("로컬 뒤끝 정보 삭제");
-        Backend.BMember.DeleteGuestInfo();
-    }
+        bool ret = InitBackend();
+        if (ret == false)
+            return;
 
-    public void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.P))
+        Backend.BMember.WithdrawAccount(callback =>
         {
-            DeleteLocalBackend();
-        }
+            if (callback.IsSuccess())
+            {
+                Debug.Log("회원 탈퇴 성공! 모든 데이터가 삭제되었습니다.");
+                Debug.Log("로컬 뒤끝 정보 삭제");
+                Backend.BMember.DeleteGuestInfo();
+                Quit();
+            }
+            else
+            {
+                Debug.LogError($"회원 탈퇴 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+            }
+        });
     }
 
-    public void CompleteCreateNickName()
+    public async void CompleteCreateNickName()
     {
+        await Awaitable.WaitForSecondsAsync(0.75f);
         _createNickNameTCS?.TrySetResult(true);
+    }
+
+    public void SetNickName()
+    {
+        string nickName = UI_CreateNickName.InputFieldStr;
+        Debug.Log($"<color=yellow>닉네임설정 : {nickName}</color>");
+        NickName = nickName;
+        UpdateBackendNickName(nickName, onSuccess: () =>
+        {
+            Debug.Log("닉네임 업데이트 성공");
+            CompleteCreateNickName();
+        }, onFail: () =>
+        {
+        });
     }
 
     public static FakeClient.Data FakeNickNameData { get; private set; }
@@ -37,7 +61,7 @@ public class BackEndWorkFlow : MonoBehaviour
         await Fader.Inst.FadeInAsync(seconds: 0.5f);
 
         // 로딩 표시 후 백엔드 초기화
-        await Fader.Inst.ShowLoadingAsync(onCancel: Quit);
+        await Fader.Inst.ShowLoadingAsync(onCancel:() => Quit());
         InitBackend();
 
         var loginTCS = new AwaitableCompletionSource<bool>();
@@ -57,10 +81,12 @@ public class BackEndWorkFlow : MonoBehaviour
                     loginTCS.TrySetResult(true);
                     return;
                 }
+                // 로그인후 닉네임을 로드
                 else if (callback.IsSuccess() && callback.GetStatusCode() == "200")
                 {
                     Debug.Log("이미 회원가입된 게스트 로그인");
                     await Fader.Inst.HideLoadingAsync();
+                    await LoadNickname();
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
                     return;
@@ -100,15 +126,13 @@ public class BackEndWorkFlow : MonoBehaviour
         // 게스트 로그인 완료까지 대기
         await loginTCS.Awaitable;
         await _createNickNameTCS.Awaitable;
+        _createNickNameTCS = null;
     }
 
 
-    public void SetNickName(string nickName)
-    {
-        NickName = nickName;
-    }
-
-
+    /// <summary>
+    /// 뒤끝 초기화 함수
+    /// </summary>
     public bool InitBackend()
     {
         BackendReturnObject ret = Backend.Initialize();
@@ -124,6 +148,49 @@ public class BackEndWorkFlow : MonoBehaviour
             Debug.LogError("오류 메시지 : " + ret.GetErrorMessage());
             return false;
         }
+    }
+
+    /// <summary>
+    /// 뒤끝 닉네임 업데이트 함수
+    /// </summary>
+    public void UpdateBackendNickName(string nickName, Action onSuccess = null, Action onFail = null)
+    {
+        Backend.BMember.UpdateNickname(nickName, callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                Debug.Log("닉네임 업데이트 성공");
+                onSuccess?.Invoke();
+            }
+            else
+            {
+                Debug.LogError("닉네임 업데이트 실패");
+                onFail?.Invoke();
+            }
+        });
+    }
+
+    public async Awaitable<bool> LoadNickname()
+    {
+        var loadNicknameTCS = new AwaitableCompletionSource<bool>();
+        Backend.BMember.GetUserInfo(callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
+                string nickname = json["nickname"].ToString();
+                NickName = nickname;
+                loadNicknameTCS.TrySetResult(true);
+            }
+            else
+            {
+                Debug.LogError($"유저 정보 로드 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                loadNicknameTCS.TrySetResult(false);
+            }
+        });
+
+        bool result = await loadNicknameTCS.Awaitable;
+        return result;
     }
 
 
