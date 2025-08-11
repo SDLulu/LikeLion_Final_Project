@@ -785,6 +785,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19da3db7d16086f46ae263d6a426ecca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &3670671679758139396
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4940159210304730022}
+  - component: {fileID: 293022622332232739}
+  m_Layer: 0
+  m_Name: State_StunState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4940159210304730022
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3670671679758139396}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1999506071608377149}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &293022622332232739
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3670671679758139396}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 979fbd88d4aba3e49bacbcc65b089fbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _priority: 0
+  _checkPriorityOnExit: 1
+  fsmRef: {fileID: 3819776023270929124}
+  anim: {fileID: 7562906231535644628}
+  animState: Idle Blinking
+  animTransitionLength: 0.06666667
 --- !u!1 &3728789604096620073
 GameObject:
   m_ObjectHideFlags: 0
@@ -1300,6 +1350,7 @@ Transform:
   - {fileID: 4623098821702853622}
   - {fileID: 5454849009767661002}
   - {fileID: 3195934432924718541}
+  - {fileID: 4940159210304730022}
   - {fileID: 7290234013880637513}
   m_Father: {fileID: 9219204811807535212}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1370,7 +1421,6 @@ GameObject:
   - component: {fileID: 1970804840944657469}
   - component: {fileID: 3819776023270929124}
   - component: {fileID: 5383209154726171859}
-  - component: {fileID: 5343214594229988335}
   m_Layer: 9
   m_Name: SkullWarriorC
   m_TagString: Untagged
@@ -1494,6 +1544,7 @@ MonoBehaviour:
   - {fileID: 6130716900146763212}
   - {fileID: 5824272448290889295}
   - {fileID: 5397268988829033948}
+  - {fileID: 293022622332232739}
   - {fileID: 9223251351363555427}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6640028872637039562
@@ -1575,31 +1626,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3e2a4bb8c1bd7e488f6154a9f233409, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _CurrentHealth: 0
   _TargetPlayer: {fileID: 0}
-  _CurrentState: 0
-  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
-  fsm: {fileID: 3819776023270929124}
   groundCheck: {fileID: 8276177378886016202}
   wallCheck: {fileID: 2248976665104097020}
   attackCheck: {fileID: 854947890263086826}
-  wallCheckDistance: 0.5
+  wallCheckDistance: 0.7
   groundCheckDistance: 0.2
   attackCheckRadius: 0.4
---- !u!114 &5343214594229988335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6435876667111946223}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 87d437e6d3c70454da2af684c69acc2a
+  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
+  fsm: {fileID: 3819776023270929124}
+  _CurrentHealth: 0
+  _CurrentState: 0
+  _IsStunned: 0
+  _IsInvincible: 0
+  _IsHeld: 0
+  _IsThrown: 0
 --- !u!1 &6459162698858102635
 GameObject:
   m_ObjectHideFlags: 0
