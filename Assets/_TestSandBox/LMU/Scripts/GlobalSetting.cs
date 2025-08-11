@@ -112,6 +112,4 @@ public class GlobalSetting : BaseManager<GlobalSetting>
         float randSpawnX = UnityEngine.Random.Range(LobbySpawnPos.x - xFactor, LobbySpawnPos.x + xFactor);
         return new Vector2(randSpawnX, LobbySpawnPos.y);
     }
-
-    public bool IsShowTitleAnimation => _settingData.IsShowTitleAnimation;
 }

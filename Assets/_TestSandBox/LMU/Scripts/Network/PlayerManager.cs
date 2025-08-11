@@ -366,7 +366,7 @@ public class PlayerManager : NetworkBehaviour
                     _isGameSceneLoaded = true;
 
                     // 서버가 세션을 '게임 중'으로 표시하여 랜덤 매치 대상에서 제외
-                    var sessionProperties = new System.Collections.Generic.Dictionary<string, SessionProperty>();
+                    var sessionProperties = new Dictionary<string, SessionProperty>();
                     sessionProperties["InGame"] = true;
                     Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
                 });

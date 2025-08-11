@@ -42,7 +42,6 @@ public class InputBlocker : MonoBehaviour
         {
             _cts?.Cancel();
             _cts?.Dispose();
-            throw;
         }
 
     }

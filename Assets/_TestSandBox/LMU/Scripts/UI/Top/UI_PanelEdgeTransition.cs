@@ -86,6 +86,7 @@ public class UI_PanelEdgeTransition : MonoBehaviour
             .SetEase(_showEase)
             .OnComplete(() =>
             {
+                _rect.anchoredPosition = _originAnchoredPos;
                 onComplete?.Invoke();
             });
     }
@@ -111,6 +112,7 @@ public class UI_PanelEdgeTransition : MonoBehaviour
             .OnComplete(() =>
             {
                 gameObject.SetActive(false);
+                _rect.anchoredPosition = _originAnchoredPos;
                 onComplete?.Invoke();
             });
     }
