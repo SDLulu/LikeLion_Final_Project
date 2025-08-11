@@ -9,16 +9,13 @@ public class UI_CreateNickName : MonoBehaviour
     [SerializeField] private Button createNickNameBtn;
     [SerializeField] private TMP_InputField nickNameInputField;
 
-    public static FakeClient.Data FakeClientData {get; private set;}
 
     private void Awake()
     {
         createNickNameBtn.onClick.AddListener(OnClickCreateNickNameBtn);
         nickNameInputField.onValueChanged.AddListener(OnValueChangedNickName);
 
-        FakeClientData = DataManager.Inst.GetRandomFakeClientData();
-        nickNameInputField.text = FakeClientData.NickName;
-        OnValueChangedNickName(FakeClientData.NickName);
+        OnValueChangedNickName(string.Empty);
         OnClickCreateNickNameBtn();
     }
 
@@ -36,20 +33,17 @@ public class UI_CreateNickName : MonoBehaviour
             return;
         }
 
-        FakeClientData.NickName = nickNameInputField.text;
-        
         Debug.Log($"닉네임 설정 : {nickNameInputField.text}");
     }
 
     private void OnValueChangedNickName(string value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrEmpty(value) || value.Length < 5)
         {
             createNickNameBtn.interactable = false;
             return;
         }
 
         createNickNameBtn.interactable = true;
-        FakeClientData.NickName = value;
     }
 }

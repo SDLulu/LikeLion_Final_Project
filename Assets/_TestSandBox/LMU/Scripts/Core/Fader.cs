@@ -301,10 +301,14 @@ namespace LMCore
             await Awaitable.NextFrameAsync();
         }
 
-        public async Awaitable ShowLoadingAsync(Action onCancel = default)
+        public async Awaitable ShowLoadingAsync(Action onCancel = default, Action onComplete = default)
         {
             CheckAndInitialize();
-            
+
+            if (IsFading)
+                return;
+
+            _isFading = true;
             _loadingCancelButton.onClick.RemoveAllListeners();
             _loadingCancelButton.onClick.AddListener(() => 
             {
@@ -331,12 +335,19 @@ namespace LMCore
                 await _loadingScaleTween.AsyncWaitForCompletion();
             }
 
+            onComplete?.Invoke();
+
+            _isFading = false;
             await Awaitable.NextFrameAsync();
         }
 
         public async Awaitable HideLoadingAsync()
         {
             CheckAndInitialize();
+            if (IsFading)
+                return;
+
+            _isFading = true;
 
             _loadingCancelButton.onClick.RemoveAllListeners();
 
@@ -354,6 +365,7 @@ namespace LMCore
             }
             
             _loadingRotateTween?.Kill();
+            _isFading = false;
             await Awaitable.NextFrameAsync();
         }
 

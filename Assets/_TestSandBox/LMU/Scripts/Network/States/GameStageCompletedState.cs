@@ -191,8 +191,10 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
+            PlayerSlotUIManager.Inst.gameObject.SetActive(false);
             await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
+            PlayerSlotUIManager.Inst.gameObject.SetActive(true);
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -236,6 +238,11 @@ public class GameStageCompletedState : BaseStateBehaviour
             onComplete?.Invoke();
             Debug.LogError("LoadNextMapAsync 오류");
             Debug.LogError(e.Message);  
+        }
+        finally
+        {
+            _stageDataIndex++;
+            Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
         }
     }
 
