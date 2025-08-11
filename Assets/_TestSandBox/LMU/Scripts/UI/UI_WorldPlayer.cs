@@ -48,6 +48,7 @@ public class UI_WorldPlayer : MonoBehaviour
 
     public async void OnSceneLoadDone(string sceneName)
     {
+        // 비동기로 로비버튼을 찾아서 초기화
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
             _readyButton?.onClick.RemoveAllListeners();
@@ -73,15 +74,7 @@ public class UI_WorldPlayer : MonoBehaviour
     /// </summary>
     public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
-        bool hasNick = string.IsNullOrEmpty(_ownerPlayerData.NickName) == false;
-        bool hasChar = string.IsNullOrEmpty(_ownerPlayerData.CharacterName) == false;
-        bool hasSkin = string.IsNullOrEmpty(_ownerPlayerData.SkinPath) == false;
-        bool isInitialized = hasNick && hasChar && hasSkin;
-
-        if (isInitialized)
-        {
-            _playerName.text = _ownerPlayerData.NickName;
-            _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
-        }
+        _playerName.text = _ownerPlayerData.NickName;
+        _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
     }
 }
