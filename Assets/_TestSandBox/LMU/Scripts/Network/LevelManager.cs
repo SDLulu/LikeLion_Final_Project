@@ -36,10 +36,18 @@ public class LevelManager : NetworkSceneManagerDefault
     protected override IEnumerator LoadSceneCoroutine(SceneRef sceneRef, NetworkLoadSceneParameters sceneParams)
     {
         yield return base.LoadSceneCoroutine(sceneRef, sceneParams);
+
+        var scene = SceneManager.GetSceneByBuildIndex(sceneRef.AsIndex);
+        string lobbyName = GlobalSetting.Inst.LobbyScenePath;
+        string gameName = GlobalSetting.Inst.GameScenePath;
+        if (scene.name == lobbyName || scene.name == gameName)
+        {
+            CameraMover.Inst.SetSolidColorEnv();
+        }
     }
 
     protected override IEnumerator UnloadSceneCoroutine(SceneRef sceneRef)
     {
-        return base.UnloadSceneCoroutine(sceneRef);
+        yield return base.UnloadSceneCoroutine(sceneRef);
     }
 }

@@ -41,13 +41,13 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
     private IEnumerator DelayedTileSpawn()
     {
-        yield return new WaitForSeconds(0.05f);
+        yield return null;
 
         if (tileRPCManager.HasStateAuthority)
         {
             Vector2 pos = transform.position;
             Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
-            tileRPCManager.RPC_DelayedTileSpawn(cellPos);
+            tileRPCManager.DelayedTileSpawnBool(cellPos);
         }
         Destroy(gameObject);
     }

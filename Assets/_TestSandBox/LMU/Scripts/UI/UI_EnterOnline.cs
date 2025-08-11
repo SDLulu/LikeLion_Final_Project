@@ -7,39 +7,39 @@ public class UI_EnterOnline : MonoBehaviour
 {
 
     [Header("입장 패널")]
-    [SerializeField] private RectTransform joinRoomPanel;
-    [SerializeField] private Button joinRoomBtn;    
-    [SerializeField] private Button createRoomBtn;
-    [SerializeField] private Button randomJoinRoomBtn;
+    [SerializeField] private RectTransform _joinRoomPanel;
+    [SerializeField] private Button _joinRoomBtn;    
+    [SerializeField] private Button _createRoomBtn;
+    [SerializeField] private Button _randomJoinRoomBtn;
 
     [Header("Prevent 패널")]
-    [SerializeField] private RectTransform preventPanel;
+    [SerializeField] private RectTransform _preventPanel;
 
     private void Awake()
     {
-        preventPanel.gameObject.SetActive(false);
-        joinRoomBtn.onClick.AddListener(OnClickJoinRoomBtn);
-        createRoomBtn.onClick.AddListener(() => _ = OnClickCreateRoomBtn());
-        randomJoinRoomBtn.onClick.AddListener(OnClickRandomJoinRoomBtn);
+        _preventPanel.gameObject.SetActive(false);
+        _joinRoomBtn.onClick.AddListener(OnClickJoinRoomBtn);
+        _createRoomBtn.onClick.AddListener(() => _ = OnClickCreateRoomBtn());
+        _randomJoinRoomBtn.onClick.AddListener(OnClickRandomJoinRoomBtn);
 
         ActiveCreateNickNamePanel();
     }
 
     private void OnDestroy()
     {
-        joinRoomBtn.onClick.RemoveAllListeners();
-        createRoomBtn.onClick.RemoveAllListeners();
-        randomJoinRoomBtn.onClick.RemoveAllListeners();
+        _joinRoomBtn.onClick.RemoveAllListeners();
+        _createRoomBtn.onClick.RemoveAllListeners();
+        _randomJoinRoomBtn.onClick.RemoveAllListeners();
     }
 
     private void ActiveCreateNickNamePanel()
     {
-        joinRoomPanel.gameObject.SetActive(false);
+        _joinRoomPanel.gameObject.SetActive(false);
     }
 
     private void ActiveJoinRoomPanel()
     {
-        joinRoomPanel.gameObject.SetActive(true);
+        _joinRoomPanel.gameObject.SetActive(true);
     }
 
 
@@ -61,44 +61,78 @@ public class UI_EnterOnline : MonoBehaviour
         // );
     }
 
+    /// <summary>
+    /// 풀백용 함수 진입함수
+    /// </summary>
+    public async Awaitable FallbackRun()
+    {
+        string roomName = "TestRoom" + Random.Range(1000, 9999);
+        _preventPanel.gameObject.SetActive(true);
+        await LobbyManager.Inst.JoinOrCreateLobby(
+            mode: GameMode.AutoHostOrClient,
+            roomName: roomName,
+            OnEnterLobby: () =>
+            {
+                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+                _preventPanel.gameObject.SetActive(false);
+            },
+            OnCancel: () =>
+            {
+                _preventPanel.gameObject.SetActive(false);
+            }
+        );
+    }
+
     public async Awaitable RunFastMode()
     {
-        preventPanel.gameObject.SetActive(true);
+        _preventPanel.gameObject.SetActive(true);
         await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.AutoHostOrClient,
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
-                preventPanel.gameObject.SetActive(false);
+                _preventPanel.gameObject.SetActive(false);
+            },
+            OnCancel: () =>
+            {
+                _preventPanel.gameObject.SetActive(false);
             }
         );
     }
 
     public async Awaitable OnClickCreateRoomBtn()
     {
-        preventPanel.gameObject.SetActive(true);
+        _preventPanel.gameObject.SetActive(true);
         await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.Host,
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
-                preventPanel.gameObject.SetActive(false);
+                _preventPanel.gameObject.SetActive(false);
+            },
+            OnCancel: () =>
+            {
+                _preventPanel.gameObject.SetActive(false);
             }
         );
     }
 
     private async void OnClickRandomJoinRoomBtn()
     {
-        preventPanel.gameObject.SetActive(true);
+        _preventPanel.gameObject.SetActive(true);
         await LobbyManager.Inst.JoinOrCreateLobby(
             mode: GameMode.AutoHostOrClient,
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
-                preventPanel.gameObject.SetActive(false);
+                _preventPanel.gameObject.SetActive(false);
+            },
+            OnCancel: () =>
+            {
+                _preventPanel.gameObject.SetActive(false);
             }
         );
     }

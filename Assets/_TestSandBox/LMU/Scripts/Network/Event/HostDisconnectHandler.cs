@@ -16,17 +16,31 @@ public class HostDisconnectHandler : MonoBehaviour
 
         if (reason == ShutdownReason.DisconnectedByPluginLogic)
         {
+            await ShutDown_AtHostQuit();
+        }
+        else if (reason == ShutdownReason.ServerInRoom)
+        {
+            await ShotDown_AtServerInRoom();
+        }
+    }
+
+    public async Awaitable ShutDown_AtHostQuit()
+    {
+        try
+        {
             await Fader.Inst.FadeOutAsync(Color.black, 1.0f);
-            
+
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
             foreach (var scene in scenes)
             {
-                if (scene.name == "DevLobby")
+                string lobbyName = GlobalSetting.Inst.LobbyScenePath;
+                string gameName = GlobalSetting.Inst.GameScenePath;
+                if (scene.name == lobbyName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
-                else if (scene.name == "DevGame")
+                else if (scene.name == gameName)
                 {
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
@@ -34,10 +48,23 @@ public class HostDisconnectHandler : MonoBehaviour
             LobbyUI_Manager.Inst.ActiveTitleUI();
             await Fader.Inst.FadeInAsync(Color.black, 1.0f);
         }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"ShutDownAtHostQuit 오류: {e.Message}");
+        }
     }
 
 
-
-
-
-} 
+    public async Awaitable ShotDown_AtServerInRoom()
+    {
+        try
+        {
+            await LobbyUI_Manager.Inst.UIEnterOnline.FallbackRun();
+            await Awaitable.NextFrameAsync();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"ShotDown_AtServerInRoom 오류: {e.Message}");
+        }
+    }
+}

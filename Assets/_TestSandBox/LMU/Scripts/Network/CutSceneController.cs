@@ -31,6 +31,7 @@ public class CutSceneController : MonoBehaviour
 
     public void FocusCutSceneCamera()
     {
+        Debug.Log("FocusCutSceneCamera - FocusCutSceneCamera - FocusCutSceneCamera");
         CutSceneCamera.Priority = 100;
     }
 
@@ -45,7 +46,7 @@ public class CutSceneController : MonoBehaviour
     }
 
 
-    public async Awaitable PlayCutScene(List<PlayerData> alivePlayers, float cutDuration)
+    public async Awaitable PlayCutScene(int playerCount, float cutDuration)
     {
         if (StartPoint == null || EndPoint == null)
         {
@@ -57,7 +58,7 @@ public class CutSceneController : MonoBehaviour
 
         CutTweenClear();
         float intervalSeconds = 0.15f;
-        for(int i = 0; i < alivePlayers.Count; i++)
+        for(int i = 0; i < playerCount; i++)
         {
             var obj = Instantiate(cutsPlayerPrefab);
             cutPlayers.Add(obj);

@@ -23,7 +23,7 @@ public class GameInput : MonoBehaviour, GameInputAction.IGameActions
     {
         // 현재 씬확인
         var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (sceneName == "Lobby")
+        if (sceneName != "DevGame")
         {
             return false;
         }

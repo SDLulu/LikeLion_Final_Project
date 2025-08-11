@@ -21,6 +21,7 @@ namespace LMCore
         }
     }
 
+    [DefaultExecutionOrder(-1000)]
     public class Fader : BaseManager<Fader>
     {
         [Header("아이콘 팽창 페이드")]
@@ -31,6 +32,7 @@ namespace LMCore
         [Header("로딩 UI")]
         [SerializeField] private RectTransform _loadingPanel;
         [SerializeField] private RectTransform _loadingRotateIcon;
+        [SerializeField] private Button _loadingCancelButton;
 
         [Header("FullScreen 페이드")]
         [SerializeField] private RectTransform _fullScreenImage;
@@ -58,16 +60,17 @@ namespace LMCore
         private Tween _loadingRotateTween;
         private Tween _loadingScaleTween;
 
-        public void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             // 우선순위 제일 높게 설정
             GetComponent<Canvas>().sortingOrder = 1000;
-            DontDestroyOnLoad(this);
             InitializeFader();
         }
 
         private void OnDestroy()
         {
+            _loadingCancelButton.onClick.RemoveAllListeners();
             _loadingRotateTween?.Kill();
             _loadingScaleTween?.Kill();
         }
@@ -196,6 +199,9 @@ namespace LMCore
             _isFading = true;
             _bgImage.color = color;
             _contentsRoot.sizeDelta = _endSize;
+            var canvas = this.GetComponent<Canvas>();
+            _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+
             await _contentsRoot.DOSizeDelta(_startSize, seconds)
                 .SetEase(_fadeInEase)
                 .SetUpdate(true)
@@ -295,10 +301,16 @@ namespace LMCore
             await Awaitable.NextFrameAsync();
         }
 
-        public async Awaitable ShowLoadingAsync()
+        public async Awaitable ShowLoadingAsync(Action onCancel = default)
         {
             CheckAndInitialize();
             
+            _loadingCancelButton.onClick.RemoveAllListeners();
+            _loadingCancelButton.onClick.AddListener(() => 
+            {
+                onCancel?.Invoke();
+            });
+
             // 로딩 아이콘 회전
             if (_loadingRotateIcon != null)
             {
@@ -325,6 +337,8 @@ namespace LMCore
         public async Awaitable HideLoadingAsync()
         {
             CheckAndInitialize();
+
+            _loadingCancelButton.onClick.RemoveAllListeners();
 
             if (_loadingPanel != null)
             {

@@ -33,13 +33,12 @@ public struct DynamicCharacterData : INetworkInput
 
 public class PlayerData : NetworkBehaviour
 {
-    public GameMode GameMode {get; set;}
-
     [Networked, UnitySerializeField]
     public ref StaticPlayerData Static_PlayerData => ref MakeRef<StaticPlayerData>();
 
     [Networked, UnitySerializeField]
     public ref DynamicCharacterData Dynamic_CharacterData => ref MakeRef<DynamicCharacterData>();
+
     [Networked] public bool IsReady {get; private set;} = false;
 
     [Header("로컬 데이터")]
@@ -58,58 +57,37 @@ public class PlayerData : NetworkBehaviour
             FakeClientData = UI_CreateNickName.FakeClientData;
             RPC_SetNickName(FakeClientData.NickName);
         }
+        else
+        {
+            FakeClientData = null;
+        }
 
         // 데이터 서버에서 생성후 전파
-        if (Object.HasStateAuthority)
+        if (Runner.IsServer && Object.HasStateAuthority)
         {
             SkinData = DataManager.Inst.GetSkinData(10000);
             Dynamic_CharacterData = DynamicCharacterData.CreateData(SkinData);
         }
-
-        FakeClientData = null;
     }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_SetNickName(NetworkString<_16> nickName)
     {
-        Static_PlayerData = new StaticPlayerData()
-        {
-            NickName = nickName
-        };
+        Static_PlayerData.NickName = nickName;
     }
 
-    /// <summary>
-    /// 캐릭터/스킨 변경
-    /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     public void RPC_ChangeCharacter(NetworkString<_16> characterName, NetworkString<_64> skinPath)
     {
-        Dynamic_CharacterData = new DynamicCharacterData()
-        {
-            CharacterName = characterName,
-            SkinPath = skinPath
-        };
+        Dynamic_CharacterData.CharacterName = characterName;
+        Dynamic_CharacterData.SkinPath = skinPath;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} 캐릭터 변경: {characterName}");
     }
 
-    /// <summary>
-    /// Ready 상태 토글
-    /// </summary>
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
-    public void RPC_ToggleReady()
+    public void RPC_ToggleReady(bool isReady)
     {
-        IsReady = !IsReady;
+        IsReady = isReady;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
-    }
-
-    /// <summary>
-    /// Ready 상태 직접 설정 (서버용)
-    /// </summary>
-    public void SetReadyState(bool ready)
-    {
-        if (Object.HasStateAuthority)
-        {
-            IsReady = ready;
-        }
     }
 }

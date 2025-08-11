@@ -41,13 +41,12 @@ GameObject:
   m_Component:
   - component: {fileID: 1830969192134398383}
   - component: {fileID: 3799774233767024648}
-  - component: {fileID: 2225042624344874438}
   - component: {fileID: 5200941601201820631}
   - component: {fileID: 8460272725050500677}
   - component: {fileID: 3217813912065374172}
   m_Layer: 6
   m_Name: Beta ArrowTrap
-  m_TagString: Untagged
+  m_TagString: BoobDestoryObj
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -123,25 +122,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &2225042624344874438
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8158514582810665039}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 1310079150
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 5200941601201820631}
-  ForceRemoteRenderTimeframe: 0
 --- !u!114 &5200941601201820631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,7 +136,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   arrowDir: {x: 1, y: 0}
   shotSpeed: 40
-  launchTrapPrefab: {fileID: 6596423867139154273, guid: cb7f0f943c6766f45acacea309377768, type: 3}
   launchPoint: {fileID: 736469470944127754}
   <targetLayer>k__BackingField:
     serializedVersion: 2

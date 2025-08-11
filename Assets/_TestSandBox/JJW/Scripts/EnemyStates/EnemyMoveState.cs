@@ -13,9 +13,9 @@ public class EnemyMoveState : EnemyStateBase
     protected override void OnEnterState()
     {
         Debug.Log("몬스터 무브 스테이트");
-        float randomIdleDuration = Random.Range(1f, 5f);
-        // fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, randomIdleDuration);
-        MoveDuration = randomIdleDuration;
+        float randomMoveDuration = Random.Range(1f, 5f);
+        fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, randomMoveDuration);
+        //MoveDuration = randomMoveDuration;
     }
 
     protected override void OnEnterStateRender()
@@ -35,7 +35,7 @@ public class EnemyMoveState : EnemyStateBase
             return;
         }
 
-        if (Machine.StateTime > MoveDuration)
+        if (fsmRef.EnemyNetworkBehaviour.StateTimer.ExpiredOrNotRunning(Runner))
         {
             fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Idle;
             fsmRef.StateMachine.ForceActivateState<EnemyIdleState>();
