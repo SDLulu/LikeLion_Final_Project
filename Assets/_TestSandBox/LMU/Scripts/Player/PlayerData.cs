@@ -47,15 +47,16 @@ public class PlayerData : NetworkBehaviour
 
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
-    public string SkinPath => Dynamic_CharacterData.SkinPath.ToString();
 
     public override void Spawned()
     {
         // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
         if (Object.HasInputAuthority)
         {
-            FakeClientData = UI_CreateNickName.FakeClientData;
-            RPC_SetNickName(FakeClientData.NickName);
+            if (BackEndWorkFlow.IsFakeClient)
+                RPC_SetNickName(BackEndWorkFlow.FakeNickNameData.NickName);
+            else
+                RPC_SetNickName(BackEndWorkFlow.NickName);
         }
         else
         {

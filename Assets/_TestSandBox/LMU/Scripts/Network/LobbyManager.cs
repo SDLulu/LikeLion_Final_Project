@@ -98,6 +98,7 @@ public class LobbyManager : BaseManager<LobbyManager>
 
     private async Awaitable<bool> CheckCancleGame(Action OnCancel = default)
     {
+        // _isCancel 변수가 true이면 종료처리
         if (_isCancel)
         {
             await Fader.Inst.HideLoadingAsync();
@@ -122,7 +123,8 @@ public class LobbyManager : BaseManager<LobbyManager>
             _isCancel = false;
             IsSoloPlay = isSoloPlay;
 
-            await Fader.Inst.ShowLoadingAsync(() => _isCancel = true);
+            // 로딩의 취소버튼을 누를경우 _isCancle 변수가 true가 되어 취소처리
+            await Fader.Inst.ShowLoadingAsync(onCancel: () => _isCancel = true);
 
             if (NetRunner == null)
             {
@@ -172,6 +174,7 @@ public class LobbyManager : BaseManager<LobbyManager>
         }
     }
 
+    private bool _isLeaveGame = false;
     /// <summary>
     /// 게임 종료 / 로비이동
     /// </summary>
@@ -179,6 +182,10 @@ public class LobbyManager : BaseManager<LobbyManager>
     {
         try
         {
+            if (_isLeaveGame)
+                return;
+            _isLeaveGame = true;
+
             LocalPlayer = default;
             if (isShowWideFade)
                 await Fader.Inst.WideFadeOutAsync(1.5f);
@@ -187,7 +194,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             if (runner == null || runner.IsRunning == false)
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
-                LobbyUI_Manager.Inst.ActiveTitleUI();
+                LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
                 if (isShowWideFade)
                     await Fader.Inst.WideFadeInAsync(1.5f);
                 return;
@@ -210,7 +217,7 @@ public class LobbyManager : BaseManager<LobbyManager>
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
-            LobbyUI_Manager.Inst.ActiveTitleUI();
+            LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
 
             localGameMode = default;
             localRoomName = default;
@@ -225,5 +232,10 @@ public class LobbyManager : BaseManager<LobbyManager>
             await Fader.Inst.HideLoadingAsync();
             await Fader.Inst.WideFadeInAsync(1.5f);
         }
+        finally
+        {
+            _isLeaveGame = false;
+        }
+
     }
 }

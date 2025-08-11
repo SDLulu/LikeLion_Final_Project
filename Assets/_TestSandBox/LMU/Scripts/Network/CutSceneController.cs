@@ -45,7 +45,6 @@ public class CutSceneController : MonoBehaviour
         UICutSceneResult.gameObject.SetActive(value);
     }
 
-
     public async Awaitable PlayCutScene(int playerCount, float cutDuration)
     {
         if (StartPoint == null || EndPoint == null)
@@ -53,6 +52,7 @@ public class CutSceneController : MonoBehaviour
             Debug.LogError("CutScene 시작 위치 또는 끝 위치가 설정되지 않았습니다.");
             return;
         }
+
 
         var cutsPlayerPrefab = Resources.Load<GameObject>("Prefabs/CutsPlayer");
 

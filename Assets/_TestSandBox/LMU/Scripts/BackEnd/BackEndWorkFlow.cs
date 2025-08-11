@@ -1,36 +1,113 @@
-using System.Threading.Tasks;
 using BackEnd;
+using LMCore;
 using UnityEngine;
 
 public class BackEndWorkFlow : MonoBehaviour
 {
-    [ContextMenu("경로보기")]
-    public void ShowPath()
+    [ContextMenu("로컬 뒤끝 정보 삭제")]
+    private void DeleteLocalBackend()
     {
-        Debug.Log(Application.persistentDataPath);
+        Debug.Log("로컬 뒤끝 정보 삭제");
+        Backend.BMember.DeleteGuestInfo();
     }
 
-    private void Awake()
+    public void Update()
     {
-        bool retInit = InitBackend();
-        if (retInit == false)
+        if (Input.GetKeyDown(KeyCode.P))
         {
-            Debug.LogError("백엔드 초기화 실패");
-            return;
+            DeleteLocalBackend();
         }
+    }
 
+    public void CompleteCreateNickName()
+    {
+        _createNickNameTCS?.TrySetResult(true);
+    }
 
-        bool retLogin = TryGuestLoginAsync();
-        if (retLogin == false)
+    public static FakeClient.Data FakeNickNameData { get; private set; }
+    public static bool IsFakeClient { get; private set; } = false;
+    public static string NickName {get; private set;} = "백앤드는 아직 테스트중";
+
+    private AwaitableCompletionSource<bool> _createNickNameTCS;
+    public async Awaitable LoginGuest()
+    {
+        // 첫화면 페이드
+        Fader.Inst.ActiveBGImage(true, Color.black);
+        await Awaitable.WaitForSecondsAsync(0.5f);
+        await Fader.Inst.FadeInAsync(seconds: 0.5f);
+
+        // 로딩 표시 후 백엔드 초기화
+        await Fader.Inst.ShowLoadingAsync(onCancel: Quit);
+        InitBackend();
+
+        var loginTCS = new AwaitableCompletionSource<bool>();
+        _createNickNameTCS = new AwaitableCompletionSource<bool>();
+
+        await Awaitable.WaitForSecondsAsync(1.5f);
+        Backend.BMember.GuestLogin(async (callback) =>
         {
-            bool retSignUp = TrySignUpAsync("test", "test");
-            if (retSignUp == false)
+            try
             {
-                Debug.LogError("회원가입 실패");
+                // 최초 회원가입
+                if (callback.IsSuccess() && callback.GetStatusCode() == "201")
+                {
+                    Debug.Log("최초 회원가입후 로그인");
+                    await Fader.Inst.HideLoadingAsync();
+                    LobbyUI_Manager.Inst.UIBackEnd.ShowNickNamePanel(value: true);
+                    loginTCS.TrySetResult(true);
+                    return;
+                }
+                else if (callback.IsSuccess() && callback.GetStatusCode() == "200")
+                {
+                    Debug.Log("이미 회원가입된 게스트 로그인");
+                    await Fader.Inst.HideLoadingAsync();
+                    loginTCS.TrySetResult(true);
+                    this._createNickNameTCS.TrySetResult(true);
+                    return;
+                }
+                // 성공했으나 예상외의 경우
+                else if (callback.IsSuccess())
+                {
+                    Debug.Log("게스트 로그인 성공?");
+                    Debug.Log(callback.GetStatusCode());
+                    await Fader.Inst.HideLoadingAsync();
+                    loginTCS.TrySetResult(true);
+                    this._createNickNameTCS.TrySetResult(true);
+                    return;
+                }
+                else
+                {
+                    Debug.LogError($"게스트 로그인 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                    await Fader.Inst.HideLoadingAsync();
+                    loginTCS.TrySetResult(false);
+                    this._createNickNameTCS.TrySetResult(false);
+                    FakeNickNameData = DataManager.Inst.GetRandomFakeClientData();
+                    IsFakeClient = true;
+                    return;
+                }
+            }
+            catch (System.Exception)
+            {
+                Debug.LogError($"[예외] 게스트 로그인 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                await Fader.Inst.HideLoadingAsync();
+                Quit();
+                loginTCS.TrySetResult(false);
+                this._createNickNameTCS.TrySetResult(false);
                 return;
             }
-        }
+        });
+
+        // 게스트 로그인 완료까지 대기
+        await loginTCS.Awaitable;
+        await _createNickNameTCS.Awaitable;
     }
+
+
+    public void SetNickName(string nickName)
+    {
+        NickName = nickName;
+    }
+
 
     public bool InitBackend()
     {
@@ -49,37 +126,13 @@ public class BackEndWorkFlow : MonoBehaviour
         }
     }
 
-    public bool TryGuestLoginAsync()
+
+    private void Quit()
     {
-        BackendReturnObject loginRet = Backend.BMember.GuestLogin();
-
-        if (loginRet.IsSuccess())
-        {
-            Debug.Log("게스트 로그인 성공 : " + loginRet.GetReturnValue());
-            return true;
-        }
-        else
-        {
-            Debug.LogError("게스트 로그인 실패 : " + loginRet.StatusCode + "-" + loginRet.GetErrorCode());
-            Debug.LogError("오류 메시지 : " + loginRet.GetErrorMessage());
-            return false;
-        }
-    }
-
-    public bool TrySignUpAsync(string id, string password)
-    {
-        BackendReturnObject signUpRet = Backend.BMember.CustomSignUp(id, password);
-
-        if (signUpRet.IsSuccess())
-        {
-            Debug.Log("회원가입 성공 : " + signUpRet.GetReturnValue());
-            return true;
-        }
-        else
-        {
-            Debug.LogError("회원가입 실패 : " + signUpRet.StatusCode + "-" + signUpRet.GetErrorCode());
-            Debug.LogError("오류 메시지 : " + signUpRet.GetErrorMessage());
-            return false;
-        }
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 }

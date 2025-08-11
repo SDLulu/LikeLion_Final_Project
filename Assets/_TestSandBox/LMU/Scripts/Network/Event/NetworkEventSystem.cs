@@ -147,7 +147,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         {
             if (runner != null && runner.IsRunning == false)
             {
-                LobbyUI_Manager.Inst.ActiveTitleUI();
+                LobbyUI_Manager.Inst.ActiveTitlePanel();
             }
         }
         catch (System.Exception)

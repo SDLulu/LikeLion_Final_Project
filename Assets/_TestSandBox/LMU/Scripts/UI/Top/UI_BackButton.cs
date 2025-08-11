@@ -56,6 +56,7 @@ public class UI_BackButton : MonoBehaviour
                     .SetEase(Ease.InQuad)
                     .OnComplete(() =>
                     {
+                        _button.transform.localScale = Vector3.one;
                         onShown?.Invoke();
                     });
             });
@@ -72,9 +73,8 @@ public class UI_BackButton : MonoBehaviour
             .SetEase(Ease.InQuad)
             .OnComplete(() =>
             {
-                if (gameObject.activeSelf)
-                    gameObject.SetActive(false);
-
+                gameObject.SetActive(false);
+                _button.transform.localScale = Vector3.one;
                 onHidden?.Invoke();
             });
     }

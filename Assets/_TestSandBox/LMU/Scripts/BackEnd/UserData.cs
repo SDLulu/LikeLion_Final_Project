@@ -28,10 +28,16 @@ public class UserInfo : MonoBehaviour
                 }
                 catch (Exception e)
                 {
+                    _data.Reset();
                     Debug.LogError(e);
                 }
 
                 OnUserInfoEvent.Invoke();
+            }
+            else
+            {
+                _data.Reset();
+                Debug.LogError(callback.GetErrorCode());
             }
         });
     }

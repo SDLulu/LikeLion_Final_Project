@@ -100,7 +100,6 @@ public class UI_CharacterSlot : MonoBehaviour
         if (connectedPlayer != null)
         {
             playerNameText.text = connectedPlayer.NickName;
-            characterImage.sprite = Resources.Load<Sprite>(connectedPlayer.SkinPath);
             isReady = connectedPlayer.IsReady;
         }
         

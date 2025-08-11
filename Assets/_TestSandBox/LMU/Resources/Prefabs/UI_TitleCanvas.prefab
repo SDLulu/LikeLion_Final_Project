@@ -4096,9 +4096,8 @@ MonoBehaviour:
   _exitBtn: {fileID: 3212972674403187812}
   _preventPanel: {fileID: 5977611883881687887}
   _otherPanelHolder: {fileID: 6463304035120173405}
-  _titleTransition: {fileID: 2294411644282132719}
-  _onlineTransition: {fileID: 1132093018849629211}
-  _nicknameTransition: {fileID: 1213207833374313984}
+  <TitleTransition>k__BackingField: {fileID: 0}
+  <OnlineTransition>k__BackingField: {fileID: 0}
   _backButton: {fileID: 538792276995068316}
 --- !u!1 &5564572406398961818
 GameObject:
@@ -4331,10 +4330,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1378216457761085993}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMin: {x: 0.5, y: 1}
+  m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -120}
-  m_SizeDelta: {x: 0, y: 50}
+  m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3513834894831496332
 CanvasRenderer:
@@ -4358,7 +4357,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

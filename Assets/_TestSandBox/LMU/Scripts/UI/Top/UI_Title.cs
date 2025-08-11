@@ -16,9 +16,8 @@ public class UI_Title : MonoBehaviour
     [SerializeField] private UI_OtherPanelHolder _otherPanelHolder;
 
     [Header("패널 트랜지션")]
-    [SerializeField] private UI_PanelEdgeTransition _titleTransition;
-    [SerializeField] private UI_PanelEdgeTransition _onlineTransition;
-    [SerializeField] private UI_PanelEdgeTransition _nicknameTransition;
+    [field: SerializeField] public UI_PanelEdgeTransition TitleTransition {get; private set;}
+    [field: SerializeField] public UI_PanelEdgeTransition OnlineTransition {get; private set;}
 
     [Header("타이틀공용 백 버튼")]
     [SerializeField] private UI_BackButton _backButton;
@@ -32,9 +31,8 @@ public class UI_Title : MonoBehaviour
         _leaderboardBtn.onClick.AddListener(OnClickLeaderboardBtn);
         _userProfileBtn.onClick.AddListener(OnClickUserProfileBtn);
         _backButton.gameObject.SetActive(false);
-        _titleTransition.gameObject.SetActive(false);
-        _onlineTransition.gameObject.SetActive(false);
-        _nicknameTransition.gameObject.SetActive(false);
+        TitleTransition.gameObject.SetActive(false);
+        OnlineTransition.gameObject.SetActive(false);
     }
 
     private void OnDestroy()
@@ -58,15 +56,13 @@ public class UI_Title : MonoBehaviour
             gameObject.SetActive(true);
 
         UI_HoverText.IsHoverBlocked = true;
-        _nicknameTransition.Show();
-        _titleTransition.Show(() => UI_HoverText.IsHoverBlocked = false);
+        TitleTransition.Show(() => UI_HoverText.IsHoverBlocked = false);
     }
 
     public void HideTitle()
     {
         UI_HoverText.IsHoverBlocked = true;
-        _nicknameTransition.Hide();
-        _titleTransition.Hide(() =>
+        TitleTransition.Hide(() =>
         {
             UI_HoverText.IsHoverBlocked = false;
             gameObject.SetActive(false);
@@ -84,11 +80,12 @@ public class UI_Title : MonoBehaviour
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+                LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(false);
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>
             {
-                LobbyUI_Manager.Inst.ActiveTitleUI();
+                LobbyUI_Manager.Inst.ActiveTitlePanel();
                 _preventPanel.gameObject.SetActive(false);
             }
         );
@@ -103,10 +100,9 @@ public class UI_Title : MonoBehaviour
 
         void OnComplete()
         {
-            _onlineTransition.Hide(() =>
+            OnlineTransition.Hide(() =>
             {
-                _nicknameTransition.Show();
-                _titleTransition.Show(() => UI_HoverText.IsHoverBlocked = false);
+                TitleTransition.Show(() => UI_HoverText.IsHoverBlocked = false);
                 UIGlobalSetting?.ActiveUI(true);
             });
         }
@@ -115,11 +111,11 @@ public class UI_Title : MonoBehaviour
     private void OnClickOnlinePlayBtn()
     {
         UI_HoverText.IsHoverBlocked = true;
-        _nicknameTransition.Hide();
-        _titleTransition.Hide(() =>
+        TitleTransition.Hide(() =>
         {
             UIGlobalSetting?.ActiveUI(false);
-            _onlineTransition.Show(() =>
+            OnlineTransition.gameObject.SetActive(true);
+            OnlineTransition.Show(() =>
             {
                 _backButton.gameObject.SetActive(true);
                 _backButton.Show(() => UI_HoverText.IsHoverBlocked = false);
