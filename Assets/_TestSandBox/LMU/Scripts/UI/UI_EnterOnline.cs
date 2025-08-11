@@ -74,6 +74,7 @@ public class UI_EnterOnline : MonoBehaviour
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+                
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>

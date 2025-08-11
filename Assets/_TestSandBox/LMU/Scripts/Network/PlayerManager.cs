@@ -6,7 +6,7 @@ using LMCore;
 using UnityEngine;
 
 [RequiredManager(typeof(PlayerManager))]
-public class PlayerManager : NetworkBehaviour, IPlayerJoined
+public class PlayerManager : NetworkBehaviour
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
@@ -17,6 +17,9 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
     [SerializeField] private bool _isGameSceneLoading = false;
     [SerializeField] private bool _isGameSceneLoaded = false;
     public int MinPlayersToStart => _minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
+    public bool IsInGame => _isInGame;
+    public bool IsGameSceneLoading => _isGameSceneLoading;
+    public bool IsGameSceneLoaded => _isGameSceneLoaded;
 
     // -- 서버 전용 필드
     private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
@@ -27,21 +30,10 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
     [Networked, Capacity(4)]
     public NetworkDictionary<PlayerRef, NetworkObject> Players => default;
 
-    async void IPlayerJoined.PlayerJoined(PlayerRef player)
-    {
-        await Awaitable.WaitForSecondsAsync(5.0f);
-        if (Runner.IsServer)
-            AddPlayer(player);
-    }
-
-    public async override void Spawned()
+    public override void Spawned()
     {
         DontDestroyOnLoad(this.gameObject);
         NetworkEventSystem.Inst.RegisterManager(this);
-
-        await Awaitable.WaitForSecondsAsync(5.0f);
-        if (Runner.IsServer)
-            AddPlayer(Runner.LocalPlayer);
 
         // Note - 기획변경으로 더이상 사용하지않음
         // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
@@ -75,13 +67,15 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
 
         var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
         if (result)
-            GameStates.Inst.DelayForceActiveState<GameStagePlayingState>();
+            GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
     }
 
     public override void Render()
     {
         if (CheckPlayerDataChanged())
-            OnChangedPlayers();
+        {
+            OnChangedData();
+        }
     }
 
     #region 유틸리티
@@ -120,11 +114,15 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
         Players.Add(player, playerObj);
         if (_changeDetectors.ContainsKey(player) == false)
         {
-            _changeDetectors[player] = playerObj.GetComponent<PlayerData>().GetChangeDetector(ChangeDetector.Source.SimulationState);
+            var playerData = playerObj.GetComponent<PlayerData>();
+            if (playerData != null)
+            {
+                _changeDetectors[player] = playerData.GetChangeDetector(ChangeDetector.Source.SimulationState);
+            }
         }
 
         // 플레이어 추가시 데이터 변경 이벤트 발생
-        OnChangedPlayers();
+        OnChangedData();
     }
 
     public List<(PlayerRef, NetworkObject)> TryRemoveAllPlayer()
@@ -245,7 +243,7 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
     {
         OnPlayerDataChanged -= action;
     }
-    private void OnChangedPlayers()
+    private void OnChangedData()
     {
         OnPlayerDataChanged?.Invoke(GetPlayerDatas());
     }
@@ -255,25 +253,34 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
     /// </summary>
     private bool CheckPlayerDataChanged()
     {
+        // 최초 생성 시 초기 동기화를 위해 갱신 신호 반환
+        bool isCreatedFrame = false;
+
         foreach (var kvp in Players)
         {
-            var playerData = kvp.Value;
-            if (playerData == null)
-            {
+            NetworkObject netObj = kvp.Value;
+            if (netObj == null)
                 continue;
-            }
+
+            PlayerData pData = netObj.GetComponent<PlayerData>();
+            if (pData == null)
+                continue;
 
             if (_changeDetectors.ContainsKey(kvp.Key) == false)
             {
-                _changeDetectors[kvp.Key] = kvp.Value.GetComponent<PlayerData>().GetChangeDetector(ChangeDetector.Source.SimulationState);
+                _changeDetectors[kvp.Key] = pData.GetChangeDetector(ChangeDetector.Source.SimulationState);
+                isCreatedFrame = true; 
+                continue;
             }
 
             var detector = _changeDetectors[kvp.Key];
-            foreach (var _ in detector.DetectChanges(kvp.Value.GetComponent<PlayerData>()))
-            {
+            foreach (var _ in detector.DetectChanges(pData))
                 return true;
-            }
         }
+
+        if (isCreatedFrame)
+            return true;
+
         return false;
     }
     #endregion
@@ -290,7 +297,15 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
 
         foreach (var kvp in Players)
         {
-            if (kvp.Value.GetComponent<PlayerData>().IsReady == false)
+            NetworkObject netObj = kvp.Value;
+            if (netObj == null)
+                continue;
+
+            PlayerData pData = netObj.GetComponent<PlayerData>();
+            if (pData == null)
+                continue;
+
+            if (pData.IsReady == false)
                 return false;
         }
 
@@ -349,6 +364,11 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
                     _isGameSceneLoading = false;
                     _isInGame = true;
                     _isGameSceneLoaded = true;
+
+                    // 서버가 세션을 '게임 중'으로 표시하여 랜덤 매치 대상에서 제외
+                    var sessionProperties = new Dictionary<string, SessionProperty>();
+                    sessionProperties["InGame"] = true;
+                    Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
                 });
 
             return true;
@@ -447,5 +467,12 @@ public class PlayerManager : NetworkBehaviour, IPlayerJoined
         LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
         _ = Fader.Inst.FadeInAsync(Color.black, 1.0f);
     }
+
+    public void PlayerJoined(PlayerRef player)
+    {
+        throw new NotImplementedException();
+    }
+
+
     #endregion
 }

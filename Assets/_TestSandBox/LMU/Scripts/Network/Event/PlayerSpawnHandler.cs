@@ -66,14 +66,10 @@ public class PlayerSpawnHandler : MonoBehaviour
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
         SpawnManagers(runner, player);
-
-        // 호스트 입장시 네트워크 관리 컴포넌트 스폰
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        var spawnPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player,
-            onBeforeSpawned: (runner, obj) =>
-            {
-                runner.SetPlayerObject(player, obj);
-            });
+        var spawnPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player);
+        runner.SetPlayerObject(player, spawnPlayer);
+        hostPlayerManage.AddPlayer(player);
     }
 
 
@@ -99,11 +95,9 @@ public class PlayerSpawnHandler : MonoBehaviour
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        var spawnedPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player,
-            onBeforeSpawned: (runner, obj) =>
-            {
-                runner.SetPlayerObject(player, obj);
-            });
+        var spawnedPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player);
+        runner.SetPlayerObject(player, spawnedPlayer);
+        hostPlayerManage.AddPlayer(player);
     }
 
 
