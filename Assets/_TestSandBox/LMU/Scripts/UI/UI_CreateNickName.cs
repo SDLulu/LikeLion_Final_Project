@@ -6,14 +6,15 @@ public class UI_CreateNickName : MonoBehaviour
 {
     [Header("닉네임 패널")]
     [field: SerializeField] public RectTransform Holder { get; private set; }
-    [SerializeField] private Button createNickNameBtn;
-    [SerializeField] private TMP_InputField nickNameInputField;
+    [SerializeField] private Button _createNickNameBtn;
+    [SerializeField] private InputField _nickNameInputField;
+    public static string InputFieldStr { get; private set; }
 
 
     private void Awake()
     {
-        createNickNameBtn.onClick.AddListener(OnClickCreateNickNameBtn);
-        nickNameInputField.onValueChanged.AddListener(OnValueChangedNickName);
+        _createNickNameBtn.onClick.AddListener(OnClickCreateNickNameBtn);
+        _nickNameInputField.onValueChanged.AddListener(OnValueChangedNickName);
 
         OnValueChangedNickName(string.Empty);
         OnClickCreateNickNameBtn();
@@ -21,29 +22,33 @@ public class UI_CreateNickName : MonoBehaviour
 
     private void OnDestroy()
     {
-        createNickNameBtn.onClick.RemoveAllListeners();
-        nickNameInputField.onValueChanged.RemoveAllListeners();
+        _createNickNameBtn.onClick.RemoveAllListeners();
+        _nickNameInputField.onValueChanged.RemoveAllListeners();
     }
 
     private void OnClickCreateNickNameBtn()
     {
-        if(string.IsNullOrEmpty(nickNameInputField.text))
+        if(string.IsNullOrEmpty(_nickNameInputField.text))
         {
             Debug.LogWarning("닉네임이 비어있습니다.");
             return;
         }
 
-        Debug.Log($"닉네임 설정 : {nickNameInputField.text}");
+        InputFieldStr = _nickNameInputField.text;
     }
 
     private void OnValueChangedNickName(string value)
     {
-        if (string.IsNullOrEmpty(value) || value.Length < 5)
+        if (string.IsNullOrEmpty(value) || value.Length < 3)
         {
-            createNickNameBtn.interactable = false;
+            _createNickNameBtn.interactable = false;
+            ColorUtility.TryParseHtmlString("#767676", out Color grayColor);
+            _createNickNameBtn.image.color = grayColor;
             return;
         }
 
-        createNickNameBtn.interactable = true;
+        ColorUtility.TryParseHtmlString("#2FB6FF", out Color blueColor);
+        _createNickNameBtn.image.color = blueColor;
+        _createNickNameBtn.interactable = true;
     }
 }
