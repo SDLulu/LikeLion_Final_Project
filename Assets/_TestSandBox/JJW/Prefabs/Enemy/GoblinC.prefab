@@ -66,6 +66,7 @@ Transform:
   - {fileID: 232264250900800121}
   - {fileID: 7101823908385691529}
   - {fileID: 4845582017074028019}
+  - {fileID: 6122811621266852115}
   - {fileID: 4262985242072576226}
   m_Father: {fileID: 8223653109460057318}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -496,6 +497,56 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1435538115462651275
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6122811621266852115}
+  - component: {fileID: 3698432953718880713}
+  m_Layer: 0
+  m_Name: State_StunState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6122811621266852115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435538115462651275}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2775778294348416911}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3698432953718880713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1435538115462651275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 979fbd88d4aba3e49bacbcc65b089fbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _priority: 0
+  _checkPriorityOnExit: 1
+  fsmRef: {fileID: 2368011527037065689}
+  anim: {fileID: 9113174244873975960}
+  animState: Idle Blinking
+  animTransitionLength: 0.06666667
 --- !u!1 &1802762827415555723
 GameObject:
   m_ObjectHideFlags: 0
@@ -1320,6 +1371,7 @@ MonoBehaviour:
   - {fileID: 6209081194863780023}
   - {fileID: 8376037304458736062}
   - {fileID: 6275235825144370206}
+  - {fileID: 3698432953718880713}
   - {fileID: 1606917985605359200}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &669289839745560515
@@ -1401,17 +1453,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3e2a4bb8c1bd7e488f6154a9f233409, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _CurrentHealth: 0
   _TargetPlayer: {fileID: 0}
-  _CurrentState: 0
-  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
-  fsm: {fileID: 2368011527037065689}
   groundCheck: {fileID: 1431283098115503849}
   wallCheck: {fileID: 7161805488300424222}
   attackCheck: {fileID: 3841046983919751002}
-  wallCheckDistance: 0.5
+  wallCheckDistance: 0.7
   groundCheckDistance: 0.2
   attackCheckRadius: 0.4
+  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
+  fsm: {fileID: 2368011527037065689}
+  _CurrentHealth: 0
+  _CurrentState: 0
+  _IsStunned: 0
+  _IsInvincible: 0
+  _IsHeld: 0
+  _IsThrown: 0
 --- !u!1 &4642609691025732614
 GameObject:
   m_ObjectHideFlags: 0

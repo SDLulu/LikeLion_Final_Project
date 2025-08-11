@@ -131,13 +131,13 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public static async void RPC_FadeOutUI(NetworkRunner runner)
+    public static async void RPC_FadeOutUI(NetworkRunner runner, float duration = 1.0f)
     {
         while (Fader.Inst.IsFading)
         {
             await Awaitable.NextFrameAsync();
         }
-        _ = Fader.Inst.FadeOutAsync(Color.black, 1.0f);
+        _ = Fader.Inst.FadeOutAsync(Color.black, duration);
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
