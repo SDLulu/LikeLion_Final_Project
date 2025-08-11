@@ -42,7 +42,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
-    [field: SerializeField] public List<PMK_TileTable> tileItems { get; private set; }
 
 
     [Header("특별한 맵 생성 확률 설정")]
@@ -324,18 +323,24 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (hasSameTag) return;
 
-        int totalChance = tileItems.Sum(t => t.spawnChance);
+        var partialItems = DataManager.Inst.ItemData
+        .OrderBy(kvp => kvp.Key) // 키 순서대로 정렬 (ID 순)
+        .Take(3)                  // 처음 3개만 가져오기
+        .Select(kvp => kvp.Value) // Item.Data만 추출
+        .ToList(); // 리스트 변환
+
+        int totalChance = partialItems.Sum(item => item.SpawnChance);
         int roll = Random.Range(0, totalChance);
         int current = 0;
 
-        int selectedIndex = -1;
+        int selectedIndex = 0;
 
-        for (int i = 0; i < tileItems.Count; i++)
+        for (int i = 0; i < 3; i++)
         {
-            current += tileItems[i].spawnChance;
+            current += partialItems[i].SpawnChance;
             if (roll < current)
             {
-                selectedIndex = i;
+                selectedIndex = partialItems[i].DataID; // 선택된 아이템의 ID
                 break;
             }
         }
