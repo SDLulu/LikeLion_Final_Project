@@ -273,9 +273,23 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (child.GetComponent<Tilemap>() == null)
                 {
                     Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
+                    GameObject prefab = child.gameObject;
 
-                    Instantiate(child.gameObject, spawnPosition, child.rotation, parentTrans); // 자식으로 추가
-                    child.name = child.name; // 이름을 원본과 동일하게 설정
+                    if (prefab.GetComponent<NetworkObject>() != null)
+                    {
+                        // 네트워크 오브젝트일 경우
+                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                        {
+                            obj.transform.SetParent(parentTrans);
+                            obj.name = prefab.name;
+                        });
+                    }
+                    else
+                    {
+                        // 일반 오브젝트일 경우
+                        GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
+                        obj.name = prefab.name;
+                    }
                 }
             }
 
