@@ -1,6 +1,8 @@
 using System.Collections;
 using Fusion;
+using Unity.VisualScripting;
 using UnityEngine;
+using static Unity.Collections.Unicode;
 
 public class PMK_TileDestroyItem : MonoBehaviour
 {
@@ -33,38 +35,52 @@ public class PMK_TileDestroyItem : MonoBehaviour
 
     protected virtual void DestroyArea()
     {
-        int radiusInt = Mathf.RoundToInt(destroyCollider2D.radius);
-        for (int i = -radiusInt; i <= radiusInt; i++)
-        {
-            for (int j = -radiusInt; j <= radiusInt; j++)
-            {
-                Vector3 checkCellPos = new Vector3(transform.position.x + i, transform.position.y + j, 0);
-                float distance = Vector2.Distance(transform.position, checkCellPos) - 0.001f;
+        float radius = destroyCollider2D.radius;
+        Vector2 origin = transform.position;
 
-                if (distance <= radiusInt)
+        // 한 셀 간격마다 반복 (0.5f로 샘플링 간격 줄이기 가능)
+        float step = 0.5f;
+
+        for (float x = -radius; x <= radius; x += step)
+        {
+            for (float y = -radius; y <= radius; y += step)
+            {
+                Vector2 checkPos = origin + new Vector2(x, y);
+                float distance = Vector2.Distance(origin, checkPos);
+
+                if (distance <= radius)
                 {
                     // 타일 파괴
-                    Collider2D overCollider2d = Physics2D.OverlapCircle(checkCellPos, 0.01f, destroyLayer);
-                    if (overCollider2d != null)
+                    Collider2D tileCol = Physics2D.OverlapPoint(checkPos, destroyLayer);
+                    if (tileCol != null)
                     {
-                        var tileLogic = overCollider2d.GetComponent<PMK_TileRPC_Manager>();
+                        var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
                         if (tileLogic != null)
-                            tileLogic.Rpc_DestroyTile(checkCellPos);
+                        {
+                            tileLogic.Rpc_DestroyTile(checkPos);
+                        }
                     }
 
                     // 타일 아이템 파괴
-                    Collider2D[] hitObjects = Physics2D.OverlapCircleAll(checkCellPos, 0.01f, destroyLayer);
+                    Collider2D[] hitObjects = Physics2D.OverlapPointAll(checkPos, destroyLayer);
                     foreach (var col in hitObjects)
                     {
                         if (col.CompareTag("Tileitem"))
                         {
                             var item = col.GetComponent<PMK_TileItem>();
                             if (item != null)
+                            {
                                 item.DestroyItem();
+                            }
+                        }
+                        else if (col.CompareTag("BoobDestoryObj"))
+                        {
+                            Destroy(col.gameObject); // 오브젝트 파괴
                         }
                     }
                 }
             }
         }
     }
+
 }

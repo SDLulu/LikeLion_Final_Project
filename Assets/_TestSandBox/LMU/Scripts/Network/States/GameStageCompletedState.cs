@@ -79,6 +79,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
+        _stageDataIndex++;
         base.OnExitState();
     }
 

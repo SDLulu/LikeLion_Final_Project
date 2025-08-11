@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
@@ -6,6 +7,9 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 {
     public static PMK_TileRPC_Manager Instance { get; private set; }
     private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
+
+    private List<NetworkObject> spawnedArrows = new List<NetworkObject>(); // 발사된 화살들을 저장하는 리스트
+
 
     private void Awake()
     {
@@ -62,15 +66,10 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
         else
         {
-            StartCoroutine(DelayedTileItemSpawn(itemIndex, cellPos));
+            var item = DataManager.Inst.ItemData[itemIndex].PrefabPath;
+            var prefab = Resources.Load<GameObject>(item);
+            Instantiate(prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
-    }
-
-    private IEnumerator DelayedTileItemSpawn(int itemIndex, Vector3Int cellPos)
-    {
-        yield return new WaitForSeconds(0.05f); // Physics2D 반영을 기다림
-        Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
-        Instantiate(tileRogic.tileItems[itemIndex].prefab, worldPos, Quaternion.identity, tileRogic.parentTrans);
     }
 
 
@@ -78,13 +77,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void Rpc_DestroyItem(Vector3 pos)
     {
-        StartCoroutine(DelayedDestroyItem(pos));
-    }
-
-    private IEnumerator DelayedDestroyItem(Vector3 pos)
-    {
-        yield return new WaitForSeconds(0.07f); // Physics2D 반영을 기다림
-
         Collider2D[] hits = Physics2D.OverlapCircleAll(pos, 0.05f);
         foreach (var hit in hits)
         {
@@ -107,39 +99,28 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             if (rnd > trapSpawnChance)
             {
                 // 타일이 없으면 타일을 배치합니다.
-                tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-
-                PMK_TileRogic.Instance.Create_TileItem(cellPos);
+                DelayedTileSpawnBool(cellPos);
             }
             else
             {
-
-                bool isThreeAboveEmpty =
-                tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
-                tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 2, 0)) == null &&
-                tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 3, 0)) == null;
-                Vector3Int downCell = cellPos + Vector3Int.down;
-
-
-
-                // 아래 셀에 타일이 없고, 위쪽 셀 3개가 비어있을 때 함정 생성
-                if (isThreeAboveEmpty && tileRogic.mainTilemap.GetTile(downCell) != null)
-                {
-                    StartCoroutine(DelayedTrapSpawn(cellPos));
-                }
-                else
-                {
-                    RPC_Create_Tile(cellPos);
-                }
+                StartCoroutine(DelayedTrapSpawn(cellPos));
             }
         }
     }
 
     private IEnumerator DelayedTrapSpawn(Vector3Int cellPos)
     {
+        if (!HasInputAuthority) yield break; // 클라이언트는 실행하지 않음
+
         yield return new WaitForSeconds(0.05f); // 0.05초 딜레이 (충돌 방지용)
 
-        if (HasStateAuthority)
+        bool isThreeAboveEmpty =
+        tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
+        tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 2, 0)) == null &&
+        tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 3, 0)) == null;
+        Vector3Int downCell = cellPos + Vector3Int.down;
+
+        if (isThreeAboveEmpty && tileRogic.mainTilemap.GetTile(downCell) != null)
         {
             Rpc_DestroyTile(cellPos + new Vector3Int(0, 1, 0));
             Rpc_DestroyTile(cellPos + new Vector3Int(0, 2, 0));
@@ -147,17 +128,21 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             Rpc_DestroyItem(cellPos + new Vector3Int(0, 1, 0));
             Rpc_DestroyItem(cellPos + new Vector3Int(0, 2, 0));
             Rpc_DestroyItem(cellPos + new Vector3Int(0, 3, 0));
-        }
 
-        Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
-        Instantiate(tileRogic.trap[0], worldPos, Quaternion.identity, tileRogic.parentTrans);
+            Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
+            Instantiate(tileRogic.trap[0], worldPos, Quaternion.identity, tileRogic.parentTrans);
+        }
+        else
+        {
+            RPC_Create_Tile(cellPos);
+        }
     }
 
 
     // 위 아래 셀에 타일이 없을 때 돌 함정 생성 (빈 공간 방지)
-    public void DelayedTileSpawnBool(Vector3Int cellPos)
+    public IEnumerator DelayedTileSpawnBool(Vector3Int cellPos)
     {
-        if (!HasInputAuthority) return;
+        if (!HasInputAuthority) yield break;
 
         bool isTileEmpty =
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
@@ -171,13 +156,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         tileRogic.mainTilemap.GetTile(cellPos + Vector3Int.right) != null &&
         tileRogic.mainTilemap.GetTile(cellPos) == null;
 
-        RPC_DelayedTileSpawn(cellPos, isTileEmpty, isThreeAboveEmpty);
-    }
-
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_DelayedTileSpawn(Vector3Int cellPos, bool isTileEmpty, bool isThreeAboveEmpty)
-    {
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
         Vector3Int tilePos = tileRogic.mainTilemap.WorldToCell(cellPos);
 
@@ -186,7 +164,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
             Rpc_DestroyItem(worldPos);
         }
-        else if (isTileEmpty)
+        else
         {
             RPC_Create_Tile(tilePos);
         }
@@ -194,14 +172,15 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     #endregion
 
 
-
-
+    #region Trap 관련 RPC 메서드
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_SpawnArrow(Vector3 position, Vector2 velocity)
     {
         if (!Object.HasStateAuthority) return; // 클라이언트는 스폰 못 함
 
         var arrowInstance = Runner.Spawn(tileRogic.launchTrapPrefab, position, Quaternion.identity);
+        spawnedArrows.Add(arrowInstance);
+
         var rb = arrowInstance.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
@@ -225,4 +204,19 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
                 rb.linearVelocity = Vector2.zero;
         }
     }
+
+
+    // 모든 화살 제거
+    public void ClearAllArrows()
+    {
+        foreach (var arrow in spawnedArrows)
+        {
+            if (arrow != null)
+            {
+                Runner.Despawn(arrow);
+            }
+        }
+        spawnedArrows.Clear();
+    }
+    #endregion
 }
