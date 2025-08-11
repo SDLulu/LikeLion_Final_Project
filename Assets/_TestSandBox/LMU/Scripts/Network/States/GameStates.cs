@@ -6,7 +6,8 @@ using UnityEngine;
 using System.Reflection;
 
 
-public class GameStates : NetworkBehaviour, IStateMachineOwner
+[RequiredManager(typeof(GameStates))]
+public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
     
@@ -14,8 +15,8 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
     public void Collect()
     {
-        if (allStates == null || allStates.Length <= 0)
-            allStates = GetComponentsInChildren<StateBehaviour>();
+        if (_allStates == null || _allStates.Length <= 0)
+            _allStates = GetComponentsInChildren<StateBehaviour>();
     }
 
     private void OnValidate() => Collect();
@@ -23,18 +24,26 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
 
     [Header("디버그용")]
-    [SerializeField] private LobbyUI_Manager uiController = null;
-    [SerializeField] private Fader fader = null;
-    [SerializeField] private CutSceneController cutSceneController = null;
-    [SerializeField] private PlayerManager playerManager = null;
-    [SerializeField] private NetworkEventSystem networkEventSystem = null;
-    [SerializeField] private StateBehaviour[] allStates;
+    [SerializeField] private LobbyUI_Manager _uiController = null;
+    [SerializeField] private Fader _fader = null;
+    [SerializeField] private CutSceneController _cutSceneController = null;
+    [SerializeField] private PlayerManager _playerManager = null;
+    [SerializeField] private NetworkEventSystem _networkEventSystem = null;
+    [SerializeField] private StateBehaviour[] _allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
+    public bool IsSpawned { get; set; }
+
     public override void Spawned()
     {
+        IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
+    }
+
+    public void AfterSpawned()
+    {
+        NetworkEventSystem.Inst.RegisterManager(this);
     }
 
     // Note - CutSceneController가 GameScene에 존재해서 게임씬 로드시점까지 대기후 Inject 처리
@@ -53,7 +62,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     public void CollectStateMachines(List<IStateMachine> stateMachines)
     {
         Collect();
-        StateMachine = new StateMachine<StateBehaviour>("GameState", allStates);
+        StateMachine = new StateMachine<StateBehaviour>("GameState", _allStates);
         stateMachines.Add(StateMachine);
     }
 
@@ -153,14 +162,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
-            { typeof(LobbyUI_Manager), uiController != null ? uiController : LobbyUI_Manager.Inst },
-            { typeof(Fader), fader != null ? fader : Fader.Inst },
-            { typeof(PlayerManager), playerManager != null ? playerManager : PlayerManager.Inst },
-            { typeof(CutSceneController), cutSceneController != null ? cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
-            { typeof(NetworkEventSystem), networkEventSystem != null ? networkEventSystem : NetworkEventSystem.Inst }
+            { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
+            { typeof(Fader), _fader != null ? _fader : Fader.Inst },
+            { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },
+            { typeof(CutSceneController), _cutSceneController != null ? _cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
+            { typeof(NetworkEventSystem), _networkEventSystem != null ? _networkEventSystem : NetworkEventSystem.Inst }
         };
 
-        foreach (var state in allStates)
+        foreach (var state in _allStates)
         {
             if (state == null) 
             {
@@ -187,7 +196,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         if (refs == null || refs.Count <= 0) 
             return;
 
-        foreach (var state in allStates)
+        foreach (var state in _allStates)
         {
             if (state == null) 
                 continue;
@@ -204,4 +213,15 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
         refs.Clear();
     }
+
+    public async Awaitable<bool> IsPollingSpawned()
+    {
+        while (IsSpawned == false)
+        {
+            await Awaitable.NextFrameAsync();
+        }
+        return true;
+    }
+
+
 } 

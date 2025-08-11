@@ -16,9 +16,7 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     // 서버 - 백그라운드 작업진행 - 컷신 재생과 맵 로딩을 병렬실행 - 0: 컷신, 1: 맵 로딩
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;
-    
     private TickTimer minWaitingTimer = TickTimer.None;
-
     private int _stageDataIndex = -1;
     public override void Spawned()
     {
@@ -35,16 +33,17 @@ public class GameStageCompletedState : BaseStateBehaviour
         base.Despawned(runner, hasState);
     }
 
-    protected override void OnEnterState()
+    protected override async void OnEnterState()
     {
         if (Runner.IsServer)
         {
+            await Awaitable.NextFrameAsync();
             var players = PlayerM.GetPlayers();
 
             _bgTaskTCS = new();
             foreach (var player in players)
             {
-                PlayerRef @ref = player.Value.Object.InputAuthority;
+                PlayerRef @ref = player.Key;
                 _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
                 {
                     Tuple.Create(0, new AwaitableCompletionSource()),
@@ -192,7 +191,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
-            await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers(), cutDuration);
+            await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
             onCompleted?.Invoke();
         }

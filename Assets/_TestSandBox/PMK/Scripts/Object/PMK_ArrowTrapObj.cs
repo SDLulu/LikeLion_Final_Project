@@ -8,32 +8,16 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
     [SerializeField] private LayerMask playerLayerMask; // 플레이어만 감지할 마스크
     [SerializeField] private float groundedVelocityThreshold = 7f; // 바닥에 닿았는지 판단할 속도 임계값
 
-    [Header("Attack Collision Handler")]
-    [SerializeField] private AttackCollisionHandler AttackCollisionHandler;
-    private Collider2D attackCollider;
-
-
-    [Header("Attack Collision Handler")]
+    // 🌐 네트워크 동기화
+    [Networked] private NetworkBool IsHeld { get; set; }
+    bool IItemInteraction.IsHeld => IsHeld;
 
     private Rigidbody2D rb;
     private bool isGrounded = false;
 
-    public bool IsHeld => true;
-
-    private void Awake()
-    {
-        if (AttackCollisionHandler != null)
-        {
-            attackCollider = AttackCollisionHandler.AttackCollider;
-        }
-
-        if (attackCollider != null) attackCollider.enabled = false;
-    }
-
     public override void Spawned()
     {
         rb = GetComponent<Rigidbody2D>();
-
     }
 
     public override void FixedUpdateNetwork()
@@ -45,22 +29,12 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
         if (rb.linearVelocity.sqrMagnitude > 0.01f && rb.linearVelocity.sqrMagnitude > 2.5 * 2.5)
         {
             RotateInDirection();
-
-            // 공격 콜라이더 활성화
-            if (rb.linearVelocity.sqrMagnitude > 8 * 8)
-            {
-                attackCollider.enabled = true;
-            }
-            else
-            {
-                attackCollider.enabled = false;
-            }
         }
 
         if (isGrounded)
             return;
 
-        // 수동 충돌 감지
+        // 수동 충돌 감지 (정지 조건)
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectRadius, playerLayerMask);
         if (hit != null)
         {
@@ -99,10 +73,18 @@ public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
 
     public void OnPickedUp()
     {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = true;
+        Debug.Log("[PMK_ArrowTrapObj] 화살 함정 픽업됨");
     }
 
     public void OnReleased()
     {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = false;
+        Debug.Log("[PMK_ArrowTrapObj] 화살 함정 해제됨");
     }
 
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
