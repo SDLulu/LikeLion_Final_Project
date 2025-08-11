@@ -4,10 +4,11 @@ using UnityEngine;
 public class PMK_TileItem : MonoBehaviour
 {
     private GameObject prefab;
+    [SerializeField] private int itemIndex = 30000; // 아이템 인덱스
 
     private void Awake()
     {
-        var item = DataManager.Inst.ItemData[30000].PrefabPath;
+        var item = DataManager.Inst.ItemData[itemIndex].PrefabPath;
         prefab = Resources.Load<GameObject>(item);
     }
 
