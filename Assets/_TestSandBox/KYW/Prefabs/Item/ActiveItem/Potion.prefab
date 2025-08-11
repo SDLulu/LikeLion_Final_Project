@@ -13,8 +13,7 @@ GameObject:
   - component: {fileID: 2320246284491093208}
   - component: {fileID: 4165887927251650559}
   - component: {fileID: 4952716328228261177}
-  - component: {fileID: 3539027903508471107}
-  - component: {fileID: 3916122173013402857}
+  - component: {fileID: 589900240989455171}
   m_Layer: 8
   m_Name: Potion
   m_TagString: Untagged
@@ -30,7 +29,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1408547461059013922}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 13.55, y: 2639.47, z: -0.42167893}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -107,7 +106,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 2320246284491093208}
-  - {fileID: 3539027903508471107}
+  - {fileID: 589900240989455171}
   - {fileID: 808800087892853903}
   ForceRemoteRenderTimeframe: 0
 --- !u!61 &4952716328228261177
@@ -156,7 +155,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.48841572, y: 0.434968}
   m_EdgeRadius: 0
---- !u!114 &3539027903508471107
+--- !u!114 &589900240989455171
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -165,25 +164,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1408547461059013922}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86589ea6ef6a6504986717421d31a175, type: 3}
+  m_Script: {fileID: 11500000, guid: 8b7f486d10a70fc44ba6d022178a4435, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemName: JumpShoes
-  itemSprite: {fileID: 0}
---- !u!114 &3916122173013402857
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1408547461059013922}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: f8441526f504cdf4c9e530cd584f288b
+  healAmount: 5
 --- !u!1 &4299513962438356448
 GameObject:
   m_ObjectHideFlags: 0
