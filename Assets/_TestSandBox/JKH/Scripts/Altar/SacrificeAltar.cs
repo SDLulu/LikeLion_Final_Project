@@ -94,12 +94,12 @@ public class SacrificeAltar : NetworkBehaviour
         }
         if (target.IsStunned)
         {
-            AltarManager.Instance.AddFavor(8, target.transform.position);
             //살아 있는 점수
+            AltarManager.Instance.AddFavor(8, target.transform.position);
         }else if (target.IsDead)
         {
-            AltarManager.Instance.AddFavor(6, target.transform.position);
             //죽은 점수
+            AltarManager.Instance.AddFavor(6, target.transform.position);
         }
 
         if (target.Object != null && target.Object.IsValid)
