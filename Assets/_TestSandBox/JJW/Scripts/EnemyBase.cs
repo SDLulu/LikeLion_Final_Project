@@ -20,8 +20,9 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     [Networked] public float CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
     [Networked] public SpelunkyPlayerController TargetPlayer { get; set; }
     [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
-    // [Networked] public TickTimer StateTimer { get; set; } //상태 시간(랜덤)을 저장할 타이머
+    [Networked] public TickTimer StateTimer { get; set; } //상태 시간(랜덤)을 저장할 타이머
     [Networked] public TickTimer AttackCooldownTimer { get; set; } // 공격 쿨타임을 위한 타이머
+    [Networked] private TickTimer FlipTimer { get; set; } // 빠르게 플립되는 현상을 방지하기 위한 타이머
     [Networked, OnChangedRender(nameof(OnDirectionChanged))] private NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
     public EnemyData enemyData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
     public EnemyFSM fsm; //시각적 상태를 제어하는 fsm
@@ -145,7 +146,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         nrb.Rigidbody.linearVelocity = new Vector2(moveDirection * enemyData.moveSpeed, nrb.Rigidbody.linearVelocity.y);
 
         //벽 또는 절벽 감지 시 방향 전환
-        if (IsDetectingWall() || !IsDetectingGround())
+        if((IsDetectingWall() || !IsDetectingGround()) && FlipTimer.ExpiredOrNotRunning(Runner))
         {
             Flip();
         }
@@ -165,7 +166,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         float directionToTarget = TargetPlayer.transform.position.x - transform.position.x;
 
         // 타겟 방향으로 몸을 돌림
-        if ((directionToTarget > 0 && !IsFacingRight) || (directionToTarget < 0 && IsFacingRight))
+        if(((directionToTarget >= 0 && !IsFacingRight) || (directionToTarget < 0 && IsFacingRight)) && FlipTimer.ExpiredOrNotRunning(Runner))
         {
             Flip();
         }
@@ -205,6 +206,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
 
     protected void Flip()
     {
+        FlipTimer = TickTimer.CreateFromSeconds(Runner, 0.5f); //빠른 플립을 방지하기 위한 플립타이머 설정
         IsFacingRight = !IsFacingRight;
     }
 
@@ -254,7 +256,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         // 가장 가까운 플레이어를 최종 타겟으로 설정합니다.
         TargetPlayer = closestPlayer;
     }
-    public void DealDamage()
+    public virtual void DealDamage()
     {
         // 서버(제어 권한자)가 아니면 로직을 실행하지 않습니다.
         if (!Object.HasStateAuthority) return;
