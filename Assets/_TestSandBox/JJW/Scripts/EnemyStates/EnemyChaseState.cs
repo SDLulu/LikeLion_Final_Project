@@ -20,19 +20,19 @@ public class EnemyChaseState : EnemyStateBase
     protected override void OnFixedUpdate()
     {
         //타겟이 벗어났다면
-        if (fsmRef.EnemyNetworkBehaviour.TargetPlayer == null)
-        {
-            fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Idle;
-            fsmRef.StateMachine.ForceActivateState<EnemyIdleState>();
-            return;
-        }
+        // if (fsmRef.EnemyNetworkBehaviour.TargetPlayer == null)
+        // {
+        //     fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Idle;
+        //     fsmRef.StateMachine.ForceActivateState<EnemyIdleState>();
+        //     return;
+        // }
 
         //타겟이 공격사정거리 안에 들어왔다면
-        if (Vector2.Distance(fsmRef.EnemyNetworkBehaviour.transform.position, fsmRef.EnemyNetworkBehaviour.TargetPlayer.transform.position) < fsmRef.EnemyNetworkBehaviour.enemyData.attackRange
-        && fsmRef.EnemyNetworkBehaviour.AttackCooldownTimer.ExpiredOrNotRunning(Runner))
-        {
-            fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Attack;
-            fsmRef.StateMachine.ForceActivateState<EnemyAttackState>();
-        }
+        // if (Vector2.Distance(fsmRef.EnemyNetworkBehaviour.transform.position, fsmRef.EnemyNetworkBehaviour.TargetPlayer.transform.position) < fsmRef.EnemyNetworkBehaviour.enemyData.attackRange
+        // && fsmRef.EnemyNetworkBehaviour.AttackCooldownTimer.ExpiredOrNotRunning(Runner))
+        // {
+        //     fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Attack;
+        //     fsmRef.StateMachine.ForceActivateState<EnemyAttackState>();
+        // }
     }
 }
