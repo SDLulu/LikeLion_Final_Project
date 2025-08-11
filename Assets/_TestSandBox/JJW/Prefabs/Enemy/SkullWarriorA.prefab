@@ -442,6 +442,56 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &2446747938667686656
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1080023733333682894}
+  - component: {fileID: 8929392987491474186}
+  m_Layer: 0
+  m_Name: State_StunState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1080023733333682894
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2446747938667686656}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4158364605687723755}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8929392987491474186
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2446747938667686656}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 979fbd88d4aba3e49bacbcc65b089fbe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _priority: 0
+  _checkPriorityOnExit: 1
+  fsmRef: {fileID: 8873342647473638973}
+  anim: {fileID: 9172674480097014409}
+  animState: Idle Blinking
+  animTransitionLength: 0.06666667
 --- !u!1 &2773874071800090161
 GameObject:
   m_ObjectHideFlags: 0
@@ -706,6 +756,7 @@ MonoBehaviour:
   - {fileID: 8810953490195839913}
   - {fileID: 6311083751816906626}
   - {fileID: 3903515523300834183}
+  - {fileID: 8929392987491474186}
   - {fileID: 3524578185868162868}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &4661726525471578019
@@ -787,17 +838,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3e2a4bb8c1bd7e488f6154a9f233409, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _CurrentHealth: 0
   _TargetPlayer: {fileID: 0}
-  _CurrentState: 0
-  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
-  fsm: {fileID: 8873342647473638973}
   groundCheck: {fileID: 5729828730234766476}
   wallCheck: {fileID: 4218818190343274483}
   attackCheck: {fileID: 2522271221555018171}
-  wallCheckDistance: 0.5
+  wallCheckDistance: 0.7
   groundCheckDistance: 0.2
   attackCheckRadius: 0.4
+  enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
+  fsm: {fileID: 8873342647473638973}
+  _CurrentHealth: 0
+  _CurrentState: 0
+  _IsStunned: 0
+  _IsInvincible: 0
+  _IsHeld: 0
+  _IsThrown: 0
 --- !u!1 &3121590321395408710
 GameObject:
   m_ObjectHideFlags: 0
@@ -1160,6 +1215,7 @@ Transform:
   - {fileID: 8826404631737498746}
   - {fileID: 2145097399288564634}
   - {fileID: 5848515172586729824}
+  - {fileID: 1080023733333682894}
   - {fileID: 721056612886542959}
   m_Father: {fileID: 2267929925722361088}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

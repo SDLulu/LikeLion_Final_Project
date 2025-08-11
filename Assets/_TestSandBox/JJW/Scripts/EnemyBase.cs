@@ -15,35 +15,49 @@ public enum EnemyStateName
     Stun,
     Dead
 }
-public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에서 처리하고, 렌더링 관련만 FSM에서 처리
+//실제 행동 및 상태전환은 EnemyBase(FUN)에서 처리하고, 렌더링 관련만 FSM에서 처리
+public class EnemyBase : NetworkBehaviour, IPlayerInteraction
 {
-    [Networked] public float CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
     [Networked] public SpelunkyPlayerController TargetPlayer { get; set; }
-    [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
+
+    // 벽, 절벽, 공격 판정 체크 위치
+    [SerializeField] private Transform groundCheck; // 절벽 감지를 위한 위치
+    [SerializeField] private Transform wallCheck; // 벽 감지를 위한 위치
+    [SerializeField] private Transform attackCheck; // 공격 판정 위치
+    [SerializeField] private float wallCheckDistance = 0.5f; // 벽 감지 거리
+    [SerializeField] private float groundCheckDistance = 0.2f; // 바닥 감지 거리
+    [SerializeField] private float attackCheckRadius = 0.5f; // 공격 판정 반지름
+
+    //컴포넌트들
+    public EnemyData enemyData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
+    public EnemyFSM fsm; //시각적 상태를 제어하는 fsm
+    protected Collider2D coll;
+    protected NetworkRigidbody2D nrb;
+
+    // 타이머들 
     [Networked] public TickTimer StateTimer { get; set; } //상태 시간(랜덤)을 저장할 타이머
     [Networked] public TickTimer AttackCooldownTimer { get; set; } // 공격 쿨타임을 위한 타이머
     [Networked] private TickTimer FlipTimer { get; set; } // 빠르게 플립되는 현상을 방지하기 위한 타이머
+    [Networked] private TickTimer InvincibleTimer { get; set; }
+    [Networked] private TickTimer ThrownTimer { get; set; }
+    // 상태 관련 네트워크 프로퍼티들
+    [Networked] public int CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
+    [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
     [Networked, OnChangedRender(nameof(OnDirectionChanged))] private NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
-    public EnemyData enemyData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
-    public EnemyFSM fsm; //시각적 상태를 제어하는 fsm
-    [SerializeField] private Transform groundCheck; // 절벽 감지를 위한 위치
-    [SerializeField] private Transform wallCheck; // 벽 감지를 위한 위치
-    [SerializeField] private Transform attackCheck; // 공격 감지를 위한 위치
-    [SerializeField] private float wallCheckDistance = 0.5f; // 벽 감지 거리
-    [SerializeField] private float groundCheckDistance = 0.2f; // 바닥 감지 거리
-    [SerializeField] private float attackCheckRadius = 0.5f; // 공격 감지 반지름
-
-    //컴포넌트들
-    protected Collider2D coll;
-    protected NetworkRigidbody2D nrb;
-    [Networked] protected bool IsAlive { get; set; }
+    [Networked] protected bool IsDead { get; set; }
+    [Networked] public bool IsStunned { get; private set; }
+    [Networked] public bool IsInvincible { get; private set; }
+    [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
+    [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
 
     public override void Spawned() //네트워크 객체가 생성될 때 호출
     {
         UnityEngine.Debug.Log($"{enemyData.enemyName} Monster Spawned");
         coll = GetComponent<Collider2D>();
         nrb = GetComponent<NetworkRigidbody2D>();
-        IsAlive = true;
+        IsDead = false;
+        IsStunned = false;
+        IsInvincible = false;
 
         if (Object.HasStateAuthority) //호스트(서버)에서 초기스탯 설정
         {
@@ -52,20 +66,26 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             CurrentState = EnemyStateName.Idle;
         }
     }
-
-    public override void Render()
-    {
-        
-    }
-
     public override void FixedUpdateNetwork()
     {
         if (!Object.HasStateAuthority) return; //호스트가 아니면, 실행 X
 
-        if (!IsAlive)
+        if (IsDead)
         {
             UpdateDeadState();
             return;
+        }
+
+        // 무적 타이머 만료 시 무적 해제
+        if (IsInvincible && InvincibleTimer.Expired(Runner))
+        {
+            IsInvincible = false;
+        }
+
+        // 던진 타이머 만료 시 던진 상태 해제
+        if (IsThrown && ThrownTimer.Expired(Runner))
+        {
+            IsThrown = false;
         }
 
         UpdateTarget();
@@ -102,36 +122,11 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         }
     }
 
-    //데미지를 받는 함수
-    [Rpc(RpcSources.StateAuthority, RpcTargets.StateAuthority)] //서버에서만 이 함수를 호출할 수 있고, 서버에서만 이 함수가 실행되어야함
-    public void Rpc_TakeDamage(float damage) //데미지를 받는 함수
-    {
-        //죽었다면 데미지 못받게 return
-        if (!IsAlive) return;
-
-
-        CurrentHealth -= damage;
-        UnityEngine.Debug.Log($"몬스터 체력 : {CurrentHealth}");
-
-        if (CurrentHealth <= 0)
-        {
-            CurrentHealth = 0;
-            IsAlive = false;
-            CurrentState = EnemyStateName.Dead;
-            fsm.StateMachine.ForceActivateState<EnemyDeadState>();
-        }
-        else
-        {
-            CurrentState = EnemyStateName.HitReact;
-            fsm.StateMachine.ForceActivateState<EnemyHitReactState>();
-        }
-    }
-
     protected virtual void UpdateIdleState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
 
-         //타겟이 감지되면 Chase 상태로 전환
+        //타겟이 감지되면 Chase 상태로 전환
         if (TargetPlayer != null)
         {
             CurrentState = EnemyStateName.Chase; //행동은 EnemyNetwworkBehaviour의 FUN 에서 처리
@@ -158,7 +153,6 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         {
             CurrentState = EnemyStateName.Idle;
             fsm.StateMachine.ForceActivateState<EnemyIdleState>();
-
         }
 
         // 정찰 로직
@@ -166,7 +160,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         nrb.Rigidbody.linearVelocity = new Vector2(moveDirection * enemyData.moveSpeed, nrb.Rigidbody.linearVelocity.y);
 
         //벽 또는 절벽 감지 시 방향 전환
-        if((IsDetectingWall() || !IsDetectingGround()) && FlipTimer.ExpiredOrNotRunning(Runner))
+        if ((IsDetectingWall() || !IsDetectingGround()) && FlipTimer.ExpiredOrNotRunning(Runner))
         {
             Flip();
         }
@@ -189,12 +183,12 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             CurrentState = EnemyStateName.Attack;
             fsm.StateMachine.ForceActivateState<EnemyAttackState>();
         }
-        
+
         // 타겟 방향으로 이동
         float directionToTarget = TargetPlayer.transform.position.x - transform.position.x;
 
         // 타겟 방향으로 몸을 돌림
-        if(((directionToTarget >= 0 && !IsFacingRight) || (directionToTarget < 0 && IsFacingRight)) && FlipTimer.ExpiredOrNotRunning(Runner))
+        if (((directionToTarget >= 0 && !IsFacingRight) || (directionToTarget < 0 && IsFacingRight)) && FlipTimer.ExpiredOrNotRunning(Runner))
         {
             Flip();
         }
@@ -215,20 +209,30 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     protected virtual void UpdateHitReactState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
-        
+
         if (StateTimer.ExpiredOrNotRunning(Runner))
         {
             CurrentState = EnemyStateName.Move;
             fsm.StateMachine.ForceActivateState<EnemyMoveState>();
         }
     }
-    protected virtual void UpdateStunState()
-    {
-    }
     protected virtual void UpdateDeadState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
         //coll.enabled = false; //다른 오브젝트와 충돌하지 않도록 비활성화
+    }
+
+    protected virtual void UpdateStunState()
+    {
+        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+
+        if (IsStunned && StateTimer.ExpiredOrNotRunning(Runner))
+        {
+            IsStunned = false;
+            //상태 전환
+            CurrentState = EnemyStateName.Chase;
+            fsm.StateMachine.ForceActivateState<EnemyChaseState>();
+        }
     }
 
     private bool IsDetectingWall()
@@ -256,18 +260,18 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         // 이 코드는 모든 클라이언트에서 실행되므로 화면에 올바르게 렌더링됩니다.
         if (IsFacingRight)
         {
-           transform.localScale =  new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z);; // 오른쪽을 볼 때 (기본값)
+            transform.localScale = new Vector3(Mathf.Abs(transform.localScale.x), transform.localScale.y, transform.localScale.z); ; // 오른쪽을 볼 때 (기본값)
         }
         else
         {
-            transform.localScale =  new Vector3(transform.localScale.x * -1, transform.localScale.y, transform.localScale.z);; // 왼쪽을 볼 때
+            transform.localScale = new Vector3(transform.localScale.x * -1, transform.localScale.y, transform.localScale.z); ; // 왼쪽을 볼 때
         }
     }
 
     //매 틱마다 주변에 플레이어가 있는지 탐색
     private void UpdateTarget()
     {
-         Collider2D[] hitColliders = new Collider2D[5];
+        Collider2D[] hitColliders = new Collider2D[5];
         int hitCounts = Runner.GetPhysicsScene2D().OverlapCircle(transform.position, enemyData.searchDistance, hitColliders, enemyData.PlayerLayer);
 
         SpelunkyPlayerController closestPlayer = null;
@@ -275,7 +279,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         if (hitCounts > 0)
         {
             // 감지된 모든 플레이어에 대해 반복
-            for(int i = 0; i < hitCounts; i++)
+            for (int i = 0; i < hitCounts; i++)
             {
                 SpelunkyPlayerController player = hitColliders[i].GetComponent<SpelunkyPlayerController>();
                 if (player != null)
@@ -303,12 +307,12 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
 
         // 공격 지점(attackPoint)을 중심으로 attackRadius 반경 내의 모든 콜라이더를 감지합니다.
         // 이때 PlayerLayer에 속한 콜라이더만 감지 대상으로 합니다.
-         List<LagCompensatedHit> hits = new  List<LagCompensatedHit>(); // 최대 5개까지 감지
+        List<LagCompensatedHit> hits = new List<LagCompensatedHit>(); // 최대 5개까지 감지
         int hitCount = Runner.LagCompensation.OverlapSphere(
-            attackCheck.position, 
-            attackCheckRadius, 
-            Object.InputAuthority, 
-            hits, 
+            attackCheck.position,
+            attackCheckRadius,
+            Object.InputAuthority,
+            hits,
             enemyData.PlayerHitBoxLayer
         );
 
@@ -337,5 +341,123 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
         Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y));
         if (attackCheck == null) return;
         Gizmos.DrawWireSphere(attackCheck.position, attackCheckRadius);
+    }
+
+
+    public virtual void ApplyKnockback(Vector2 force, float stunDuration = 0)
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 무적 상태에서는 넉백 불가
+        if (IsInvincible == true) return;
+
+        // 기본 스턴 지속시간 0.5초로 설정 (stunDuration이 0이면)
+        if (stunDuration <= 0f) stunDuration = 0.5f;
+
+        if (nrb != null)
+        {
+            nrb.Rigidbody.AddForce(force, ForceMode2D.Impulse);
+        }
+        else
+        {
+            Debug.LogWarning($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없어 넉백을 적용할 수 없습니다!");
+        }
+
+        ApplyStun(stunDuration);
+    }
+
+    //데미지를 받는 함수
+    // [Rpc(RpcSources.StateAuthority, RpcTargets.StateAuthority)] //서버에서만 이 함수를 호출할 수 있고, 서버에서만 이 함수가 실행되어야함
+    public virtual void TakeDamage(int damage) //데미지를 받는 함수
+    {
+        //죽었다면 데미지 못받게 return
+        if (IsDead) return;
+
+        //무적상태라면 데미지 못받게 return
+        if (IsInvincible) return;
+
+        CurrentHealth -= damage;
+        SetInvincible(true, 0.2f);
+        UnityEngine.Debug.Log($"몬스터 체력 : {CurrentHealth}");
+
+        if (CurrentHealth <= 0)
+        {
+            CurrentHealth = 0;
+            IsDead = true;
+            CurrentState = EnemyStateName.Dead;
+            fsm.StateMachine.ForceActivateState<EnemyDeadState>();
+        }
+        else
+        {
+            CurrentState = EnemyStateName.HitReact;
+            fsm.StateMachine.ForceActivateState<EnemyHitReactState>();
+        }
+    }
+
+    public virtual void ApplyStun(float duration)
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 무적 상태에서는 스턴 불가
+        if (IsInvincible == true) return;
+
+        // 사망 상태에서는 스턴 불가
+        if (IsDead) return;
+
+        IsStunned = true;
+        StateTimer = TickTimer.CreateFromSeconds(Runner, duration);
+
+        //StunState로 전환
+        CurrentState = EnemyStateName.Stun;
+        fsm.StateMachine.ForceActivateState<EnemyStunState>();
+    }
+
+    public virtual void SetInvincible(bool value, float duration = 0)
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 사망 상태에서는 무적 설정 불가
+        if (IsDead) return;
+
+        IsInvincible = value;
+
+        if (value && duration > 0f)
+        {
+            InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+        }
+        else if (!value)
+        {
+            InvincibleTimer = TickTimer.None;
+        }
+    }
+    public virtual void OnPickedUp()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = true;
+    }
+
+    public virtual void OnReleased()
+    {
+        if (!HasStateAuthority) return;
+        IsHeld = false;
+    }
+    
+    // 🚀 던진 상태 설정 (duration초 동안)
+    public virtual void SetThrown(float duration = 1.5f)
+    {
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+        
+        // 사망 상태에서는 던진 상태 설정 불가
+        if (IsDead) return;
+        
+        // 무적 상태에서는 던진 상태 설정 불가
+        if (IsInvincible) return;
+        
+        IsThrown = true;
+        ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
     }
 }    
