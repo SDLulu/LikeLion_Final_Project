@@ -130,6 +130,19 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     protected virtual void UpdateIdleState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+
+         //타겟이 감지되면 Chase 상태로 전환
+        if (TargetPlayer != null)
+        {
+            CurrentState = EnemyStateName.Chase; //행동은 EnemyNetwworkBehaviour의 FUN 에서 처리
+            fsm.StateMachine.ForceActivateState<EnemyChaseState>(); //렌더링은 FSM에서 처리
+            return; //상태가 변경되었으므로 즉시 함수 종료
+        }
+        if (StateTimer.ExpiredOrNotRunning(Runner))
+        {
+            CurrentState = EnemyStateName.Move;
+            fsm.StateMachine.ForceActivateState<EnemyMoveState>();
+        }
     }
     protected virtual void UpdateMoveState()
     {
@@ -139,6 +152,13 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             CurrentState = EnemyStateName.Chase;
             fsm.StateMachine.ForceActivateState<EnemyChaseState>();
             return;
+        }
+
+        if (StateTimer.ExpiredOrNotRunning(Runner))
+        {
+            CurrentState = EnemyStateName.Idle;
+            fsm.StateMachine.ForceActivateState<EnemyIdleState>();
+
         }
 
         // 정찰 로직
@@ -154,6 +174,7 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     }
     protected virtual void UpdateChaseState()
     {
+        //타겟이 벗어났다면
         if (TargetPlayer == null)
         {
             CurrentState = EnemyStateName.Idle;
@@ -161,7 +182,14 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
             return;
         }
 
-
+        //타겟이 공격사정거리 안에 들어왔다면
+        if (Vector2.Distance(transform.position, TargetPlayer.transform.position) < enemyData.attackRange
+            && AttackCooldownTimer.ExpiredOrNotRunning(Runner))
+        {
+            CurrentState = EnemyStateName.Attack;
+            fsm.StateMachine.ForceActivateState<EnemyAttackState>();
+        }
+        
         // 타겟 방향으로 이동
         float directionToTarget = TargetPlayer.transform.position.x - transform.position.x;
 
@@ -177,10 +205,22 @@ public class EnemyBase : NetworkBehaviour //실제 행동은 EnemyBase(FUN)에�
     protected virtual void UpdateAttackState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+
+        if (StateTimer.ExpiredOrNotRunning(Runner))
+        {
+            CurrentState = EnemyStateName.Chase;
+            fsm.StateMachine.ForceActivateState<EnemyChaseState>();
+        }
     }
     protected virtual void UpdateHitReactState()
     {
         nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        
+        if (StateTimer.ExpiredOrNotRunning(Runner))
+        {
+            CurrentState = EnemyStateName.Move;
+            fsm.StateMachine.ForceActivateState<EnemyMoveState>();
+        }
     }
     protected virtual void UpdateStunState()
     {
