@@ -12,7 +12,6 @@ public class EnemyMoveState : EnemyStateBase
 
     protected override void OnEnterState()
     {
-        Debug.Log("몬스터 무브 스테이트");
         float randomMoveDuration = Random.Range(1f, 5f);
         fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, randomMoveDuration);
         //MoveDuration = randomMoveDuration;
@@ -25,21 +24,21 @@ public class EnemyMoveState : EnemyStateBase
 
     protected override void OnFixedUpdate()
     {
-        if (!fsmRef.Object.HasStateAuthority) return;
+        // if (!fsmRef.Object.HasStateAuthority) return;
 
-        // 타겟(플레이어)이 감지되면 Chase 상태로 전환합니다.
-        if (fsmRef.EnemyNetworkBehaviour.TargetPlayer != null)
-        {
-            fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Chase;
-            fsmRef.StateMachine.ForceActivateState<EnemyChaseState>();
-            return;
-        }
+        // // 타겟(플레이어)이 감지되면 Chase 상태로 전환합니다.
+        // if (fsmRef.EnemyNetworkBehaviour.TargetPlayer != null)
+        // {
+        //     fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Chase;
+        //     fsmRef.StateMachine.ForceActivateState<EnemyChaseState>();
+        //     return;
+        // }
 
-        if (fsmRef.EnemyNetworkBehaviour.StateTimer.ExpiredOrNotRunning(Runner))
-        {
-            fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Idle;
-            fsmRef.StateMachine.ForceActivateState<EnemyIdleState>();
+        // if (fsmRef.EnemyNetworkBehaviour.StateTimer.ExpiredOrNotRunning(Runner))
+        // {
+        //     fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Idle;
+        //     fsmRef.StateMachine.ForceActivateState<EnemyIdleState>();
 
-        }
+        // }
     }
 }
