@@ -6,9 +6,10 @@ using UnityEngine;
 public class PlayerHealth : NetworkBehaviour
 {
     [Networked, OnChangedRender(nameof(OnHealthChanged))]
-    public int Health { get; private set; } = 4;
+    public int Health { get; private set; } = 5;
 
-    public int MaxHealth => 4;
+    public int MaxHealth => 99;
+    public int StartHealth { get; private set; } = 5;
 
     public event Action OnHealthChangedEvent; // 인자 없는 알림 (인벤토리 방식과 통일)
 
@@ -18,6 +19,7 @@ public class PlayerHealth : NetworkBehaviour
     public override void Spawned()
     {
         base.Spawned();
+        Health = StartHealth;
         playerDeathHandler = GetComponentInParent<PlayerDeathHandler>();
     }
 
@@ -28,7 +30,7 @@ public class PlayerHealth : NetworkBehaviour
         Health = Mathf.Max(Health - amount, 0);
         if (Health == 0)
         {
-            OnDeath();
+            Death();
         }
     }
 
@@ -48,7 +50,7 @@ public class PlayerHealth : NetworkBehaviour
     }
 
     // 사망 처리
-    private void OnDeath()
+    private void Death()
     {
         Debug.Log("[PlayerHealth] Player died!");
         if (playerDeathHandler != null)
