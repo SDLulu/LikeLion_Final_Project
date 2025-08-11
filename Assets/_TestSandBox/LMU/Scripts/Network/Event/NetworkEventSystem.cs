@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Fusion;
 using Fusion.Sockets;
 using LMCore;
@@ -7,6 +9,52 @@ using UnityEngine;
 
 public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunnerCallbacks
 {
+    private HashSet<Type> _requiredManagerTypes = new HashSet<Type>();
+    private HashSet<Type> _registeredManagers = new HashSet<Type>();
+
+    public bool IsReady { get; private set; } = false;
+
+    public event Action OnAllManagersReady;
+
+    /// <summary>
+    /// 어셈블리를 스캔해 필수 매니저 목록 초기화
+    /// </summary>
+    private void DiscoverRequiredManagers()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        foreach (var type in assembly.GetTypes().Where(t => t.IsDefined(typeof(RequiredManagerAttribute), false)))
+        {
+            _requiredManagerTypes.Add(type);
+            Debug.Log($"[GameStateManager] 필수 매니저 발견: {type.Name}");
+        }
+    }
+
+    public void RegisterManager(NetworkBehaviour manager)
+    {
+        if (IsReady) 
+            return;
+
+        var managerType = manager.GetType();
+        _registeredManagers.Add(managerType);
+        CheckIfReady();
+    }
+
+    private void CheckIfReady()
+    {
+        if (_requiredManagerTypes.IsSubsetOf(_registeredManagers))
+        {
+            IsReady = true;
+            OnAllManagersReady?.Invoke();
+        }
+    }
+
+    public void UnregisterManager(NetworkBehaviour manager)
+    {
+        _registeredManagers.Remove(manager.GetType());
+    }
+
+
+
     [Header("이벤트 핸들러")]
     [SerializeField] private PlayerSpawnHandler spawnHandler;
     [SerializeField] private HostDisconnectHandler hostDisconnectHandler;
@@ -19,8 +67,10 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
     public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
 
+    public event Action<NetworkRunner, PlayerRef> OnPlayerSpawnedEvent;
+
     public event Action<Stage.Data> OnStageLoadDoneEvent;
-    
+
     // 게임 상태 변경 이벤트
     public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
 
@@ -33,10 +83,11 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnGameStateChangedEvent?.Invoke(previousState, currentState);
         Debug.Log($"게임 상태 변경: {previousState} → {currentState}");
     }
-    
+
     protected override void Awake()
     {
         base.Awake();
+        DiscoverRequiredManagers();
         spawnHandler = this.GetOrAddComponent<PlayerSpawnHandler>();
         hostDisconnectHandler = this.GetOrAddComponent<HostDisconnectHandler>();
 

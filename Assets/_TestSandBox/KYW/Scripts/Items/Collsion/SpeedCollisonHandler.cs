@@ -14,7 +14,7 @@ public class SpeedCollisionHandler : NetworkBehaviour
     [SerializeField] private float speedAttackKnockbackDuration = 0.5f; // 속도 공격 넉백/무적 지속시간
     
     [Header("Collider References")]
-    [SerializeField] private Collider2D speedAttackCollider;    // SpeedAttack 레이어 콜라이더 (속도 기반 공격용)
+    [SerializeField] private Collider2D[] speedAttackColliders;    // SpeedAttack 레이어 콜라이더 배열 (속도 기반 공격용)
     
     private Rigidbody2D rb;
     private IItemInteraction itemInteraction;
@@ -33,9 +33,15 @@ public class SpeedCollisionHandler : NetworkBehaviour
     
     private void InitializeColliders()
     {
-        if (speedAttackCollider != null)
+        if (speedAttackColliders != null)
         {
-            speedAttackCollider.enabled = false;
+            foreach (Collider2D collider in speedAttackColliders)
+            {
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
+            }
         }
     }
     
@@ -70,9 +76,15 @@ public class SpeedCollisionHandler : NetworkBehaviour
     
     private void SetSpeedAttackCollider(bool enabled)
     {
-        if (speedAttackCollider != null)
+        if (speedAttackColliders != null)
         {
-            speedAttackCollider.enabled = enabled;
+            foreach (Collider2D collider in speedAttackColliders)
+            {
+                if (collider != null)
+                {
+                    collider.enabled = enabled;
+                }
+            }
         }
     }
     
@@ -135,7 +147,7 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void ApplyDamageAndKnockback(GameObject target, IPlayerInteraction interaction)
     {
         // 콜라이더의 실제 중심점을 기준으로 넉백 방향 계산 (오프셋 고려)
-        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)speedAttackCollider.bounds.center).normalized;
+        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)speedAttackColliders[0].bounds.center).normalized; // 첫 번째 콜라이더를 기준으로 넉백 방향 계산
         Vector2 knockbackForceVector = knockbackDirection * speedAttackKnockbackForce;
         
         interaction.ApplyKnockback(knockbackForceVector, speedAttackKnockbackDuration);
@@ -146,7 +158,7 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void ApplyKnockbackOnly(GameObject target, IItemInteraction interaction)
     {
         // 콜라이더의 실제 중심점을 기준으로 넉백 방향 계산 (오프셋 고려)
-        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)speedAttackCollider.bounds.center).normalized;
+        Vector2 knockbackDirection = ((Vector2)target.transform.position - (Vector2)speedAttackColliders[0].bounds.center).normalized; // 첫 번째 콜라이더를 기준으로 넉백 방향 계산
         Vector2 knockbackForceVector = knockbackDirection * speedAttackKnockbackForce;
         
         interaction.ApplyKnockback(knockbackForceVector, speedAttackKnockbackDuration);

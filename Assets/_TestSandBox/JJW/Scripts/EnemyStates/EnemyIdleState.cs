@@ -14,8 +14,8 @@ public class EnemyIdleState : EnemyStateBase
     {
         Debug.Log("몬스터 아이들 스테이트");
         float randomIdleDuration = Random.Range(1f, 3f);
-        // fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, randomIdleDuration);
-        idleDuration = randomIdleDuration;
+        fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, randomIdleDuration);
+        //idleDuration = randomIdleDuration;
     }
 
     protected override void OnEnterStateRender()
@@ -35,7 +35,7 @@ public class EnemyIdleState : EnemyStateBase
             fsmRef.StateMachine.ForceActivateState<EnemyChaseState>(); //렌더링은 FSM에서 처리
             return; //상태가 변경되었으므로 즉시 함수 종료
         }
-        if (Machine.StateTime > idleDuration)
+        if (fsmRef.EnemyNetworkBehaviour.StateTimer.ExpiredOrNotRunning(Runner))
         {
             fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Move;
             fsmRef.StateMachine.ForceActivateState<EnemyMoveState>();
