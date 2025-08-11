@@ -1,0 +1,195 @@
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+using System.Linq;
+using UnityEngine.Animations;
+
+public class UI_PlayerSlot : MonoBehaviour
+{
+    [Header("돈")]
+    [SerializeField] private TMP_Text _playerMoney;
+    
+    [Header("체력 UI")]
+    [SerializeField] private TMP_Text _playerHealthText;
+    [SerializeField] private Image _playerHealthIcon;
+    [SerializeField] private Sprite _normalHealthIcon; // 일반 체력 아이콘
+    [SerializeField] private Sprite _deadHealthIcon;   // 사망 시 체력 아이콘
+    
+    [Header("패시브 아이템 아이콘들")]
+    [SerializeField] private GameObject _rocketIcon;
+    [SerializeField] private GameObject _wingsIcon;
+    [SerializeField] private GameObject _speedShoesIcon;
+    [SerializeField] private GameObject _jumpShoesIcon;
+    [SerializeField] private GameObject _magnetIcon;
+    [SerializeField] private GameObject _headsetIcon;
+    [SerializeField] private GameObject _sunglassesIcon;
+
+    // 같은 부모(플레이어 프리팹) 아래의 컴포넌트들
+    private PlayerInventory _playerInventory;
+    private PlayerHealth _playerHealth;
+    private bool _isInitialized = false;
+
+    private void Awake()
+    {
+        // 같은 부모 아래의 컴포넌트들 찾기
+        _playerInventory = transform.parent.parent.GetComponentInChildren<PlayerInventory>();
+        _playerHealth = transform.parent.parent.GetComponentInChildren<PlayerHealth>();
+    }
+
+    private void Start()
+    {
+        // 초기화
+        InitializeUI();
+    }
+
+    private void InitializeUI()
+    {
+        if (_isInitialized) return;
+
+        // 컴포넌트들이 모두 있는지 확인
+        if (_playerInventory == null || _playerHealth == null)
+        {
+            Debug.LogWarning("📱 UI_PlayerSlot: 필요한 컴포넌트가 없습니다!");
+            return;
+        }
+
+        // 이벤트 구독
+        SubscribeToEvents();
+        
+        // 초기 UI 업데이트
+        UpdateUI();
+        
+        // PlayerSlotUIManager에 등록
+        PlayerSlotUIManager.Inst.RegisterPlayerUI(this);
+        
+        _isInitialized = true;
+        Debug.Log($"📱 UI_PlayerSlot: 초기화 완료");
+    }
+
+    private void SubscribeToEvents()
+    {
+        if (_playerInventory != null)
+        {
+            _playerInventory.OnInventoryDataChanged += OnInventoryDataChanged;
+        }
+        
+        if (_playerHealth != null)
+        {
+            _playerHealth.OnHealthChangedEvent += OnHealthChanged;
+        }
+    }
+
+
+
+    private void UpdateUI()
+    {
+        UpdateMoneyUI();
+        UpdateHealthUI();
+        UpdateItemIcons();
+    }
+
+    private void UpdateMoneyUI()
+    {
+        if (_playerMoney != null && _playerInventory != null)
+        {
+            _playerMoney.text = $"${_playerInventory.CurrentMoney}";
+        }
+    }
+
+    private void UpdateHealthUI()
+    {
+        if (_playerHealthText != null && _playerHealth != null)
+        {
+            _playerHealthText.text = $"{_playerHealth.Health}";
+        }
+
+        if (_playerHealthIcon != null && _playerHealth != null)
+        {
+            // 체력이 0일 때 아이콘 이미지 변경
+            if (_playerHealth.Health <= 0)
+            {
+                if (_deadHealthIcon != null)
+                {
+                    _playerHealthIcon.sprite = _deadHealthIcon;
+                }
+            }
+            else
+            {
+                if (_normalHealthIcon != null)
+                {
+                    _playerHealthIcon.sprite = _normalHealthIcon;
+                }
+            }
+            
+            // 체력에 따른 아이콘 크기 비례 변경
+            float scaleMultiplier;
+            if (_playerHealth.Health <= 0)
+            {
+                scaleMultiplier = 0.5f; // 최소 크기
+            }
+            else if (_playerHealth.Health >= 10)
+            {
+                scaleMultiplier = 1.5f; // 최대 크기
+            }
+            else
+            {
+                // 0~10 사이에서 선형 보간
+                scaleMultiplier = 0.5f + (_playerHealth.Health / 10f) * 1.0f;
+            }
+            
+            // 아이콘 크기 적용
+            _playerHealthIcon.transform.localScale = Vector3.one * scaleMultiplier;
+        }
+    }
+
+    private void UpdateItemIcons()
+    {
+        if (_playerInventory == null) return;
+
+        // 각 패시브 아이템 아이콘 활성화/비활성화
+        if (_rocketIcon != null) _rocketIcon.SetActive(_playerInventory.hasRocket);
+        if (_wingsIcon != null) _wingsIcon.SetActive(_playerInventory.hasWings);
+        if (_speedShoesIcon != null) _speedShoesIcon.SetActive(_playerInventory.hasSpeedShoes);
+        if (_jumpShoesIcon != null) _jumpShoesIcon.SetActive(_playerInventory.hasJumpShoes);
+        if (_magnetIcon != null) _magnetIcon.SetActive(_playerInventory.hasMagnet);
+        if (_headsetIcon != null) _headsetIcon.SetActive(_playerInventory.hasHeadset);
+        if (_sunglassesIcon != null) _sunglassesIcon.SetActive(_playerInventory.hasSunglasses);
+    }
+
+
+
+    // --- Event Handlers ---
+    private void OnInventoryDataChanged()
+    {
+        UpdateMoneyUI();
+        UpdateItemIcons();
+    }
+
+    private void OnHealthChanged()
+    {
+        UpdateHealthUI();
+    }
+
+    // --- Unity Lifecycle ---
+    private void OnDestroy()
+    {
+        // PlayerSlotUIManager에서 제거
+        PlayerSlotUIManager.Inst?.UnregisterPlayerUI(this);
+        
+        // 이벤트 구독 해제
+        if (_playerInventory != null)
+        {
+            _playerInventory.OnInventoryDataChanged -= OnInventoryDataChanged;
+        }
+        
+        if (_playerHealth != null)
+        {
+            _playerHealth.OnHealthChangedEvent -= OnHealthChanged;
+        }
+
+        // 참조 정리
+        _playerInventory = null;
+        _playerHealth = null;
+        _isInitialized = false;
+    }
+}
