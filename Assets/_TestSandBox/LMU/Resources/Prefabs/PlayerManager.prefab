@@ -45,7 +45,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 474ab1a8da50e1a44a53f49225dc3764, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  currentPlayerCount: 0
+  minPlayersToStart: 2
+  isInGame: 0
+  isGameSceneLoading: 0
+  isGameSceneLoaded: 0
+  _Players:
+    _items: []
 --- !u!114 &6662820892479281810
 MonoBehaviour:
   m_ObjectHideFlags: 0

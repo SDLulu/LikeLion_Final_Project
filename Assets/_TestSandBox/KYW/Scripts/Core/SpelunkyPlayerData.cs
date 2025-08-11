@@ -27,5 +27,8 @@ public enum SpelunkyInputButtons
     Skill = 5,          // 쉬프트키 - 스킬 사용
     pick = 6,
     buy = 7,
-    drop = 8
+    drop = 8,
+    DownJump = 9,       // 스페이스 (앉은 상태) - 밑점프
+    Interact = 10,      // F키 - 상호작용
+    Death = 11          // K키 - 테스트용 죽음 트리거
 } 

@@ -1,13 +1,16 @@
 using Fusion;
 using UnityEngine;
 
-public class PMK_ArrowTrapObj : NetworkBehaviour
+public class PMK_ArrowTrapObj : NetworkBehaviour, IItemInteraction
 {
     [Header("튕김 설정")]
-    [SerializeField] private float bounceForce = 3f;
     [SerializeField] private float detectRadius = 0.3f; // 감지 반지름
     [SerializeField] private LayerMask playerLayerMask; // 플레이어만 감지할 마스크
     [SerializeField] private float groundedVelocityThreshold = 7f; // 바닥에 닿았는지 판단할 속도 임계값
+
+    // 🌐 네트워크 동기화
+    [Networked] private NetworkBool IsHeld { get; set; }
+    bool IItemInteraction.IsHeld => IsHeld;
 
     private Rigidbody2D rb;
     private bool isGrounded = false;
@@ -31,15 +34,13 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
         if (isGrounded)
             return;
 
-        // 수동 충돌 감지
+        // 수동 충돌 감지 (정지 조건)
         Collider2D hit = Physics2D.OverlapCircle(transform.position, detectRadius, playerLayerMask);
         if (hit != null)
         {
-            Debug.Log($"[ArrowTrap] Overlap 감지됨: {hit.gameObject.name}");
-
             if (hit.gameObject.layer == LayerMask.NameToLayer("Player") && rb.linearVelocity.sqrMagnitude > groundedVelocityThreshold * groundedVelocityThreshold)
             {
-                Debug.Log("피격됨");
+                rb.linearVelocity = Vector2.zero;
             }
             else if (hit.gameObject.layer == LayerMask.NameToLayer("Ground"))
             {
@@ -58,5 +59,43 @@ public class PMK_ArrowTrapObj : NetworkBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(transform.position, detectRadius);
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0)
+    {
+        if (!HasStateAuthority) return;
+
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
+
+    public void OnPickedUp()
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = true;
+        Debug.Log("[PMK_ArrowTrapObj] 화살 함정 픽업됨");
+    }
+
+    public void OnReleased()
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = false;
+        Debug.Log("[PMK_ArrowTrapObj] 화살 함정 해제됨");
+    }
+
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
     }
 }

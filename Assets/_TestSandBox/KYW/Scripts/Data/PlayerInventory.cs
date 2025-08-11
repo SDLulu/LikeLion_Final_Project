@@ -1,6 +1,5 @@
 using Fusion;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 // 🎒 플레이어 인벤토리 시스템 (손에 든 것만 관리)
@@ -12,12 +11,20 @@ public class PlayerInventory : NetworkBehaviour
     public GameObject CurrentHeldObject { get { return currentHeldObject?.gameObject; } }
 
     [Header("Money")]
-    [Networked] private int currentMoney { get; set; }
+    [Networked, OnChangedRender(nameof(OnMoneyChanged))] private int currentMoney { get; set; }
     public int CurrentMoney { get { return currentMoney; } set { if (HasStateAuthority) currentMoney = value; } }
 
-    // ===== 🧩 패시브 아이템 프리팹 관리 (로컬 전용) =====
-    [Header("Passive Items (Prefab)")]
-    public List<GameObject> passiveItemPrefabs = new List<GameObject>();
+    // ===== 🧩 패시브 아이템 상태 관리 =====
+    [Header("Passive Items Status")]
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasRocket { get; set; }        // 로켓 (제트팩 대신)
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasWings { get; set; }         // 날개
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasSpeedShoes { get; set; }    // 이속신발
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasJumpShoes { get; set; }     // 점프신발
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasMagnet { get; set; }        // 자석
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasHeadset { get; set; }       // 헤드셋
+    [Networked, OnChangedRender(nameof(OnPassiveItemsChanged))] public NetworkBool hasSunglasses { get; set; }    // 선글라스
+    
+    // ===== 🧩 패시브 아이템 프리팹 관리 제거됨 (bool 변수로 대체) =====
 
     // ===== 🎯 손에 든 오브젝트 관리 =====
     // 아이템/캐릭터 등 무엇이든 손에 들기 (데이터만 관리)
@@ -37,18 +44,76 @@ public class PlayerInventory : NetworkBehaviour
         currentHeldObject = null;
     }
 
-    // ===== 🧩 패시브 아이템 프리팹 관리 (로컬 전용) =====
-    public void AddPassiveItem(GameObject prefab)
+    // ===== 🧩 패시브 아이템 상태 관리 =====
+    public void AddPassiveItem(GameObject itemObject)
     {
-        if (!passiveItemPrefabs.Contains(prefab))
-            passiveItemPrefabs.Add(prefab);
+        if (!Object.HasStateAuthority) return;
+        
+        // 아이템 타입에 따라 bool 변수 자동 설정
+        SetPassiveItemStatus(itemObject, true);
     }
-    public void RemovePassiveItem(GameObject prefab)
+    
+    public void RemovePassiveItem(GameObject itemObject)
     {
-        passiveItemPrefabs.Remove(prefab);
+        if (!Object.HasStateAuthority) return;
+        
+        // 아이템 타입에 따라 bool 변수 자동 해제
+        SetPassiveItemStatus(itemObject, false);
     }
-    public bool HasPassiveItem(GameObject prefab)
+    
+    public bool HasPassiveItem(GameObject itemObject)
     {
-        return passiveItemPrefabs.Contains(prefab);
+        // 각 아이템 타입별로 bool 변수 확인
+        if (itemObject.GetComponent<Rocket>() != null)
+            return hasRocket;
+        else if (itemObject.GetComponent<Wings>() != null)
+            return hasWings;
+        else if (itemObject.GetComponent<SpeedShoes>() != null)
+            return hasSpeedShoes;
+        else if (itemObject.GetComponent<JumpShoes>() != null)
+            return hasJumpShoes;
+        else if (itemObject.GetComponent<Magnet>() != null)
+            return hasMagnet;
+        else if (itemObject.GetComponent<Headset>() != null)
+            return hasHeadset;
+        else if (itemObject.GetComponent<Sunglasses>() != null)
+            return hasSunglasses;
+        
+        return false;
     }
+    
+    // 패시브 아이템 타입에 따라 bool 변수 자동 설정/해제
+    private void SetPassiveItemStatus(GameObject itemObject, bool status)
+    {
+        if (itemObject.GetComponent<Rocket>() != null)
+            hasRocket = status;
+        else if (itemObject.GetComponent<Wings>() != null)
+            hasWings = status;
+        else if (itemObject.GetComponent<SpeedShoes>() != null)
+            hasSpeedShoes = status;
+        else if (itemObject.GetComponent<JumpShoes>() != null)
+            hasJumpShoes = status;
+        else if (itemObject.GetComponent<Magnet>() != null)
+            hasMagnet = status;
+        else if (itemObject.GetComponent<Headset>() != null)
+            hasHeadset = status;
+        else if (itemObject.GetComponent<Sunglasses>() != null)
+            hasSunglasses = status;
+    }
+    
+    // ===== OnChanged 이벤트 메서드들 =====
+    private void OnMoneyChanged()
+    {
+        // 돈이 변경될 때만 UI 업데이트 이벤트 발생
+        OnInventoryDataChanged?.Invoke();
+    }
+    
+    private void OnPassiveItemsChanged()
+    {
+        // 패시브 아이템이 변경될 때만 UI 업데이트 이벤트 발생
+        OnInventoryDataChanged?.Invoke();
+    }
+    
+    // ===== UI 업데이트 이벤트 =====
+    public event System.Action OnInventoryDataChanged;
 } 

@@ -1,3 +1,4 @@
+using System;
 using Fusion;
 using UnityEngine;
 
@@ -9,13 +10,15 @@ public class PlayerHealth : NetworkBehaviour
 
     public int MaxHealth => 4;
 
+    public event Action OnHealthChangedEvent; // 인자 없는 알림 (인벤토리 방식과 통일)
+
     // PlayerState 변경을 위한 상태 관리자 참조
-    private PlayerStunInvincibleDie stunInvincible;
+    private PlayerDeathHandler playerDeathHandler;
 
     public override void Spawned()
     {
         base.Spawned();
-        stunInvincible = GetComponentInParent<PlayerStunInvincibleDie>();
+        playerDeathHandler = GetComponentInParent<PlayerDeathHandler>();
     }
 
     // 데미지 처리
@@ -40,17 +43,17 @@ public class PlayerHealth : NetworkBehaviour
     private void OnHealthChanged()
     {
         Debug.Log($"[PlayerHealth] Health changed to: {Health}");
-        // TODO: UI 갱신, 이펙트 등
+        // UI 갱신 이벤트 알림 (값은 구독자 측에서 조회)
+        OnHealthChangedEvent?.Invoke();
     }
 
     // 사망 처리
     private void OnDeath()
     {
         Debug.Log("[PlayerHealth] Player died!");
-        if (stunInvincible != null)
+        if (playerDeathHandler != null)
         {
-            stunInvincible.Die();
+            playerDeathHandler.Die();
         }
-        // TODO: 사망 애니메이션, 리스폰 등
     }
 } 

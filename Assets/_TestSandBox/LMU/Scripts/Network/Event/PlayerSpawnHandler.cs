@@ -1,20 +1,32 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Fusion;
 using UnityEngine;
 
 public class PlayerSpawnHandler : MonoBehaviour
 {
-    [Header("프리팹 참조")]
-    [SerializeField] private GameObject playerMPrefab;
-    [SerializeField] private GameObject gameStatesPrefab;
-
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private PlayerManager hostPlayerManage;
     [SerializeField] private GameStates gameStates;
+    [SerializeField] private ChatManager chatManager;
 
+    private const string PLAYER_MANAGER_PREFAB_PATH = "Prefabs/PlayerManager";
+    private const string GAME_STATES_PREFAB_PATH = "Prefabs/GameStates";
+    private const string CHAT_MANAGER_PREFAB_PATH = "Prefabs/ChatManager";
+    public GameObject PlayerManagerPrefab => Resources.Load<GameObject>(PLAYER_MANAGER_PREFAB_PATH);
+    public GameObject GameStatesPrefab => Resources.Load<GameObject>(GAME_STATES_PREFAB_PATH);
+    public GameObject ChatManagerPrefab => Resources.Load<GameObject>(CHAT_MANAGER_PREFAB_PATH);
 
+    private void OnDestroy()
+    {
+        hostPlayerManage = null;
+        gameStates = null;
+        chatManager = null;
+    }
 
-#region 플레이어 입장 및 퇴장
+    #region 플레이어 입장 및 퇴장
 
     /// <summary>
     /// 로비씬로드 대기
@@ -36,56 +48,62 @@ public class PlayerSpawnHandler : MonoBehaviour
         await WaitForLobbySceneLoaded();
 
         localGameMode = runner.GameMode;
-        if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null) 
+        if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null)
         {
-            await OnHostPlayerJoinAsync(runner, player);
+            OnHostPlayerJoinAsync(runner, player);
         }
-        else if(runner.IsServer)
+        else if (runner.IsServer)
         {
-            await OnClientPlayerJoinAsync(runner, player);
+            OnClientPlayerJoinAsync(runner, player);
         }
     }
 
     /// <summary>
     /// 호스트 입장 처리
     /// </summary>
-    private async Awaitable OnHostPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnHostPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
+        SpawnManagers(runner, player);
+
         // 호스트 입장시 네트워크 관리 컴포넌트 스폰
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        await runner.SpawnAsync(id, playerSpawnPos, Quaternion.identity, player,
-            onCompleted: (info) =>
+        var spawnPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player,
+            onBeforeSpawned: (runner, obj) =>
             {
-                var gameManagerObj = runner.Spawn(playerMPrefab, Vector3.zero, Quaternion.identity, player);
-                hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
-
-                var gameStatesObj = runner.Spawn(gameStatesPrefab, Vector3.zero, Quaternion.identity, player);
-                gameStates = gameStatesObj.GetComponent<GameStates>();
-
-                runner.SetPlayerObject(player, info.Object);
+                runner.SetPlayerObject(player, obj);
             });
-        
-        // PlayerManager 네트워크 등록까지 대기
-        await hostPlayerManage.IsPollingSpawned();
-        hostPlayerManage.AddPlayer(player);
+    }
+
+
+    public void SpawnManagers(NetworkRunner runner, PlayerRef player)
+    {
+        var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
+        hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
+
+
+        var chatManagerObj = runner.Spawn(ChatManagerPrefab, Vector3.zero, Quaternion.identity, player);
+        chatManager = chatManagerObj.GetComponent<ChatManager>();
+
+
+        var gameStatesObj = runner.Spawn(GameStatesPrefab, Vector3.zero, Quaternion.identity, player);
+        gameStates = gameStatesObj.GetComponent<GameStates>();
     }
 
     /// <summary>
     /// 클라이언트 입장처리
     /// </summary>
-    private async Awaitable OnClientPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnClientPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
         var id = NetworkPrefabId.FromRaw(NetObjProvider.PLAYER);
-        var spawnedPlayer = await runner.SpawnAsync(id, playerSpawnPos, Quaternion.identity, player);
-        runner.SetPlayerObject(player, spawnedPlayer);
-
-        // PlayerManager 네트워크 등록까지 대기
-        await hostPlayerManage.IsPollingSpawned();
-        hostPlayerManage.AddPlayer(player);
+        var spawnedPlayer = runner.Spawn(id, playerSpawnPos, Quaternion.identity, player,
+            onBeforeSpawned: (runner, obj) =>
+            {
+                runner.SetPlayerObject(player, obj);
+            });
     }
 
 
@@ -96,8 +114,7 @@ public class PlayerSpawnHandler : MonoBehaviour
     {
         return gameStates != null &&
                gameStates.StateMachine != null &&
-               gameStates.StateMachine.ActiveState != null &&
-               !(gameStates.StateMachine.ActiveState is LobbyState);
+               gameStates.StateMachine.ActiveState != null;
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)
@@ -128,91 +145,6 @@ public class PlayerSpawnHandler : MonoBehaviour
 
         runner.Despawn(playerObj);
     }
-#endregion
+    #endregion
 
-
-
-
-
-
-    public async void OnLateJoin(NetworkRunner runner, PlayerRef player, NetworkObject spawnedPlayer)
-    {
-        await OnLateJoinPlayerAsync(runner, player, spawnedPlayer);
-    }
-
-    /// <summary>
-    /// Late Join 플레이어 처리
-    /// </summary>
-    private async Awaitable OnLateJoinPlayerAsync(NetworkRunner runner, PlayerRef player, NetworkObject spawnedPlayer)
-    {
-        await Awaitable.NextFrameAsync();
-
-        var gameStates = GameStates.Inst;
-        if (gameStates?.StateMachine?.ActiveState == null)
-        {
-            Debug.LogWarning("GameStates를 찾을 수 없어 Late Join 처리를 건너뜁니다.");
-            return;
-        }
-
-        var currentState = gameStates.StateMachine.ActiveState;
-
-        // 게임 씬으로 플레이어 이동
-        if (IsGameSceneState(currentState))
-        {
-            MovePlayerToGameScene(runner, spawnedPlayer);
-        }
-
-        // 플레이어 상태 설정
-        SetPlayerStateForLateJoin(player, spawnedPlayer, currentState);
-
-        Debug.Log($"Late Join 처리 완료: 플레이어 {player}");
-    }
-
-    /// <summary>
-    /// 게임 씬 상태인지 확인
-    /// </summary>
-    private bool IsGameSceneState(object currentState)
-    {
-        return currentState is GameStageWaitingState ||
-               currentState is GameStagePlayingState;
-    }
-
-    /// <summary>
-    /// 플레이어를 게임 씬으로 이동
-    /// </summary>
-    private void MovePlayerToGameScene(NetworkRunner runner, NetworkObject spawnedPlayer)
-    {
-        var gameSceneObj = GameObject.Find("GameScene");
-        if (gameSceneObj != null)
-        {
-            runner.MoveGameObjectToSameScene(spawnedPlayer.gameObject, gameSceneObj);
-
-            // 플레이어 위치 설정
-            var teleporter = spawnedPlayer.GetComponent<PlayerStageController>();
-            if (teleporter != null)
-            {
-                teleporter.SetPosition(new Vector2(0, 0));
-            }
-        }
-    }
-
-    /// <summary>
-    /// Late Join 플레이어 상태 설정
-    /// </summary>
-    private void SetPlayerStateForLateJoin(PlayerRef player, NetworkObject spawnedPlayer, object currentState)
-    {
-        var playerData = spawnedPlayer.GetComponent<PlayerData>();
-        if (playerData != null)
-        {
-            // Late Join 플레이어는 자동으로 준비 상태로 설정
-            playerData.SetReadyState(true);
-
-            // 게임이 이미 시작되었으면 플레이어 상태를 활성화
-            if (currentState is GameStagePlayingState)
-            {
-                Debug.Log($"Late Join 플레이어 {player}를 게임 플레이 상태로 설정합니다.");
-                // 필요시 추가 게임 플레이 상태 설정
-            }
-        }
-    }
 }

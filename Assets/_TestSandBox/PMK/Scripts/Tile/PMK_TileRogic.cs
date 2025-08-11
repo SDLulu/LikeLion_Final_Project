@@ -1,8 +1,9 @@
-using UnityEngine;
-using UnityEngine.Tilemaps;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Fusion;
+using UnityEngine;
+using UnityEngine.Tilemaps;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -22,6 +23,11 @@ public partial class PMK_TileRogic : NetworkBehaviour
     public static PMK_TileRogic Instance { get; private set; }
     private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance; // 타일 RPC 매니저 인스턴스 (타일 아이템 생성 및 파괴를 담당)
 
+    // 맵 프리팹 세트 (맵 타입별로 프리팹을 저장하는 리스트)
+    private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
+    private Dictionary<string, GameObject[]> mapPrefabDict;
+
+    private int bossStage = 0;
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
     [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 메인 타일맵 (맵 생성시 타일을 추가하는 타일맵)
@@ -34,20 +40,27 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [SerializeField] private float nextTileX = 17; // 다음 타일까지 넘어갈 x위치
     [SerializeField] private float nextTileY = 11; // 다음 타일까지 넘어갈 y위치
 
-
-    [Header("맵 프리팹 설정")]
-    [SerializeField] private MapPrefabSet[] mapPrefabSets;
-    private Dictionary<string, GameObject[]> mapPrefabDict;
-
-
     [Header("타일 아이템 설정")]
     [SerializeField] private int itemSpawnChance = 35; // 타일안에 아이템 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
-    [field: SerializeField] public List<PMK_TileTable> tileItems { get; private set; }
+
+
+    [Header("특별한 맵 생성 확률 설정")]
+    [SerializeField] private int special_Map_Chance = 20; // 특별한 맵 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
 
 
     [Header("TileZoneSpawner 설정")]
-    [field: SerializeField] public TileBase ruleTile { get; private set; }// 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    [SerializeField] public TileBase RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    public TileBase ruleTile => RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
     [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
+
+
+    [Header("PMK_ArrowTrap 설정")]
+    [SerializeField] private NetworkObject LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
+    public NetworkObject launchTrapPrefab => LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨, 네트워크 오브젝트)
+
+
+    [Header("PMK_NextStageDoor 설정")]
+    [Networked] public int ClearCount { get; set; } = 0; // 클리어 횟수 (PMK_NextStageDoor에서 사용됨, 네트워크 동기화됨)
 
 
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
@@ -68,6 +81,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
         {
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
+
+        LoadMapPrefabsAutomatically();
     }
 
     public bool IsStageTestNetwork = false;
@@ -102,6 +117,44 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
+    private void LoadMapPrefabsAutomatically()
+    {
+        // 모든 맵 프리팹 불러오기
+        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps");
+
+        Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
+
+        foreach (var prefab in loadedPrefabs)
+        {
+            // 파일명에서 맵 타입 추출 (예: Map_C_1 → C)
+            string[] parts = prefab.name.Split('_');
+            if (parts.Length >= 2)
+            {
+                string type = parts[1];
+
+                if (!tempMap.ContainsKey(type))
+                    tempMap[type] = new List<GameObject>();
+
+                tempMap[type].Add(prefab);
+            }
+        }
+
+        // mapPrefabSets 초기화
+        mapPrefabSets.Clear();
+
+        foreach (var kvp in tempMap)
+        {
+            mapPrefabSets.Add(new MapPrefabSet
+            {
+                mapType = kvp.Key,
+                prefabs = kvp.Value.ToArray()
+            });
+        }
+
+        // Dictionary로도 구성
+        mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
 
     #region 맵 초기화 및 재생성
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -115,21 +168,34 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         mainTilemap.ClearAllTiles();
 
-        foreach (Transform child in parentTrans)
+        foreach (Transform child in parentTrans) // 모든 자식 오브젝트를 제거합니다.
         {
-            if (child.GetComponent<PMK_TileRogic>() != null)
-                continue;
-
             Destroy(child.gameObject);
         }
+        // 오브젝트 제거
+        tileRPCManager.ClearAllArrows(); // 발사된 화살들을 모두 제거합니다.
+
 
         // 초기화
         SaveMapPos();
         SpawnMap_Instantiate();
         DownExit_Map_Instantiate(removeMapX);
-        Create_Special_Map(0, 10);
+        Create_Special_Map(0, special_Map_Chance);
         Create_EmptyMap();
         mainTilemap.RefreshAllTiles();
+    }
+
+
+    public void ResetBoosMap()
+    {
+        mainTilemap.ClearAllTiles();
+
+        foreach (Transform child in parentTrans) // 모든 자식 오브젝트를 제거합니다.
+        {
+            Destroy(child.gameObject);
+        }
+        // 오브젝트 제거
+        tileRPCManager.ClearAllArrows(); // 발사된 화살들을 모두 제거합니다.
     }
     #endregion
 
@@ -159,7 +225,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            randomIndex = mapType != "C" ? Random.Range(0, prefabs.Length) : 0;
+            if (mapType != "B" && mapType != "C")
+            {
+                randomIndex = Random.Range(0, prefabs.Length);
+            }
 
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
@@ -190,10 +259,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
                         {
                             Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
                             Vector3Int targetPos = sourcePos + offset;
-                            mainTilemap.SetTile(targetPos, tile);
 
-                            // 랜덤한 확률로 아이템 생성
-                            Create_TileItem(targetPos);
+                            // 타일 생성 및 랜덤한 확률로 아이템 생성
+                            StartCoroutine(DelayedTileSpawn(targetPos, tile));
                         }
                     }
                 }
@@ -230,41 +298,65 @@ public partial class PMK_TileRogic : NetworkBehaviour
             }
         }
     }
+
+    // 타일과 타일 아이템을 생성하는 코루틴
+    private IEnumerator DelayedTileSpawn(Vector3Int targetPos, TileBase tile)
+    {
+        yield return new WaitForSeconds(0.1f);
+        mainTilemap.SetTile(targetPos, tile);
+        Create_TileItem(targetPos);
+    }
     #endregion
 
 
     #region 타일에 아이템 생성
-    // 호스트가 타일 랜덤값을 적용후 공유함
     public void Create_TileItem(Vector3Int targetPos)
     {
         if (!HasStateAuthority) return;
 
         if (Random.Range(0, 100) > itemSpawnChance) return;
 
-        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos); // 타일의 월드 좌표로 변환
+        Vector3 worldPos = mainTilemap.GetCellCenterWorld(targetPos);
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f); // 타일 위치에 있는 모든 콜라이더를 가져옴
-        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item")); // 아이템 레이어에 해당하는지 확인
+        Collider2D[] hits = Physics2D.OverlapCircleAll(worldPos, 0.1f);
+        bool hasSameTag = hits.Any(hit => hit.gameObject.layer == LayerMask.NameToLayer("Item"));
 
-        if (!hasSameTag)
+        if (hasSameTag) return;
+
+        var partialItems = DataManager.Inst.ItemData
+        .OrderBy(kvp => kvp.Key) // 키 순서대로 정렬 (ID 순)
+        .Take(3)                  // 처음 3개만 가져오기
+        .Select(kvp => kvp.Value) // Item.Data만 추출
+        .ToList(); // 리스트 변환
+
+        int totalChance = partialItems.Sum(item => item.SpawnChance);
+        int roll = Random.Range(0, totalChance);
+        int current = 0;
+
+        int selectedIndex = 0;
+
+        for (int i = 0; i < 3; i++)
         {
-            int totalChance = tileItems.Sum(t => t.spawnChance);
-            int roll = Random.Range(0, totalChance);
-            int current = 0;
-
-            foreach (var item in tileItems)
+            current += partialItems[i].SpawnChance;
+            if (roll < current)
             {
-                current += item.spawnChance;
-                if (roll < current)
-                {
-                    int index = tileItems.IndexOf(item);
-                    tileRPCManager.RPC_Create_TileItem(index, worldPos);
-                    break;
-                }
+                selectedIndex = partialItems[i].DataID; // 선택된 아이템의 ID
+                break;
             }
         }
 
+        Vector3Int cellPos = mainTilemap.WorldToCell(worldPos);
+        bool isSurrounded =
+            mainTilemap.GetTile(cellPos + Vector3Int.up) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.down) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.left) != null &&
+            mainTilemap.GetTile(cellPos + Vector3Int.right) != null;
+
+        bool spawnTrap = isSurrounded && Random.Range(0, 100) < 25;
+
+        tileRPCManager.RPC_Create_TileItem(selectedIndex, worldPos, spawnTrap);
     }
+
     #endregion
 
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using LMCore;
+using UnityEditor.UIElements;
 using UnityEngine;
 
 [DefaultExecutionOrder(-100)]
@@ -10,6 +11,7 @@ public class DataManager : BaseManager<DataManager>
     public Dictionary<int, Skin.Data> SkinData;
     public Dictionary<int, FakeClient.Data> FakeClientData;
     public Dictionary<int, Sound.Data> SoundData;
+    public Dictionary<int, Item.Data> ItemData;
 
     protected override void Awake()
     {
@@ -17,6 +19,7 @@ public class DataManager : BaseManager<DataManager>
         SkinData = Skin.Data.GetDictionary();
         FakeClientData = FakeClient.Data.GetDictionary();
         SoundData = Sound.Data.GetDictionary();
+        ItemData = Item.Data.GetDictionary();
     }
 
     // --- 클라이언트 관련
@@ -67,6 +70,7 @@ public class DataManager : BaseManager<DataManager>
         return null;
     }
 
+    // --- 스테이지 데이터 관련
     public Stage.Data GetStageData(int index)
     {
         if (StageData.TryGetValue(index, out var data))
@@ -74,6 +78,18 @@ public class DataManager : BaseManager<DataManager>
             return data;
         }
         Debug.LogError($"스테이지 데이터를 찾을 수 없습니다. index: {index}");
+        var ret = StageData.First().Value;
+        return ret;
+    }
+
+    // --- 아이템 데이터 관련
+    public Item.Data GetItemData(int id)
+    {
+        if (ItemData.TryGetValue(id, out var data))
+        {
+            return data;
+        }
+        Debug.LogError($"아이템 데이터를 찾을 수 없습니다. id: {id}");
         return null;
     }
 }
