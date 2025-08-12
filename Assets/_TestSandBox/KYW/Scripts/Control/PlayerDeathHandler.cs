@@ -16,6 +16,20 @@ public class PlayerDeathHandler : NetworkBehaviour
     [SerializeField] public float dropForce = 5f; // 아이템 드롭 시 힘
     [SerializeField] public float dropRadius = 2f; // 드롭 반경
     
+    [Header("🧩 패시브 아이템 드롭 프리팹")]
+    [SerializeField] private NetworkPrefabRef rocketPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef wingsPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef speedShoesPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef jumpShoesPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef magnetPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef headsetPrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef sunglassesPrefabRef = NetworkPrefabRef.Empty;
+
+    [Header("🪙 코인 드롭 프리팹(권종)")]
+    [SerializeField] private NetworkPrefabRef coin100PrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef coin10PrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef coin1PrefabRef = NetworkPrefabRef.Empty;
+    
     // 💀 죽음 처리 관련 변수들
     [Networked] public bool IsDead { get; private set; } // 죽음 상태
     [Networked] public Vector3 DeathSpawnPosition { get; set; } // 시체/유령이 스폰될 원래 위치
@@ -75,8 +89,10 @@ public class PlayerDeathHandler : NetworkBehaviour
         // 원래 위치 저장
         DeathSpawnPosition = transform.position;
         
-        // 💰 죽을 때 아이템 드롭 처리 (원래 위치에서)
+        // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
         DropAllItems();
+        DropPassiveItems();
+        DropMoney();
         
         // 시체 프리팹 스폰 (원래 위치에서)
         // SpawnCorpse();
@@ -98,6 +114,12 @@ public class PlayerDeathHandler : NetworkBehaviour
     
     // 🔄 부활 처리 (외부에서 호출)
     public void Resurrect()
+    {
+        ResurrectAt(DeathSpawnPosition);
+    }
+
+    // 🔄 부활 처리 (지정 위치로)
+    public void ResurrectAt(Vector3 respawnPosition)
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
@@ -123,8 +145,8 @@ public class PlayerDeathHandler : NetworkBehaviour
         // 카메라를 원래 플레이어로 복귀
         RPC_TransferCameraToPlayer();
         
-        // 플레이어를 원래 위치로 복귀
-        transform.position = DeathSpawnPosition;
+        // 플레이어를 지정한 위치로 복귀
+        transform.position = respawnPosition;
         
         // 상태 초기화
         HasSpawnedDeathObjects = false;
@@ -136,7 +158,7 @@ public class PlayerDeathHandler : NetworkBehaviour
             stunInvincibleDie.SetDead(false);
         }
         
-        Debug.Log($"[{name}] 플레이어 부활 처리 완료! 위치: {DeathSpawnPosition}");
+        Debug.Log($"[{name}] 플레이어 부활 처리 완료! 위치: {respawnPosition}");
     }
     
     // 💰 모든 아이템 드롭
@@ -201,6 +223,14 @@ public class PlayerDeathHandler : NetworkBehaviour
             {
                 ghostController.SetOriginalPlayer(Object);
             }
+
+            // 유령 스킨을 플레이어 스킨과 동일하게 설정 (애니메이터 스왑)
+            var playerAppearance = GetComponentInChildren<PlayerAppearance>();
+            var ghostAppearance = ghost.GetComponent<PlayerAppearance>();
+            if (playerAppearance != null && ghostAppearance != null && HasStateAuthority)
+            {
+                ghostAppearance.SkinKey = playerAppearance.SkinKey;
+            }
             
             Debug.Log($"[{name}] 유령 플레이어 스폰됨: {ghost?.name ?? "null"} (PlayerRef: {Object.InputAuthority})");
         }
@@ -216,18 +246,22 @@ public class PlayerDeathHandler : NetworkBehaviour
     {
         if (Object.HasInputAuthority && ghost != null)
         {
-            // 시네머신 카메라 찾기
-            var cinemachineCamera = UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>();
-            if (cinemachineCamera != null)
+            var mover = CameraMover.Inst;
+            if (mover != null)
             {
-                // 시네머신 카메라의 Follow/LookAt을 유령으로 변경
-                cinemachineCamera.Follow = ghost.transform;
-                cinemachineCamera.LookAt = ghost.transform;
-                Debug.Log($"[{name}] 시네머신 카메라가 유령으로 전환됨!");
+                mover.SetFollowAndLookAtForAll(ghost.transform);
+                Debug.Log($"[{name}] 모든 카메라 Follow/LookAt을 유령으로 전환");
             }
             else
             {
-                Debug.LogWarning($"[{name}] 시네머신 카메라를 찾을 수 없습니다!");
+                // 폴백: 기존 단일 카메라 탐색
+                var cinemachineCamera = UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>();
+                if (cinemachineCamera != null)
+                {
+                    cinemachineCamera.Follow = ghost.transform;
+                    cinemachineCamera.LookAt = ghost.transform;
+                }
+                Debug.LogWarning($"[{name}] CameraMover가 없어 폴백 경로 사용");
             }
         }
     }
@@ -238,18 +272,21 @@ public class PlayerDeathHandler : NetworkBehaviour
     {
         if (Object.HasInputAuthority)
         {
-            // 시네머신 카메라 찾기
-            var cinemachineCamera = UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>();
-            if (cinemachineCamera != null)
+            var mover = CameraMover.Inst;
+            if (mover != null)
             {
-                // 시네머신 카메라의 Follow/LookAt을 원래 플레이어로 복귀
-                cinemachineCamera.Follow = transform;
-                cinemachineCamera.LookAt = transform;
-                Debug.Log($"[{name}] 시네머신 카메라가 원래 플레이어로 복귀됨!");
+                mover.SetFollowAndLookAtForAll(transform);
+                Debug.Log($"[{name}] 모든 카메라 Follow/LookAt을 플레이어로 복귀");
             }
             else
             {
-                Debug.LogWarning($"[{name}] 시네머신 카메라를 찾을 수 없습니다!");
+                var cinemachineCamera = UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>();
+                if (cinemachineCamera != null)
+                {
+                    cinemachineCamera.Follow = transform;
+                    cinemachineCamera.LookAt = transform;
+                }
+                Debug.LogWarning($"[{name}] CameraMover가 없어 폴백 경로 사용");
             }
         }
     }
@@ -261,17 +298,91 @@ public class PlayerDeathHandler : NetworkBehaviour
         Resurrect();
     }
     
-    // TODO: 패시브 아이템 드롭 (추후 구현)
+    // 🧩 패시브 아이템 드롭
     private void DropPassiveItems()
     {
-        // 패시브 아이템 드롭 로직
-        Debug.Log($"[{name}] 패시브 아이템 드롭 (구현 예정)");
+        if (!HasStateAuthority) return;
+        if (playerInventory == null) return;
+
+        Vector3 center = DeathSpawnPosition;
+
+        void TryDrop(bool hasItem, NetworkPrefabRef prefabRef)
+        {
+            if (!hasItem) return;
+            if (prefabRef == NetworkPrefabRef.Empty) return;
+            var spawned = SpawnAndImpulse(prefabRef, center, dropForce, dropRadius);
+            if (spawned != null)
+            {
+                // 보유 상태 해제 (스폰된 프리팹 타입으로 판별)
+                playerInventory.RemovePassiveItem(spawned.gameObject);
+            }
+        }
+
+        TryDrop(playerInventory.hasRocket, rocketPrefabRef);
+        TryDrop(playerInventory.hasWings, wingsPrefabRef);
+        TryDrop(playerInventory.hasSpeedShoes, speedShoesPrefabRef);
+        TryDrop(playerInventory.hasJumpShoes, jumpShoesPrefabRef);
+        TryDrop(playerInventory.hasMagnet, magnetPrefabRef);
+        TryDrop(playerInventory.hasHeadset, headsetPrefabRef);
+        TryDrop(playerInventory.hasSunglasses, sunglassesPrefabRef);
     }
-    
-    // TODO: 돈 드롭 (추후 구현)
+
+    // 🪙 돈 드롭 (권종 분해: 100/10/1)
     private void DropMoney()
     {
-        // 돈 드롭 로직
-        Debug.Log($"[{name}] 돈 드롭 (구현 예정)");
+        if (!HasStateAuthority) return;
+        if (playerInventory == null) return;
+
+        int amount = playerInventory.CurrentMoney;
+        if (amount <= 0) return;
+
+        int hundreds = amount / 100; amount %= 100;
+        int tens = amount / 10; amount %= 10;
+        int ones = amount;
+
+        Vector3 center = DeathSpawnPosition;
+
+        void SpawnMany(NetworkPrefabRef prefabRef, int count)
+        {
+            if (prefabRef == NetworkPrefabRef.Empty) return;
+            for (int i = 0; i < count; i++)
+            {
+                SpawnAndImpulse(prefabRef, center, dropForce, dropRadius);
+            }
+        }
+
+        SpawnMany(coin100PrefabRef, hundreds);
+        SpawnMany(coin10PrefabRef, tens);
+        SpawnMany(coin1PrefabRef, ones);
+
+        playerInventory.CurrentMoney = 0;
+    }
+
+    // 공통: 네트워크 스폰 + 랜덤 임펄스
+    private NetworkObject SpawnAndImpulse(NetworkPrefabRef prefabRef, Vector3 center, float force, float radius)
+    {
+        if (!HasStateAuthority) return null;
+        Vector2 offset2D = Random.insideUnitCircle * Mathf.Max(0.1f, radius);
+        Vector3 spawnPos = center + new Vector3(offset2D.x, offset2D.y, 0f);
+
+        var spawned = Runner.Spawn(prefabRef, spawnPos, Quaternion.identity);
+        if (spawned == null) return null;
+
+        var rb = spawned.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            Vector2 dir = (Vector2)(spawnPos - center);
+            if (dir.sqrMagnitude < 0.0001f)
+            {
+                dir = Random.insideUnitCircle.normalized;
+            }
+            else
+            {
+                dir = dir.normalized;
+            }
+            rb.AddForce(dir * force, ForceMode2D.Impulse);
+        }
+
+        return spawned;
     }
 } 

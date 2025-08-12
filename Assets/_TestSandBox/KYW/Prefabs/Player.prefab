@@ -326,8 +326,9 @@ GameObject:
   - component: {fileID: 254836847344143782}
   - component: {fileID: 6696972684070348503}
   - component: {fileID: 1947617888994713779}
-  - component: {fileID: 3890942704944702080}
   - component: {fileID: 6676247167621756481}
+  - component: {fileID: 8105248320513259120}
+  - component: {fileID: 3890942704944702080}
   - component: {fileID: 6372772755790050032}
   - component: {fileID: 919117524012339033}
   - component: {fileID: 8891331676658020565}
@@ -385,6 +386,8 @@ MonoBehaviour:
   showAnimationInfo: 1
   showPassiveItemInfo: 1
   showInteractionInfo: 1
+  showRespawnControls: 1
+  debugRespawnPoint: {fileID: 0}
 --- !u!114 &6207183941582798706
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -405,6 +408,7 @@ MonoBehaviour:
   testInvincibleDuration: 3
   testKnockbackForce: 10
   showDebugInfo: 1
+  testRespawnPoint: {fileID: 0}
 --- !u!114 &8184683026101553609
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -434,8 +438,9 @@ MonoBehaviour:
   - {fileID: 254836847344143782}
   - {fileID: 6696972684070348503}
   - {fileID: 1947617888994713779}
-  - {fileID: 3890942704944702080}
   - {fileID: 6676247167621756481}
+  - {fileID: 8105248320513259120}
+  - {fileID: 3890942704944702080}
   - {fileID: 6372772755790050032}
   - {fileID: 919117524012339033}
   - {fileID: 8645920090710987740}
@@ -694,27 +699,30 @@ MonoBehaviour:
     RawGuidValue: 15a487d8f516d014cb04e3051c79f688
   dropForce: 2
   dropRadius: 2
+  rocketPrefabRef:
+    RawGuidValue: 381c5c24663f37a44951257ccd4be59b
+  wingsPrefabRef:
+    RawGuidValue: 7b02e3fce0f24774a9fb7a18475b78ae
+  speedShoesPrefabRef:
+    RawGuidValue: 97f764135119c0f44bf9fe340ac9d20f
+  jumpShoesPrefabRef:
+    RawGuidValue: e6c4edadf0879c64989a1aed1712ddf4
+  magnetPrefabRef:
+    RawGuidValue: 0a329f7b0eeb86549b5c815c03807904
+  headsetPrefabRef:
+    RawGuidValue: d33bd77e740111943a2fdac5296a7867
+  sunglassesPrefabRef:
+    RawGuidValue: f8441526f504cdf4c9e530cd584f288b
+  coin100PrefabRef:
+    RawGuidValue: 6cbb7ea9edea66246baa58a6da9fd83d
+  coin10PrefabRef:
+    RawGuidValue: e0947ef7486899f4c9989afdba895be0
+  coin1PrefabRef:
+    RawGuidValue: df95076c8cf3c2841945b938daf413cb
   _IsDead: 0
   _DeathSpawnPosition: {x: 0, y: 0, z: 0}
   _HasSpawnedDeathObjects: 0
   _GhostObject: {fileID: 0}
---- !u!114 &3890942704944702080
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 908821303918873339}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Config: 3
-  BroadRadius: 0
-  Offset: {x: 0, y: 0, z: 0}
-  GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
-  Hitboxes: []
 --- !u!114 &6676247167621756481
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -737,6 +745,37 @@ MonoBehaviour:
   wingsFlapDuration: 0.3
   wingsFlapAngle: 50
   wingsFlapEase: 6
+--- !u!114 &8105248320513259120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 908821303918873339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d61077ecb34d094994b090bf2a79048, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  offsetAmount: 3
+  holdDuration: 0.3
+--- !u!114 &3890942704944702080
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 908821303918873339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1039544458, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Config: 3
+  BroadRadius: 0
+  Offset: {x: 0, y: 0, z: 0}
+  GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  Hitboxes: []
 --- !u!114 &6372772755790050032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1847,6 +1886,7 @@ MonoBehaviour:
   animator: {fileID: 19799240382493907}
   skinDatabase: {fileID: 11400000, guid: e597257263c96d74eb30a159dbc3822f, type: 2}
   visualRoot: {fileID: 4573830555875214864}
+  useGhostAnimator: 0
   _SkinKey:
     _length: 8
     _data:
