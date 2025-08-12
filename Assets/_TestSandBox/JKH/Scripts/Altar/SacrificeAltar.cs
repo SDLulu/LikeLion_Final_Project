@@ -13,7 +13,7 @@ public class SacrificeAltar : NetworkBehaviour
     [Networked] private TickTimer SacrificeDelayTimer { get; set; } // 제물화 지연 타이머
     [Networked] private NetworkObject PotentialSacrifice { get; set; } // 제물 후보 네트워크 오브젝트
 
-    
+
 
     public override void FixedUpdateNetwork()
     {
@@ -66,24 +66,31 @@ public class SacrificeAltar : NetworkBehaviour
             return;
         }
 
-        var targetComponent = PotentialSacrifice.GetComponent<PlayerStunInvincibleDie>();
+        var targetPlayerComponent = PotentialSacrifice.GetComponent<PlayerStunInvincibleDie>();
+        var targetEnemyComponent = PotentialSacrifice.GetComponent<EnemyBase>();
 
-        // 1초가 지난 지금도 여전히 스턴 상태인지 최종 확인합니다.
-        if (targetComponent != null && targetComponent.IsStunned)
+        // 1초가 지난 지금도 여전히 유효한지 최종 확인합니다.
+        if (targetPlayerComponent != null)
         {
-            if (targetComponent.IsStunned || targetComponent.IsDead)
-                PerformSacrifice(targetComponent);
+            if (targetPlayerComponent.IsStunned || targetPlayerComponent.IsDead)
+                PerformPlayerSacrifice(targetPlayerComponent);
+        }
+        else if (targetEnemyComponent != null) 
+        {
+            if (targetEnemyComponent.IsStunned || targetEnemyComponent.IsDead)
+            {
+                PerformEnemySacrifice(targetEnemyComponent);
+            }
         }
         else
         {
-            Debug.Log($"Host: [{targetComponent?.name}]이(가) 제물로 바쳐지기 전에 스턴에서 풀려났습니다.");
+            Debug.Log($"Host: [{targetPlayerComponent?.name}]이(가) 제물로 바쳐지기 전에 스턴에서 풀려났습니다.");
         }
 
         // 시도가 끝났으므로 상태를 초기화합니다.
         ResetAltarState();
     }
-
-    private void PerformSacrifice(PlayerStunInvincibleDie target)
+    private void PerformEnemySacrifice(EnemyBase target)
     {
         Debug.Log($"Host: [{target.name}]을(를) 제물로 바칩니다!");
         CooldownTimer = TickTimer.CreateFromSeconds(Runner, cooldownDuration);
@@ -94,12 +101,41 @@ public class SacrificeAltar : NetworkBehaviour
         }
         if (target.IsStunned)
         {
-            AltarManager.Instance.AddFavor(8, target.transform.position);
             //살아 있는 점수
-        }else if (target.IsDead)
+            AltarManager.Instance.AddFavor(8, target.transform.position);
+        }
+        else if (target.IsDead)
         {
-            AltarManager.Instance.AddFavor(6, target.transform.position);
             //죽은 점수
+            AltarManager.Instance.AddFavor(6, target.transform.position);
+        }
+
+        if (target.Object != null && target.Object.IsValid)
+        {
+            Runner.Despawn(target.Object);
+        }
+
+        // TODO: 여기에 보상 시스템을 구현합니다.
+        // AltarManager Ddol -> 제단 호의 점수 정보 저장. 및 일정 호의 점수 도달 시 아이템 생성
+    }
+    private void PerformPlayerSacrifice(PlayerStunInvincibleDie target)
+    {
+        Debug.Log($"Host: [{target.name}]을(를) 제물로 바칩니다!");
+        CooldownTimer = TickTimer.CreateFromSeconds(Runner, cooldownDuration);
+
+        if (sacrificeEffectPrefab != null)
+        {
+            Instantiate(sacrificeEffectPrefab, target.transform.position, Quaternion.identity);
+        }
+        if (target.IsStunned)
+        {
+            //살아 있는 점수
+            AltarManager.Instance.AddFavor(8, target.transform.position);
+        }
+        else if (target.IsDead)
+        {
+            //죽은 점수
+            AltarManager.Instance.AddFavor(6, target.transform.position);
         }
 
         if (target.Object != null && target.Object.IsValid)

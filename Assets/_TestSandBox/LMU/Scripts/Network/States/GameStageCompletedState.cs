@@ -39,19 +39,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             await Awaitable.NextFrameAsync();
             var players = PlayerM.GetPlayers();
-
-            _bgTaskTCS = new();
-            foreach (var player in players)
-            {
-                PlayerRef @ref = player.Key;
-                _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
-                {
-                    Tuple.Create(0, new AwaitableCompletionSource()),
-                    Tuple.Create(1, new AwaitableCompletionSource())
-                };
-            }
-
-
+            InitTCS(players);
             minWaitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
             RPC_StartFadeOut();
         }
@@ -79,8 +67,21 @@ public class GameStageCompletedState : BaseStateBehaviour
         minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
-        _stageDataIndex++;
         base.OnExitState();
+    }
+
+    public void InitTCS(NetworkDictionary<PlayerRef, NetworkObject> players)
+    {
+        _bgTaskTCS = new();
+        foreach (var player in players)
+        {
+            PlayerRef @ref = player.Key;
+            _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
+                {
+                    Tuple.Create(0, new AwaitableCompletionSource()),
+                    Tuple.Create(1, new AwaitableCompletionSource())
+                };
+        }
     }
 
 
@@ -121,6 +122,18 @@ public class GameStageCompletedState : BaseStateBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_PostCutScene()
     {
+        if (CutSceneC == null)
+        {
+            Debug.LogError("CutSceneC가 null입니다.");
+            return;
+        }
+
+        if (UIController == null)
+        {
+            Debug.LogError("UIController가 null입니다.");
+            return;
+        }
+
         CutSceneC.DefocusCutSceneCamera();
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
@@ -142,30 +155,29 @@ public class GameStageCompletedState : BaseStateBehaviour
     }
 
 
-    /// <summary>
-    /// Note
-    /// 기본적으로 Task또는 UniTask의 WhenAll과 같은 함수를 Awaitable에서 제공하지않아서
-    /// AwaitableCompletionSource과 Action을 사용해 우회적으로 WhenAll의 기능을 구현
-    /// </summary>
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_StartFadeOut()
     {
         try
         {
-            UIEventSystem.Inst.TriggerGameUIActive(false);
+            if (UIEventSystem.Inst != null)
+            {
+                UIEventSystem.Inst.TriggerGameUIActive(false);
+            }
 
             // 검은 화면 페이드 및 CutScene 화면 준비
+            await Awaitable.NextFrameAsync();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
-            _ = UIEventSystem.Inst.TriggerPlayerSlotsFadeOutAsync();
+            NetEvent.TriggerCutSceneActiveEvent(true);
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
 
-            _ = PlayCutSceneAsync(() => 
+            _ = PlayCutSceneAsync(() =>
             {
                 RPC_PlayerBackgroundCompleted(Runner.LocalPlayer, 0);
             });
 
-            _ = LoadNextMapAsync(() => 
+            _ = LoadNextMapAsync(() =>
             {
                 RPC_PlayerBackgroundCompleted(Runner.LocalPlayer, 1);
             });
@@ -187,14 +199,12 @@ public class GameStageCompletedState : BaseStateBehaviour
     /// </summary>
     private async Awaitable PlayCutSceneAsync(Action onCompleted)
     {
-        try 
+        try
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
-            PlayerSlotUIManager.Inst.gameObject.SetActive(false);
             await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
-            PlayerSlotUIManager.Inst.gameObject.SetActive(true);
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -210,7 +220,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     /// </summary>
     public async Awaitable LoadNextMapAsync(Action onComplete = default)
     {
-        try 
+        try
         {
             if (Runner.IsServer)
             {
@@ -237,7 +247,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             onComplete?.Invoke();
             Debug.LogError("LoadNextMapAsync 오류");
-            Debug.LogError(e.Message);  
+            Debug.LogError(e.Message);
         }
         finally
         {
@@ -250,10 +260,10 @@ public class GameStageCompletedState : BaseStateBehaviour
     public async void RPC_FadeInUI()
     {
         UIEventSystem.Inst.TriggerGameUIActive(true);
-        await UIEventSystem.Inst.TriggerPlayerSlotsFadeInAsync();
+        NetEvent.TriggerCutSceneActiveEvent(false);
         await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
     }
-    
+
     /// <summary>
     /// 클라이언트에서 서버에게 백그라운드 작업 완료 알림
     /// </summary>
@@ -271,7 +281,7 @@ public class GameStageCompletedState : BaseStateBehaviour
 
             if (_bgTaskTCS.TryGetValue(player, out var tcs))
             {
-                tcs.ForEach(t => 
+                tcs.ForEach(t =>
                 {
                     if (t.Item1 == taskIndex)
                         t.Item2.TrySetResult();

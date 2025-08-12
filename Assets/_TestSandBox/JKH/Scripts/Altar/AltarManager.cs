@@ -10,6 +10,7 @@ public class AltarManager : NetworkBehaviour
     [Header("보상 아이템 설정")]
     [SerializeField] private List<NetworkPrefabRef> tier1RewardPrefabs; // 8점 보상 아이템 프리팹 목록
     [SerializeField] private NetworkPrefabRef kapalaPrefab; // 16점 보상 (카팔라) 프리팹
+    [SerializeField] private List<NetworkPrefabRef> HealingRewardPrefabs; // 16점 보상 (카팔라) 프리팹
 
     // ⭐️ 팀 전체가 공유하는 호의 점수
     [Networked] public int SharedFavor { get; private set; }
@@ -22,9 +23,11 @@ public class AltarManager : NetworkBehaviour
         if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
+            
             // 이미 인스턴스가 있다면 이 오브젝트는 파괴
             Destroy(gameObject);
         }
@@ -73,13 +76,27 @@ public class AltarManager : NetworkBehaviour
     // 보상을 체크하고 지급하는 메서드 (호스트에서만 실행)
     private void CheckAndGiveRewards(int oldFavor, int newFavor, Vector3 rewardSpawnPosition)
     {
+        if (oldFavor < 24 && newFavor >= 24)
+        {
+            Debug.Log("24점 보상");
+            SharedFavor -= 8;
+            //회복 아이템 스폰
+            if (HealingRewardPrefabs != null && HealingRewardPrefabs.Count > 0)
+            {
+                NetworkPrefabRef healingrewardPrefab = HealingRewardPrefabs[Random.Range(0, HealingRewardPrefabs.Count)];
+                if (healingrewardPrefab.IsValid)
+                {
+                    Runner.Spawn(healingrewardPrefab, rewardSpawnPosition + (Vector3.up * 0.5f), Quaternion.identity);
+                }
+            }
+        }
         // 카팔라 보상 (16점)
         if (oldFavor < 16 && newFavor >= 16)
         {
             Debug.Log("Host: Spawning Kapala as a reward!");
             if (kapalaPrefab.IsValid)
             {
-                Runner.Spawn(kapalaPrefab, rewardSpawnPosition + Vector3.up, Quaternion.identity);
+                Runner.Spawn(kapalaPrefab, rewardSpawnPosition + (Vector3.up * 0.5f), Quaternion.identity);
             }
         }
         // 유용한 아이템 보상 (8점)
@@ -92,7 +109,7 @@ public class AltarManager : NetworkBehaviour
                 NetworkPrefabRef rewardPrefab = tier1RewardPrefabs[Random.Range(0, tier1RewardPrefabs.Count)];
                 if (rewardPrefab.IsValid)
                 {
-                    Runner.Spawn(rewardPrefab, rewardSpawnPosition + Vector3.up, Quaternion.identity);
+                    Runner.Spawn(rewardPrefab, rewardSpawnPosition + (Vector3.up * 0.5f), Quaternion.identity);
                 }
             }
         }
