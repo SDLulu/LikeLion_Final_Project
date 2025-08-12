@@ -39,19 +39,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             await Awaitable.NextFrameAsync();
             var players = PlayerM.GetPlayers();
-
-            _bgTaskTCS = new();
-            foreach (var player in players)
-            {
-                PlayerRef @ref = player.Key;
-                _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
-                {
-                    Tuple.Create(0, new AwaitableCompletionSource()),
-                    Tuple.Create(1, new AwaitableCompletionSource())
-                };
-            }
-
-
+            InitTCS(players);
             minWaitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
             RPC_StartFadeOut();
         }
@@ -79,8 +67,21 @@ public class GameStageCompletedState : BaseStateBehaviour
         minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
-        _stageDataIndex++;
         base.OnExitState();
+    }
+
+    public void InitTCS(NetworkDictionary<PlayerRef, NetworkObject> players)
+    {
+        _bgTaskTCS = new();
+            foreach (var player in players)
+            {
+                PlayerRef @ref = player.Key;
+                _bgTaskTCS[@ref] = new List<Tuple<int, AwaitableCompletionSource>>()
+                {
+                    Tuple.Create(0, new AwaitableCompletionSource()),
+                    Tuple.Create(1, new AwaitableCompletionSource())
+                };
+            }
     }
 
 
@@ -142,11 +143,6 @@ public class GameStageCompletedState : BaseStateBehaviour
     }
 
 
-    /// <summary>
-    /// Note
-    /// 기본적으로 Task또는 UniTask의 WhenAll과 같은 함수를 Awaitable에서 제공하지않아서
-    /// AwaitableCompletionSource과 Action을 사용해 우회적으로 WhenAll의 기능을 구현
-    /// </summary>
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_StartFadeOut()
     {
@@ -156,7 +152,7 @@ public class GameStageCompletedState : BaseStateBehaviour
 
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
-            _ = UIEventSystem.Inst.TriggerPlayerSlotsFadeOutAsync();
+            NetEvent.TriggerCutSceneActiveEvent(true);
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
 
@@ -191,10 +187,8 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
-            PlayerSlotUIManager.Inst.gameObject.SetActive(false);
             await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
-            PlayerSlotUIManager.Inst.gameObject.SetActive(true);
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -250,7 +244,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     public async void RPC_FadeInUI()
     {
         UIEventSystem.Inst.TriggerGameUIActive(true);
-        await UIEventSystem.Inst.TriggerPlayerSlotsFadeInAsync();
+        NetEvent.TriggerCutSceneActiveEvent(false);
         await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
     }
     

@@ -32,7 +32,7 @@ public class LobbyManager : BaseManager<LobbyManager>
         localRoomName = default;
     }
 
-    public string NetworkRunnerPath => "Prefabs/TitleBatchModule/@NetworkRunner";
+    public string NetworkRunnerPath => "Prefabs/@NetworkRunner";
     public GameObject NetworkRunnerPrefab => Resources.Load<GameObject>(NetworkRunnerPath);
     [SerializeField] private NetworkRunner netRunner;
     public NetworkRunner NetRunner
