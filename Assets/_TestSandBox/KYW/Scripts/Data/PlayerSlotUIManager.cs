@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class PlayerSlotUIManager : MonoBehaviour
@@ -37,6 +38,7 @@ public class PlayerSlotUIManager : MonoBehaviour
         }
     }
 
+
     private void Awake()
     {
         if (_instance == null)
@@ -69,7 +71,86 @@ public class PlayerSlotUIManager : MonoBehaviour
     [Header("UI 설정")]
     [SerializeField] private HorizontalLayoutGroup _playerUIContainer;
 
-    private List<UI_PlayerSlot> _playerUIs = new();
+    [SerializeField] private List<UI_PlayerSlot> _playerUIs = new();
+
+    private void Start()
+    {
+        // 씬 활성화 여부 / 컷씬 활성화 여부
+        SceneManager.activeSceneChanged += (preScene, nextScene) =>
+        {
+            OnSceneLoadDone(nextScene.name);
+        };
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent += (isActive) =>
+        {
+            OnCutSceneActive(isActive);
+        };
+    }
+
+    private void OnSceneLoadDone(string sceneName = "")
+    {
+        // 게임 씬일때만 활성화
+        if (string.IsNullOrEmpty(sceneName))
+            sceneName = LocalSceneManager.Inst.GetActiveScene().name;
+
+        if (sceneName == GlobalSetting.Inst.GameScenePath)
+        {
+            ActivePlayerSlots();
+        }
+        else if (sceneName == GlobalSetting.Inst.LobbyScenePath)
+        {
+            DeactivePlayerSlots();
+        }
+        else
+        {
+            DeletePlayerSlots();
+        }
+    }
+
+    public void OnCutSceneActive(bool isCutSceneActive)
+    {
+        // 현재씬 체크
+        OnSceneLoadDone();
+        
+        if (isCutSceneActive)
+        {
+            DeactivePlayerSlots();
+        }
+        else
+        {
+            ActivePlayerSlots();
+        }
+    }
+
+    public void ActivePlayerSlots()
+    {
+        foreach (var playerUI in _playerUIs)
+        {
+            if (playerUI == null) 
+                continue;
+            playerUI.gameObject.SetActive(true);
+        }
+    }
+
+    public void DeactivePlayerSlots()
+    {
+        foreach (var playerUI in _playerUIs)
+        {
+            if (playerUI == null) 
+                continue;
+            playerUI.gameObject.SetActive(false);
+        }
+    }
+
+    public void DeletePlayerSlots()
+    {
+        foreach (var playerUI in _playerUIs)
+        {
+            if (playerUI == null)
+                continue;
+            UnregisterPlayerUI(playerUI);
+        }
+    }
+
 
     // 플레이어 UI 등록
     public void RegisterPlayerUI(UI_PlayerSlot playerUI)
@@ -96,6 +177,9 @@ public class PlayerSlotUIManager : MonoBehaviour
         {
             Debug.LogError("📱 PlayerSlotUIManager: PlayerUIContainer가 설정되지 않았습니다!");
         }
+
+        // 추가될때 현재씬을 확인후 확인
+        OnSceneLoadDone();
     }
 
     // 플레이어 UI 제거
@@ -108,6 +192,8 @@ public class PlayerSlotUIManager : MonoBehaviour
         {
             Debug.Log($"📱 PlayerSlotUIManager: 플레이어 UI 제거 완료 - {playerUI.name} (총 {_playerUIs.Count}개)");
         }
+
+        GameObject.Destroy(playerUI.gameObject);
     }
 
     // 현재 등록된 플레이어 UI 개수

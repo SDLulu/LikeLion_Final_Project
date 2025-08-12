@@ -12,27 +12,20 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     [field: SerializeField] public UI_Title UITitle {get; private set;}
     [field: SerializeField] public UI_Chating UIChatting {get; private set;}
     [field: SerializeField] public UI_BackEnd UIBackEnd {get; private set;}
-    [SerializeField] private TMP_Text _curSceneNameText;
-    [SerializeField] private BackEndWorkFlow _testProfile;
 
-    private static bool _inited = false;
-    protected override async void Awake()
+    [Header("인스펙터 참조")]
+    [SerializeField] private TMP_Text _curSceneNameText;
+    protected override void Awake()
     {
 #if UNITY_EDITOR
-        _curSceneNameText.text = "현재 씬 : " + SceneManager.GetActiveScene().name;
+        _curSceneNameText.text = "현재 씬 : " + SceneManager.GetActiveScene().name + "\n" +
+        "백엔드 활성화 여부 : " + BackEndWorkFlow.IsFakeClient + "\n" +
+        "보이스 활성화 여부 : " + GlobalSetting.Inst.IsEnableVoice;
 #else
         _curSceneNameText.gameObject.SetActive(false);
 #endif
-
-        if (_inited == false)
-        {
-            DontDestroyOnLoad(this);
-            _inited = true;
-            await _testProfile.LoginGuest();
-            ActiveTitlePanel(true);
-        }
     }
-
+    
     /// <summary>
     /// 메인 타이틀 화면 활성화
     /// </summary>
