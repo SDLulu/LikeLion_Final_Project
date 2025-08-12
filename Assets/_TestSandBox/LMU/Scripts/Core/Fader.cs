@@ -192,6 +192,9 @@ namespace LMCore
         // Note - AsyncWaitForCompletion / Task 사용중
         public async Awaitable FadeInExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
+            try
+            {
+         
             CheckAndInitialize();
             if (_contentsRoot == null || IsFading)
                 return;
@@ -209,11 +212,22 @@ namespace LMCore
             _contentsRoot.gameObject.SetActive(false);
             _isFading = false;
             await Awaitable.NextFrameAsync();
+            
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("FadeInExpandAsync 오류");
+                Debug.LogError(e.Message);
+            }       
         }
 
         // Note - AsyncWaitForCompletion / Task 사용중
         public async Awaitable FadeOutExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
+            try
+            {
+                
+
             CheckAndInitialize();
             if (_contentsRoot == null || IsFading)
                 return;
@@ -232,6 +246,12 @@ namespace LMCore
                 .AsyncWaitForCompletion();
             _isFading = false;
             await Awaitable.NextFrameAsync();
+                        }
+            catch (System.Exception e)
+            {
+                Debug.LogError("FadeOutExpandAsync 오류");
+                Debug.LogError(e.Message);
+            }
         }
 
 
