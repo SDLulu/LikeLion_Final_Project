@@ -6,10 +6,6 @@ public class UI_Game : MonoBehaviour
     [Header("인스펙터 참조")]
     [SerializeField] private UI_PlayerSlotContainer _playerSlotContainer;
     [SerializeField] private UI_Pause _uiPause;
-
-    public async Awaitable FadeInPlayerSlotsAsync() => await _playerSlotContainer.FadeInAsync();
-    public async Awaitable FadeOutPlayerSlotsAsync() => await _playerSlotContainer.FadeOutAsync();
-
     public void Awake()
     {
         ActivePauseUI(false);
@@ -18,10 +14,6 @@ public class UI_Game : MonoBehaviour
         UIEventSystem.Inst.OnPauseUIToggleEvent += TogglePauseUI;
         UIEventSystem.Inst.OnPauseUIActiveEvent += ActivePauseUI;
         UIEventSystem.Inst.OnGameUIActiveEvent += SetGameUIActive;
-        
-        // 비동기 이벤트 구독
-        UIEventSystem.Inst.OnPlayerSlotsFadeInEvent += FadeInPlayerSlotsAsync;
-        UIEventSystem.Inst.OnPlayerSlotsFadeOutEvent += FadeOutPlayerSlotsAsync;
     }
 
     private void OnDestroy()
@@ -32,10 +24,6 @@ public class UI_Game : MonoBehaviour
             UIEventSystem.Inst.OnPauseUIToggleEvent -= TogglePauseUI;
             UIEventSystem.Inst.OnPauseUIActiveEvent -= ActivePauseUI;
             UIEventSystem.Inst.OnGameUIActiveEvent -= SetGameUIActive;
-            
-            // 비동기 이벤트 구독 해제
-            UIEventSystem.Inst.OnPlayerSlotsFadeInEvent -= FadeInPlayerSlotsAsync;
-            UIEventSystem.Inst.OnPlayerSlotsFadeOutEvent -= FadeOutPlayerSlotsAsync;
         }
     }
 
