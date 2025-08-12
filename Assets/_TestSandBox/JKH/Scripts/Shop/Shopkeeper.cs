@@ -48,6 +48,9 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
     [SerializeField] private float attackCooldown = 1f;
     private TickTimer _attackTimer;
 
+    // IPlayerInteraction.IsHeld (bool)을 만족하기 위한 래핑
+    [Networked] private NetworkBool heldFlag { get; set; }
+    public bool IsHeld => heldFlag;
     public override void Spawned()
     {
         // 씬에서 ShopManager를 찾아 참조합니다.
@@ -390,11 +393,13 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
 
     public void OnPickedUp()
     {
-        throw new System.NotImplementedException();
+        if (!Object.HasStateAuthority) return;
+        heldFlag = true;
     }
 
     public void OnReleased()
     {
-        throw new System.NotImplementedException();
+        if (!Object.HasStateAuthority) return;
+        heldFlag = false;
     }
 }
