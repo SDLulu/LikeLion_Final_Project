@@ -301,60 +301,90 @@ namespace LMCore
             await Awaitable.NextFrameAsync();
         }
 
-        public async Awaitable ShowLoadingAsync(Action onCancel = default)
+        public async Awaitable ShowLoadingAsync(Action onCancel = default, Action onComplete = default)
         {
-            CheckAndInitialize();
-            
-            _loadingCancelButton.onClick.RemoveAllListeners();
-            _loadingCancelButton.onClick.AddListener(() => 
+            try
             {
-                onCancel?.Invoke();
-            });
+                CheckAndInitialize();
 
-            // 로딩 아이콘 회전
-            if (_loadingRotateIcon != null)
-            {
-                _loadingRotateTween?.Kill();
-                _loadingRotateIcon.localRotation = Quaternion.identity;
-                _loadingRotateTween = _loadingRotateIcon.DORotate(new Vector3(0, 0, -360), _loadingIconRotateSpeed, RotateMode.FastBeyond360)
-                    .SetLoops(-1, LoopType.Restart)
-                    .SetEase(Ease.Linear)
-                    .SetUpdate(true);
+                if (IsFading)
+                    return;
+
+                _isFading = true;
+                _loadingCancelButton.onClick.RemoveAllListeners();
+                _loadingCancelButton.onClick.AddListener(() =>
+                {
+                    onCancel?.Invoke();
+                });
+
+                // 로딩 아이콘 회전
+                if (_loadingRotateIcon != null)
+                {
+                    _loadingRotateTween?.Kill();
+                    _loadingRotateIcon.localRotation = Quaternion.identity;
+                    _loadingRotateTween = _loadingRotateIcon.DORotate(new Vector3(0, 0, -360), _loadingIconRotateSpeed, RotateMode.FastBeyond360)
+                        .SetLoops(-1, LoopType.Restart)
+                        .SetEase(Ease.Linear)
+                        .SetUpdate(true);
+                }
+
+                if (_loadingPanel != null)
+                {
+                    _loadingPanel.gameObject.SetActive(true);
+                    _loadingPanel.localScale = Vector3.zero;
+                    _loadingScaleTween?.Kill();
+                    _loadingScaleTween = _loadingPanel.DOScale(1f, _loadingUiFadeDuration).SetEase(Ease.OutBack).SetUpdate(true);
+                    await _loadingScaleTween.AsyncWaitForCompletion();
+                }
+
+                onComplete?.Invoke();
+
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
             }
-
-            if (_loadingPanel != null)
+            catch (System.Exception ex)
             {
-                _loadingPanel.gameObject.SetActive(true);
-                _loadingPanel.localScale = Vector3.zero;
-                _loadingScaleTween?.Kill();
-                _loadingScaleTween = _loadingPanel.DOScale(1f, _loadingUiFadeDuration).SetEase(Ease.OutBack).SetUpdate(true);
-                await _loadingScaleTween.AsyncWaitForCompletion();
+                Debug.LogError($"로딩 표시 실패 : {ex.Message}");
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
             }
-
-            await Awaitable.NextFrameAsync();
         }
 
         public async Awaitable HideLoadingAsync()
         {
-            CheckAndInitialize();
-
-            _loadingCancelButton.onClick.RemoveAllListeners();
-
-            if (_loadingPanel != null)
+            try
             {
-                _loadingScaleTween?.Kill();
-                _loadingScaleTween = _loadingPanel.DOScale(0f, _loadingUiFadeDuration).SetEase(Ease.InBack).SetUpdate(true)
-                    .OnComplete(() =>
-                    {
-                        _loadingPanel.gameObject.SetActive(false);
-                        if (_loadingRotateIcon != null)
-                            _loadingRotateIcon.localRotation = Quaternion.identity;
-                    });
-                await _loadingScaleTween.AsyncWaitForCompletion();
+                CheckAndInitialize();
+                if (IsFading)
+                    return;
+
+                _isFading = true;
+
+                _loadingCancelButton.onClick.RemoveAllListeners();
+
+                if (_loadingPanel != null)
+                {
+                    _loadingScaleTween?.Kill();
+                    _loadingScaleTween = _loadingPanel.DOScale(0f, _loadingUiFadeDuration).SetEase(Ease.InBack).SetUpdate(true)
+                        .OnComplete(() =>
+                        {
+                            _loadingPanel.gameObject.SetActive(false);
+                            if (_loadingRotateIcon != null)
+                                _loadingRotateIcon.localRotation = Quaternion.identity;
+                        });
+                    await _loadingScaleTween.AsyncWaitForCompletion();
+                }
+
+                _loadingRotateTween?.Kill();
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
             }
-            
-            _loadingRotateTween?.Kill();
-            await Awaitable.NextFrameAsync();
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"로딩 표시 숨기기 실패 : {ex.Message}");
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
+            }
         }
 
 
@@ -389,7 +419,7 @@ namespace LMCore
                 float easedProgress = -(Mathf.Cos(Mathf.PI * progress) - 1) / 2;
                 _testPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, easedProgress);
                 elapsedTime += Time.deltaTime;
-                await Awaitable.NextFrameAsync(); 
+                await Awaitable.NextFrameAsync();
             }
 
             _testPanel.anchoredPosition = endPos;
@@ -412,7 +442,7 @@ namespace LMCore
             while (elapsedTime < duration)
             {
                 float progress = elapsedTime / duration;
-                float easedProgress = -(Mathf.Cos(Mathf.PI * progress) - 1) / 2; 
+                float easedProgress = -(Mathf.Cos(Mathf.PI * progress) - 1) / 2;
                 _testPanel.anchoredPosition = Vector2.Lerp(startPos, endPos, easedProgress);
 
                 elapsedTime += Time.deltaTime;
