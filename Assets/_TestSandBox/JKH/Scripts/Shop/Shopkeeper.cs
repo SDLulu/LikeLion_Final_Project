@@ -14,7 +14,7 @@ public enum ShopkeeperState
 }
 // TextMeshPro를 사용하는 경우
 
-public class Shopkeeper : NetworkBehaviour
+public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
 {
     [Header("Shopkeeper Settings")]
     [SerializeField] private TextMeshProUGUI speechBubbleText; // 대화 말풍선 텍스트
@@ -48,6 +48,9 @@ public class Shopkeeper : NetworkBehaviour
     [SerializeField] private float attackCooldown = 1f;
     private TickTimer _attackTimer;
 
+    // IPlayerInteraction.IsHeld (bool)을 만족하기 위한 래핑
+    [Networked] private NetworkBool heldFlag { get; set; }
+    public bool IsHeld => heldFlag;
     public override void Spawned()
     {
         // 씬에서 ShopManager를 찾아 참조합니다.
@@ -366,5 +369,37 @@ public class Shopkeeper : NetworkBehaviour
                 Gizmos.DrawWireSphere(transform.position, attackRange);
             }
         }
+    }
+
+    public void ApplyKnockback(Vector2 force, float stunDuration = 0)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void TakeDamage(int damage)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void ApplyStun(float duration)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void SetInvincible(bool value, float duration = 0)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void OnPickedUp()
+    {
+        if (!Object.HasStateAuthority) return;
+        heldFlag = true;
+    }
+
+    public void OnReleased()
+    {
+        if (!Object.HasStateAuthority) return;
+        heldFlag = false;
     }
 }
