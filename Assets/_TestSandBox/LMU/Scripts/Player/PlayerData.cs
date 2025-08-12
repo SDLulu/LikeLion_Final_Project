@@ -1,5 +1,7 @@
 using Fusion;
+using Photon.Voice.Fusion;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 [System.Serializable]
 public struct StaticPlayerData : INetworkInput
@@ -31,8 +33,12 @@ public struct DynamicCharacterData : INetworkInput
     }
 }
 
+[NetworkSpawnDelay(typeof(PlayerData))]
 public class PlayerData : NetworkBehaviour
 {
+    [Header("인스펙터 참조")]
+    [SerializeField] private PlayerDeathHandler _deathHandler;
+
     [Networked, UnitySerializeField]
     public ref StaticPlayerData Static_PlayerData => ref MakeRef<StaticPlayerData>();
 
@@ -47,13 +53,16 @@ public class PlayerData : NetworkBehaviour
 
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
+    public bool IsAlive => _deathHandler.IsDead;
 
     public override void Spawned()
     {
+        NetworkEventSystem.Inst.RegisterNetDelay(this);
+
         // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
         if (Object.HasInputAuthority)
         {
-            if (GlobalSetting.Inst.IsEnableBackend == false || BackEndWorkFlow.IsFakeClient == false)
+            if (GlobalSetting.Inst.IsEnableBackend == false || BackEndWorkFlow.IsFakeClient)
             {
                 var randomFake = DataManager.Inst.GetRandomFakeClientData();
                 RPC_SetNickName(randomFake.NickName);

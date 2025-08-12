@@ -27,6 +27,9 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
     public event Action<Stage.Data> OnStageLoadDoneEvent;                   // 스테이지 정보 - "3-1 or 5-4"
     public event Action<bool> OnCutSceneActiveEvent;                        // 컷씬 활성화 여부
+    public event Action<PlayerRef, int> OnEnemyKilledEvent;                 // 적 처치 (플레이어, 가중치)
+    public event Action<PlayerRef, int> OnItemCollectedEvent;               // 아이템 획득 (플레이어, 가중치)
+    public event Action<PlayerRef, int> OnScoreChangedEvent;                // 점수 변경 알림 (플레이어, 변경 후 점수)
 
     public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)   
     {
@@ -35,12 +38,31 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public void TriggerGameStateChangedEvent(E_StateName previousState, E_StateName currentState)
     {
         OnGameStateChangedEvent?.Invoke(previousState, currentState);
-        Debug.Log($"게임 상태 변경: {previousState} → {currentState}");
     }
-
     public void TriggerCutSceneActiveEvent(bool isActive)
     {
         OnCutSceneActiveEvent?.Invoke(isActive);
+    }
+
+    public void TriggerEnemyKilled(PlayerRef attacker, int scoreWeight = 1)
+    {
+        if (IsServer() == false)
+            return;
+        OnEnemyKilledEvent?.Invoke(attacker, scoreWeight);
+    }
+
+    public void TriggerItemCollected(PlayerRef attacker, int scoreWeight = 1)
+    {
+        if (IsServer() == false)
+            return;
+        OnItemCollectedEvent?.Invoke(attacker, scoreWeight);
+    }
+
+    public void TriggerScoreChanged(PlayerRef attacker, int newScore)
+    {
+        if (IsServer() == false)
+            return;
+        OnScoreChangedEvent?.Invoke(attacker, newScore);
     }
 
 #region NewtorkSpawn 시점에 따른 초기화 이벤트 처리
@@ -56,19 +78,19 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     private void DiscoverRequiredManagers()
     {
         var assembly = Assembly.GetExecutingAssembly();
-        foreach (var type in assembly.GetTypes().Where(t => t.IsDefined(typeof(NetworkSpawnManagerAttribute), false)))
+        foreach (var type in assembly.GetTypes().Where(t => t.IsDefined(typeof(NetworkSpawnDelayAttribute), false)))
         {
             _requiredManagerTypes.Add(type);
             Debug.Log($"[GameStateManager] 필수 매니저 발견: {type.Name}");
         }
     }
 
-    public void RegisterManager(NetworkBehaviour manager)
+    public void RegisterNetDelay(NetworkBehaviour netDelay)
     {
         if (IsReady) 
             return;
 
-        var managerType = manager.GetType();
+        var managerType = netDelay.GetType();
         _registeredManagers.Add(managerType);
         CheckIfReady();
     }
@@ -82,12 +104,21 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         }
     }
 
-    public void UnregisterManager(NetworkBehaviour manager)
+    public void UnregisterNetDelay(NetworkBehaviour netDelay)
     {
-        _registeredManagers.Remove(manager.GetType());
+        _registeredManagers.Remove(netDelay.GetType());
     }
 #endregion
 
+    private NetworkRunner _runner;
+    private bool IsServer()
+    {
+        if (_runner == null)
+        {
+            return true;
+        }
+        return _runner.IsServer;
+    }
 
     protected override void Awake()
     {
@@ -112,6 +143,9 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnShutdownEvent = null;
         OnStageLoadDoneEvent = null;
         OnGameStateChangedEvent = null;
+        OnEnemyKilledEvent = null;
+        OnItemCollectedEvent = null;
+        OnScoreChangedEvent = null;
 
         _spawnHandler = null;
         _connectionHandler = null;
@@ -189,7 +223,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     public void OnConnectedToServer(NetworkRunner runner)
     {
-
+        _runner = runner;
     }
 
     public void OnSessionListUpdated(NetworkRunner runner, List<SessionInfo> sessionList)
@@ -207,12 +241,14 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public void OnSceneLoadDone(NetworkRunner runner)
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        _runner = runner;
         OnSceneLoadDoneEvent?.Invoke(runner, sceneName);
     }
 
     public void OnSceneLoadStart(NetworkRunner runner)
     {
         string sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        _runner = runner;
         OnSceneLoadStartEvent?.Invoke(runner, sceneName);
     }
 }
