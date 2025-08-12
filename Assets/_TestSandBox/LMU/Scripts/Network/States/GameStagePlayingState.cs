@@ -19,7 +19,13 @@ public class GameStagePlayingState : BaseStateBehaviour
                 return;
             }
 
-            var players = PlayerM.Players.ToList();
+            var players = PlayerM.GetPlayers();
+            if (players.Count <= 0)
+            {
+                Debug.LogError("플레이어가 없습니다.");
+                return;
+            }
+
             foreach (var player in players)
             {
                 var playerC = player.Value.GetComponent<PlayerStageController>();

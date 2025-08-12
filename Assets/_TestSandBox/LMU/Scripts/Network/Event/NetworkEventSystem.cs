@@ -9,6 +9,41 @@ using UnityEngine;
 
 public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunnerCallbacks
 {
+    [Header("디버그용")]
+    [SerializeField] private PlayerSpawnHandler _spawnHandler;
+    [SerializeField] private ConnectionHandler _connectionHandler;
+
+    // -- 퓨전2 이벤트
+    public event Action<NetworkRunner, PlayerRef> OnPlayerJoinedEvent;
+    public event Action<NetworkRunner, PlayerRef> OnPlayerLeftEvent;
+    public event Action<NetworkRunner, string> OnSceneLoadDoneEvent;
+    public event Action<NetworkRunner, string> OnSceneLoadStartEvent;
+    public event Action<NetworkRunner, NetworkRunnerCallbackArgs.ConnectRequest, byte[]> OnConnectRequestEvent;
+    public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
+    public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
+    public event Action<NetworkRunner, PlayerRef> OnPlayerSpawnedEvent;
+
+    // --- 커스텀 이벤트
+    public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
+    public event Action<Stage.Data> OnStageLoadDoneEvent;                   // 스테이지 정보 - "3-1 or 5-4"
+    public event Action<bool> OnCutSceneActiveEvent;                        // 컷씬 활성화 여부
+
+    public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)   
+    {
+        OnStageLoadDoneEvent?.Invoke(stageInfo);
+    }
+    public void TriggerGameStateChangedEvent(E_StateName previousState, E_StateName currentState)
+    {
+        OnGameStateChangedEvent?.Invoke(previousState, currentState);
+        Debug.Log($"게임 상태 변경: {previousState} → {currentState}");
+    }
+
+    public void TriggerCutSceneActiveEvent(bool isActive)
+    {
+        OnCutSceneActiveEvent?.Invoke(isActive);
+    }
+
+#region NewtorkSpawn 시점에 따른 초기화 이벤트 처리
     private HashSet<Type> _requiredManagerTypes = new HashSet<Type>();
     private HashSet<Type> _registeredManagers = new HashSet<Type>();
 
@@ -21,7 +56,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     private void DiscoverRequiredManagers()
     {
         var assembly = Assembly.GetExecutingAssembly();
-        foreach (var type in assembly.GetTypes().Where(t => t.IsDefined(typeof(RequiredManagerAttribute), false)))
+        foreach (var type in assembly.GetTypes().Where(t => t.IsDefined(typeof(NetworkSpawnManagerAttribute), false)))
         {
             _requiredManagerTypes.Add(type);
             Debug.Log($"[GameStateManager] 필수 매니저 발견: {type.Name}");
@@ -51,34 +86,8 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     {
         _registeredManagers.Remove(manager.GetType());
     }
+#endregion
 
-    [Header("이벤트 핸들러")]
-    [SerializeField] private PlayerSpawnHandler _spawnHandler;
-    [SerializeField] private ConnectionHandler _connectionHandler;
-
-    // -- 퓨전2 이벤트
-    public event Action<NetworkRunner, PlayerRef> OnPlayerJoinedEvent;
-    public event Action<NetworkRunner, PlayerRef> OnPlayerLeftEvent;
-    public event Action<NetworkRunner, string> OnSceneLoadDoneEvent;
-    public event Action<NetworkRunner, string> OnSceneLoadStartEvent;
-    public event Action<NetworkRunner, NetworkRunnerCallbackArgs.ConnectRequest, byte[]> OnConnectRequestEvent;
-    public event Action<NetworkRunner, NetDisconnectReason> OnDisconnectedFromServerEvent;
-    public event Action<NetworkRunner, ShutdownReason> OnShutdownEvent;
-    public event Action<NetworkRunner, PlayerRef> OnPlayerSpawnedEvent;
-    public event Action<Stage.Data> OnStageLoadDoneEvent;
-
-    // 게임 상태 변경 이벤트
-    public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
-
-    public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)    // 스테이지 정보 - "3-1 or 5-4"
-    {
-        OnStageLoadDoneEvent?.Invoke(stageInfo);
-    }
-    public void TriggerGameStateChangedEvent(E_StateName previousState, E_StateName currentState)
-    {
-        OnGameStateChangedEvent?.Invoke(previousState, currentState);
-        Debug.Log($"게임 상태 변경: {previousState} → {currentState}");
-    }
 
     protected override void Awake()
     {
@@ -96,14 +105,16 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
 
     private void OnDestroy()
     {
-        OnConnectRequestEvent -= _connectionHandler.OnConnectRequest;
-        OnPlayerJoinedEvent -= _spawnHandler.OnPlayerJoined;
-        OnPlayerLeftEvent -= _spawnHandler.OnPlayerLeft;
-        OnDisconnectedFromServerEvent -= _connectionHandler.OnDisconnectedFromServer;
-        OnShutdownEvent -= _connectionHandler.OnShutdown;
-
+        OnConnectRequestEvent = null;
+        OnPlayerJoinedEvent = null;
+        OnPlayerLeftEvent = null;
+        OnDisconnectedFromServerEvent = null;
+        OnShutdownEvent = null;
         OnStageLoadDoneEvent = null;
         OnGameStateChangedEvent = null;
+
+        _spawnHandler = null;
+        _connectionHandler = null;
     }
 
     public void OnObjectExitAOI(NetworkRunner runner, NetworkObject obj, PlayerRef player)
