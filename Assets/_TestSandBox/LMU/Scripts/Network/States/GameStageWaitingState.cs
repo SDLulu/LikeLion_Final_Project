@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using Fusion;
 using Fusion.Addons.FSM;
-using LMCore;
 using UnityEngine;
 
 public class GameStageWaitingState : BaseStateBehaviour
@@ -14,8 +14,6 @@ public class GameStageWaitingState : BaseStateBehaviour
     {
         if (Runner.IsServer)
         {
-            GameStates.RPC_FadeOutUI(this.Runner);
-            
             try
             {
                 var playingState = Machine.GetState<GameStageCompletedState>();
@@ -50,7 +48,4 @@ public class GameStageWaitingState : BaseStateBehaviour
         _isMapLoadCompleted = false;
         base.OnExitState(); // 이벤트 발생을 위해 base 호출
     }
-
-
-
 } 

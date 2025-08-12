@@ -8,7 +8,7 @@ public class EnemyDeadState : EnemyStateBase
 
     protected override void OnEnterState()
     {
-        Debug.Log("몬스터 데드 스테이트");
+
     }
 
     protected override void OnEnterStateRender()

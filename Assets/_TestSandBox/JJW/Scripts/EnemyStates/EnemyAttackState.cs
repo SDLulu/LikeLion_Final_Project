@@ -12,6 +12,7 @@ public class EnemyAttackState : EnemyStateBase
     protected override void OnEnterState()
     {
         fsmRef.EnemyNetworkBehaviour.AttackCooldownTimer = TickTimer.CreateFromSeconds(Runner, fsmRef.EnemyNetworkBehaviour.enemyData.attackCooldown);
+        fsmRef.EnemyNetworkBehaviour.StateTimer = TickTimer.CreateFromSeconds(Runner, attackDuration);
     }
 
     protected override void OnEnterStateRender()
@@ -21,13 +22,13 @@ public class EnemyAttackState : EnemyStateBase
 
     protected override void OnFixedUpdate()
     {
-        if (!fsmRef.Object.HasStateAuthority) return;
+        // if (!fsmRef.Object.HasStateAuthority) return;
 
-        // 공격 모션 시간이 끝나면 다시 Chase 상태로 돌아감
-        if (Machine.StateTime > attackDuration)
-        {
-            fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Chase;
-            fsmRef.StateMachine.ForceActivateState<EnemyChaseState>();
-        }
+        // // 공격 모션 시간이 끝나면 다시 Chase 상태로 돌아감
+        // if (Machine.StateTime > attackDuration)
+        // {
+        //     fsmRef.EnemyNetworkBehaviour.CurrentState = EnemyStateName.Chase;
+        //     fsmRef.StateMachine.ForceActivateState<EnemyChaseState>();
+        // }
     }
 }

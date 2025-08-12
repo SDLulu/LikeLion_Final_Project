@@ -5,7 +5,6 @@ using UnityEngine.Tilemaps;
 public class PMK_TileDestroyer : MonoBehaviour
 {
     [SerializeField] private LayerMask whatisPlatform;
-    [SerializeField] private TileBase ruleTile;
 
     private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
     private PMK_TileRPC_Manager tileRPCManager => PMK_TileRPC_Manager.Instance;
