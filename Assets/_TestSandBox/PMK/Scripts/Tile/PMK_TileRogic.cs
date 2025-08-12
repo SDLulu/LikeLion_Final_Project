@@ -480,8 +480,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 빈 공간에 특별한 맵 생성
-    private void Create_Special_Map(int Map_Number, int Percent)
+    private void Create_Special_Map(int Percent)
     {
+        int Map_Number = Random.Range(0, mapPrefabDict["S"].Length); // 특별한 맵의 인덱스 
         if (Random.Range(0, 100) < Percent)
         {
             const int maxAttempts = 100; // 최대 시도 횟수 (무한 루프 방지용)
