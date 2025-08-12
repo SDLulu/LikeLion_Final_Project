@@ -44,7 +44,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     [Networked] public int CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
     [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
     [Networked, OnChangedRender(nameof(OnDirectionChanged))] private NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
-    [Networked] protected bool IsDead { get; set; }
+    [Networked] public bool IsDead { get; set; }
     [Networked] public bool IsStunned { get; private set; }
     [Networked] public bool IsInvincible { get; private set; }
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
