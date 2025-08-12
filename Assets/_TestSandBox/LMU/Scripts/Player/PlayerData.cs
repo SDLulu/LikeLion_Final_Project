@@ -5,7 +5,7 @@ using UnityEngine;
 public struct StaticPlayerData : INetworkInput
 {
     public NetworkString<_16> NickName;
-    
+
     public static StaticPlayerData CreateData(FakeClient.Data localPlayerData)
     {
         return new StaticPlayerData()
@@ -20,7 +20,7 @@ public struct DynamicCharacterData : INetworkInput
 {
     public NetworkString<_16> CharacterName;
     public NetworkString<_64> SkinPath;
-    
+
     public static DynamicCharacterData CreateData(Skin.Data skinData)
     {
         return new DynamicCharacterData()
@@ -39,11 +39,11 @@ public class PlayerData : NetworkBehaviour
     [Networked, UnitySerializeField]
     public ref DynamicCharacterData Dynamic_CharacterData => ref MakeRef<DynamicCharacterData>();
 
-    [Networked] public bool IsReady {get; private set;} = false;
+    [Networked] public bool IsReady { get; private set; } = false;
 
     [Header("로컬 데이터")]
-    [field: SerializeField] public FakeClient.Data FakeClientData {get; private set;}   
-    [field: SerializeField] public Skin.Data SkinData {get; private set;}
+    [field: SerializeField] public FakeClient.Data FakeClientData { get; private set; }
+    [field: SerializeField] public Skin.Data SkinData { get; private set; }
 
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
@@ -53,8 +53,11 @@ public class PlayerData : NetworkBehaviour
         // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
         if (Object.HasInputAuthority)
         {
-            if (BackEndWorkFlow.IsFakeClient)
-                RPC_SetNickName(BackEndWorkFlow.FakeNickNameData.NickName);
+            if (GlobalSetting.Inst.IsEnableBackend == false || BackEndWorkFlow.IsFakeClient == false)
+            {
+                var randomFake = DataManager.Inst.GetRandomFakeClientData();
+                RPC_SetNickName(randomFake.NickName);
+            }
             else
                 RPC_SetNickName(BackEndWorkFlow.NickName);
         }
