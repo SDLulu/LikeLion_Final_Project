@@ -10,7 +10,8 @@ public class PlayerSkinDatabase : ScriptableObject
     {
         [Tooltip("스킨을 식별할 문자열 키 (예: 'Penguin', 'Rabbit')")]
         public string SkinKey;
-        public RuntimeAnimatorController AnimatorController;
+        public RuntimeAnimatorController AnimatorController; // 플레이어용
+        public RuntimeAnimatorController GhostAnimatorController; // 유령용
         // 필요 시 2D Animation 사용 시 SpriteLibraryAsset 등도 추가
         // public SpriteLibraryAsset SpriteLibrary;
     }
@@ -19,6 +20,7 @@ public class PlayerSkinDatabase : ScriptableObject
     private List<SkinEntry> skins = new List<SkinEntry>();
 
     private Dictionary<string, RuntimeAnimatorController> keyToAnimator;
+    private Dictionary<string, RuntimeAnimatorController> keyToGhostAnimator;
 
     private void OnEnable()
     {
@@ -26,6 +28,11 @@ public class PlayerSkinDatabase : ScriptableObject
             keyToAnimator = new Dictionary<string, RuntimeAnimatorController>(System.StringComparer.OrdinalIgnoreCase);
         else
             keyToAnimator.Clear();
+
+        if (keyToGhostAnimator == null)
+            keyToGhostAnimator = new Dictionary<string, RuntimeAnimatorController>(System.StringComparer.OrdinalIgnoreCase);
+        else
+            keyToGhostAnimator.Clear();
 
         for (int i = 0; i < skins.Count; i++)
         {
@@ -36,6 +43,10 @@ public class PlayerSkinDatabase : ScriptableObject
             {
                 keyToAnimator.Add(entry.SkinKey, entry.AnimatorController);
             }
+            if (!keyToGhostAnimator.ContainsKey(entry.SkinKey))
+            {
+                keyToGhostAnimator.Add(entry.SkinKey, entry.GhostAnimatorController != null ? entry.GhostAnimatorController : entry.AnimatorController);
+            }
         }
     }
 
@@ -44,6 +55,14 @@ public class PlayerSkinDatabase : ScriptableObject
         if (string.IsNullOrEmpty(skinKey)) return null;
         if (keyToAnimator == null) OnEnable();
         keyToAnimator.TryGetValue(skinKey, out var controller);
+        return controller;
+    }
+
+    public RuntimeAnimatorController GetGhostAnimatorByKey(string skinKey)
+    {
+        if (string.IsNullOrEmpty(skinKey)) return null;
+        if (keyToGhostAnimator == null) OnEnable();
+        keyToGhostAnimator.TryGetValue(skinKey, out var controller);
         return controller;
     }
 }

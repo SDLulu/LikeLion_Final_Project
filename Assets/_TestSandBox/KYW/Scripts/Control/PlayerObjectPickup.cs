@@ -127,14 +127,18 @@ public class PlayerObjectPickup : NetworkBehaviour
         {
             Debug.Log($"[PlayerObjectPickup] StateAuthority에서 PickupObject 시도");
             
-            // 플레이어인 경우 특별 처리
+            // 플레이어인 경우 특별 처리 (이미 들린 상태면 거부)
             if (obj.layer == LayerMask.NameToLayer("Player"))
             {
-                var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
-                if (playerInteraction != null)
+                var p = obj.GetComponent<IPlayerInteraction>();
+                if (p != null)
                 {
-                    // 들린 플레이어의 상태 설정
-                    playerInteraction.OnPickedUp();
+                    if (p.IsHeld)
+                    {
+                        Debug.Log("[PlayerObjectPickup] 이미 들려있는 플레이어는 픽업 불가");
+                        return;
+                    }
+                    p.OnPickedUp();
                 }
             }
             
@@ -243,21 +247,18 @@ public class PlayerObjectPickup : NetworkBehaviour
             return;
         }
         
-        // 플레이어 레이어인 경우 특별 처리
-        if (other.gameObject.layer == LayerMask.NameToLayer("Player"))
+        // 플레이어/적/NPC 레이어: 인터페이스 + IsHeld 체크로 통일
+        if (other.gameObject.layer == LayerMask.NameToLayer("Player") ||
+            other.gameObject.layer == LayerMask.NameToLayer("Enemy") ||
+            other.gameObject.layer == LayerMask.NameToLayer("Npc"))
         {
-            var playerInteraction = other.GetComponent<PlayerInteractionBase>();
-            if (playerInteraction != null && playerInteraction.IsHoldable) // 스턴 상태인지 확인
+            var p = other.GetComponent<IPlayerInteraction>();
+            if (p != null && !p.IsHeld)
             {
                 nearbyObjects.Add(other.gameObject);
-                Debug.Log($"[PlayerObjectPickup] 들 수 있는 플레이어 감지: {other.gameObject.name}");
+                Debug.Log($"[PlayerObjectPickup] 들 수 있는 대상 감지: {other.gameObject.name} (레이어:{other.gameObject.layer})");
             }
-        }
-        // 기타 레이어 처리
-        else if ((pickupLayerMask.value & (1 << other.gameObject.layer)) != 0)
-        {
-            nearbyObjects.Add(other.gameObject);
-            Debug.Log($"[PlayerObjectPickup] pickupLayerMask에 포함된 레이어: {other.gameObject.layer}");
+            return;
         }
     }
     
