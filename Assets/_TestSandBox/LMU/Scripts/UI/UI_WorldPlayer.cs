@@ -43,11 +43,16 @@ public class UI_WorldPlayer : MonoBehaviour
         {
             OnSceneLoadDone(sceneName);
         };
+
         OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
     }
 
     public async void OnSceneLoadDone(string sceneName)
     {
+        // 로비씬에서만 활성화
+        bool toggleRet = sceneName == GlobalSetting.Inst.LobbyScenePath;
+        ToggleReadyIcon(toggleRet);
+
         // 비동기로 로비버튼을 찾아서 초기화
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
@@ -56,12 +61,16 @@ public class UI_WorldPlayer : MonoBehaviour
             {
                 var buttons = FindObjectsByType<Button>(FindObjectsSortMode.None);
                 _readyButton = buttons.FirstOrDefault((button) => button.tag == "LobbyReady");
-
                 await Awaitable.WaitForSecondsAsync(0.1f);
             }
 
             _readyButton.onClick.AddListener(OnReadyButtonClicked);
         }
+    }
+
+    private void ToggleReadyIcon(bool value)
+    {
+        _playerReadyIcon.gameObject.SetActive(value);
     }
 
     private void OnReadyButtonClicked()

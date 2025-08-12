@@ -13,6 +13,7 @@ public class SO_GlobalSetting : ScriptableObject
     [field: SerializeField] public string GameScenePath {get; private set;}
     [field: SerializeField] public Vector2 LobbySpawnPos {get; private set;}
     [field: SerializeField] public bool IsEnableBackend {get; private set;} = false;
+    [field: SerializeField] public bool IsEnableVoice {get; private set;} = false;
 
 #if UNITY_EDITOR
     [SerializeField] private List<SceneAsset> _sceneInfoList;

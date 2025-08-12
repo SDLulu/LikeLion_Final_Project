@@ -13,7 +13,7 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
     
     public void AfterSpawned()
     {
-        NetworkEventSystem.Inst.RegisterManager(this);
+        NetworkEventSystem.Inst.RegisterNetDelay(this);
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
