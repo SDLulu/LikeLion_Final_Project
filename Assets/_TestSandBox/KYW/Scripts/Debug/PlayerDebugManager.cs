@@ -26,6 +26,11 @@ public class PlayerDebugManager : NetworkBehaviour
     private PlayerAnimation playerAnimation;
     private PlayerInventory inventory; // 인벤토리 참조 추가
     private PlayerInteraction playerInteraction; // 상호작용 참조 추가
+    private PlayerDeathHandler playerDeathHandler; // 부활 디버그용
+    
+    [Header("Respawn Debug")]
+    [SerializeField] private bool showRespawnControls = true;
+    [SerializeField] private Transform debugRespawnPoint;
     
     private void Awake()
     {
@@ -58,6 +63,7 @@ public class PlayerDebugManager : NetworkBehaviour
         climbing = GetComponent<PlayerClimbing>();
         ladderCheck = GetComponentInChildren<PlayerLadderCheck>();
         playerInteraction = GetComponent<PlayerInteraction>();
+        playerDeathHandler = GetComponent<PlayerDeathHandler>();
     }
     
     private void OnGUI()
@@ -97,6 +103,11 @@ public class PlayerDebugManager : NetworkBehaviour
         if (showInteractionInfo)
         {
             DrawInteractionDebugInfo();
+        }
+        
+        if (showRespawnControls)
+        {
+            DrawRespawnDebugControls();
         }
     }
     
@@ -224,6 +235,23 @@ public class PlayerDebugManager : NetworkBehaviour
         {
             GUILayout.Label("상호작용 가능한 대상 없음");
         }
+        GUILayout.EndArea();
+    }
+    
+    private void DrawRespawnDebugControls()
+    {
+        if (playerDeathHandler == null) return;
+        
+        GUILayout.BeginArea(new Rect(320, 10, 300, 120));
+        GUILayout.Box("🩺 부활 디버그");
+        GUILayout.Label($"죽음 상태: {playerDeathHandler.IsDead}");
+        
+        if (GUILayout.Button("부활 (지정 위치)"))
+        {
+            var pos = debugRespawnPoint != null ? debugRespawnPoint.position : transform.position;
+            playerDeathHandler.ResurrectAt(pos);
+        }
+        
         GUILayout.EndArea();
     }
 } 

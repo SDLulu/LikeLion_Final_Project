@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1345135363816216854}
   - component: {fileID: 5123644052545637484}
   - component: {fileID: 2521671384153698669}
+  - component: {fileID: 7061504841261015218}
   m_Layer: 0
   m_Name: GhostPlayer
   m_TagString: Untagged
@@ -146,6 +147,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 1345135363816216854}
   - {fileID: 2521671384153698669}
+  - {fileID: 7061504841261015218}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2521671384153698669
 MonoBehaviour:
@@ -168,6 +170,26 @@ MonoBehaviour:
   dashDistance: 3
   dashDuration: 0.2
   dashCooldown: 1
+--- !u!114 &7061504841261015218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2255852619988363092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae3cc894db672cb4384f4fc55f547f78, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animator: {fileID: 5137824401469694723}
+  skinDatabase: {fileID: 11400000, guid: e597257263c96d74eb30a159dbc3822f, type: 2}
+  visualRoot: {fileID: 1331975038503641361}
+  useGhostAnimator: 1
+  _SkinKey:
+    _length: 8
+    _data:
+      Data: 4d000000750000007300000068000000720000006f0000006f0000006d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 --- !u!1 &5288189172278999355
 GameObject:
   m_ObjectHideFlags: 0

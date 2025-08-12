@@ -60,11 +60,6 @@ public class PlayerGhostController : NetworkBehaviour, IBeforeUpdate
         // 초기 위치 저장
         startPosition = transform.position;
         
-        // 초기 알파값 설정 (반투명)
-        Color color = spriteRenderer.color;
-        color.a = 0.7f;
-        spriteRenderer.color = color;
-        
         
         Debug.Log($"[{name}] 유령 플레이어 컨트롤러 초기화 완료!");
     }
