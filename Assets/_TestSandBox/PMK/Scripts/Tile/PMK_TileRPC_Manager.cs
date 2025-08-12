@@ -86,6 +86,13 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
             }
         }
     }
+
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_Create_Enemy()
+    {
+
+    }
     #endregion
 
 
