@@ -18,17 +18,20 @@ public class PlayerStateDebugger : MonoBehaviour
     [Header("디버그 정보")]
     [SerializeField] private bool showDebugInfo = true;
     
+    [Header("부활 테스트")]
+    [SerializeField] private Transform testRespawnPoint; // 지정 안하면 현 위치 사용
+    
     private void Start()
     {
         // 자동으로 컴포넌트 찾기
         if (stunInvincible == null)
-            stunInvincible = FindObjectOfType<PlayerStunInvincibleDie>();
+            stunInvincible = FindAnyObjectByType<PlayerStunInvincibleDie>();
         if (playerAnimation == null)
-            playerAnimation = FindObjectOfType<PlayerAnimation>();
+            playerAnimation = FindAnyObjectByType<PlayerAnimation>();
         if (playerInteraction == null)
-            playerInteraction = FindObjectOfType<PlayerInteractionBase>();
+            playerInteraction = FindAnyObjectByType<PlayerInteractionBase>();
         if (playerDeathHandler == null)
-            playerDeathHandler = FindObjectOfType<PlayerDeathHandler>();
+            playerDeathHandler = FindAnyObjectByType<PlayerDeathHandler>();
             
         Debug.Log("🧪 PlayerStateDebugger 초기화 완료!");
     }
@@ -65,6 +68,13 @@ public class PlayerStateDebugger : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha4))
         {
             TestRandomKnockback();
+            Debug.Log($"🧪 랜덤 넉백 테스트 실행! 힘: {testKnockbackForce}");
+        }
+        
+        // 5: 부활 테스트 (지정 위치)
+        if (Input.GetKeyDown(KeyCode.Alpha5))
+        {
+            TestResurrect();
         }
         
         // 0: 상태 리셋
@@ -114,6 +124,14 @@ public class PlayerStateDebugger : MonoBehaviour
             ApplyRandomKnockback(testKnockbackForce);
             Debug.Log($"🧪 랜덤 넉백 테스트 실행! 힘: {testKnockbackForce}");
         }
+    }
+
+    private void TestResurrect()
+    {
+        if (playerDeathHandler == null) return;
+        var pos = testRespawnPoint != null ? testRespawnPoint.position : playerDeathHandler.transform.position;
+        playerDeathHandler.ResurrectAt(pos);
+        Debug.Log($"🧪 부활 테스트 실행! 위치: {pos}");
     }
     
     // 🧪 랜덤 방향 넉백 테스트 (디버그용)
@@ -195,7 +213,7 @@ public class PlayerStateDebugger : MonoBehaviour
         
         GUILayout.Space(10);
         GUILayout.Label("=== 테스트 키 ===");
-        GUILayout.Label("1: 스턴, 2: 무적, 3: 사망, 4: 넉백, 0: 리셋, R: 업데이트");
+        GUILayout.Label("1: 스턴, 2: 무적, 3: 사망, 4: 넉백, 5: 부활, 0: 리셋, R: 업데이트");
         GUILayout.EndArea();
     }
 } 
