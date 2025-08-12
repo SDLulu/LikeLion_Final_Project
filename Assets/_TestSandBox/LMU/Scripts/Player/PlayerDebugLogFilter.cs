@@ -9,10 +9,14 @@ public class PlayerDebugLogFilter : MonoBehaviour
     private ILogHandler _originalLogHandler;
     private CustomLogHandler _customLogHandler;
     private HashSet<string> _playerComponentTypes = new HashSet<string>();
+    [SerializeField] private bool _isFiltering = true;
 
     private void Awake()
     {
-        ApplyLoggerFilter();
+        if (_isFiltering)
+        {
+            ApplyLoggerFilter();
+        }
     }
 
     private void OnDestroy()

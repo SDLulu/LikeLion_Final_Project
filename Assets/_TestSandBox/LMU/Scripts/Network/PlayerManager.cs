@@ -5,7 +5,7 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
-[RequiredManager(typeof(PlayerManager))]
+[NetworkSpawnManager(typeof(PlayerManager))]
 public class PlayerManager : NetworkBehaviour
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;

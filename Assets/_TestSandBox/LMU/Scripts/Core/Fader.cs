@@ -9,13 +9,15 @@ namespace LMCore
     {
         public static Vector2 GetUIPosition(Canvas canvas, Vector2 worldPos)
         {
-            var screenPos = Camera.main.WorldToScreenPoint(worldPos);
             var canvasRect = canvas.GetComponent<RectTransform>();
+            var usedCamera = Camera.main;
+
+            var screenPos = usedCamera.WorldToScreenPoint(worldPos);
             Vector2 localPoint;
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
                 canvasRect,
                 screenPos,
-                canvas.worldCamera,
+                usedCamera,
                 out localPoint);
             return localPoint;
         }
@@ -192,46 +194,69 @@ namespace LMCore
         // Note - AsyncWaitForCompletion / Task 사용중
         public async Awaitable FadeInExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
-            CheckAndInitialize();
-            if (_contentsRoot == null || IsFading)
-                return;
+            try
+            {
+                CheckAndInitialize();
+                if (_contentsRoot == null || IsFading)
+                    return;
 
-            _isFading = true;
-            _bgImage.color = color;
-            _contentsRoot.sizeDelta = _endSize;
-            var canvas = this.GetComponent<Canvas>();
-            _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+                _isFading = true;
+                if (_bgImage != null)
+                    _bgImage.color = color;
+                _contentsRoot.sizeDelta = _endSize;
+                var canvas = this.GetComponent<Canvas>();
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
 
-            await _contentsRoot.DOSizeDelta(_startSize, seconds)
-                .SetEase(_fadeInEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-            _contentsRoot.gameObject.SetActive(false);
-            _isFading = false;
-            await Awaitable.NextFrameAsync();
+                await _contentsRoot.DOSizeDelta(_startSize, seconds)
+                    .SetEase(_fadeInEase)
+                    .SetUpdate(true)
+                    .AsyncWaitForCompletion();
+                _contentsRoot.gameObject.SetActive(false);
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
+
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("FadeInExpandAsync 오류");
+                Debug.LogError(e.Message);
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
+            }
         }
 
         // Note - AsyncWaitForCompletion / Task 사용중
         public async Awaitable FadeOutExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
         {
-            CheckAndInitialize();
-            if (_contentsRoot == null || IsFading)
-                return;
+            try
+            {
+                CheckAndInitialize();
+                if (_contentsRoot == null || IsFading)
+                    return;
 
-            _isFading = true;
-            _contentsRoot.sizeDelta = _startSize;
+                _isFading = true;
+                _contentsRoot.sizeDelta = _startSize;
 
-            var canvas = this.GetComponent<Canvas>();
-            _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
-            _bgImage.color = color;
-            _contentsRoot.gameObject.SetActive(true);
-            await _contentsRoot
-                .DOSizeDelta(_endSize, seconds)
-                .SetEase(_fadeOutEase)
-                .SetUpdate(true)
-                .AsyncWaitForCompletion();
-            _isFading = false;
-            await Awaitable.NextFrameAsync();
+                var canvas = this.GetComponent<Canvas>();
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+                if (_bgImage != null)
+                    _bgImage.color = color;
+                _contentsRoot.gameObject.SetActive(true);
+                await _contentsRoot
+                    .DOSizeDelta(_endSize, seconds)
+                    .SetEase(_fadeOutEase)
+                    .SetUpdate(true)
+                    .AsyncWaitForCompletion();
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError("FadeOutExpandAsync 오류");
+                Debug.LogError(e.Message);
+                _isFading = false;
+                await Awaitable.NextFrameAsync();
+            }
         }
 
 
