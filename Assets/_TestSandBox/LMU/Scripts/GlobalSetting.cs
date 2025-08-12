@@ -3,6 +3,7 @@ using LMCore;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using System.IO;
 
 [DefaultExecutionOrder(-1000)]
 public class GlobalSetting : BaseManager<GlobalSetting>
@@ -112,4 +113,6 @@ public class GlobalSetting : BaseManager<GlobalSetting>
         float randSpawnX = UnityEngine.Random.Range(LobbySpawnPos.x - xFactor, LobbySpawnPos.x + xFactor);
         return new Vector2(randSpawnX, LobbySpawnPos.y);
     }
+
+    public bool IsEnableBackend => _settingData.IsEnableBackend;
 }

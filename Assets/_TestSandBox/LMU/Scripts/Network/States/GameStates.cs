@@ -156,13 +156,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
     private void ApplyInject()
     {
+        _cutSceneController = this.FindObjectByTypeAtCurScene<CutSceneController>();
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
             { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
             { typeof(Fader), _fader != null ? _fader : Fader.Inst },
             { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },
-            { typeof(CutSceneController), _cutSceneController != null ? _cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
+            { typeof(CutSceneController), _cutSceneController },
             { typeof(NetworkEventSystem), _networkEventSystem != null ? _networkEventSystem : NetworkEventSystem.Inst }
         };
 
