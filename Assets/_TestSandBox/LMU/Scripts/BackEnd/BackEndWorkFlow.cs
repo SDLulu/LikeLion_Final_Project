@@ -55,6 +55,13 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
     private AwaitableCompletionSource<bool> _createNickNameTCS;
     public async Awaitable LoginGuest()
     {
+        if (GlobalSetting.Inst.IsEnableBackend == false)
+        {
+            IsFakeClient = true;
+            Debug.Log("백앤드 비활성화");
+            return;
+        }
+
         // 첫화면 페이드
         Fader.Inst.ActiveBGImage(true, Color.black);
         await Awaitable.WaitForSecondsAsync(0.5f);
