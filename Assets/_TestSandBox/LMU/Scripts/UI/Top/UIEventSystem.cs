@@ -7,12 +7,8 @@ public class UIEventSystem : BaseManager<UIEventSystem>
     // -- 로비 이벤트 목록
     public event Action OnPauseUIToggleEvent;
     public event Action<bool> OnPauseUIActiveEvent;
-    
     public event Action<bool> OnGameUIActiveEvent;
     
-    public event Func<Awaitable> OnPlayerSlotsFadeInEvent;
-    public event Func<Awaitable> OnPlayerSlotsFadeOutEvent;
-
 
     public void TriggerPauseUIToggle()
     {
@@ -27,15 +23,5 @@ public class UIEventSystem : BaseManager<UIEventSystem>
     public void TriggerGameUIActive(bool active)
     {
         OnGameUIActiveEvent?.Invoke(active);
-    }
-
-    public async Awaitable TriggerPlayerSlotsFadeInAsync()
-    {
-        await OnPlayerSlotsFadeInEvent.Invoke();
-    }
-
-    public async Awaitable TriggerPlayerSlotsFadeOutAsync()
-    {
-        await OnPlayerSlotsFadeOutEvent.Invoke();
     }
 } 
