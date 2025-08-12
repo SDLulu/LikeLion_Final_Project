@@ -26,6 +26,19 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 }
 
                 //스테이지 로더 추가 할 곳
+                if (stageInfo.IsBossStage == 1)
+                {
+                   Debug.Log("보스 스테이지 로드");
+                   ResetBoosMap();
+                   Create_Map("B", bossStage, 0, 0);
+                   bossStage++;
+                   return;
+                }
+                else if (stageInfo.IsBossStage == 0)
+                {
+                   Debug.Log("일반 스테이지 로드");
+                   RPC_ResetMap();
+                }
             };
             return;
         }

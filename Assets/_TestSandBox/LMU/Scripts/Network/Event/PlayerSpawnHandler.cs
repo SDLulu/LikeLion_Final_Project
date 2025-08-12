@@ -50,18 +50,18 @@ public class PlayerSpawnHandler : MonoBehaviour
         localGameMode = runner.GameMode;
         if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null)
         {
-            OnHostPlayerJoinAsync(runner, player);
+            OnHostPlayerJoin(runner, player);
         }
         else if (runner.IsServer)
         {
-            OnClientPlayerJoinAsync(runner, player);
+            OnClientPlayerJoin(runner, player);
         }
     }
 
     /// <summary>
     /// 호스트 입장 처리
     /// </summary>
-    private void OnHostPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnHostPlayerJoin(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
@@ -78,10 +78,8 @@ public class PlayerSpawnHandler : MonoBehaviour
         var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
         hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
 
-
         var chatManagerObj = runner.Spawn(ChatManagerPrefab, Vector3.zero, Quaternion.identity, player);
         chatManager = chatManagerObj.GetComponent<ChatManager>();
-
 
         var gameStatesObj = runner.Spawn(GameStatesPrefab, Vector3.zero, Quaternion.identity, player);
         gameStates = gameStatesObj.GetComponent<GameStates>();
@@ -90,7 +88,7 @@ public class PlayerSpawnHandler : MonoBehaviour
     /// <summary>
     /// 클라이언트 입장처리
     /// </summary>
-    private void OnClientPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnClientPlayerJoin(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
