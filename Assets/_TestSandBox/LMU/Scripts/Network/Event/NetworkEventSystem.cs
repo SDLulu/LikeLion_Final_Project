@@ -27,9 +27,9 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
     public event Action<Stage.Data> OnStageLoadDoneEvent;                   // 스테이지 정보 - "3-1 or 5-4"
     public event Action<bool> OnCutSceneActiveEvent;                        // 컷씬 활성화 여부
-    public event Action<PlayerRef, int> OnEnemyKilledEvent;                 // 적 처치 (플레이어, 가중치)
+    public event Action<PlayerRef, EnemyData> OnEnemyKilledEvent;           // 적 처치 (플레이어, 가중치)
     public event Action<PlayerRef, int> OnItemCollectedEvent;               // 아이템 획득 (플레이어, 가중치)
-    public event Action<PlayerRef, int> OnScoreChangedEvent;                // 점수 변경 알림 (플레이어, 변경 후 점수)
+    public event Action<PlayerRef> OnScoreChangedEvent;                     // 점수 변경 알림 
 
     public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)   
     {
@@ -44,11 +44,11 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnCutSceneActiveEvent?.Invoke(isActive);
     }
 
-    public void TriggerEnemyKilled(PlayerRef attacker, int scoreWeight = 1)
+    public void TriggerEnemyKilled(PlayerRef attacker, EnemyData enemyData)
     {
         if (IsServer() == false)
             return;
-        OnEnemyKilledEvent?.Invoke(attacker, scoreWeight);
+        OnEnemyKilledEvent?.Invoke(attacker, enemyData);
     }
 
     public void TriggerItemCollected(PlayerRef attacker, int scoreWeight = 1)
@@ -58,11 +58,11 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnItemCollectedEvent?.Invoke(attacker, scoreWeight);
     }
 
-    public void TriggerScoreChanged(PlayerRef attacker, int newScore)
+    public void TriggerScoreChanged(PlayerRef attacker)
     {
         if (IsServer() == false)
             return;
-        OnScoreChangedEvent?.Invoke(attacker, newScore);
+        OnScoreChangedEvent?.Invoke(attacker);
     }
 
 #region NewtorkSpawn 시점에 따른 초기화 이벤트 처리

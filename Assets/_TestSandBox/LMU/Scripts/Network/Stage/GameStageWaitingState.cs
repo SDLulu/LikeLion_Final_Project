@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class GameStageWaitingState : BaseStateBehaviour
 {
-    public override E_StateName StateName => E_StateName.GameStageWaitingState;
+    public override E_StateName StateName => E_StateName.WaitingState;
     
     [Header("디버그용")]
     private bool _isMapLoadCompleted = false;

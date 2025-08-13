@@ -4,16 +4,17 @@ using UnityEngine;
 
 public enum E_StateName
 {
-    EmptyState,
-    GameStageWaitingState,
-    GameStageTransitionState,
-    GameStagePlayingState,
-    GameStageFailedState,
-    GameStageCompletedState,
+    LobbyState,
+    WaitingState,
+    TransitionState,
+    PlayingState,
+    FailedState,
+    CompletedState,
 }
 
 public abstract class BaseStateBehaviour : StateBehaviour
 {
+    protected GameStates StateOwner {get; set;}
     protected LobbyUI_Manager UIController {get; set;}
     protected Fader Fader {get; set;}
     protected PlayerManager PlayerM {get; set;}

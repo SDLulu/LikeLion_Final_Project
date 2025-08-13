@@ -153,7 +153,7 @@ public class PlayerObjectPickup : NetworkBehaviour
                 }
             }
             
-            // 아이템/캐릭터 구분 없이 무조건 손에 든다
+	            // 아이템/캐릭터 구분 없이 무조건 손에 든다
             bool picked = inventory.HoldObject(obj); 
             if (picked)
             {
@@ -184,6 +184,12 @@ public class PlayerObjectPickup : NetworkBehaviour
                     }
                 }
                 
+	                // 점수 처리: 아이템을 성공적으로 들었을 때만 트리거
+	                if (layer == LayerMask.NameToLayer("Item"))
+	                {
+	                    NetworkEventSystem.Inst.TriggerItemCollected(Object.InputAuthority, 1);
+	                }
+	                
                 DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화
             }
         }

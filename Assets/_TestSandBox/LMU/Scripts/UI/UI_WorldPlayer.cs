@@ -43,16 +43,29 @@ public class UI_WorldPlayer : MonoBehaviour
         {
             OnSceneLoadDone(sceneName);
         };
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += (oldState, newState) =>
+        {
+            OnStageChanged(oldState, newState);
+        };
 
         OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
     }
 
+    private void OnStageChanged(E_StateName oldState, E_StateName newState)
+    {
+        if (newState == E_StateName.LobbyState)
+        {
+            _ownerPlayerData.RPC_ToggleReady(false);
+            ActiveReadyIcon(true);
+        }
+        else
+        {
+            ActiveReadyIcon(false);
+        }
+    }
+
     public async void OnSceneLoadDone(string sceneName)
     {
-        // 로비씬에서만 활성화
-        bool toggleRet = sceneName == GlobalSetting.Inst.LobbyScenePath;
-        ToggleReadyIcon(toggleRet);
-
         // 비동기로 로비버튼을 찾아서 초기화
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
@@ -68,7 +81,7 @@ public class UI_WorldPlayer : MonoBehaviour
         }
     }
 
-    private void ToggleReadyIcon(bool value)
+    private void ActiveReadyIcon(bool value)
     {
         _playerReadyIcon.gameObject.SetActive(value);
     }

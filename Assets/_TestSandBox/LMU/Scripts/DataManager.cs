@@ -92,4 +92,15 @@ public class DataManager : BaseManager<DataManager>
         Debug.LogError($"아이템 데이터를 찾을 수 없습니다. id: {id}");
         return null;
     }
+
+    public Item.Data GetItemDataByName(string name)
+    {
+        var result = ItemData.FirstOrDefault(x => x.Value.ItemName == name);
+        if (result.Value != null)
+        {
+            return result.Value;
+        }
+        Debug.LogError($"아이템 데이터를 찾을 수 없습니다. name: {name}");
+        return null;
+    }
 }
