@@ -122,39 +122,31 @@ public class PlayerObjectThrower : NetworkBehaviour
         
         var netObj = obj.GetComponent<NetworkObject>();
         int layer = obj.layer;
-        
-        // 플레이어인 경우 특별 처리
-        if (layer == LayerMask.NameToLayer("Player"))
+
+        // 1) 캐릭터(IPlayerInteraction)
+        var character = obj.GetComponent<IPlayerInteraction>();
+        if (character != null)
         {
-            var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
-            if (playerInteraction != null)
-            {
-                // 들린 플레이어 해제
-                playerInteraction.OnReleased();
-            }
-            
-            // 🚀 던진 상태 설정 (던질 때만)
+            character.OnReleased();
+
+            // 던진 상태 설정 (던질 때만)
             if (applyForce)
             {
-                var stunInvincibleDie = obj.GetComponent<PlayerStunInvincibleDie>();
-                if (stunInvincibleDie != null)
-                {
-                    stunInvincibleDie.SetThrown(1.5f); // 1.5초간 던진 상태
-                }
+                // 플레이어: PlayerStunInvincibleDie, 적/NPC: 각자 구현에서 처리되도록 위임
+                var stun = obj.GetComponent<PlayerStunInvincibleDie>();
+                if (stun != null) stun.SetThrown(1.5f);
+                var enemy = obj.GetComponent<EnemyBase>();
+                if (enemy != null) enemy.SetThrown(1.5f);
             }
         }
-        
-        // 아이템인 경우 IItemInteraction 체크
-        if (layer == LayerMask.NameToLayer("Item"))
+        else
         {
-            var itemInteraction = obj.GetComponent<IItemInteraction>();
-            if (itemInteraction != null)
+            // 2) 아이템(IItemInteraction)
+            var item = obj.GetComponent<IItemInteraction>();
+            if (item != null)
             {
-                // 아이템의 OnReleased 호출
-                itemInteraction.OnReleased();
+                item.OnReleased();
             }
-            
-
         }
         
         // 🎮 InputAuthority 해제 (아이템만)

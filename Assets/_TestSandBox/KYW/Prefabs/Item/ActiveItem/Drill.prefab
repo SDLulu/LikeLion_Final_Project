@@ -101,7 +101,6 @@ GameObject:
   - component: {fileID: 6749140625659538780}
   - component: {fileID: 1117916079866787632}
   - component: {fileID: 9119602247989683629}
-  - component: {fileID: -188237232998606784}
   m_Layer: 8
   m_Name: Drill
   m_TagString: Untagged
@@ -147,7 +146,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 6749140625659538780}
   - {fileID: 9119602247989683629}
-  - {fileID: 2071675303841186540}
+  - {fileID: 512362126990799355}
   - {fileID: 6840311574223646927}
   ForceRemoteRenderTimeframe: 0
 --- !u!50 &5735192360923932109
@@ -260,22 +259,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rotationSpeed: 3600
   attackInterval: 0.1
-  drillAttackCollisionHandler: {fileID: 2071675303841186540}
+  attackHandler: {fileID: 512362126990799355}
+  attackCollider: {fileID: 7118312988402447923}
   drillSprite: {fileID: 4456650111111165660}
---- !u!114 &-188237232998606784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5909273242602881402}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 381c5c24663f37a44951257ccd4be59b
 --- !u!1 &6215066750971373064
 GameObject:
   m_ObjectHideFlags: 0
@@ -373,7 +359,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1313905449039471830}
   - component: {fileID: 7118312988402447923}
-  - component: {fileID: 2071675303841186540}
+  - component: {fileID: 512362126990799355}
   m_Layer: 12
   m_Name: AtkCol
   m_TagString: Untagged
@@ -467,7 +453,7 @@ PolygonCollider2D:
       - {x: 0.015, y: -0.265}
       - {x: 0.16499999, y: -0.205}
   m_UseDelaunayMesh: 0
---- !u!114 &2071675303841186540
+--- !u!114 &512362126990799355
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -476,13 +462,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8187179284689087773}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 426b2539860c0ca488da23e556c76850, type: 3}
+  m_Script: {fileID: 11500000, guid: 76d97d7a6940e46418a591d66c16e883, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  drillDamage: 1
-  drillKnockbackForce: 2
-  drillKnockbackDuration: 0.3
-  attackCollider: {fileID: 7118312988402447923}
+  attackDamage: 1
+  knockbackForce: 5
+  knockbackDuration: 0.5
+  AttackCollider: {fileID: 7118312988402447923}
+  statueSwapCooldownSeconds: 0.15
 --- !u!1 &8232216425188521781
 GameObject:
   m_ObjectHideFlags: 0
