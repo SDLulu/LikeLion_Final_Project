@@ -41,8 +41,6 @@ public class UI_Chating : MonoBehaviour
     private PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
 
     private void OnDestroy() => OnReset();
-    public void OnDisable() => OnReset();
-
     public void OnReset()
     {
         RemoveAllMessageUI();
@@ -216,7 +214,6 @@ public class UI_Chating : MonoBehaviour
             _chatViewCanvasGroup.alpha = 1f;
         }
     }
-
 
 
     private void CreateMessageUI(ChatHistory chatHistory)

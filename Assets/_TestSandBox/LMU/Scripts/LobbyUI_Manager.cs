@@ -57,6 +57,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
 
     public void ActiveLobbyOnLineUI()
     {
+        UILobby.gameObject.SetActive(true);
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.ActiveOnlinePanel();
         UIChatting.gameObject.SetActive(true);

@@ -235,7 +235,7 @@ public class PlayerManager : NetworkBehaviour
             if (_changeDetectors.ContainsKey(kvp.Key) == false)
             {
                 _changeDetectors[kvp.Key] = pData.GetChangeDetector(ChangeDetector.Source.SimulationState);
-                isCreatedFrame = true; 
+                isCreatedFrame = true;
                 continue;
             }
 
@@ -252,28 +252,60 @@ public class PlayerManager : NetworkBehaviour
     #endregion
 
     #region 씬이동 및 RPC
-    /// <summary>
-    /// Note - 게임씬 로드완료시 호출 / Only Server
-    /// </summary>
-    public void MoveToGameScene(string sceneName)
-    {
-        if (sceneName == GlobalSetting.Inst.FocusScenePath)
-        {
-            RPC_MoveToGameScene();
-        }
-    }
-
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_MoveToGameScene()
+    public async void RPC_MoveToGameScene()
     {
+        await WaitForScene("GameScene");
         Internal_MoveToScene("GameScene");
+
+        Debug.Log("<color=green>게임씬 이동</color>");
+
+        // 게임씬 UI
+        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
+    }
+
+    /// <summary>
+    /// 특정 플레이어만 게임 씬으로 이동시키는 RPC
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public async void RPC_MoveToGameScene_Target([RpcTarget] PlayerRef targetPlayer)
+    {
+        await WaitForScene("GameScene");
+        Internal_MovePlayerToScene("GameScene", targetPlayer);
+
+        Debug.Log("<color=green>게임씬 이동 (타깃)</color>");
+
+        // 게임씬 UI (타깃 클라이언트 전용)
+        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
     }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_MoveToLobbyScene()
+    public async void RPC_MoveToLobbyScene()
     {
+        await WaitForScene("LobbyScene");
         Internal_MoveToScene("LobbyScene");
+
+        Debug.Log("<color=green>로비씬 이동</color>");
+
+        // 로비씬 UI
+        LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+        LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 특정 플레이어만 로비 씬으로 이동시키는 RPC
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public async void RPC_MoveToLobbyScene_Target([RpcTarget] PlayerRef targetPlayer)
+    {
+        await WaitForScene("LobbyScene");
+        Internal_MovePlayerToScene("LobbyScene", targetPlayer, GlobalSetting.Inst.LobbySpawnPos);
+
+        Debug.Log("<color=green>로비씬 이동 (타깃)</color>");
+
+        LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+        LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -292,6 +324,7 @@ public class PlayerManager : NetworkBehaviour
                 Debug.LogError("게임 씬 오브젝트를 찾을 수 없습니다.");
                 continue;
             }
+
             Runner.MoveGameObjectToSameScene(obj, gameSceneObj);
 
             if (Runner.IsServer)
@@ -300,6 +333,67 @@ public class PlayerManager : NetworkBehaviour
                 teleporter.SetPosition(new Vector2(0, 0));
             }
         }
+
+    }
+
+    /// <summary>
+    /// 특정 플레이어의 오브젝트를 지정한 씬으로 이동시키는 함수
+    /// </summary>
+    private void Internal_MovePlayerToScene(string sceneName, PlayerRef targetPlayer, Vector2? serverTeleportPosition = null)
+    {
+        if (Players.ContainsKey(targetPlayer) == false)
+        {
+            Debug.LogError($"대상 플레이어를 찾을 수 없습니다. {targetPlayer}");
+            return;
+        }
+
+        var obj = Players[targetPlayer]?.gameObject;
+        if (obj == null)
+        {
+            Debug.LogError("대상 플레이어 오브젝트가 없습니다.");
+            return;
+        }
+
+        GameObject gameSceneObj = GameObject.Find(sceneName);
+        if (gameSceneObj == null)
+        {
+            Debug.LogError($"{sceneName} 오브젝트를 찾을 수 없습니다.");
+            return;
+        }
+
+        Runner.MoveGameObjectToSameScene(obj, gameSceneObj);
+
+        if (Runner.IsServer)
+        {
+            var teleporter = obj.GetComponent<PlayerStageController>();
+            Vector2 targetPos = serverTeleportPosition.HasValue ? serverTeleportPosition.Value : new Vector2(0, 0);
+            teleporter.SetPosition(targetPos);
+        }
+    }
+
+    /// <summary>
+    /// 지정한 이름의 씬이 있을때 까지 대기
+    /// </summary>
+    private async Awaitable<bool> WaitForScene(string sceneName, float timeoutSeconds = 30.0f)
+    {
+        float startTime = Time.time;
+        GameObject anchor = null;
+        while (anchor == null)
+        {
+            anchor = GameObject.Find(sceneName);
+            if (anchor != null)
+            {
+                return true;
+            }
+
+            if (Time.time - startTime >= timeoutSeconds)
+            {
+                Debug.LogWarning($"씬 앵커를 찾을 수 없습니다: {sceneName}");
+                break;
+            }
+            await Awaitable.NextFrameAsync();
+        }
+        return false;
     }
 
     #endregion

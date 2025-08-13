@@ -2,99 +2,103 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
-public class PlayerScoreTracker : MonoBehaviour
+public class PlayerScoreTracker : NetworkBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private UI_StageProgress _uiStageProgress;
 
-    private Dictionary<PlayerRef, int> _itemScore = new();
-    private Dictionary<PlayerRef, int> _monsterScore = new();
+    [Networked, OnChangedRender(nameof(OnItemScoreChanged))]
+    private NetworkDictionary<PlayerRef, int> ItemScores { get; }
 
-    private NetworkRunner _runner;
+    [Networked, OnChangedRender(nameof(OnMonsterScoreChanged))]
+    private NetworkDictionary<PlayerRef, int> MonsterScores { get; }
 
-    private void Awake()
+    private PlayerRef _localPlayer;
+
+	private int GetMonsterScore(PlayerRef player)
+	{
+		if (MonsterScores.ContainsKey(player) == false)
+			MonsterScores.Set(player, 0);
+
+		return MonsterScores.Get(player);
+	}
+
+	private void SetMonsterScore(PlayerRef player, int score)
+	{
+		if (MonsterScores.ContainsKey(player) == false)
+			MonsterScores.Set(player, score);
+		else
+			MonsterScores.Set(player, score);
+	}
+
+	private void AddMonsterScore(PlayerRef player, int delta)
+	{
+		int current = GetMonsterScore(player);
+		SetMonsterScore(player, current + delta);
+	}
+
+	private int GetItemScore(PlayerRef player)
+	{
+		if (ItemScores.ContainsKey(player) == false)
+			ItemScores.Set(player, 0);
+
+		return ItemScores.Get(player);
+	}
+
+	private void SetItemScore(PlayerRef player, int score)
+	{
+		if (ItemScores.ContainsKey(player) == false)
+			ItemScores.Set(player, score);
+		else
+			ItemScores.Set(player, score);
+	}
+
+	private void AddItemScore(PlayerRef player, int delta)
+	{
+		int current = GetItemScore(player);
+		SetItemScore(player, current + delta);
+	}
+
+    public override void Spawned()
     {
-        NetworkEventSystem.Inst.OnEnemyKilledEvent += OnEnemyKilled;
-        NetworkEventSystem.Inst.OnItemCollectedEvent += OnItemCollected;
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += OnSceneLoadDone;
-    }
+        _localPlayer = Runner.LocalPlayer; 
 
-    private bool IsServer()
-    {
-        if (_runner == null)
-            return true;
-        return _runner.IsServer;
-    }
-
-    private void OnSceneLoadDone(NetworkRunner runner, string sceneName)
-    {
-        if (runner == null)
+        if (Runner.IsServer)
         {
-            _runner = runner;
-            return;
+            NetworkEventSystem.Inst.OnEnemyKilledEvent += OnEnemyKilled;
+            NetworkEventSystem.Inst.OnItemCollectedEvent += OnItemCollected;
         }
     }
 
-    // -- 적 처치
     private void OnEnemyKilled(PlayerRef killer, EnemyData enemyData)
     {
-        if (IsServer() == false)
-            return;
-
-        int enemyScore = GetEnemyScore(killer);
-        SetEnemyScore(killer, enemyScore + 1);
-
-        int itemScore = GetItemScore(killer);
-
-        _uiStageProgress.UpdateScoreData(enemyScore, itemScore);
+		AddMonsterScore(killer, 1);
         NetworkEventSystem.Inst.TriggerScoreChanged(killer);
     }
 
-    private int GetEnemyScore(PlayerRef player)
-    {
-        if (_monsterScore.ContainsKey(player) == false)
-            _monsterScore.Add(player, 0);
-
-        return _monsterScore[player];
-    }
-
-    private void SetEnemyScore(PlayerRef player, int score)
-    {
-        if (_monsterScore.ContainsKey(player) == false)
-            _monsterScore.Add(player, 0);
-
-        _monsterScore[player] = score;
-    }
-
-    // --- 아이템 획득
     private void OnItemCollected(PlayerRef player, int weight)
     {
-        if (IsServer() == false)
-            return;
-
-        int itemScore = GetItemScore(player);
-        SetItemScore(player, itemScore + 1);
-        int monsterScore = GetEnemyScore(player);
-
-        _uiStageProgress.UpdateScoreData(monsterScore, itemScore);
+		AddItemScore(player, 1);
         NetworkEventSystem.Inst.TriggerScoreChanged(player);
     }
 
-    private int GetItemScore(PlayerRef player)
+    public void OnItemScoreChanged()
     {
-        if (_itemScore.ContainsKey(player) == false)
-            _itemScore.Add(player, 0);
-
-        return _itemScore[player];
+		_uiStageProgress.UpdateScoreData(GetMonsterScore(_localPlayer), GetItemScore(_localPlayer));
+        UpdateMyScoreUI();
     }
 
-    private void SetItemScore(PlayerRef player, int score)
+    public void OnMonsterScoreChanged()
     {
-        if (_itemScore.ContainsKey(player) == false)
-            _itemScore.Add(player, 0);
+		_uiStageProgress.UpdateScoreData(GetMonsterScore(_localPlayer), GetItemScore(_localPlayer));
+        UpdateMyScoreUI();
+    }
 
-        _itemScore[player] = score;
+    private void UpdateMyScoreUI()
+    {
+		int myMonsterScore = GetMonsterScore(_localPlayer);
+		int myItemScore = GetItemScore(_localPlayer);
+        
+        _uiStageProgress.UpdateScoreData(myMonsterScore, myItemScore);
     }
 }
-
-

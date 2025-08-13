@@ -6,7 +6,6 @@ public enum E_StateName
 {
     LobbyState,
     WaitingState,
-    TransitionState,
     PlayingState,
     FailedState,
     CompletedState,
