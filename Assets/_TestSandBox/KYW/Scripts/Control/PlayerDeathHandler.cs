@@ -26,9 +26,9 @@ public class PlayerDeathHandler : NetworkBehaviour
     [SerializeField] private NetworkPrefabRef sunglassesPrefabRef = NetworkPrefabRef.Empty;
 
     [Header("🪙 코인 드롭 프리팹(권종)")]
+    [SerializeField] private NetworkPrefabRef coin1000PrefabRef = NetworkPrefabRef.Empty;
+    [SerializeField] private NetworkPrefabRef coin500PrefabRef = NetworkPrefabRef.Empty;
     [SerializeField] private NetworkPrefabRef coin100PrefabRef = NetworkPrefabRef.Empty;
-    [SerializeField] private NetworkPrefabRef coin10PrefabRef = NetworkPrefabRef.Empty;
-    [SerializeField] private NetworkPrefabRef coin1PrefabRef = NetworkPrefabRef.Empty;
     
     // 💀 죽음 처리 관련 변수들
     [Networked] public bool IsDead { get; private set; } // 죽음 상태
@@ -90,7 +90,7 @@ public class PlayerDeathHandler : NetworkBehaviour
         DeathSpawnPosition = transform.position;
         
         // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
-        DropAllItems();
+        DropHandObject();
         DropPassiveItems();
         DropMoney();
         
@@ -157,12 +157,21 @@ public class PlayerDeathHandler : NetworkBehaviour
         {
             stunInvincibleDie.SetDead(false);
         }
+
+        // 기본 체력 회복 (StartHealth 기준 5)
+        var health = GetComponentInChildren<PlayerHealth>();
+        if (health != null)
+        {
+            int target = health.StartHealth;
+            int diff = Mathf.Max(0, target - health.Health);
+            if (diff > 0) health.Heal(diff);
+        }
         
         Debug.Log($"[{name}] 플레이어 부활 처리 완료! 위치: {respawnPosition}");
     }
     
-    // 💰 모든 아이템 드롭
-    private void DropAllItems()
+    // 💰 손에 든것 드롭
+    private void DropHandObject()
     {
         if (playerInventory == null) return;
         
@@ -179,9 +188,6 @@ public class PlayerDeathHandler : NetworkBehaviour
             }
         }
         
-        // TODO: 패시브 아이템, 돈 등도 드롭 처리
-        // DropPassiveItems();
-        // DropMoney();
     }
     
     // 💀 시체 프리팹 스폰
@@ -327,7 +333,7 @@ public class PlayerDeathHandler : NetworkBehaviour
         TryDrop(playerInventory.hasSunglasses, sunglassesPrefabRef);
     }
 
-    // 🪙 돈 드롭 (권종 분해: 100/10/1)
+    // 🪙 돈 드롭 (권종 분해: 1000/500/100)
     private void DropMoney()
     {
         if (!HasStateAuthority) return;
@@ -336,9 +342,9 @@ public class PlayerDeathHandler : NetworkBehaviour
         int amount = playerInventory.CurrentMoney;
         if (amount <= 0) return;
 
+        int thousands = amount / 1000; amount %= 1000;
+        int fiveHundreds = amount / 500; amount %= 500;
         int hundreds = amount / 100; amount %= 100;
-        int tens = amount / 10; amount %= 10;
-        int ones = amount;
 
         Vector3 center = DeathSpawnPosition;
 
@@ -351,11 +357,12 @@ public class PlayerDeathHandler : NetworkBehaviour
             }
         }
 
+        SpawnMany(coin1000PrefabRef, thousands);
+        SpawnMany(coin500PrefabRef, fiveHundreds);
         SpawnMany(coin100PrefabRef, hundreds);
-        SpawnMany(coin10PrefabRef, tens);
-        SpawnMany(coin1PrefabRef, ones);
 
-        playerInventory.CurrentMoney = 0;
+        // 남은 잔액(< 100)은 보유로 유지
+        playerInventory.CurrentMoney = amount;
     }
 
     // 공통: 네트워크 스폰 + 랜덤 임펄스
