@@ -142,6 +142,12 @@ public class PlayerObjectPickup : NetworkBehaviour
             if (obj.layer == LayerMask.NameToLayer("Item"))
             {
                 var itemInteraction = obj.GetComponent<IItemInteraction>();
+                var shopitem = obj.GetComponent<ShopItem>();
+                if(shopitem != null)
+                {
+                    shopitem.OnPickedUp();
+
+                }
                 if (itemInteraction != null)
                 {
                     // 아이템의 OnPickedUp 호출

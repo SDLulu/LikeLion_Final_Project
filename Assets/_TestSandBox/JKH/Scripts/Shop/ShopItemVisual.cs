@@ -14,6 +14,7 @@ public class ShopItemVisual : MonoBehaviour // ⭐️ NetworkBehaviour 대신 Mo
     [SerializeField] private Color pickedColor = Color.gray;
     [SerializeField] private Color soldColor = Color.red; // 판매된 아이템 색상
 
+   
     // ⭐️ ShopItem에서 호출하여 스프라이트를 설정하는 함수
     public void SetItemSprite(Sprite sprite)
     {
