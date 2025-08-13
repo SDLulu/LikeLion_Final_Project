@@ -59,6 +59,24 @@ public class PlayerScoreTracker : NetworkBehaviour
 		SetItemScore(player, current + delta);
 	}
 
+	/// <summary>
+	/// 플레이어의 아이템 점수를 반환
+	/// </summary>
+	public int GetItemScoreOf(PlayerRef player)
+	{
+		int value = GetItemScore(player);
+		return value;
+	}
+
+	/// <summary>
+	/// 플레이어의 적 처치 점수를 반환
+	/// </summary>
+	public int GetMonsterScoreOf(PlayerRef player)
+	{
+		int value = GetMonsterScore(player);
+		return value;
+	}
+
     public override void Spawned()
     {
         _localPlayer = Runner.LocalPlayer; 

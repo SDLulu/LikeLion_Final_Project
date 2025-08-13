@@ -13,8 +13,16 @@ public class UI_StageProgress : MonoBehaviour
 
     private void Awake()
     {
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
         NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
     }
+
+    private void Onable()
+    {
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
+    }
+    
     private void OnCutSceneActive(bool isActive)
     {
         this.gameObject.SetActive(isActive == false);

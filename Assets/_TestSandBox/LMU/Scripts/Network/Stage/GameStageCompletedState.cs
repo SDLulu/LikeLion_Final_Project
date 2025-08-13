@@ -214,13 +214,6 @@ public class GameStageCompletedState : BaseStateBehaviour
                 await Awaitable.WaitForSecondsAsync(1.5f);
                 var nextStageData = DataManager.Inst.GetStageData(_stageDataIndex);
                 NetEvent.TriggerStageLoadDoneEvent(nextStageData);
-
-                var startPos = new Vector2(15.0f, 15.0f);
-                foreach (var player in PlayerM.Players)
-                {
-                    var playerC = player.Value.GetComponent<PlayerStageController>();
-                    playerC.SetPosition(startPos);
-                }
                 onComplete?.Invoke();
                 Debug.Log("다음 스테이지 로딩이 완료되었습니다.");
             }

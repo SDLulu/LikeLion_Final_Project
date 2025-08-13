@@ -73,6 +73,12 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
     protected override void OnExitState()
     {
         Debug.Log("LobbyState 퇴장");
+
+        _isInGame = false;
+        _isGameSceneLoading = false;
+        _isGameSceneLoaded = false;
+
+        _fadingTCS.Clear();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -189,23 +195,32 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
             RPC_FadeOutUI();
             await WaitForAllPlayerFading();
 
+            // 이미 로드되어 있으면 재로드 없이 이동만 수행
             var gameScenePath = GlobalSetting.Inst.GameScenePath;
-            await LevelManager.LoadSceneAsync(
-                gameScenePath,
-                UnityEngine.SceneManagement.LoadSceneMode.Additive,
-                onLoadComplete: () =>
-                {
-                    Debug.Log("게임 씬 로드 완료");
-                    _isGameSceneLoading = false;
-                    _isInGame = true;
-                    _isGameSceneLoaded = true;
+            if (LocalSceneManager.Inst.IsSceneLoaded(gameScenePath) == false)
+            {
+                await LevelManager.LoadSceneAsync(
+                    gameScenePath,
+                    UnityEngine.SceneManagement.LoadSceneMode.Additive,
+                    onLoadComplete: () =>
+                    {
+                        var sessionProperties = new Dictionary<string, SessionProperty>();
+                        sessionProperties["InGame"] = true;
+                        Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+                    });
+            }
+            else
+            {
+                var sessionProperties = new Dictionary<string, SessionProperty>();
+                sessionProperties["InGame"] = true;
+                Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+            }
 
-                    // 서버가 세션을 '게임 중'으로 표시하여 랜덤 매치 대상에서 제외
-                    var sessionProperties = new Dictionary<string, SessionProperty>();
-                    sessionProperties["InGame"] = true;
-                    Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
-                });
-
+            // 씬 로드 여부와 관계 없이 플레이어는 게임씬으로 이동
+            PlayerM.RPC_MoveToGameScene();
+            _isGameSceneLoading = false;
+            _isGameSceneLoaded = true;
+            _isInGame = true;
             return true;
         }
         catch (Exception e)
