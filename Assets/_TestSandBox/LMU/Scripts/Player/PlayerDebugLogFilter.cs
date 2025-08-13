@@ -116,7 +116,8 @@ public class CustomLogHandler : ILogHandler
             string lowerMessage = message.ToLower();
             
             // 핵심 플레이어 관련 키워드들
-            if (lowerMessage.Contains("[Visual]") ||
+            if (lowerMessage.Contains("[bress(Clone)]") ||
+                lowerMessage.Contains("[Visual]") ||
                 lowerMessage.Contains("📷") ||
                 lowerMessage.Contains("🎮") || // 플레이어 컨트롤러
                 lowerMessage.Contains("🌐") || // 네트워크 설정

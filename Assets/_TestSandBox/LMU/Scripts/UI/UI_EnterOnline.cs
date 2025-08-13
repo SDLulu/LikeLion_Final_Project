@@ -5,7 +5,6 @@ using UnityEngine.UI;
 
 public class UI_EnterOnline : MonoBehaviour
 {
-
     [Header("입장 패널")]
     [SerializeField] private RectTransform _joinRoomPanel;
     [SerializeField] private Button _joinRoomBtn;    
@@ -74,7 +73,6 @@ public class UI_EnterOnline : MonoBehaviour
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
-                
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>
