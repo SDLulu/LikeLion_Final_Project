@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Fusion; // NetworkPrefabRef를 사용하기 위해 추가
 
 [System.Serializable]
@@ -14,8 +14,7 @@ public class ItemStaticData
 public enum ItemType // 이 Enum은 ItemStaticData 또는 별도의 전역 파일에 정의되어야 합니다.
 {
     None,
-    HealthPotion,
-    ManaPotion,
-    Sword,
-    Shield
+    Active,
+    Passive,
+    Healing
 }

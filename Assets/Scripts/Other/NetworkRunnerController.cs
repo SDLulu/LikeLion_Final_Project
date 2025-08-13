@@ -13,21 +13,22 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     // 🔔 이벤트: 다른 스크립트들이 네트워크 상태 변화를 알 수 있도록 함
     public event Action OnStartedRunnerConnection;      // 네트워크 연결 시작할 때
     public event Action OnPlayerJoinedSuccessfully;    // 플레이어가 성공적으로 접속했을 때
-    
+
     // 🏷️ 로컬 플레이어의 닉네임 저장 (이 컴퓨터의 플레이어 이름)
     public string LocalPlayerNickname { get; private set; }
-    
+
     // 🎮 NetworkRunner 프리팹: Fusion의 핵심 컴포넌트 (Unity의 NetworkManager 같은 역할)
     [SerializeField] private NetworkRunner networkRunnerPrefab;
 
     // 🎯 실제 생성된 NetworkRunner 인스턴스
     private NetworkRunner networkRunnerInstance;
-    
+
     // 🛠️ 개발용 설정: 현재 씬에서 바로 테스트할지 여부
     private bool skipSceneLoading = false;
 
     // 🏷️ 게임 씬 이름 (인스펙터에서 설정)
     [SerializeField] public string gameSceneName = "Main";
+    [SerializeField] private NetworkPrefabRef _altarManagerPrefab;
 
     // 🛑 네트워크 연결 종료 메서드
     public void ShutDownRunner()
@@ -40,7 +41,7 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     {
         LocalPlayerNickname = str;
     }
-    
+
     // 🚀 게임 시작 메서드 (가장 중요한 메서드!)
     // GameMode: Host, Client, Server 등 어떤 방식으로 게임을 시작할지
     // roomName: 게임 방 이름 (같은 방 이름끼리 연결됨)
@@ -48,25 +49,26 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     {
         StartGameInternal(mode, roomName, false); // 기본적으로 씬 이동 수행
     }
-    
+
     // 🛠️ 개발용 게임 시작 메서드 (씬 이동 건너뛰기 옵션)
     public void StartGame(GameMode mode, string roomName, bool skipSceneLoad)
     {
         StartGameInternal(mode, roomName, skipSceneLoad);
+
     }
-    
+
     // 🔧 내부 게임 시작 메서드
     private async void StartGameInternal(GameMode mode, string roomName, bool skipSceneLoad)
     {
         // 🔔 네트워크 연결 시작 이벤트 알림
         OnStartedRunnerConnection?.Invoke();
-        
+
         // 🎮 NetworkRunner가 없으면 새로 생성
         if (networkRunnerInstance == null)
         {
             networkRunnerInstance = Instantiate(networkRunnerPrefab);
         }
-        
+
         // 📞 이 스크립트를 콜백 리스너로 등록 (네트워크 이벤트 받기 위함)
         networkRunnerInstance.AddCallbacks(this);
 
@@ -74,41 +76,42 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
         // (키보드, 마우스 입력을 네트워크로 보냄)
         networkRunnerInstance.ProvideInput = true;
 
-       // 🎮 게임 시작 설정값들
-       var startGameArgs = new StartGameArgs()
-       {
-           GameMode = mode,                    // 게임 모드 (Host/Client/Server)
-           SessionName = roomName,             // 방 이름 (같은 이름끼리 연결)
-           PlayerCount = 4,                    // 최대 플레이어 수
-           SceneManager = networkRunnerInstance.GetComponent<INetworkSceneManager>(),  // 씬 관리자
-    
-       };
+        // 🎮 게임 시작 설정값들
+        var startGameArgs = new StartGameArgs()
+        {
+            GameMode = mode,                    // 게임 모드 (Host/Client/Server)
+            SessionName = roomName,             // 방 이름 (같은 이름끼리 연결)
+            PlayerCount = 4,                    // 최대 플레이어 수
+            SceneManager = networkRunnerInstance.GetComponent<INetworkSceneManager>(),  // 씬 관리자
 
-      // 🚀 실제 게임 시작! (비동기 처리)
-      var result = await networkRunnerInstance.StartGame(startGameArgs);
-      
-      // 🏠 서버(Host)인 경우에만 씬 로딩 처리
-      if (networkRunnerInstance.IsServer)
-      {
-          if (result.Ok)
-          {
-              // 🛠️ 개발 모드에서는 씬 이동 건너뛰기
-              if (!skipSceneLoad)
-              {
-                  // ✅ 성공시 인스펙터에서 지정한 게임 씬으로 이동
-                  networkRunnerInstance.LoadScene(gameSceneName);
-              }
-              else
-              {
-                  Debug.Log("🛠️ [DEV MODE] 씬 이동 건너뜀 - 현재 씬에서 플레이어 소환 가능");
-              }
-          }
-          else
-          {
-              // ❌ 실패시 에러 로그
-              Debug.LogError($"Failed to start: {result.ShutdownReason}");
-          }
-      }
+        };
+        
+        // 🚀 실제 게임 시작! (비동기 처리)
+        var result = await networkRunnerInstance.StartGame(startGameArgs);
+
+        // 🏠 서버(Host)인 경우에만 씬 로딩 처리
+        if (networkRunnerInstance.IsServer)
+        {
+            if (result.Ok)
+            {
+                networkRunnerInstance.Spawn(_altarManagerPrefab, Vector3.zero, Quaternion.identity);
+                // 🛠️ 개발 모드에서는 씬 이동 건너뛰기
+                if (!skipSceneLoad)
+                {
+                    // ✅ 성공시 인스펙터에서 지정한 게임 씬으로 이동
+                    networkRunnerInstance.LoadScene(gameSceneName);
+                }
+                else
+                {
+                    Debug.Log("🛠️ [DEV MODE] 씬 이동 건너뜀 - 현재 씬에서 플레이어 소환 가능");
+                }
+            }
+            else
+            {
+                // ❌ 실패시 에러 로그
+                Debug.LogError($"Failed to start: {result.ShutdownReason}");
+            }
+        }
     }
 
     // 🔍 AOI (Area of Interest) 관련 콜백들
@@ -126,9 +129,9 @@ public class NetworkRunnerController : MonoBehaviour, INetworkRunnerCallbacks
     // 👥 플레이어 접속/퇴장 이벤트
     public void OnPlayerJoined(NetworkRunner runner, PlayerRef player)
     {
-       Debug.Log("OnPlayerJoined");
-       // 🔔 플레이어 접속 성공 이벤트 알림
-       OnPlayerJoinedSuccessfully?.Invoke();
+        Debug.Log("OnPlayerJoined");
+        // 🔔 플레이어 접속 성공 이벤트 알림
+        OnPlayerJoinedSuccessfully?.Invoke();
     }
 
     public void OnPlayerLeft(NetworkRunner runner, PlayerRef player)

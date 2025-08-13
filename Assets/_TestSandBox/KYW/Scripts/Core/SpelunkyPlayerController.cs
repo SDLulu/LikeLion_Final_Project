@@ -52,8 +52,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
-    private testPlayerInventory inventory;
-
+    
     private PlayerStunInvincibleDie stunInvincibleDie;
     private PlayerDeathHandler playerDeathHandler;
     
@@ -80,7 +79,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        inventory = GetComponent<testPlayerInventory>();
 
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         playerDeathHandler = GetComponent<PlayerDeathHandler>();
@@ -240,7 +238,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
-            inventory?.ProcessInput(input);
             interaction?.ProcessInput(input);
         }
         
