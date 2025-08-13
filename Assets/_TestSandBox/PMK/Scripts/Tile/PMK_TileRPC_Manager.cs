@@ -51,6 +51,50 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
     }
 
+    // 타일 파괴 + 같은 셀의 타일아이템/파괴오브젝트 정리를 한 번에 수행
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void Rpc_DestroyTileAndCleanup(Vector3 worldPos)
+    {
+        // 셀 스냅
+        Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(worldPos);
+        Vector3 cellCenter = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
+
+        // 타일 제거
+        if (tileRogic.mainTilemap.HasTile(cellPos))
+        {
+            tileRogic.mainTilemap.SetTile(cellPos, null);
+            tileRogic.mainTilemap.RefreshTile(cellPos);
+        }
+
+        // 같은 셀 영역 내 타일아이템/파괴오브젝트 정리
+        // 셀 크기 근사값: 타일맵 셀은 보통 1x1, 약간 여유를 둔 박스 사용
+        Vector2 boxSize = new Vector2(0.9f, 0.9f);
+        var hits = Physics2D.OverlapBoxAll(cellCenter, boxSize, 0f);
+        if (hits == null || hits.Length == 0) return;
+
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var h = hits[i];
+            if (h == null) continue;
+            if (h.CompareTag("Tileitem"))
+            {
+                var item = h.GetComponent<PMK_TileItem>();
+                if (item != null)
+                {
+                    item.DestroyItem();
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(h.gameObject);
+                }
+            }
+            else if (h.CompareTag("BoobDestoryObj"))
+            {
+                UnityEngine.Object.Destroy(h.gameObject);
+            }
+        }
+    }
+
 
     // 타일 아이템 생성
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]

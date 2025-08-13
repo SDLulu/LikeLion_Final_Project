@@ -20,55 +20,7 @@ public class Bomb : NetworkBehaviour, IItemInteraction
     [Networked] private NetworkBool IsArmed { get; set; }
     [Networked] private TickTimer explosionTimer { get; set; }
 
-    protected virtual void DestroyArea()
-    {
-        float radius = destroyCollider2D.radius;
-        Vector2 origin = transform.position;
-
-        // 한 셀 간격마다 반복 (0.5f로 샘플링 간격 줄이기 가능)
-        float step = 0.5f;
-
-        for (float x = -radius; x <= radius; x += step)
-        {
-            for (float y = -radius; y <= radius; y += step)
-            {
-                Vector2 checkPos = origin + new Vector2(x, y);
-                float distance = Vector2.Distance(origin, checkPos);
-
-                if (distance <= radius)
-                {
-                    // 타일 파괴
-                    Collider2D tileCol = Physics2D.OverlapPoint(checkPos, destroyLayer);
-                    if (tileCol != null)
-                    {
-                        var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
-                        if (tileLogic != null)
-                        {
-                            tileLogic.Rpc_DestroyTile(checkPos);
-                        }
-                    }
-
-                    // 타일 아이템 파괴
-                    Collider2D[] hitObjects = Physics2D.OverlapPointAll(checkPos, destroyLayer);
-                    foreach (var col in hitObjects)
-                    {
-                        if (col.CompareTag("Tileitem"))
-                        {
-                            var item = col.GetComponent<PMK_TileItem>();
-                            if (item != null)
-                            {
-                                item.DestroyItem();
-                            }
-                        }
-                        else if (col.CompareTag("BoobDestoryObj"))
-                        {
-                            Destroy(col.gameObject); // 오브젝트 파괴
-                        }
-                    }
-                }
-            }
-        }
-    }
+    // 파괴 로직은 ExplosionCollisionHandler로 이관
 
     // --- NetworkBehaviour 구현 ---
     public override void Spawned()
@@ -96,10 +48,14 @@ public class Bomb : NetworkBehaviour, IItemInteraction
         {
             destroyArea.SetActive(true);
         }
-        DestroyArea();
+        // 파괴 로직은 핸들러에서 수행
 
-        // 폭발 충돌 처리: 하위 핸들러(예: ExplosionCollisionHandler)가 있다면 1회 활성화 메시지 전파
-        gameObject.BroadcastMessage("ActivateOnce", SendMessageOptions.DontRequireReceiver);
+        // 폭발 충돌/파괴 처리: 하위 핸들러(ExplosionCollisionHandler) 1회 활성화
+        var explosionHandler = GetComponentInChildren<ExplosionCollisionHandler>();
+        if (explosionHandler != null)
+        {
+            explosionHandler.ActivateOnce();
+        }
 
         // 손에서 제거 후 Despawn
         RemoveFromHand();

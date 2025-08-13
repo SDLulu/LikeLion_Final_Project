@@ -15,6 +15,14 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 	[Header("Collider References")]
 	[SerializeField] private Collider2D[] explosionColliders; // 트리거 콜라이더들
 
+	[Header("Tile Destruction (Optional)")]
+	[SerializeField] private bool enableTileDestruction = true; // 폭발 시 타일/파괴물 처리
+	[SerializeField] private LayerMask destroyLayer; // 타일/파괴 대상 레이어(기존 Bomb.destroyLayer와 동일 용도)
+	[SerializeField] private float gridSampleStep = 0.5f; // 포인트 샘플링 간격
+	[SerializeField] private float fallbackRadius = 0f; // 콜라이더가 없을 때 사용할 반경(0이면 비활성)
+	[SerializeField] private string tileItemTag = "Tileitem";
+	[SerializeField] private string destroyObjectTag = "BoobDestoryObj"; // 기존 태그 철자 유지
+
 	private IItemInteraction ownerItem;
 	[Networked] private NetworkBool IsActive { get; set; }
 	[Networked] private TickTimer activeTimer { get; set; }
@@ -43,6 +51,12 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 		IsActive = true;
 		SetCollidersEnabled(true);
 		activeTimer = TickTimer.CreateFromSeconds(Runner, activeWindowSeconds);
+
+		// 폭발 시점에 타일/파괴물 처리 한 번 수행
+		if (enableTileDestruction)
+		{
+			DestroyTilesAndObjectsWithinExplosion();
+		}
 	}
 
 	private void SetCollidersEnabled(bool enabled)
@@ -99,6 +113,89 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 		Vector2 force = knockbackDirection * explosionKnockbackForce;
 
 		interaction.ApplyKnockback(force, explosionKnockbackDuration);
+	}
+
+	// --- Tile/Object destruction helpers ---
+	private void DestroyTilesAndObjectsWithinExplosion()
+	{
+		// 1) 콜라이더 기반 샘플링: 각 폭발 콜라이더의 AABB 안을 gridSampleStep 간격으로 탐색
+		bool usedColliderArea = false;
+		if (explosionColliders != null && explosionColliders.Length > 0)
+		{
+			foreach (var col in explosionColliders)
+			{
+				if (col == null) continue;
+				SampleAndDestroyInCollider(col);
+				usedColliderArea = true;
+			}
+		}
+
+		// 2) 콜라이더가 없다면, 선택적으로 폭발체 중심 원형 반경 샘플링
+		if (!usedColliderArea && fallbackRadius > 0f)
+		{
+			SampleAndDestroyInCircle((Vector2)transform.position, fallbackRadius);
+		}
+	}
+
+	private void SampleAndDestroyInCollider(Collider2D areaCollider)
+	{
+		Bounds b = areaCollider.bounds;
+		float step = Mathf.Max(0.05f, gridSampleStep);
+		for (float x = b.min.x; x <= b.max.x; x += step)
+		{
+			for (float y = b.min.y; y <= b.max.y; y += step)
+			{
+				Vector2 p = new Vector2(x, y);
+				// 실제 콜라이더 내부만 처리
+				if (!areaCollider.OverlapPoint(p)) continue;
+				ProcessDestroyAtPoint(p);
+			}
+		}
+	}
+
+	private void SampleAndDestroyInCircle(Vector2 origin, float radius)
+	{
+		float step = Mathf.Max(0.05f, gridSampleStep);
+		for (float x = -radius; x <= radius; x += step)
+		{
+			for (float y = -radius; y <= radius; y += step)
+			{
+				Vector2 p = origin + new Vector2(x, y);
+				if (Vector2.SqrMagnitude(new Vector2(x, y)) > radius * radius) continue;
+				ProcessDestroyAtPoint(p);
+			}
+		}
+	}
+
+	private void ProcessDestroyAtPoint(Vector2 point)
+	{
+        // 포인트 기반 처리 (기존)
+        Collider2D tileCol = Physics2D.OverlapPoint(point, destroyLayer);
+        if (tileCol != null)
+        {
+            var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
+            if (tileLogic != null)
+            {
+                tileLogic.Rpc_DestroyTile(point);
+            }
+        }
+
+        Collider2D[] hits = Physics2D.OverlapPointAll(point, destroyLayer);
+        if (hits == null) return;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            var col = hits[i];
+            if (col == null) continue;
+            if (col.CompareTag(tileItemTag))
+            {
+                var item = col.GetComponent<PMK_TileItem>();
+                if (item != null) item.DestroyItem();
+            }
+            else if (col.CompareTag(destroyObjectTag))
+            {
+                UnityEngine.Object.Destroy(col.gameObject);
+            }
+        }
 	}
 }
 
