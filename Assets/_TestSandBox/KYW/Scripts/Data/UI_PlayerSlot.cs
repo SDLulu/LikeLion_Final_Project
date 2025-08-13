@@ -64,6 +64,42 @@ public class UI_PlayerSlot : MonoBehaviour
         Debug.Log($"📱 UI_PlayerSlot: 초기화 완료");
     }
 
+    /// <summary>
+    /// 이 UI 슬롯이 참조하는 실제 플레이어 오브젝트가 유효한지 검사합니다.
+    /// </summary>
+    public bool IsOwnerValid()
+    {
+        if (this == null)
+        {
+            return false;
+        }
+
+        if (gameObject == null)
+        {
+            return false;
+        }
+
+        var ownerRoot = transform != null && transform.parent != null ? transform.parent.parent : null;
+        if (ownerRoot == null)
+        {
+            return false;
+        }
+
+        var hasInventory = ownerRoot.GetComponentInChildren<PlayerInventory>() != null;
+        if (hasInventory == false)
+        {
+            return false;
+        }
+
+        var hasHealth = ownerRoot.GetComponentInChildren<PlayerHealth>() != null;
+        if (hasHealth == false)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private void SubscribeToEvents()
     {
         if (_playerInventory != null)

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using Fusion;
 using Fusion.Addons.FSM;
 using UnityEngine;
@@ -16,13 +18,10 @@ public class GameStageWaitingState : BaseStateBehaviour
         {
             try
             {
-                var playingState = Machine.GetState<GameStageCompletedState>();
-                await playingState.LoadNextMapAsync();
-                
+                await LoadFirstMapAsync();
                 _isMapLoadCompleted = true;
-                Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 Debug.LogError("GameStageWaitingState 맵 로딩 중 오류 발생:");
                 Debug.LogError(e.Message);
@@ -46,6 +45,18 @@ public class GameStageWaitingState : BaseStateBehaviour
     protected override void OnExitState()
     {
         _isMapLoadCompleted = false;
-        base.OnExitState(); // 이벤트 발생을 위해 base 호출
+        base.OnExitState();
+    }
+
+    private async Awaitable LoadFirstMapAsync()
+    {
+        if (Runner.IsServer)
+        {
+            await Awaitable.NextFrameAsync();
+            await Awaitable.WaitForSecondsAsync(1.5f);
+            var firstStageData = DataManager.Inst.StageData.First().Value;
+            NetEvent.TriggerStageLoadDoneEvent(firstStageData);
+            Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
+        }
     }
 } 

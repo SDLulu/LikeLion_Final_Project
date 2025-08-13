@@ -13,10 +13,10 @@ public class GameStageFailedState : BaseStateBehaviour
         {
             GameStates.RPC_FadeOutUI(this.Runner, 1.0f);
             await Awaitable.WaitForSecondsAsync(2.0f);
-            // 현재 씬인 게임씬을 언로드 후 로비상태진입
-            string gameSceneName = GlobalSetting.Inst.GameScenePath;
-            string lobbySceneName = GlobalSetting.Inst.LobbyScenePath;
-            await LevelManager.UnloadSceneAsync(gameSceneName, lobbySceneName);
+            PlayerM.RPC_MoveToLobbyScene();
+            var sessionProperties = new System.Collections.Generic.Dictionary<string, SessionProperty>();
+            sessionProperties["InGame"] = false;
+            Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
             StateOwner.DelayForceActiveState<LobbyState>();
         }
     }   

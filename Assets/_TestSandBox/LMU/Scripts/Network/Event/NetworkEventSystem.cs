@@ -70,8 +70,53 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public void TriggerStageLoadDoneEvent(Stage.Data stageData)
     {
         if (IsServer() == false)
+        {
             return;
-        OnStageLoadDoneEvent?.Invoke(stageData);
+        }
+        var handler = OnStageLoadDoneEvent;
+        if (handler == null)
+        {
+            return;
+        }
+        foreach (var del in handler.GetInvocationList())
+        {
+            var action = del as Action<Stage.Data>;
+            if (action == null)
+            {
+                continue;
+            }
+
+            var method = action.Method;
+            var target = action.Target;
+            string targetInfo = "static";
+            if (target is UnityEngine.MonoBehaviour mb)
+            {
+                // 파괴된 컴포넌트는 Unity의 null 비교에서 null로 동작함
+                if (mb == null)
+                {
+                    targetInfo = "Destroyed(MonoBehaviour)";
+                }
+                else
+                {
+                    var go = mb.gameObject;
+                    targetInfo = $"{mb.GetType().FullName} on GO='{go.name}' Scene='{go.scene.name}'";
+                }
+            }
+            else if (target != null)
+            {
+                targetInfo = target.GetType().FullName;
+            }
+
+            try
+            {
+                action.Invoke(stageData);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning(
+                    $"[StageLoadDoneEvent] 예외 발생 - {method.DeclaringType.FullName}.{method.Name} | Target={targetInfo}\n{ex}");
+            }
+        }
     }
 
 #region NewtorkSpawn 시점에 따른 초기화 이벤트 처리
