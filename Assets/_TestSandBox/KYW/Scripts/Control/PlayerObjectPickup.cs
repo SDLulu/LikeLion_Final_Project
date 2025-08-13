@@ -126,67 +126,61 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (Object.HasStateAuthority)
         {
             Debug.Log($"[PlayerObjectPickup] StateAuthority에서 PickupObject 시도");
-            
-            // 플레이어인 경우 특별 처리 (이미 들린 상태면 거부)
-            if (obj.layer == LayerMask.NameToLayer("Player"))
+            // 1) 캐릭터(IPlayerInteraction) 우선 처리
+            var character = obj.GetComponent<IPlayerInteraction>();
+            if (character != null)
             {
-                var p = obj.GetComponent<IPlayerInteraction>();
-                if (p != null)
+                if (character.IsHeld)
                 {
-                    if (p.IsHeld)
-                    {
-                        Debug.Log("[PlayerObjectPickup] 이미 들려있는 플레이어는 픽업 불가");
-                        return;
-                    }
-                    p.OnPickedUp();
+                    Debug.Log("[PlayerObjectPickup] 이미 들려있는 캐릭터는 픽업 불가");
+                    return;
                 }
+                character.OnPickedUp();
+                if (!FinalizePickup(obj, networkObject, isCharacter: true)) return;
+                return;
             }
-            
-            // 아이템인 경우 IItemInteraction 체크
-            if (obj.layer == LayerMask.NameToLayer("Item"))
+
+            // 2) 아이템(IItemInteraction)
+            var item = obj.GetComponent<IItemInteraction>();
+            if (item != null)
             {
-                var itemInteraction = obj.GetComponent<IItemInteraction>();
-                if (itemInteraction != null)
+                if (item.IsHeld)
                 {
-                    // 아이템의 OnPickedUp 호출
-                    itemInteraction.OnPickedUp();
+                    Debug.Log("[PlayerObjectPickup] 이미 들려있는 아이템은 픽업 불가");
+                    return;
                 }
+                item.OnPickedUp();
+                if (!FinalizePickup(obj, networkObject, isCharacter: false)) return;
+                return;
             }
-            
-            // 아이템/캐릭터 구분 없이 무조건 손에 든다
-            bool picked = inventory.HoldObject(obj); 
-            if (picked)
+
+            Debug.Log("[PlayerObjectPickup] 지원되지 않는 대상");
+        }
+    }
+
+    // 최종 픽업 공통 마무리: 보유 등록, 부모/위치, 입력권한, 물리전환
+    private bool FinalizePickup(GameObject obj, NetworkObject netObj, bool isCharacter)
+    {
+        bool picked = inventory.HoldObject(obj);
+        if (!picked) return false;
+
+        nearbyObjects.Remove(obj);
+        obj.transform.SetParent(transform);
+
+        obj.transform.localPosition = isCharacter ? playerHoldOffset : Vector3.zero;
+        obj.transform.localRotation = Quaternion.identity;
+
+        if (!isCharacter)
+        {
+            if (!netObj.HasInputAuthority)
             {
-                Debug.Log($"[PlayerObjectPickup] HoldObject 성공: {obj.name}");
-                nearbyObjects.Remove(obj);  // 🗑️ 주변 목록에서 제거
-                obj.transform.SetParent(transform);        // 🏠 Hand의 자식으로 설정
-                
-                // 🎯 캐릭터(플레이어/적/NPC)인 경우 오프셋 적용, 아이템은 기본 위치
-                Vector3 holdPosition = Vector3.zero;
-                int layer = obj.layer;
-                if (layer == LayerMask.NameToLayer("Player") || 
-                    layer == LayerMask.NameToLayer("Enemy") || 
-                    layer == LayerMask.NameToLayer("Npc"))
-                {
-                    holdPosition = playerHoldOffset;
-                    Debug.Log($"[PlayerObjectPickup] 캐릭터 오프셋 적용: {obj.name} (레이어: {layer})");
-                }
-                
-                obj.transform.localPosition = holdPosition; // 📍 위치 설정
-                obj.transform.localRotation = Quaternion.identity; // 🔄 회전 초기화
-                
-                // 🎮 InputAuthority 할당 (던질 수 있도록 )
-                if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
-                {
-                    if (!networkObject.HasInputAuthority)
-                    {
-                        networkObject.AssignInputAuthority(Object.InputAuthority);
-                    }
-                }
-                
-                DisableItemPhysics(obj);  // ⚡ 물리 시뮬레이션 비활성화
+                netObj.AssignInputAuthority(Object.InputAuthority);
             }
         }
+
+        DisableItemPhysics(obj);
+        Debug.Log($"[PlayerObjectPickup] FinalizePickup 완료: {obj.name} (isCharacter:{isCharacter})");
+        return true;
     }
     
     // 🔍 주변 오브젝트 중 가장 가까운 것 찾기
