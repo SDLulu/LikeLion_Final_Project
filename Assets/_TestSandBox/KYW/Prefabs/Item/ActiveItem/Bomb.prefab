@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 7201304057115362276}
   - component: {fileID: 3129272500132848800}
   m_Layer: 8
-  m_Name: BoomMon!!!!!
+  m_Name: Bomb
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -187,13 +187,14 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 3824617502
+  SortKey: 1613490365
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 1077488816018223321}
   - {fileID: 3129272500132848800}
+  - {fileID: 4878539097253546262}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &3129272500132848800
 MonoBehaviour:
@@ -228,13 +229,14 @@ GameObject:
   m_Component:
   - component: {fileID: 8135817336852151558}
   - component: {fileID: 6111369041995829154}
-  m_Layer: 0
+  - component: {fileID: 4878539097253546262}
+  m_Layer: 12
   m_Name: explosionArea
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &8135817336852151558
 Transform:
   m_ObjectHideFlags: 0
@@ -286,3 +288,29 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 3
+--- !u!114 &4878539097253546262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7953718114797873995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f63269e77008b494694bdf051d97e900, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  explosionDamage: 2
+  explosionKnockbackForce: 8
+  explosionKnockbackDuration: 0.4
+  activeWindowSeconds: 0.05
+  explosionColliders:
+  - {fileID: 6111369041995829154}
+  enableTileDestruction: 1
+  destroyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  gridSampleStep: 0.5
+  fallbackRadius: 0
+  tileItemTag: Tileitem
+  destroyObjectTag: BoobDestoryObj

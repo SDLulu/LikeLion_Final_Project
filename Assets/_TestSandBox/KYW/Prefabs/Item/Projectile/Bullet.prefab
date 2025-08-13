@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3606712934516803020}
   - component: {fileID: 325429710649217625}
-  - component: {fileID: 2016381730995876985}
+  - component: {fileID: 8824935736893141425}
   m_Layer: 12
-  m_Name: AtkCol
+  m_Name: SpdCol
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -69,7 +69,7 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.07
---- !u!114 &2016381730995876985
+--- !u!114 &8824935736893141425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -78,12 +78,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 732358454388980100}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0d838a02c0528a4f8c6f38b91a0e044, type: 3}
+  m_Script: {fileID: 11500000, guid: 037622f1f1de6f741ac7c0078c1f86e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bulletDamage: 1
-  knockbackForce: 2
-  knockbackDuration: 0.5
+  attackSpeedThreshold: 3
+  normalSpeedThreshold: 1
+  speedAttackDamage: 1
+  speedAttackKnockbackForce: 5
+  speedAttackKnockbackDuration: 0.5
+  speedAttackColliders:
+  - {fileID: 325429710649217625}
 --- !u!1 &5342592131236500076
 GameObject:
   m_ObjectHideFlags: 0
@@ -164,7 +168,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: 3562677763325499553}
   - {fileID: 4788393211096110865}
-  - {fileID: 2016381730995876985}
+  - {fileID: 8824935736893141425}
   ForceRemoteRenderTimeframe: 0
 --- !u!212 &3038918048126580102
 SpriteRenderer:
