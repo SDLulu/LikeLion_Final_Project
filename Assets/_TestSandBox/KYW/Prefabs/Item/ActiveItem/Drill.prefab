@@ -469,6 +469,14 @@ MonoBehaviour:
   knockbackForce: 5
   knockbackDuration: 0.5
   AttackCollider: {fileID: 7118312988402447923}
+  tileLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  breakGroundTile: 1
+  tileHitCooldownSeconds: 0.1
+  itemCleanupRadius: 0.25
+  tileItemTag: Tileitem
+  destroyObjectTag: BoobDestoryObj
   statueSwapCooldownSeconds: 0.15
 --- !u!1 &8232216425188521781
 GameObject:

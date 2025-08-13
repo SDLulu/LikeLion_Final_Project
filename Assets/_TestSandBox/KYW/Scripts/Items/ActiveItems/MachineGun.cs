@@ -13,6 +13,8 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
     [SerializeField] private float bulletSpeed = 15f; // 총알 속도
     [SerializeField] private int maxAmmo = 30;        // 최대 탄약
     [SerializeField] private float reloadTime = 2f;   // 재장전 시간(초)
+    [SerializeField] private float machineGunRecoilForce = 0.8f; // 리코일 힘(소량)
+    [SerializeField] private float machineGunRecoilStun = 0.06f; // 입력/물리 차단 스턴 시간(짧게)
 
     [Networked] private int currentAmmo { get; set; }
     [Networked] private TickTimer fireRateTimer { get; set; }
@@ -109,6 +111,25 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
                 bulletRb.linearVelocity = fireDirection * bulletSpeed;
             }
             
+            // 리코일 적용 (발사 반대 방향으로 넉백+짧은 스턴)
+            ApplyRecoil(fireDirection, machineGunRecoilForce, machineGunRecoilStun);
+            
+        }
+    }
+
+    private void ApplyRecoil(Vector2 fireDirection, float force, float stunSeconds)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        var ownerObject = Runner.GetPlayerObject(Object.InputAuthority);
+        if (ownerObject == null) return;
+
+        var interaction = ownerObject.GetComponent<IPlayerInteraction>();
+        if (interaction != null)
+        {
+            Vector2 recoilDir = (-fireDirection).normalized;
+            Vector2 forceVec = recoilDir * force;
+            interaction.ApplyKnockback(forceVec, stunSeconds);
         }
     }
 
