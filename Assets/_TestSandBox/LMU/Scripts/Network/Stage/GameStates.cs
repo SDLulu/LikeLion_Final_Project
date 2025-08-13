@@ -31,7 +31,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
     public bool IsSpawned { get; set; }
 
-    private E_StateName _previousStateName = E_StateName.GameStageWaitingState;
+    private E_StateName _previousStateName = E_StateName.WaitingState;
     public override void Spawned()
     {
         IsSpawned = true;
@@ -73,7 +73,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     {
         var state = StateMachine.ActiveState as BaseStateBehaviour;
         if (state == null)
-            return E_StateName.GameStageWaitingState;
+            return E_StateName.WaitingState;
 
         return state.StateName;
     }
@@ -160,6 +160,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
+            { typeof(GameStates), this },
             { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
             { typeof(Fader), _fader != null ? _fader : Fader.Inst },
             { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },

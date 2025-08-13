@@ -38,6 +38,7 @@ public class PlayerData : NetworkBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private PlayerDeathHandler _deathHandler;
+    [SerializeField] private PlayerHealth _playerHealth;
 
     [Networked, UnitySerializeField]
     public ref StaticPlayerData Static_PlayerData => ref MakeRef<StaticPlayerData>();
@@ -53,7 +54,16 @@ public class PlayerData : NetworkBehaviour
 
     public string NickName => Static_PlayerData.NickName.ToString();
     public string CharacterName => Dynamic_CharacterData.CharacterName.ToString();
-    public bool IsAlive => _deathHandler.IsDead;
+    public bool IsAlive 
+    {
+        get
+        {
+            // 아직 정상동작하지않음
+            // _deathHandler.IsDead
+            bool ret = _playerHealth.Health > 0;
+            return ret;
+        }
+    }
 
     public override void Spawned()
     {

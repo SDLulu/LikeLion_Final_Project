@@ -123,6 +123,8 @@ public class PlayerSlotUIManager : MonoBehaviour
 
     public void ActivePlayerSlots()
     {
+        if (_playerUIs == null) 
+            return;
         foreach (var playerUI in _playerUIs)
         {
             if (playerUI == null) 
@@ -133,6 +135,8 @@ public class PlayerSlotUIManager : MonoBehaviour
 
     public void DeactivePlayerSlots()
     {
+        if (_playerUIs == null) 
+            return;
         foreach (var playerUI in _playerUIs)
         {
             if (playerUI == null) 
@@ -143,6 +147,9 @@ public class PlayerSlotUIManager : MonoBehaviour
 
     public void DeletePlayerSlots()
     {
+        if (_playerUIs == null) 
+            return;
+
         foreach (var playerUI in _playerUIs)
         {
             if (playerUI == null)

@@ -34,7 +34,7 @@ public class GameInput : MonoBehaviour, GameInputAction.IGameActions
 
         // 현재 게임 상태확인
         var stateName = GameStates.Inst.GetActiveStateName();
-        if (stateName != E_StateName.GameStagePlayingState)
+        if (stateName != E_StateName.PlayingState)
         {
             return false;
         }

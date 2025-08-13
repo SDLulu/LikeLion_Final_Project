@@ -6,8 +6,6 @@ public class UI_GameStateTest : MonoBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private RectTransform _testHolder;
-    [SerializeField] private TMP_Text _stateText;
-    [SerializeField] private TMP_Text _timerText;
     [SerializeField] private Button _nextStageButton;
     [SerializeField] private Button _failButton;
 

@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class GameStageCompletedState : BaseStateBehaviour
 {
-    public override E_StateName StateName => E_StateName.GameStageCompletedState;
+    public override E_StateName StateName => E_StateName.CompletedState;
 
     [Header("설정")]
     [SerializeField, Range(10.0f, 15.0f)] private float minWaitingTime = 15.0f;
