@@ -245,6 +245,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
             GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
+
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
 
@@ -268,15 +269,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             mainTilemap.SetTile(targetPos, tile);
                             Create_TileItem(targetPos);
 
-
-                            HashSet<Vector3Int> occupiedCells = new HashSet<Vector3Int>();
-                            foreach (Transform child in temp.transform)
-                            {
-                                Vector3Int cellPos = mainTilemap.WorldToCell(child.position);
-                                occupiedCells.Add(cellPos);
-                            }
-
-                            StartCoroutine(DelayedCreateEnemy(targetPos, occupiedCells));
+                            StartCoroutine(DelayedCreateEnemy(targetPos));
                         }
                     }
                 }
@@ -385,28 +378,33 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 타일 위에 적 생성
-    IEnumerator DelayedCreateEnemy(Vector3Int targetPos, HashSet<Vector3Int> occupiedCells)
+    IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
         yield return null; // 한 프레임 대기
 
         if (Random.value > 0.1f) yield break;
-
-        if (occupiedCells.Contains(targetPos)) yield break;
-
-        Vector3Int cellPos = targetPos;
 
         int topY = mainTilemap.cellBounds.yMax - 1;
         int leftX = mainTilemap.cellBounds.xMin;
         int rightX = mainTilemap.cellBounds.xMax - 1;
 
         // 위, 왼쪽, 오른쪽 경계 체크
-        if (cellPos.y == topY || cellPos.x == leftX || cellPos.x == rightX)
+        if (targetPos.y == topY || targetPos.x == leftX || targetPos.x == rightX)
             yield break;
 
-        bool isBlockedAbove = mainTilemap.GetTile(cellPos + Vector3Int.up) != null;
+        bool isBlockedAbove = mainTilemap.GetTile(targetPos + Vector3Int.up) != null;
         if (isBlockedAbove) yield break;
 
-        Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(cellPos), Quaternion.identity, null, (runner, obj) =>
+        Vector3 worldPos = mainTilemap.CellToWorld(targetPos + Vector3Int.up);
+        float checkRadius = 0.4f;
+
+        Collider2D col = Physics2D.OverlapCircle(worldPos + new Vector3(0.5f, 0.5f), checkRadius);
+        if (col != null)
+        {
+            yield break; // 위에 게임 오브젝트가 있음
+        }
+
+        Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
         {
             obj.transform.SetParent(parentTrans);
             obj.name = objectToSpawnIfTileExists.name;
@@ -421,7 +419,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #endregion
 
 
-    #region 스폰맵 생성
+        #region 스폰맵 생성
     private void SpawnMap_Instantiate()
     {
         removeMapX = Random.Range(0, maxTileX);
