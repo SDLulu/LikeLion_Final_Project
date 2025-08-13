@@ -14,7 +14,6 @@ GameObject:
   - component: {fileID: 8711163526170814093}
   - component: {fileID: 9164011943157410246}
   - component: {fileID: 172088933724073949}
-  - component: {fileID: -2597242902507259162}
   m_Layer: 8
   m_Name: Shotgun
   m_TagString: Untagged
@@ -85,6 +84,8 @@ MonoBehaviour:
   bulletSpeed: 12
   bulletCount: 5
   spreadAngle: 30
+  shotgunRecoilForce: 10
+  shotgunRecoilStun: 0.12
 --- !u!114 &8711163526170814093
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -175,20 +176,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.5223396, y: 0.28627062}
   m_EdgeRadius: 0
---- !u!114 &-2597242902507259162
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 836713141727297103}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: deda996a8f1ee654f9b926a6e75d030f
 --- !u!1 &1985872930100520246
 GameObject:
   m_ObjectHideFlags: 0

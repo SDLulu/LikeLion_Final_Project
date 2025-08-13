@@ -7,6 +7,7 @@ public class Bullets : NetworkBehaviour
     [SerializeField] private int maxCollisions = 5; // 최대 충돌 횟수
     
     [Networked] private int collisionCount { get; set; } // 충돌 횟수 (네트워크 동기화)
+    [Networked] private NetworkBool pendingDespawn { get; set; }
     
     private Rigidbody2D rb;
 
@@ -20,6 +21,23 @@ public class Bullets : NetworkBehaviour
         rb.gravityScale = 0f;
         // 충돌 카운터 초기화
         collisionCount = 0;
+        pendingDespawn = false;
+    }
+
+    public void RequestDespawn()
+    {
+        if (!HasStateAuthority) return;
+        pendingDespawn = true; // 다음 FixedUpdateNetwork에서 안전하게 소멸
+    }
+
+    public override void FixedUpdateNetwork()
+    {
+        if (!HasStateAuthority) return;
+        if (pendingDespawn)
+        {
+            Runner.Despawn(Object);
+            return;
+        }
     }
 
     // 물리적 충돌 (땅/벽과의 충돌) - Physics Material 적용됨

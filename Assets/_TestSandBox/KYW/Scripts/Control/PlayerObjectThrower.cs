@@ -115,52 +115,45 @@ public class PlayerObjectThrower : NetworkBehaviour
             collider.isTrigger = false;
     }
 
-    // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
+ // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
     public void ReleaseObject(GameObject obj, bool applyForce = false, Vector2 forceDirection = default)
     {
         if (!Object.HasStateAuthority) return;
-
+        
         var netObj = obj.GetComponent<NetworkObject>();
         int layer = obj.layer;
-        var shopobj = obj.GetComponent<ShopItem>();
-        // 플레이어인 경우 특별 처리
-        if (layer == LayerMask.NameToLayer("Player"))
-        {
-            var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
-            if (playerInteraction != null)
-            {
-                // 들린 플레이어 해제
-                playerInteraction.OnReleased();
-            }
 
-            // 🚀 던진 상태 설정 (던질 때만)
+        // 1) 캐릭터(IPlayerInteraction)
+        var character = obj.GetComponent<IPlayerInteraction>();
+        if (character != null)
+        {
+            character.OnReleased();
+
+            // 던진 상태 설정 (던질 때만)
             if (applyForce)
             {
-                var stunInvincibleDie = obj.GetComponent<PlayerStunInvincibleDie>();
-                if (stunInvincibleDie != null)
-                {
-                    stunInvincibleDie.SetThrown(1.5f); // 1.5초간 던진 상태
-                }
+                // 플레이어: PlayerStunInvincibleDie, 적/NPC: 각자 구현에서 처리되도록 위임
+                var stun = obj.GetComponent<PlayerStunInvincibleDie>();
+                if (stun != null) stun.SetThrown(1.5f);
+                var enemy = obj.GetComponent<EnemyBase>();
+                if (enemy != null) enemy.SetThrown(1.5f);
             }
         }
-
-        // 아이템인 경우 IItemInteraction 체크
-        if (layer == LayerMask.NameToLayer("Item"))
+        else
         {
-            var itemInteraction = obj.GetComponent<IItemInteraction>();
-            if (itemInteraction != null)
+            // 2) 아이템(IItemInteraction)
+            var item = obj.GetComponent<IItemInteraction>();
+            if (item != null)
             {
-                // 아이템의 OnReleased 호출
-                itemInteraction.OnReleased();
+                item.OnReleased();
             }
-
-
+            var shopobj = obj.GetComponent<ShopItem>();
+            if (shopobj != null)
+            {
+              shopobj.OnReleased();
+            }
         }
-        if (shopobj != null)
-        {
-            shopobj.OnReleased();
-        }
-
+        
         // 🎮 InputAuthority 해제 (아이템만)
         if (layer != LayerMask.NameToLayer("Player") && layer != LayerMask.NameToLayer("Enemy") && layer != LayerMask.NameToLayer("Npc"))
         {
@@ -169,13 +162,13 @@ public class PlayerObjectThrower : NetworkBehaviour
                 netObj.RemoveInputAuthority();
             }
         }
-
+        
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
-
+        
         // 🎯 캐릭터인 경우 로테이션만 초기화, 아이템은 부모만 해제
-        if (layer == LayerMask.NameToLayer("Player") ||
-            layer == LayerMask.NameToLayer("Enemy") ||
+        if (layer == LayerMask.NameToLayer("Player") || 
+            layer == LayerMask.NameToLayer("Enemy") || 
             layer == LayerMask.NameToLayer("Npc"))
         {
             obj.transform.SetParent(null);
@@ -208,6 +201,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             EnableItemPhysicsWithoutForce(obj);
         }
     }
+    
 
     // ⚡ 아이템의 물리 시뮬레이션 활성화 (힘 없이)
     private void EnableItemPhysicsWithoutForce(GameObject item)

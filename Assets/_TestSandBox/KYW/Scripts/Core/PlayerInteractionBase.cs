@@ -9,8 +9,8 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
     protected PlayerHealth playerHealth;
     protected SpelunkyPlayerController playerController;
 
-    // IHoldable 인터페이스 구현
-    public bool IsHoldable => true; // 플레이어는 언제나 들 수 있음
+    // 들림 상태 : 단일 소스(PlayStunInvincibleDie)에서 관리, 외부에서는 IPlayerInteraction.IsHeld로 접근
+    public bool IsHeld { get { return stunInvincible != null && stunInvincible.IsHeld; } }
 
     public override void Spawned()
     {
@@ -90,18 +90,18 @@ public class PlayerInteractionBase : NetworkBehaviour, IPlayerInteraction
     public virtual void OnPickedUp()
     {
         if (!HasStateAuthority) return;
-        
+        // 단일 소스 : stunInvincible에 위임(네트워크 동기화)
         stunInvincible?.SetHeld(true);
-        
+
         Debug.Log($"[{name}] 플레이어가 들렸습니다!");
     }
     
     public virtual void OnReleased()
     {
         if (!HasStateAuthority) return;
-        
+        // 단일 소스 : stunInvincible에 위임(네트워크 동기화)
         stunInvincible?.SetHeld(false);
-        
+
         Debug.Log($"[{name}] 플레이어가 놓아졌습니다!");
     }
 } 

@@ -6,7 +6,7 @@ using UnityEngine;
 using System.Reflection;
 
 
-[NetworkSpawnManager(typeof(GameStates))]
+[NetworkSpawnDelay(typeof(GameStates))]
 public class GameStates : NetworkBehaviour, IStateMachineOwner
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
@@ -37,7 +37,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
-        NetworkEventSystem.Inst.RegisterManager(this);
+        NetworkEventSystem.Inst.RegisterNetDelay(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone(sceneName);
         ApplyInject();
     }
