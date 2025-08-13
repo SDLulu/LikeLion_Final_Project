@@ -122,21 +122,10 @@ public class GameStageCompletedState : BaseStateBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_PostCutScene()
     {
-        if (CutSceneC == null)
-        {
-            Debug.LogError("CutSceneC가 null입니다.");
-            return;
-        }
-
-        if (UIController == null)
-        {
-            Debug.LogError("UIController가 null입니다.");
-            return;
-        }
-
         CutSceneC.DefocusCutSceneCamera();
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
+        NetEvent.TriggerCutSceneActiveEvent(false);
     }
 
 
@@ -151,6 +140,8 @@ public class GameStageCompletedState : BaseStateBehaviour
             var player = playerObj.GetComponent<PlayerStageController>();
             playerWorldPos = player.GetPosition();
         }
+        var canvas = FindAnyObjectByType<UI_Game>().GetComponent<Canvas>();
+        FaderUtil.GetUIPosition(canvas, playerWorldPos);
         return playerWorldPos;
     }
 
@@ -160,17 +151,12 @@ public class GameStageCompletedState : BaseStateBehaviour
     {
         try
         {
-            if (UIEventSystem.Inst != null)
-            {
-                UIEventSystem.Inst.TriggerGameUIActive(false);
-            }
-
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Awaitable.NextFrameAsync();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
-            NetEvent.TriggerCutSceneActiveEvent(true);
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
+            NetEvent.TriggerCutSceneActiveEvent(true);
 
             _ = PlayCutSceneAsync(() =>
             {
@@ -202,9 +188,9 @@ public class GameStageCompletedState : BaseStateBehaviour
         try
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
-            await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPoint());
+            await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
             await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
-            await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPoint());
+            await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -225,7 +211,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             if (Runner.IsServer)
             {
                 await Awaitable.NextFrameAsync();
-                await Awaitable.WaitForSecondsAsync(2.0f);
+                await Awaitable.WaitForSecondsAsync(1.5f);
                 var nextStageData = DataManager.Inst.GetStageData(_stageDataIndex);
                 NetEvent.TriggerStageLoadDoneEvent(nextStageData);
 
@@ -259,7 +245,6 @@ public class GameStageCompletedState : BaseStateBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_FadeInUI()
     {
-        UIEventSystem.Inst.TriggerGameUIActive(true);
         NetEvent.TriggerCutSceneActiveEvent(false);
         await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
     }

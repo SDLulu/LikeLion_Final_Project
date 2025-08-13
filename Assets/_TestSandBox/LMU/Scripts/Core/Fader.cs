@@ -204,8 +204,7 @@ namespace LMCore
                 if (_bgImage != null)
                     _bgImage.color = color;
                 _contentsRoot.sizeDelta = _endSize;
-                var canvas = this.GetComponent<Canvas>();
-                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(GetComponent<Canvas>(), worldPos);
 
                 await _contentsRoot.DOSizeDelta(_startSize, seconds)
                     .SetEase(_fadeInEase)
@@ -237,8 +236,7 @@ namespace LMCore
                 _isFading = true;
                 _contentsRoot.sizeDelta = _startSize;
 
-                var canvas = this.GetComponent<Canvas>();
-                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(GetComponent<Canvas>(), worldPos);
                 if (_bgImage != null)
                     _bgImage.color = color;
                 _contentsRoot.gameObject.SetActive(true);

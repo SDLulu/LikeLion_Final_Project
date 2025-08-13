@@ -9,7 +9,8 @@ public class Drill : NetworkBehaviour, IItemInteraction
     [SerializeField] private float attackInterval = 0.1f; // 연속 공격 간격 (초)
     
     [Header("References")]
-    [SerializeField] private DrillAttackCollisionHandler drillAttackCollisionHandler;
+    [SerializeField] private AttackCollisionHandler attackHandler; // 공용 핸들러 사용
+    [SerializeField] private Collider2D attackCollider;            // 드릴 공격 콜라이더
     [SerializeField] private Transform drillSprite; // 드릴 스프라이트 Transform (별도 오브젝트)
     
     [Networked] private TickTimer AttackTimer { get; set; }
@@ -52,6 +53,13 @@ public class Drill : NetworkBehaviour, IItemInteraction
             base.Object.RenderSource = RenderSource.Interpolated;
             base.Object.ForceRemoteRenderTimeframe = true;
         }
+
+        // 공용 핸들러에 콜라이더 주입 및 초기 비활성화
+        if (attackHandler != null && attackCollider != null)
+        {
+            attackHandler.AttackCollider = attackCollider;
+            attackCollider.enabled = false;
+        }
     }
     
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
@@ -81,10 +89,8 @@ public class Drill : NetworkBehaviour, IItemInteraction
         IsDrilling = true;
         
         // 콜라이더 활성화
-        if (drillAttackCollisionHandler != null)
-        {
-            drillAttackCollisionHandler.SetColliderEnabled(true);
-        }
+        if (attackCollider != null)
+            attackCollider.enabled = true;
     }
     
     private void StopDrilling()
@@ -92,10 +98,8 @@ public class Drill : NetworkBehaviour, IItemInteraction
         IsDrilling = false;
         
         // 콜라이더 비활성화
-        if (drillAttackCollisionHandler != null)
-        {
-            drillAttackCollisionHandler.SetColliderEnabled(false);
-        }
+        if (attackCollider != null)
+            attackCollider.enabled = false;
         
         // 스프라이트 회전 초기화
         if (drillSprite != null)
@@ -124,10 +128,10 @@ public class Drill : NetworkBehaviour, IItemInteraction
             if (canAttack)
             {
                 // 콜라이더를 껐다 켜서 새로운 트리거 체크 발생
-                if (drillAttackCollisionHandler != null)
+                if (attackCollider != null)
                 {
-                    drillAttackCollisionHandler.SetColliderEnabled(false);
-                    drillAttackCollisionHandler.SetColliderEnabled(true);
+                    attackCollider.enabled = false;
+                    attackCollider.enabled = true;
                 }
                 
                 AttackTimer = TickTimer.CreateFromSeconds(Runner, attackInterval);
@@ -136,10 +140,8 @@ public class Drill : NetworkBehaviour, IItemInteraction
         else
         {
             // 콜라이더 비활성화
-            if (drillAttackCollisionHandler != null)
-            {
-                drillAttackCollisionHandler.SetColliderEnabled(false);
-            }
+            if (attackCollider != null)
+                attackCollider.enabled = false;
             
             // 스프라이트 회전 초기화
             if (drillSprite != null)

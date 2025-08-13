@@ -1,8 +1,6 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Linq;
-using UnityEngine.Animations;
 
 public class UI_PlayerSlot : MonoBehaviour
 {
@@ -155,8 +153,6 @@ public class UI_PlayerSlot : MonoBehaviour
         if (_headsetIcon != null) _headsetIcon.SetActive(_playerInventory.hasHeadset);
         if (_sunglassesIcon != null) _sunglassesIcon.SetActive(_playerInventory.hasSunglasses);
     }
-
-
 
     // --- Event Handlers ---
     private void OnInventoryDataChanged()
