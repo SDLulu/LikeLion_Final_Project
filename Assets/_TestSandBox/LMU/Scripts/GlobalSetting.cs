@@ -115,4 +115,5 @@ public class GlobalSetting : BaseManager<GlobalSetting>
     }
 
     public bool IsEnableBackend => _settingData.IsEnableBackend;
+    public bool IsEnableVoice => _settingData.IsEnableVoice;
 }

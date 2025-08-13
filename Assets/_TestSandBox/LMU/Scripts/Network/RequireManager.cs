@@ -2,11 +2,11 @@ using System;
 using UnityEngine;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-public class NetworkSpawnManagerAttribute : Attribute
+public class NetworkSpawnDelayAttribute : Attribute
 {
     public Type ManagerType { get; }
 
-    public NetworkSpawnManagerAttribute(Type managerType)
+    public NetworkSpawnDelayAttribute(Type managerType)
     {
         ManagerType = managerType;
     }
