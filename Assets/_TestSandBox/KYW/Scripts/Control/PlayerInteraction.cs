@@ -130,4 +130,4 @@ public class PlayerInteraction : NetworkBehaviour
 public interface IInteractable
 {
     void OnInteract(PlayerInteraction player);
-} 
+}
