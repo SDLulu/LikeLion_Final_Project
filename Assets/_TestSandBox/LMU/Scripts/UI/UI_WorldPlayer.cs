@@ -1,10 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_WorldPlayer : MonoBehaviour
+public class UI_WorldPlayer : NetworkBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private PlayerData _ownerPlayerData;
@@ -43,25 +44,34 @@ public class UI_WorldPlayer : MonoBehaviour
         {
             OnSceneLoadDone(sceneName);
         };
-        NetworkEventSystem.Inst.OnGameStateChangedEvent += (oldState, newState) =>
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += (runner, oldState, newState) =>
         {
-            OnStageChanged(oldState, newState);
+            OnStageChanged(runner, oldState, newState);
         };
 
         OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
     }
 
-    private void OnStageChanged(E_StateName oldState, E_StateName newState)
+    private void OnStageChanged(NetworkRunner runner, E_StateName oldState, E_StateName newState)
     {
+        if (runner.IsServer == false)
+            return;
+
         if (newState == E_StateName.LobbyState)
         {
+            RPC_ActiveReadyIcon(true);
             _ownerPlayerData.RPC_ToggleReady(false);
-            ActiveReadyIcon(true);
         }
         else
         {
-            ActiveReadyIcon(false);
+            RPC_ActiveReadyIcon(false);
         }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_ActiveReadyIcon(bool value)
+    {
+        ActiveReadyIcon(value);
     }
 
     public async void OnSceneLoadDone(string sceneName)
@@ -78,6 +88,12 @@ public class UI_WorldPlayer : MonoBehaviour
             }
 
             _readyButton.onClick.AddListener(OnReadyButtonClicked);
+        }
+
+        if (Runner.IsServer)
+        {
+            RPC_ActiveReadyIcon(true);
+            _ownerPlayerData.RPC_ToggleReady(false);
         }
     }
 
@@ -96,6 +112,9 @@ public class UI_WorldPlayer : MonoBehaviour
     /// </summary>
     public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
+        if (_ownerPlayerData.IsSpawned == false)
+            return;
+
         _playerName.text = _ownerPlayerData.NickName;
         _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
     }

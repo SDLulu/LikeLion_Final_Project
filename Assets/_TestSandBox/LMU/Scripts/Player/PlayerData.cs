@@ -65,9 +65,12 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
+    public bool IsSpawned = false;
+
     public override void Spawned()
     {
         NetworkEventSystem.Inst.RegisterNetDelay(this);
+        IsSpawned = true;
 
         // 닉네임 - 중요한 정보가 아니므로 로컬에서 설정
         if (Object.HasInputAuthority)

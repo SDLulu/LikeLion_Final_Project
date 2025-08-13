@@ -282,6 +282,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
                     if (prefab.GetComponent<NetworkObject>() != null)
                     {
+                        if (Runner.IsServer == false)
+                            return;
+
                         // 네트워크 오브젝트일 경우
                         Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
                         {

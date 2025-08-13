@@ -9,6 +9,7 @@ public class UI_StageProgress : MonoBehaviour
     [SerializeField] private TMP_Text _curStageText;
     [SerializeField] private TMP_Text _monsterKillCountText;
     [SerializeField] private TMP_Text _itemCollectCountText;
+    [SerializeField] private bool _showSessionTime = true;
 
     private void Awake()
     {
@@ -29,7 +30,10 @@ public class UI_StageProgress : MonoBehaviour
         int stageMinutes = stageWhole / 60;
         int stageSeconds = stageWhole % 60;
 
-        _sessionTimeText.text = string.Format("{0:00}:{1:00}", sessionMinutes, sessionSeconds);
+        if (_showSessionTime)
+        {
+            _sessionTimeText.text = string.Format("{0:00}:{1:00}", sessionMinutes, sessionSeconds);
+        }
         _stagePlayingTimeText.text = string.Format("{0:00}:{1:00}", stageMinutes, stageSeconds);
         _curStageText.text = currentStageId;
     }
@@ -38,5 +42,19 @@ public class UI_StageProgress : MonoBehaviour
     {
         _monsterKillCountText.text = monsterKillCount.ToString();
         _itemCollectCountText.text = itemCollectCount.ToString();
+    }
+
+    public void SetShowSessionTime(bool show)
+    {
+        _showSessionTime = show;
+        if (_sessionTimeText != null)
+        {
+            _sessionTimeText.gameObject.SetActive(show);
+        }
+    }
+
+    public bool IsSessionTimeVisible()
+    {
+        return _showSessionTime;
     }
 }

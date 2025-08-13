@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
 
-public class LobbyState : BaseStateBehaviour
+public class LobbyState : BaseStateBehaviour, IPlayerJoined
 {
     public override E_StateName StateName => E_StateName.LobbyState;
 
@@ -18,20 +18,40 @@ public class LobbyState : BaseStateBehaviour
     public bool IsGameSceneLoaded => _isGameSceneLoaded;
     private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
 
-    protected override void OnEnterState()
-    {
-        Debug.Log("LobbyState 진입");
-        PlayerM.RPC_MoveToLobbyScene();
-        LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
-        LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(false);
+    private static bool _isFirst = true;
 
-        Vector3 targetPos = GlobalSetting.Inst.LobbySpawnPos;
-        var players = PlayerM.GetPlayers();
-        foreach (var player in players)
+
+    // 로비씬에 플레이어가 참가할때
+    public void PlayerJoined(PlayerRef player)
+    {
+        if (Runner.IsServer)
         {
-            var stageController = player.Value.GetComponent<PlayerStageController>();
-            stageController.SetPosition(targetPos);
+            PlayerM.RPC_MoveToLobbyScene_Target(player);
         }
+    }
+
+    protected override async void OnEnterState()
+    {
+        if (Runner.IsServer)
+        {
+            PlayerM.RPC_MoveToLobbyScene();
+
+            Vector3 targetPos = GlobalSetting.Inst.LobbySpawnPos;
+            var players = PlayerM.GetPlayers();
+            foreach (var player in players)
+            {
+                var stageController = player.Value.GetComponent<PlayerStageController>();
+                stageController.SetPosition(targetPos);
+            }
+
+            if (_isFirst == false)
+            {
+                await Awaitable.WaitForSecondsAsync(3.0f);
+                RPC_FadeInUI();
+            }
+            _isFirst = false;
+        }
+
     }
 
     protected override async void OnFixedUpdate()
@@ -94,8 +114,9 @@ public class LobbyState : BaseStateBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_FadeInUI()
     {
-        UIEventSystem.Inst.TriggerGameUIActive(true);
-        LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
+        UIEventSystem.Inst.TriggerGameUIActive(false);
+        LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
+        LobbyUI_Manager.Inst.UITitle.gameObject.SetActive(false);
         _ = Fader.FadeInAsync(Color.black, 1.0f);
     }
 

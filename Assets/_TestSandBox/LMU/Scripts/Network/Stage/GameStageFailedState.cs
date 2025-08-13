@@ -9,11 +9,16 @@ public class GameStageFailedState : BaseStateBehaviour
 
     protected override async void OnEnterState()
     {
-        // 현재 씬인 게임씬을 언로드 후 로비상태진입
-        string gameSceneName = GlobalSetting.Inst.GameScenePath;
-        string lobbySceneName = GlobalSetting.Inst.LobbyScenePath;
-        await LevelManager.UnloadSceneAsync(gameSceneName, lobbySceneName);
-        StateOwner.DelayForceActiveState<LobbyState>();
+        if (Runner.IsServer)
+        {
+            GameStates.RPC_FadeOutUI(this.Runner, 1.0f);
+            await Awaitable.WaitForSecondsAsync(2.0f);
+            // 현재 씬인 게임씬을 언로드 후 로비상태진입
+            string gameSceneName = GlobalSetting.Inst.GameScenePath;
+            string lobbySceneName = GlobalSetting.Inst.LobbyScenePath;
+            await LevelManager.UnloadSceneAsync(gameSceneName, lobbySceneName);
+            StateOwner.DelayForceActiveState<LobbyState>();
+        }
     }   
 
     protected override void OnFixedUpdate()
