@@ -82,7 +82,15 @@ public class SpeedShoes : NetworkBehaviour, IItemInteraction
     private void RemoveFromHand()
     {
         if (!Object.HasStateAuthority) return;
-        
+        var shopitem = GetComponent<ShopItem>();
+        var shopmanager = FindFirstObjectByType<ShopManager>();
+        if (shopitem != null)
+        {
+            if (shopitem.ItemData.IsAvailable)
+            {
+                shopmanager.Rpc_ReportTheftByData(shopitem.ItemData);
+            }
+        }
         // 자신을 들고 있는 플레이어의 던지기 컴포넌트 찾기
         var playerThrower = GetComponentInParent<PlayerObjectThrower>();
         if (playerThrower != null)

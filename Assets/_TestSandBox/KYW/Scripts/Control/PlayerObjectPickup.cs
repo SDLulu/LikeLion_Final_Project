@@ -126,27 +126,69 @@ public class PlayerObjectPickup : NetworkBehaviour
         if (Object.HasStateAuthority)
         {
             Debug.Log($"[PlayerObjectPickup] StateAuthority에서 PickupObject 시도");
-            
-            // 플레이어인 경우 특별 처리 (이미 들린 상태면 거부)
-            if (obj.layer == LayerMask.NameToLayer("Player"))
+            // 1) 캐릭터(IPlayerInteraction) 우선 처리
+            var character = obj.GetComponent<IPlayerInteraction>();
+            if (character != null)
             {
-                var p = obj.GetComponent<IPlayerInteraction>();
-                if (p != null)
+                if (character.IsHeld)
                 {
-                    if (p.IsHeld)
-                    {
-                        Debug.Log("[PlayerObjectPickup] 이미 들려있는 플레이어는 픽업 불가");
-                        return;
-                    }
-                    p.OnPickedUp();
+                    Debug.Log("[PlayerObjectPickup] 이미 들려있는 캐릭터는 픽업 불가");
+                    return;
                 }
+                character.OnPickedUp();
+                if (!FinalizePickup(obj, networkObject, isCharacter: true)) return;
+                return;
             }
-            
-            // 아이템인 경우 IItemInteraction 체크
-            if (obj.layer == LayerMask.NameToLayer("Item"))
+
+            // 2) 아이템(IItemInteraction)
+            var item = obj.GetComponent<IItemInteraction>();
+            if (item != null)
             {
                 var itemInteraction = obj.GetComponent<IItemInteraction>();
+                var shopitem = obj.GetComponent<ShopItem>();
+                if(shopitem != null)
+                {
+                    shopitem.OnPickedUp();
+
+                }
                 if (itemInteraction != null)
+                if (item.IsHeld)
+                {
+                    Debug.Log("[PlayerObjectPickup] 이미 들려있는 아이템은 픽업 불가");
+                    return;
+                }
+                item.OnPickedUp();
+                if (!FinalizePickup(obj, networkObject, isCharacter: false)) return;
+                return;
+            }
+
+            Debug.Log("[PlayerObjectPickup] 지원되지 않는 대상");
+        }
+    }
+
+    // 최종 픽업 공통 마무리: 보유 등록, 부모/위치, 입력권한, 물리전환
+    private bool FinalizePickup(GameObject obj, NetworkObject netObj, bool isCharacter)
+    {
+        bool picked = inventory.HoldObject(obj);
+        if (!picked) return false;
+
+        nearbyObjects.Remove(obj);
+        obj.transform.SetParent(transform);
+
+        obj.transform.localPosition = isCharacter ? playerHoldOffset : Vector3.zero;
+        obj.transform.localRotation = Quaternion.identity;
+
+        if (!isCharacter)
+        {
+            if (!netObj.HasInputAuthority)
+            {
+                netObj.AssignInputAuthority(Object.InputAuthority);
+            }
+        }
+
+        DisableItemPhysics(obj);
+        Debug.Log($"[PlayerObjectPickup] FinalizePickup 완료: {obj.name} (isCharacter:{isCharacter})");
+        return true;
                 {
                     // 아이템의 OnPickedUp 호출
                     itemInteraction.OnPickedUp();
