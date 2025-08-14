@@ -219,26 +219,26 @@ public class AttackCollisionHandler : NetworkBehaviour
         // 1) 스킨 변경 (네트워크 값만 변경)
         appearance.ChangeSkin(statue.SkinKey);
 
-		// 2) 간단 플로우: 플레이어를 동상 위치로 이동 → 동상에 원래 플레이어 위치로 이동 요청
+		// 2) 위치 스왑: 플레이어와 동상의 위치를 바꿈
 		var playerRoot = attackerRoot != null ? attackerRoot : transform;
 		var playerObj = playerRoot.GetComponentInParent<NetworkObject>();
 		var statueBehaviour = statue.GetComponentInParent<CharacterStatue>();
 		var statueObj = statue.GetComponentInParent<NetworkObject>();
 		if (playerObj == null || statueBehaviour == null || statueObj == null) return false;
 
+		// NetworkObject 유효성 가드(초기 스폰 전 호출 방지)
+		if (playerObj.Id == default || statueObj.Id == default)
+		{
+			Debug.LogWarning("[StatueSwap] NetworkObject not valid yet. Abort swap.");
+			return false;
+		}
+
 		// 원래 플레이어 위치 저장
 		Vector3 originalPlayerPos = playerRoot.position;
 		Vector3 statuePos = statueObj.transform.position;
 
-		// 권한 측에서 플레이어 즉시 이동 (NRB2D 우선)
-		var playerNrb = playerObj.GetComponent<NetworkRigidbody2D>();
-		if (playerNrb != null) playerNrb.Teleport(statuePos, null);
-		else
-		{
-			var prb = playerObj.GetComponent<Rigidbody2D>();
-			if (prb != null) { prb.position = (Vector2)statuePos; prb.linearVelocity = Vector2.zero; prb.angularVelocity = 0f; }
-			else { playerObj.transform.position = statuePos; }
-		}
+		// 플레이어를 동상 위치로 순간이동 (속도 0으로 제한)
+		TeleportPlayerToPosition(playerObj, statuePos);
 
 		// 동상 측(StateAuthority)에서 원래 플레이어 위치로 이동 요청
 		statueBehaviour.Rpc_RequestMoveTo((Vector2)originalPlayerPos);
@@ -248,9 +248,33 @@ public class AttackCollisionHandler : NetworkBehaviour
 		return true;
     }
 
-	[Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-	private void RPC_SnapRemote(NetworkId playerId, NetworkId statueId, Vector2 playerTargetPos, Vector2 statueTargetPos)
+	/// <summary>
+	/// 플레이어를 지정 위치로 순간이동하고 속도를 0으로 제한
+	/// </summary>
+	private void TeleportPlayerToPosition(NetworkObject playerObj, Vector3 targetPos)
 	{
-		// 비활성화: 스냅 보정은 동상 RPC 경로에서 처리
+		// NetworkRigidbody2D 우선 처리
+		var playerNrb = playerObj.GetComponent<NetworkRigidbody2D>();
+		if (playerNrb != null)
+		{
+			playerNrb.Teleport(targetPos, null);
+			// 속도를 0으로 제한
+			playerNrb.Rigidbody.linearVelocity = Vector2.zero;
+			playerNrb.Rigidbody.angularVelocity = 0f;
+			return;
+		}
+
+		// 일반 Rigidbody2D 처리
+		var prb = playerObj.GetComponent<Rigidbody2D>();
+		if (prb != null)
+		{
+			prb.position = (Vector2)targetPos;
+			prb.linearVelocity = Vector2.zero;
+			prb.angularVelocity = 0f;
+			return;
+		}
+
+		// Transform만 있는 경우
+		playerObj.transform.position = targetPos;
 	}
 } 
