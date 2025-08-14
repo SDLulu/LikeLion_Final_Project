@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,21 +39,15 @@ public class UI_WorldPlayer : MonoBehaviour
 
     public void OnInit()
     {
+        // 게임 진행중일때만 비활성화
+        UIEventSystem.Inst.OnGameUIActiveEvent -= ActiveReadyIcon;
+        UIEventSystem.Inst.OnGameUIActiveEvent += ActiveReadyIcon;
         PlayerManager.Inst.AddPlayerDataAction(UpdateData);
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
-        {
-            OnSceneLoadDone(sceneName);
-        };
-
         OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
     }
 
     public async void OnSceneLoadDone(string sceneName)
     {
-        // 로비씬에서만 활성화
-        bool toggleRet = sceneName == GlobalSetting.Inst.LobbyScenePath;
-        ToggleReadyIcon(toggleRet);
-
         // 비동기로 로비버튼을 찾아서 초기화
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
@@ -68,12 +63,7 @@ public class UI_WorldPlayer : MonoBehaviour
         }
     }
 
-    private void ToggleReadyIcon(bool value)
-    {
-        _playerReadyIcon.gameObject.SetActive(value);
-    }
-
-    private void OnReadyButtonClicked()
+    public void OnReadyButtonClicked()
     {
         _ownerPlayerData.RPC_ToggleReady(_ownerPlayerData.IsReady == false);
     }
@@ -83,7 +73,20 @@ public class UI_WorldPlayer : MonoBehaviour
     /// </summary>
     public void UpdateData(Dictionary<Fusion.PlayerRef, PlayerData> players)
     {
+        if (_ownerPlayerData.IsSpawned == false)
+            return;
+
         _playerName.text = _ownerPlayerData.NickName;
         _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
+    }
+
+    private void ActiveReadyIcon(bool value)
+    {
+        if (this == null)
+            return;
+        if (_playerReadyIcon == null || _playerReadyIcon.Equals(null))
+            return;
+
+        _playerReadyIcon.gameObject.SetActive(value == false);
     }
 }

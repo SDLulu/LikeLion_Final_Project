@@ -63,6 +63,11 @@ public class Gold : NetworkBehaviour
             }
             
             Debug.Log($"골드 {goldAmount}개를 수집했습니다! 현재 골드: {playerInventory.CurrentMoney}");
+            var netObj = playerInventory.GetComponentInParent<NetworkObject>();
+            if (netObj != null)
+            {
+                NetworkEventSystem.Inst.TriggerItemCollected(netObj.InputAuthority, goldAmount);
+            }
             
             // 골드 오브젝트 제거
             Runner.Despawn(Object);
