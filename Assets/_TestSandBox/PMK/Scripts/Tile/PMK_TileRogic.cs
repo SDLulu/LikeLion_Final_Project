@@ -234,20 +234,77 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 randomIndex = Random.Range(0, prefabs.Length);
             }
 
+            // 바로 useMapXY를 먼저 true로 바꿔야 함 (설치 예정 상태로 표시)
+            Vector2 pos = new Vector2(spawnXpos, spawnYpos);
+            for (int y = 0; y < maxTileY; y++)
+            {
+                for (int x = 0; x < maxTileX; x++)
+                {
+                    if (mapXY[x, y] == pos)
+                        useMapXY[x, y] = true; // ★ 여기서 먼저 막아줘야 중복 안 생김
+                }
+            }
+
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
     }
 
-
+    public bool isCreatingMap = false;
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
+        StartCoroutine(DelayCreate_Map(mapType, randomIndex, spawnXpos, spawnYpos));
+    }
+    #endregion
+
+    private IEnumerator DelayCreate_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
+    {
+        //// 다른 맵 생성이 진행 중이면 대기
+        //while (isCreatingMap)
+        //    yield return null;
+
+        isCreatingMap = true; // 락 걸기
+
+        List<Vector3Int> tilePositions = new List<Vector3Int>();
+
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
             GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
 
             Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
             Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
+
+
+            // 생성된 맵을 부모 오브젝트에 자식으로 추가
+            foreach (Transform child in temp.transform)
+            {
+                if (child.GetComponent<Tilemap>() != null)
+                    continue;
+
+                Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
+                GameObject prefab = child.gameObject;
+
+
+                if (prefab.GetComponent<EnemyFSM>() != null)
+                {
+
+                    Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                    {
+                        obj.transform.SetParent(parentTrans);
+                        obj.name = prefab.name;
+                    });
+                }
+                else
+                {
+                    // 일반 오브젝트일 경우
+                    GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
+                    obj.name = prefab.name;
+                }
+            }
+
+            // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
+            Destroy(temp);
+
 
             // 생성할 위치가 타일맵의 셀 좌표로 변환
             foreach (Tilemap sourceTilemap in tilemaps)
@@ -269,61 +326,20 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             mainTilemap.SetTile(targetPos, tile);
                             Create_TileItem(targetPos);
 
+                            tilePositions.Add(targetPos);
+
                             StartCoroutine(DelayedCreateEnemy(targetPos));
+
+
+                            yield return null; // 한 프레임 대기
                         }
                     }
                 }
             }
-
-            // 생성된 맵을 부모 오브젝트에 자식으로 추가
-            foreach (Transform child in temp.transform)
-            {
-                if (child.GetComponent<Tilemap>() == null)
-                {
-                    Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
-                    GameObject prefab = child.gameObject;
-
-
-                    if (prefab.GetComponent<EnemyFSM>() != null)
-                    {
-                        if (!Runner.IsServer) return;
-
-                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
-                        {
-                            obj.transform.SetParent(parentTrans);
-                            obj.name = prefab.name;
-                        });
-                    }
-                    else
-                    {
-                        // 일반 오브젝트일 경우
-                        GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
-                        obj.name = prefab.name;
-                    }
-                }
-            }
-
-            // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
-            Destroy(temp);
-
-
-            // 생성된 맵의 위치를 useMapXY에 저장
-            Vector2 pos = new Vector2(spawnXpos, spawnYpos);
-            for (int y = 0; y < maxTileY; y++)
-            {
-                for (int x = 0; x < maxTileX; x++)
-                {
-                    if (mapXY[x, y] == pos)
-                    {
-                        useMapXY[x, y] = true;
-                        return;
-                    }
-                }
-            }
         }
-    }
-    #endregion
 
+        isCreatingMap = false; // 혹시 실패했을 경우도 해제
+    }
 
     #region 타일에 아이템 생성
     public void Create_TileItem(Vector3Int targetPos)
@@ -380,7 +396,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #region 타일 위에 적 생성
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
-        yield return null; // 한 프레임 대기
+        while (isCreatingMap)
+            yield return null;
+
+        yield return new WaitForSeconds(2f);
 
         if (Random.value > 0.1f) yield break;
 
@@ -419,7 +438,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #endregion
 
 
-        #region 스폰맵 생성
+    #region 스폰맵 생성
     private void SpawnMap_Instantiate()
     {
         removeMapX = Random.Range(0, maxTileX);

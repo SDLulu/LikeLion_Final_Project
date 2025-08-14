@@ -57,7 +57,8 @@ public class PMK_TileDestroyItem : MonoBehaviour
                         var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
                         if (tileLogic != null)
                         {
-                            tileLogic.Rpc_DestroyTile(checkPos);
+                            Vector3Int intPos = Vector3Int.FloorToInt(new Vector3(checkPos.x, checkPos.y, 0f));
+                            tileLogic.Rpc_DestroyTile(intPos);
                         }
                     }
 
