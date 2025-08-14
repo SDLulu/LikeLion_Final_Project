@@ -423,8 +423,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
             yield break; // 위에 게임 오브젝트가 있음
         }
 
-        Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
+        if (objectToSpawnIfTileExists != null)
         {
+            Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
+            {
             obj.transform.SetParent(parentTrans);
             obj.name = objectToSpawnIfTileExists.name;
 
@@ -434,6 +436,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 Runner.SetIsSimulated(netObj, true); // ← 반드시 추가
             }
         });
+        }
+
+       
     }
     #endregion
 

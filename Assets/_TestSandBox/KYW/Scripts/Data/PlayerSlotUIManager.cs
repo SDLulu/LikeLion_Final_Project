@@ -1,131 +1,100 @@
 using System.Collections.Generic;
+using LMCore;
+using Fusion;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class PlayerSlotUIManager : MonoBehaviour
+public class PlayerSlotUIManager : BaseManager<PlayerSlotUIManager>
 {
-    #region Singleton
-    private static PlayerSlotUIManager _instance;
-    private static readonly object _lock = new object();
-    private static bool _shuttingDown = false;
-
-    public static PlayerSlotUIManager Inst
-    {
-        get
-        {
-            if (_shuttingDown)
-            {
-                Debug.LogWarning("[Singleton] PlayerSlotUIManager 인스턴스가 이미 파괴되었습니다. null을 반환합니다.");
-                return null;
-            }
-
-            lock (_lock)
-            {
-                if (_instance == null)
-                {
-                    _instance = FindAnyObjectByType<PlayerSlotUIManager>();
-                    if (_instance == null)
-                    {
-                        var singletonObject = new GameObject();
-                        _instance = singletonObject.AddComponent<PlayerSlotUIManager>();
-                        singletonObject.name = "PlayerSlotUIManager (Singleton)";
-                        DontDestroyOnLoad(singletonObject);
-                    }
-                }
-                return _instance;
-            }
-        }
-    }
-
-
-    private void Awake()
-    {
-        if (_instance == null)
-        {
-            _instance = this;
-            DontDestroyOnLoad(this.gameObject);
-        }
-        else if (_instance != this)
-        {
-            Debug.Log("[Singleton] PlayerSlotUIManager 인스턴스가 이미 존재합니다. 중복을 제거합니다.");
-            Destroy(this.gameObject);
-        }
-    }
-
-    private void OnApplicationQuit()
-    {
-        _shuttingDown = true;
-    }
-
-    private void OnDestroy()
-    {
-        if (_instance == this)
-        {
-            _instance = null;
-            _shuttingDown = true;
-        }
-    }
-    #endregion
-
     [Header("UI 설정")]
     [SerializeField] private HorizontalLayoutGroup _playerUIContainer;
 
     [SerializeField] private List<UI_PlayerSlot> _playerUIs = new();
 
+    private bool _isCutSceneActive = false;
+    private E_StateName _currentState = E_StateName.WaitingState;
+
     private void Start()
     {
-        // 씬 활성화 여부 / 컷씬 활성화 여부
-        SceneManager.activeSceneChanged += (preScene, nextScene) =>
-        {
-            OnSceneLoadDone(nextScene.name);
-        };
-        NetworkEventSystem.Inst.OnCutSceneActiveEvent += (isActive) =>
-        {
-            OnCutSceneActive(isActive);
-        };
+         LobbyManager.Inst.OnNetworkEventsBound += RegisterEvents;
+    }
+    private void RegisterEvents()
+    {
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
+        NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
+        NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
+		NetworkEventSystem.Inst.OnShutdownEvent -= OnNetworkShutdown;
+		NetworkEventSystem.Inst.OnShutdownEvent += OnNetworkShutdown;
+        UpdateVisibility();
     }
 
-    private void OnSceneLoadDone(string sceneName = "")
+    private void OnDisable()
     {
-        // 게임 씬일때만 활성화
-        if (string.IsNullOrEmpty(sceneName))
-            sceneName = LocalSceneManager.Inst.GetActiveScene().name;
+        if (NetworkEventSystem.HasInstance)
+        {
+            NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
+            NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
+			NetworkEventSystem.Inst.OnShutdownEvent -= OnNetworkShutdown;
+        }
+    }
 
-        if (sceneName == GlobalSetting.Inst.GameScenePath)
+    private void OnDestroy()
+    {
+        if (NetworkEventSystem.HasInstance)
         {
-            ActivePlayerSlots();
+            NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
+            NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
+			NetworkEventSystem.Inst.OnShutdownEvent -= OnNetworkShutdown;
         }
-        else if (sceneName == GlobalSetting.Inst.LobbyScenePath)
-        {
-            DeactivePlayerSlots();
-        }
-        else
-        {
-            DeletePlayerSlots();
-        }
+    }
+
+	private void OnNetworkEventsUnboundFromLobby()
+	{
+		DeletePlayerSlots();
+	}
+
+	private void OnNetworkShutdown(NetworkRunner runner, ShutdownReason reason)
+	{
+		DeletePlayerSlots();
+	}
+
+    private void OnGameStateChanged(NetworkRunner runner, E_StateName previous, E_StateName current)
+    {
+        _currentState = current;
+        UpdateVisibility();
     }
 
     public void OnCutSceneActive(bool isCutSceneActive)
     {
-        // 현재씬 체크
-        OnSceneLoadDone();
-        
-        if (isCutSceneActive)
+        _isCutSceneActive = isCutSceneActive;
+        UpdateVisibility();
+    }
+
+    private void UpdateVisibility()
+    {
+        if (_isCutSceneActive)
         {
             DeactivePlayerSlots();
+            return;
         }
-        else
+
+        if (_currentState == E_StateName.LobbyState)
         {
-            ActivePlayerSlots();
+            DeactivePlayerSlots();
+            return;
         }
+
+        ActivePlayerSlots();
     }
 
     public void ActivePlayerSlots()
     {
+        if (_playerUIs == null)
+            return;
         foreach (var playerUI in _playerUIs)
         {
-            if (playerUI == null) 
+            if (playerUI == null)
                 continue;
             playerUI.gameObject.SetActive(true);
         }
@@ -133,9 +102,11 @@ public class PlayerSlotUIManager : MonoBehaviour
 
     public void DeactivePlayerSlots()
     {
+        if (_playerUIs == null)
+            return;
         foreach (var playerUI in _playerUIs)
         {
-            if (playerUI == null) 
+            if (playerUI == null)
                 continue;
             playerUI.gameObject.SetActive(false);
         }
@@ -143,10 +114,17 @@ public class PlayerSlotUIManager : MonoBehaviour
 
     public void DeletePlayerSlots()
     {
-        foreach (var playerUI in _playerUIs)
+        if (_playerUIs == null)
+            return;
+
+        for (int i = _playerUIs.Count - 1; i >= 0; i--)
         {
+            var playerUI = _playerUIs[i];
             if (playerUI == null)
+            {
+                _playerUIs.RemoveAt(i);
                 continue;
+            }
             UnregisterPlayerUI(playerUI);
         }
     }
@@ -177,9 +155,6 @@ public class PlayerSlotUIManager : MonoBehaviour
         {
             Debug.LogError("📱 PlayerSlotUIManager: PlayerUIContainer가 설정되지 않았습니다!");
         }
-
-        // 추가될때 현재씬을 확인후 확인
-        OnSceneLoadDone();
     }
 
     // 플레이어 UI 제거
@@ -194,6 +169,7 @@ public class PlayerSlotUIManager : MonoBehaviour
         }
 
         GameObject.Destroy(playerUI.gameObject);
+        
     }
 
     // 현재 등록된 플레이어 UI 개수

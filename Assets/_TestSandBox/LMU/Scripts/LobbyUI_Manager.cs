@@ -19,7 +19,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     {
 #if UNITY_EDITOR
         _curSceneNameText.text = "현재 씬 : " + SceneManager.GetActiveScene().name + "\n" +
-        "백엔드 활성화 여부 : " + BackEndWorkFlow.IsFakeClient + "\n" +
+        "백엔드 활성화 여부 : " + GlobalSetting.Inst.IsEnableBackend + "\n" +
         "보이스 활성화 여부 : " + GlobalSetting.Inst.IsEnableVoice;
 #else
         _curSceneNameText.gameObject.SetActive(false);
@@ -57,6 +57,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
 
     public void ActiveLobbyOnLineUI()
     {
+        UILobby.gameObject.SetActive(true);
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.ActiveOnlinePanel();
         UIChatting.gameObject.SetActive(true);

@@ -1,12 +1,10 @@
 using System.Linq;
-using Fusion;
-using Fusion.Addons.FSM;
 using LMCore;
 using UnityEngine;
 
 public class GameStagePlayingState : BaseStateBehaviour
 {
-    public override E_StateName StateName => E_StateName.GameStagePlayingState;
+    public override E_StateName StateName => E_StateName.PlayingState;
 
     protected override void OnEnterState()
     {
@@ -32,8 +30,7 @@ public class GameStagePlayingState : BaseStateBehaviour
                 playerC.SetPosition(startPos[0].transform.position);
             }
 
-            // 모든 로딩이 완료된 후 화면을 밝힘
-            GameStates.RPC_FadeInUI(this.Runner);
+            GameStates.RPC_FadeInUI(Runner, 1.0f);
         }
     }
 
