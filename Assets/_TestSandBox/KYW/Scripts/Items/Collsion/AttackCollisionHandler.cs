@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Fusion;
+using Fusion.Addons.Physics;
 using UnityEngine;
 
 public class AttackCollisionHandler : NetworkBehaviour
@@ -25,13 +26,25 @@ public class AttackCollisionHandler : NetworkBehaviour
     [Header("Statue Hit Control")]
     [SerializeField] private float statueSwapCooldownSeconds = 0.15f;
     [Networked] private TickTimer StatueSwapCooldown { get; set; }
+
+    // 스왑 예약용 로컬 상태(권한 측 전용)
+    private bool pendingSwap;
+    private NetworkObject pendingPlayerObj;
+    private NetworkObject pendingStatueObj;
+    private Vector2 pendingPlayerTargetPos;
+    private Vector2 pendingStatueTargetPos;
     
     public override void Spawned()
     {
         weaponItem = GetComponentInParent<IItemInteraction>();
         Runner.SetIsSimulated(Object, true);
     }
-    
+
+    public override void FixedUpdateNetwork()
+    {
+        // no-op: 스왑은 동상(StateAuthority) RPC에서 수행
+    }
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!HasStateAuthority) return;
@@ -164,6 +177,12 @@ public class AttackCollisionHandler : NetworkBehaviour
         if (itemInteraction != null)
         {
             ApplyKnockbackOnly(target, itemInteraction);
+            // 아이템도 데미지를 받을 수 있다면 체력 감소 처리
+            var damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(attackDamage);
+            }
             TryHandleStatueSwap(target);
         }
     }
@@ -199,41 +218,38 @@ public class AttackCollisionHandler : NetworkBehaviour
         // 1) 스킨 변경 (네트워크 값만 변경)
         appearance.ChangeSkin(statue.SkinKey);
 
-        // 2) 위치 스왑 (StateAuthority에서만 적용)
-        var playerTransform = attackerRoot;
-        var statueTransform = (statue.RootToMove != null ? statue.RootToMove : statue.transform);
+		// 2) 간단 플로우: 플레이어를 동상 위치로 이동 → 동상에 원래 플레이어 위치로 이동 요청
+		var playerRoot = attackerRoot != null ? attackerRoot : transform;
+		var playerObj = playerRoot.GetComponentInParent<NetworkObject>();
+		var statueBehaviour = statue.GetComponentInParent<CharacterStatue>();
+		var statueObj = statue.GetComponentInParent<NetworkObject>();
+		if (playerObj == null || statueBehaviour == null || statueObj == null) return false;
 
-        Vector3 playerPos = playerTransform.position;
-        Vector3 statuePos = statueTransform.position;
+		// 원래 플레이어 위치 저장
+		Vector3 originalPlayerPos = playerRoot.position;
+		Vector3 statuePos = statueObj.transform.position;
 
-        var playerRb = playerTransform.GetComponent<Rigidbody2D>();
-        var statueRb = statueTransform.GetComponent<Rigidbody2D>();
+		// 권한 측에서 플레이어 즉시 이동 (NRB2D 우선)
+		var playerNrb = playerObj.GetComponent<NetworkRigidbody2D>();
+		if (playerNrb != null) playerNrb.Teleport(statuePos, null);
+		else
+		{
+			var prb = playerObj.GetComponent<Rigidbody2D>();
+			if (prb != null) { prb.position = (Vector2)statuePos; prb.linearVelocity = Vector2.zero; prb.angularVelocity = 0f; }
+			else { playerObj.transform.position = statuePos; }
+		}
 
-        // 속도 정지
-        if (playerRb != null)
-        {
-            playerRb.linearVelocity = Vector2.zero;
-            playerRb.angularVelocity = 0f;
-        }
-        if (statueRb != null)
-        {
-            statueRb.linearVelocity = Vector2.zero;
-            statueRb.angularVelocity = 0f;
-        }
+		// 동상 측(StateAuthority)에서 원래 플레이어 위치로 이동 요청
+		statueBehaviour.Rpc_RequestMoveTo((Vector2)originalPlayerPos);
 
-        // 위치 교환 (Z는 각자 유지)
-        if (playerRb != null)
-            playerRb.position = new Vector2(statuePos.x, statuePos.y);
-        else
-            playerTransform.position = new Vector3(statuePos.x, statuePos.y, playerPos.z);
-
-        if (statueRb != null)
-            statueRb.position = new Vector2(playerPos.x, playerPos.y);
-        else
-            statueTransform.position = new Vector3(playerPos.x, playerPos.y, statuePos.z);
-
-        // 추가 트리거 방지용 쿨다운 시작
-        StatueSwapCooldown = TickTimer.CreateFromSeconds(Runner, statueSwapCooldownSeconds);
-        return true;
+		// 쿨다운 시작
+		StatueSwapCooldown = TickTimer.CreateFromSeconds(Runner, statueSwapCooldownSeconds);
+		return true;
     }
+
+	[Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+	private void RPC_SnapRemote(NetworkId playerId, NetworkId statueId, Vector2 playerTargetPos, Vector2 statueTargetPos)
+	{
+		// 비활성화: 스냅 보정은 동상 RPC 경로에서 처리
+	}
 } 

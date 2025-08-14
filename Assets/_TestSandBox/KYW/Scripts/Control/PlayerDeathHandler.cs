@@ -448,62 +448,19 @@ public class PlayerDeathHandler : NetworkBehaviour
         return _deadPos != null ? _deadPos.position : deathPosition;
     }
 
-    // 플레이어 텔레포트 + 속도 초기화
+    // 플레이어 텔레포트 (권한 측에서만)
     private void TeleportPlayer(Vector3 targetPosition)
     {
-        if (_playerRoot != null)
-        {
-            if (_playerRootRb != null)
-            {
-                _playerRootRb.position = targetPosition;
-                _playerRootRb.linearVelocity = Vector2.zero;
-                _playerRootRb.angularVelocity = 0f;
-            }
-            else
-            {
-                _playerRoot.position = targetPosition;
-            }
-        }
-        else
-        {
-            transform.position = targetPosition;
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
+        var target = _playerRoot != null ? _playerRoot : transform;
+        NetworkMoveUtil.Teleport(this, target, targetPosition);
     }
 
     // 시각 위치를 모든 클라이언트에 즉시 반영 (NetworkTransform이 없을 때 보정)
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_TeleportPlayer(Vector3 targetPosition)
     {
-        // 서버는 이미 텔레포트 수행, 클라이언트만 보정
         if (HasStateAuthority) return;
-        if (_playerRoot != null)
-        {
-            _playerRoot.position = targetPosition;
-            var rb = _playerRootRb ?? _playerRoot.GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
-        else
-        {
-            transform.position = targetPosition;
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
+        var target = _playerRoot != null ? _playerRoot : transform;
+        NetworkMoveUtil.Teleport(this, target, targetPosition);
     }
 } 

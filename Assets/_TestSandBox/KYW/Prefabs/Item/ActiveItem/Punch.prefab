@@ -49,6 +49,15 @@ MonoBehaviour:
   knockbackForce: 5
   knockbackDuration: 0.5
   AttackCollider: {fileID: 5856941372324168473}
+  enableTileDestruction: 1
+  destroyLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  gridSampleStep: 0.5
+  fallbackRadius: 0
+  tileItemTag: Tileitem
+  destroyObjectTag: BoobDestoryObj
+  statueSwapCooldownSeconds: 0.15
 --- !u!58 &5856941372324168473
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -95,9 +104,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7335317480394317469}
   - component: {fileID: 7945472705208556351}
-  - component: {fileID: 3597694245438659254}
   - component: {fileID: 4988725899642136857}
-  - component: {fileID: 2372182561793394747}
+  - component: {fileID: 4000668789107874388}
+  - component: {fileID: 4908392773709674517}
   m_Layer: 8
   m_Name: Punch
   m_TagString: Untagged
@@ -137,27 +146,6 @@ MonoBehaviour:
   punchDistance: 1.2
   punchDuration: 0.15
   AttackCollisionHandler: {fileID: 5223453545016697367}
---- !u!114 &3597694245438659254
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3908651508869614236}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 2370725174
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 7945472705208556351}
-  - {fileID: 2372182561793394747}
-  - {fileID: 5223453545016697367}
-  ForceRemoteRenderTimeframe: 0
 --- !u!50 &4988725899642136857
 Rigidbody2D:
   serializedVersion: 5
@@ -185,7 +173,28 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &2372182561793394747
+--- !u!114 &4000668789107874388
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3908651508869614236}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3125807562
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 7945472705208556351}
+  - {fileID: 4908392773709674517}
+  - {fileID: 5223453545016697367}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &4908392773709674517
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
