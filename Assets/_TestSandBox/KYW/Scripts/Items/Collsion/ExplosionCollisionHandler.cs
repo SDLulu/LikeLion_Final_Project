@@ -169,17 +169,24 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 
 	private void ProcessDestroyAtPoint(Vector2 point)
 	{
-        // 포인트 기반 처리 (기존)
+        // 셀 기반 RPC로 일원화: 히트 지점 기준 가장 가까운 1셀 파괴 + 해당 셀 아이템/파괴오브젝트 정리
+        var mgr = UnityEngine.Object.FindAnyObjectByType<PMK_TileRPC_Manager>();
+        if (mgr != null)
+        {
+            mgr.Rpc_DestroyTileAndCleanup(point);
+            return;
+        }
+        // 폴백: 매니저를 찾지 못한 경우 기존 포인트 기반 처리를 최소한으로 수행
         Collider2D tileCol = Physics2D.OverlapPoint(point, destroyLayer);
         if (tileCol != null)
         {
             var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
             if (tileLogic != null)
             {
-                tileLogic.Rpc_DestroyTile(point);
+                Vector3Int cellPos = Vector3Int.FloorToInt(point);
+                tileLogic.Rpc_DestroyTile(cellPos);
             }
         }
-
         Collider2D[] hits = Physics2D.OverlapPointAll(point, destroyLayer);
         if (hits == null) return;
         for (int i = 0; i < hits.Length; i++)

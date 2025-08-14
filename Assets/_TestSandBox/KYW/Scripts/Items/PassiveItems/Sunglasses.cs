@@ -25,6 +25,11 @@ public class Sunglasses : NetworkBehaviour, IItemInteraction
         {
             // 선글라스 효과 적용 (인벤토리에 패시브 아이템 추가)
             playerInventory.AddPassiveItem(gameObject);
+            var netObj = playerInventory.GetComponentInParent<NetworkObject>();
+            if (netObj != null)
+            {
+                NetworkEventSystem.Inst.TriggerItemCollected(netObj.InputAuthority, 1);
+            }
             Debug.Log($"[Sunglasses] 플레이어 인벤토리에 선글라스 효과 적용됨");
         }
         else

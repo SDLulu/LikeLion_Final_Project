@@ -10,7 +10,7 @@ public class PlayerJump : NetworkBehaviour
     [SerializeField] private float jumpSpeed = 10f;         // 점프 상승 속도 (일정)
     [SerializeField] private float maxJumpTime = 0.3f;      // 최대 점프 지속 시간
     [SerializeField] private float gravity = 20f;
-    [SerializeField] private float maxFallSpeed = 15f;
+    [SerializeField] private float maxFallSpeed = 50f;
     public float VelocityY { get; private set; }
     
     [Header("Passive Items - Jump")]
