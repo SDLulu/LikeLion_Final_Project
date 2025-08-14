@@ -48,7 +48,9 @@ public class SpeedCollisionHandler : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
-        if (itemInteraction == null || itemInteraction.IsHeld) return; // 들린 상태면 무시 (IsHeld = true일 때)
+        // 아이템이 아닌 총알 등에서도 동작해야 하므로 null은 허용
+        // 단, 아이템인 경우 들린 상태(IsHeld)일 때만 무시
+        if (itemInteraction != null && itemInteraction.IsHeld) return;
         
 
         
@@ -117,7 +119,9 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!HasStateAuthority) return;
-        if (itemInteraction == null || itemInteraction.IsHeld) return; // 들린 상태면 무시 (IsHeld = true일 때)
+        // 아이템이 아닌 총알 등에서도 동작해야 하므로 null은 허용
+        // 단, 아이템인 경우 들린 상태(IsHeld)일 때만 무시
+        if (itemInteraction != null && itemInteraction.IsHeld) return;
         if (!IsInSpeedAttackMode) return;
         
         // 자기 자신 또는 같은 아이템의 다른 콜라이더와의 충돌 방지
