@@ -4,6 +4,7 @@ using UnityEngine;
 
 public enum E_StateName
 {
+    None,
     LobbyState,
     WaitingState,
     PlayingState,

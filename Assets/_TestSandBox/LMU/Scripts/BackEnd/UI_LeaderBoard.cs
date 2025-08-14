@@ -8,20 +8,23 @@ public class UI_LeaderBoard : MonoBehaviour
     [SerializeField] private List<UI_LeaderBoardSlot> _leaderBoardSlots;
     [SerializeField] private UI_LeaderBoardSlot _mySlot;
 
-    [Header("리더보드 식별자")]
-    [SerializeField] private string _leaderboardUUID;
+    private string _leaderboardUUID;
+
+    private void Awake()
+    {
+        _leaderboardUUID = BackEndWorkFlow.Inst.LeaderboardUUID;
+    }
 
     private void OnEnable()
     {
+        _leaderboardUUID = BackEndWorkFlow.Inst.LeaderboardUUID;
         if (string.IsNullOrEmpty(_leaderboardUUID))
         {
             Debug.LogError("리더보드 UUID 가 설정되지 않았습니다.");
             return;
         }
 
-        // 상위 10개 불러오기
         LeaderBoard.Inst.LoadTop10(_leaderboardUUID, OnLoadedTop10);
-        // 내 랭킹 불러오기
         LeaderBoard.Inst.LoadMyRank(_leaderboardUUID, OnLoadedMyRank);
     }
 
@@ -29,29 +32,39 @@ public class UI_LeaderBoard : MonoBehaviour
     {
         if (ok == false)
         {
-            if (_leaderBoardSlots != null)
-            {
-                for (int i = 0; i < _leaderBoardSlots.Count; i++)
-                {
-                    _leaderBoardSlots[i]?.ClearSlot();
-                }
-            }
+            Debug.LogError("리더보드 목록 조회 실패");
             return;
         }
 
-        int count = Mathf.Min(_leaderBoardSlots?.Count ?? 0, list?.Count ?? 0);
+        if (_leaderBoardSlots == null || _leaderBoardSlots.Count <= 0)
+        {
+            Debug.LogError("리더보드 목록 조회 실패 - 슬롯이 존재하지 않음");
+            return;
+        }
+
+        if (list == null || list.Count <= 0)
+        {
+            Debug.LogError("리더보드 목록 조회 실패 - 데이터가 존재하지 않음");
+            return;
+        }
+
+        for (int i = 0; i < _leaderBoardSlots.Count; i++)
+        {
+            _leaderBoardSlots[i]?.ClearSlot();
+        }
+
+        // 개수만큼 슬롯 업데이트
+        int count = Mathf.Min(_leaderBoardSlots.Count, list.Count);
         for (int i = 0; i < count; i++)
         {
             LeaderBoard.LeaderBoardEntry e = list[i];
-            _leaderBoardSlots[i].SetSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
+            _leaderBoardSlots[i]?.UpdateSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
         }
 
-        if (_leaderBoardSlots != null)
+        // 남은 슬롯 초기화
+        for (int i = count; i < _leaderBoardSlots.Count; i++)
         {
-            for (int i = count; i < _leaderBoardSlots.Count; i++)
-            {
-                _leaderBoardSlots[i]?.ClearSlot();
-            }
+            _leaderBoardSlots[i]?.ClearSlot();
         }
     }
 
@@ -63,6 +76,12 @@ public class UI_LeaderBoard : MonoBehaviour
             return;
         }
 
-        _mySlot?.SetSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
+        if (e == null)
+        {
+            Debug.LogError("리더보드 내 랭킹 조회 실패 - 데이터가 존재하지 않음");
+            return;
+        }
+
+        _mySlot?.UpdateSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
     }
 }

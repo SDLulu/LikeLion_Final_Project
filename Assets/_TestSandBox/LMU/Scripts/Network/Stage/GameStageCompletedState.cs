@@ -10,6 +10,8 @@ public class GameStageCompletedState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.CompletedState;
 
+    [Networked] public bool IsCutSceneActive { get; set; } = false;
+
     [Header("설정")]
     [SerializeField, Range(10.0f, 15.0f)] private float _minWaitingTime = 15.0f;
     [SerializeField] private float _cutDuration = 2.0f;
@@ -126,6 +128,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
         NetEvent.TriggerCutSceneActiveEvent(false);
+        UIEventSystem.Inst.TriggerCutSceneActive(false);
     }
 
 
@@ -156,7 +159,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
-            NetEvent.TriggerCutSceneActiveEvent(true);
+            UIEventSystem.Inst.TriggerCutSceneActive(true);
 
             _ = PlayCutSceneAsync(() =>
             {

@@ -13,7 +13,6 @@ public class GameStageFailedState : BaseStateBehaviour
         {
             GameStates.RPC_FadeOutUI(this.Runner, 1.0f);
             await Awaitable.WaitForSecondsAsync(2.0f);
-            PlayerM.RPC_MoveToLobbyScene();
             var sessionProperties = new System.Collections.Generic.Dictionary<string, SessionProperty>();
             sessionProperties["InGame"] = false;
             Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
