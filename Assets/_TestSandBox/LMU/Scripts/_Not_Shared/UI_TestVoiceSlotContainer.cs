@@ -13,6 +13,7 @@ public class UI_TestVoiceSlotContainer : MonoBehaviour
 
     private void Awake()
     {
+        return;
         _voicePrefab = Resources.Load<GameObject>(VOICE_PREFAB_PATH);
         if (_voicePrefab == null)
         {
