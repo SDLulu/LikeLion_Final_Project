@@ -8,8 +8,7 @@ using UnityEngine;
 public class PlayerStageController : NetworkBehaviour
 {
     /// <summary>
-    /// Note : 매프레임 호출하니 갑자기 위치가 튀는 문제 발생
-    /// 내부적으로 RPC 쓰는것 같긴한데 그래서 문제가 발생하는듯?
+    /// Note : 매프레임 호출하니 위치가 튀는 문제 발생
     /// </summary>
     public void SetPosition(Vector2 position)
     {

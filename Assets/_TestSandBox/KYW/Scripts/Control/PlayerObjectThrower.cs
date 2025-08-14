@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 // 아이템 던지기 담당 컴포넌트
 // 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemThrower)
 // 🎯 목적: 우클릭으로 현재 들고 있는 아이템을 마우스 방향으로 던지기
-public class PlayerObjectThrower : NetworkBehaviour
+public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
 {
     [Header("Throw Settings")]
     [SerializeField] private float throwForce = 10f;      // 💪 던지기 힘 (Rigidbody2D.velocity에 적용)
@@ -53,6 +53,16 @@ public class PlayerObjectThrower : NetworkBehaviour
         {
             ThrowObjectRpc(input.MouseWorldPosition);
         }
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 입력/지연 부모 해제 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        ButtonsPrevious = default;
+        delayedParentReleaseTimer = TickTimer.None;
+        delayedParentReleaseObject = null;
     }
 
     public override void FixedUpdateNetwork()

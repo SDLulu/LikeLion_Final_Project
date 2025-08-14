@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 // 🦘 플레이어 점프 컴포넌트
 // 점프, 중력, 속도 제한 담당
-public class PlayerJump : NetworkBehaviour
+public class PlayerJump : NetworkBehaviour, ISoftReset
 {
     [Header("Jump Settings")]
     [SerializeField] private float jumpSpeed = 10f;         // 점프 상승 속도 (일정)
@@ -405,4 +405,24 @@ public class PlayerJump : NetworkBehaviour
     }
     
     // 디버그 GUI는 PlayerJumpDebugGUI 컴포넌트에서 처리
+    
+    /// <summary>
+    /// ISoftReset 구현: 점프 관련 상태 초기화 및 연료 복구
+    /// </summary>
+    public void SoftReset()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        IsJumping = false;
+        JumpTime = 0f;
+        CurrentJumpCount = 0;
+        IsRocketThrusting = false;
+        RocketFuel = maxRocketFuel;
+        ButtonsPrevious = default;
+        isDownJumping = false;
+        downJumpTimer = 0f;
+        RestorePlatformCollisions();
+    }
 } 

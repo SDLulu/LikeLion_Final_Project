@@ -22,7 +22,7 @@ namespace LMCore
         {
             var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
             var rootObjects = scene.GetRootGameObjects();
-            Debug.Log($"FindObjectByTypeAtCurScene - rootObjects.Length: {rootObjects.Length}");
+            //Debug.Log($"FindObjectByTypeAtCurScene - rootObjects.Length: {rootObjects.Length}");
             foreach (var root in rootObjects)
             {
                 var component = root.GetComponentInChildren<T>(true);

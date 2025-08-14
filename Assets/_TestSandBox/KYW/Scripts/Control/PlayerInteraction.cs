@@ -5,7 +5,7 @@ using System.Collections.Generic;
 // 🎯 플레이어 상호작용 컴포넌트
 // 📍 위치: Player 오브젝트
 // 🎯 목적: F키로 주변 상호작용 가능한 오브젝트와 상호작용
-public class PlayerInteraction : NetworkBehaviour
+public class PlayerInteraction : NetworkBehaviour, ISoftReset
 {
     [Header("Interaction Settings")]
     [SerializeField] private LayerMask interactionLayerMask = -1;  // 🎛️ 상호작용 가능한 레이어들
@@ -34,6 +34,15 @@ public class PlayerInteraction : NetworkBehaviour
         // 필수 컴포넌트 검증
         if (playerController == null)
             Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 버튼 래칭 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        ButtonsPrevious = default;
+        interactableObjects.Clear();
     }
     
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)

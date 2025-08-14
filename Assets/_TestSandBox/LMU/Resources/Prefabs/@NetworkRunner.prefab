@@ -91,6 +91,7 @@ GameObject:
   - component: {fileID: 1282612564580668288}
   - component: {fileID: 757231200225293466}
   - component: {fileID: 2278830276986656162}
+  - component: {fileID: 4845346672516301502}
   m_Layer: 0
   m_Name: '@NetworkRunner'
   m_TagString: Untagged
@@ -164,8 +165,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4fe5c7165cc6d2448a85c4f15229a4f4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnHandler: {fileID: 1282612564580668288}
-  hostDisconnectHandler: {fileID: 0}
+  _spawnHandler: {fileID: 0}
+  _connectionHandler: {fileID: 0}
 --- !u!114 &1282612564580668288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -178,11 +179,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9948e57267adc7e438bedea5effdf455, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerMPrefab: {fileID: 9216748042563623557, guid: 2e698a57fdb293f4584a2643b0aacdb4, type: 3}
-  gameStatesPrefab: {fileID: 8691710846094561082, guid: b2c43cf05518152429fd3c341ca33492, type: 3}
+  _altarManager: {fileID: 0}
   localGameMode: 0
-  hostPlayerManage: {fileID: 0}
-  gameStates: {fileID: 0}
+  _hostPlayerManage: {fileID: 0}
+  _gameStates: {fileID: 0}
+  _chatManager: {fileID: 0}
+  altarManangerPrefab: {fileID: 6331124844603162951, guid: c87a7b466e1ca8b448b35ed27b6bdc4c, type: 3}
 --- !u!114 &757231200225293466
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -241,3 +243,16 @@ MonoBehaviour:
   AutoConnectAndJoin: 1
   UseFusionAppSettings: 1
   UseFusionAuthValues: 1
+--- !u!114 &4845346672516301502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7594205007270301120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5756dd5ef970def458df6b820cfd97b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _cursorTexture: {fileID: 2800000, guid: e60dad622c9f9ce46a2fc9d31fff3294, type: 3}
