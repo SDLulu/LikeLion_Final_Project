@@ -4,7 +4,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using static Unity.Collections.Unicode;
 
-public class Bomb : NetworkBehaviour, IItemInteraction
+public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
 {
     [Header("기본 설정")]
     [SerializeField] protected GameObject destroyArea; // 파괴 영역 오브젝트
@@ -15,10 +15,15 @@ public class Bomb : NetworkBehaviour, IItemInteraction
     [SerializeField] protected float deleteRadius = 3f; // 파괴 반경
     [SerializeField] protected float delayBeforeBoom = 3f; // 폭발 전 대기 시간
 
+    [Header("Health Settings")]
+    [SerializeField] private int startHealth = 5; // 폭탄 시작 체력
+
     // --- 네트워크 상태 ---
     [Networked] private NetworkBool IsHeld { get; set; }
     [Networked] private NetworkBool IsArmed { get; set; }
     [Networked] private TickTimer explosionTimer { get; set; }
+    [Networked] private int CurrentHealth { get; set; }
+    [Networked] private NetworkBool HasExploded { get; set; }
 
     // 파괴 로직은 ExplosionCollisionHandler로 이관
 
@@ -30,6 +35,9 @@ public class Bomb : NetworkBehaviour, IItemInteraction
         {
             destroyCollider2D.radius = deleteRadius;
         }
+        // 체력 초기화
+        CurrentHealth = startHealth;
+        HasExploded = false;
     }
 
     public override void FixedUpdateNetwork()
@@ -44,6 +52,9 @@ public class Bomb : NetworkBehaviour, IItemInteraction
 
     private void Explode()
     {
+        if (!HasStateAuthority) return;
+        if (HasExploded) return;
+        HasExploded = true;
         if (destroyArea != null)
         {
             destroyArea.SetActive(true);
@@ -62,6 +73,20 @@ public class Bomb : NetworkBehaviour, IItemInteraction
         if (Object != null)
         {
             Runner.Despawn(Object);
+        }
+    }
+
+    // --- IDamageable 구현 ---
+    public void TakeDamage(int damage)
+    {
+        if (!HasStateAuthority) return;
+        if (HasExploded) return;
+        int newHealth = Mathf.Max(0, CurrentHealth - Mathf.Max(0, damage));
+        CurrentHealth = newHealth;
+        if (CurrentHealth <= 0)
+        {
+            // 사용 여부와 무관하게 즉시 폭발
+            Explode();
         }
     }
 

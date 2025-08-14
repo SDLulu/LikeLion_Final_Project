@@ -16,6 +16,9 @@ public class PlayerDeathHandler : NetworkBehaviour
     [SerializeField] public float dropForce = 5f; // 아이템 드롭 시 힘
     [SerializeField] public float dropRadius = 2f; // 드롭 반경
     
+    [Header("🛡️ 부활 무적 설정")]
+    [SerializeField] public float respawnInvincibleSeconds = 0.5f; // 부활 직후 무적 시간
+    
     [Header("🧩 패시브 아이템 드롭 프리팹")]
     [SerializeField] private NetworkPrefabRef rocketPrefabRef = NetworkPrefabRef.Empty;
     [SerializeField] private NetworkPrefabRef wingsPrefabRef = NetworkPrefabRef.Empty;
@@ -167,10 +170,14 @@ public class PlayerDeathHandler : NetworkBehaviour
         HasSpawnedDeathObjects = false;
         IsDead = false;
         
-        // PlayerStunInvincibleDie의 죽음 상태도 해제
+        // PlayerStunInvincibleDie의 죽음 상태도 해제 + 부활 무적 부여
         if (stunInvincibleDie != null)
         {
             stunInvincibleDie.SetDead(false);
+            if (respawnInvincibleSeconds > 0f)
+            {
+                stunInvincibleDie.SetInvincible(true, respawnInvincibleSeconds);
+            }
         }
 
         // 기본 체력 회복 (StartHealth 기준 5)
@@ -194,12 +201,19 @@ public class PlayerDeathHandler : NetworkBehaviour
         var heldObject = playerInventory.CurrentHeldObject;
         if (heldObject != null)
         {
-            // 랜덤 방향으로 던지기
+            // 돈 드롭과 동일: 원반경 내 임의 오프셋 위치로 이동 후 임펄스 적용
+            Vector3 center = DeathSpawnPosition;
+            Vector2 offset2D = Random.insideUnitCircle * Mathf.Max(0.1f, dropRadius);
+            Vector3 spawnPos = center + new Vector3(offset2D.x, offset2D.y, 0f);
+            heldObject.transform.position = spawnPos;
+
+            // 랜덤 방향으로 던지기 (힘은 Thrower 내 설정값 사용)
             Vector2 randomDirection = Random.insideUnitCircle.normalized;
             if (playerThrower != null)
             {
-                playerThrower.ReleaseObject(heldObject, true, randomDirection * dropForce);
-                Debug.Log($"[{name}] 들고 있던 아이템 드롭: {heldObject.name}");
+                // 즉시 부모 해제 예외 적용: 위치 이동 전에 손에서 분리되도록 함
+                playerThrower.ReleaseObject(heldObject, true, randomDirection, true);
+                Debug.Log($"[{name}] 들고 있던 아이템 드롭(원반경): {heldObject.name} at {spawnPos}");
             }
         }
         
@@ -448,62 +462,19 @@ public class PlayerDeathHandler : NetworkBehaviour
         return _deadPos != null ? _deadPos.position : deathPosition;
     }
 
-    // 플레이어 텔레포트 + 속도 초기화
+    // 플레이어 텔레포트 (권한 측에서만)
     private void TeleportPlayer(Vector3 targetPosition)
     {
-        if (_playerRoot != null)
-        {
-            if (_playerRootRb != null)
-            {
-                _playerRootRb.position = targetPosition;
-                _playerRootRb.linearVelocity = Vector2.zero;
-                _playerRootRb.angularVelocity = 0f;
-            }
-            else
-            {
-                _playerRoot.position = targetPosition;
-            }
-        }
-        else
-        {
-            transform.position = targetPosition;
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
+        var target = _playerRoot != null ? _playerRoot : transform;
+        NetworkMoveUtil.Teleport(this, target, targetPosition);
     }
 
     // 시각 위치를 모든 클라이언트에 즉시 반영 (NetworkTransform이 없을 때 보정)
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_TeleportPlayer(Vector3 targetPosition)
     {
-        // 서버는 이미 텔레포트 수행, 클라이언트만 보정
         if (HasStateAuthority) return;
-        if (_playerRoot != null)
-        {
-            _playerRoot.position = targetPosition;
-            var rb = _playerRootRb ?? _playerRoot.GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
-        else
-        {
-            transform.position = targetPosition;
-            var rb = GetComponent<Rigidbody2D>();
-            if (rb != null)
-            {
-                rb.position = targetPosition;
-                rb.linearVelocity = Vector2.zero;
-                rb.angularVelocity = 0f;
-            }
-        }
+        var target = _playerRoot != null ? _playerRoot : transform;
+        NetworkMoveUtil.Teleport(this, target, targetPosition);
     }
 } 
