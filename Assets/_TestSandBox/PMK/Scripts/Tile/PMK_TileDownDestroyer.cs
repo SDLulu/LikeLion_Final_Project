@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class PMK_TileDestroyer : MonoBehaviour
+public class PMK_TileDownDestroyer : MonoBehaviour
 {
     [SerializeField] private LayerMask whatisPlatform;
 
@@ -44,8 +44,17 @@ public class PMK_TileDestroyer : MonoBehaviour
         {
             if (tileRPCManager.HasStateAuthority)
             {
-                tileRPCManager.Rpc_DestroyTile(cellPos);
-                tileRPCManager.Rpc_DestroyItem(pos);
+                Vector3Int checkPos = cellPos;
+
+                // 현재 위치부터 아래로 내려가면서 타일이 없을 때까지 루프
+                while (tileRogic.mainTilemap.GetTile(checkPos) != null)
+                {
+                    Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(checkPos);
+                    tileRPCManager.Rpc_DestroyTile(checkPos);
+                    tileRPCManager.Rpc_DestroyItem(worldPos);
+
+                    checkPos += Vector3Int.down;
+                }
             }
 
             Destroy(gameObject);
