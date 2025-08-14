@@ -72,7 +72,6 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: roomName,
             OnEnterLobby: () =>
             {
-                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>
@@ -90,7 +89,6 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>
@@ -108,7 +106,6 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>
@@ -126,7 +123,6 @@ public class UI_EnterOnline : MonoBehaviour
             roomName: "TestRoom",
             OnEnterLobby: () =>
             {
-                LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
                 _preventPanel.gameObject.SetActive(false);
             },
             OnCancel: () =>

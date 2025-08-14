@@ -70,6 +70,11 @@ public class Food : NetworkBehaviour
             }
             
             Debug.Log($"[Food] 체력 {healAmount} 회복! 현재 체력: {playerHealth.Health}/{playerHealth.MaxHealth}");
+            var netObj = playerHealth.GetComponentInParent<NetworkObject>();
+            if (netObj != null)
+            {
+                NetworkEventSystem.Inst.TriggerItemCollected(netObj.InputAuthority, 1);
+            }
             
             // 음식 오브젝트 제거
             Runner.Despawn(Object);
