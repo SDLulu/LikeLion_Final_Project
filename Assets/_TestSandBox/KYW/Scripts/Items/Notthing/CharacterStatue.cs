@@ -50,12 +50,31 @@ public class CharacterStatue : NetworkBehaviour, IItemInteraction
 	[Rpc(RpcSources.All, RpcTargets.StateAuthority)]
 	public void Rpc_RequestMoveTo(Vector2 targetPos)
 	{
+		// 초기화 가드
+		if (Object == null) return;
+		if (!HasStateAuthority) return;
+		
+		// 동상을 지정 위치로 순간이동하고 속도를 0으로 제한
+		TeleportStatueToPosition(targetPos);
+	}
+
+	/// <summary>
+	/// 동상을 지정 위치로 순간이동하고 속도를 0으로 제한
+	/// </summary>
+	private void TeleportStatueToPosition(Vector2 targetPos)
+	{
+		// NetworkRigidbody2D 우선 처리
 		var nrb = Object.GetComponent<NetworkRigidbody2D>();
 		if (nrb != null)
 		{
 			nrb.Teleport(new Vector3(targetPos.x, targetPos.y, transform.position.z), null);
+			// 속도를 0으로 제한
+			nrb.Rigidbody.linearVelocity = Vector2.zero;
+			nrb.Rigidbody.angularVelocity = 0f;
 			return;
 		}
+
+		// 일반 Rigidbody2D 처리
 		var rb = GetComponent<Rigidbody2D>();
 		if (rb != null)
 		{
@@ -64,6 +83,8 @@ public class CharacterStatue : NetworkBehaviour, IItemInteraction
 			rb.angularVelocity = 0f;
 			return;
 		}
+
+		// Transform만 있는 경우
 		transform.position = new Vector3(targetPos.x, targetPos.y, transform.position.z);
 	}
 }

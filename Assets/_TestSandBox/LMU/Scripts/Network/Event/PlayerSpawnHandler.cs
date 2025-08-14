@@ -80,6 +80,18 @@ public class PlayerSpawnHandler : MonoBehaviour
 
     public void SpawnManagers(NetworkRunner runner, PlayerRef player)
     {
+        // 기존 방식으로 스폰 (하위 호환성 유지)
+        SpawnManagersLegacy(runner, player);
+        
+        // LobbySpawnManager를 통한 추가 스폰
+        SpawnManagersFromLobbyManager(runner, player);
+    }
+    
+    /// <summary>
+    /// 기존 방식으로 매니저들을 스폰 (하위 호환성 유지)
+    /// </summary>
+    private void SpawnManagersLegacy(NetworkRunner runner, PlayerRef player)
+    {
         var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
         hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
 
@@ -91,6 +103,32 @@ public class PlayerSpawnHandler : MonoBehaviour
 
         var altarManagerObj = runner.Spawn(altarManangerPrefab, Vector3.zero, Quaternion.identity);
         altarManager = altarManagerObj.GetComponent<AltarManager>();
+    }
+    
+    /// <summary>
+    /// LobbySpawnManager에서 설정된 정보를 참고하여 프리팹들을 스폰
+    /// </summary>
+    private void SpawnManagersFromLobbyManager(NetworkRunner runner, PlayerRef player)
+    {
+        var lobbySpawnManager = FindObjectOfType<LobbySpawnManager>();
+        if (lobbySpawnManager == null) return;
+        
+        foreach (var spawnData in lobbySpawnManager.SpawnDataList)
+        {
+            if (spawnData.prefab != null && spawnData.spawnTransform != null)
+            {
+                try
+                {
+                    runner.Spawn(spawnData.prefab, 
+                        spawnData.spawnTransform.position, 
+                        spawnData.spawnTransform.rotation);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"LobbySpawnManager 스폰 실패: {spawnData.prefab.name}, 오류: {e.Message}");
+                }
+            }
+        }
     }
 
     /// <summary>
