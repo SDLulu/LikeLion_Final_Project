@@ -113,7 +113,6 @@ GameObject:
   - component: {fileID: 867776497275251165}
   - component: {fileID: 5213699269955021099}
   - component: {fileID: 7263726307632256174}
-  - component: {fileID: 2931223156085631948}
   m_Layer: 8
   m_Name: Pickaxe
   m_TagString: Untagged
@@ -318,20 +317,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.24637955, y: 1.3034694}
   m_EdgeRadius: 0
---- !u!114 &2931223156085631948
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 907367525660238801}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 480264de5f500064b8fefc2f08a64465
 --- !u!1 &7287601465672112718
 GameObject:
   m_ObjectHideFlags: 0
@@ -427,6 +412,14 @@ MonoBehaviour:
   knockbackForce: 5
   knockbackDuration: 0.5
   AttackCollider: {fileID: 861379390805639719}
+  tileLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  breakGroundTile: 1
+  sweepMargin: 0.2
+  tileItemTag: Tileitem
+  destroyObjectTag: BoobDestoryObj
+  statueSwapCooldownSeconds: 0.15
 --- !u!1 &7338617349859605161
 GameObject:
   m_ObjectHideFlags: 0

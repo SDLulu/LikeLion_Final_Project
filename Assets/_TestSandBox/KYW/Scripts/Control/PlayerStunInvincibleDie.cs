@@ -67,15 +67,21 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
         
         // 사망 상태에서는 무적 설정 불가
         if (IsDead) return;
-        
-        IsInvincible = value;
-        
-        if (value && duration > 0f)
+
+        if (value)
         {
-            InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+            // 이미 무적이라면 타이머 갱신 금지 (연속 히트로 무적 연장 방지)
+            if (IsInvincible) return;
+            IsInvincible = true;
+            if (duration > 0f)
+            {
+                InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+            }
         }
-        else if (!value)
+        else
         {
+            if (!IsInvincible) return;
+            IsInvincible = false;
             InvincibleTimer = TickTimer.None;
         }
     }
@@ -85,13 +91,7 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
-        
-        // 사망 상태에서는 들림 설정 불가
-        if (IsDead) return;
-        
-        // 무적 상태에서는 들림 설정 불가
-        if (IsInvincible) return;
-        
+            
         IsHeld = value;
         Debug.Log($"[{name}] 들림 상태 설정: {value}");
     }
@@ -100,13 +100,7 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
     public void SetThrown(float duration = 1.5f)
     {
         // 권한 확인 (호스트/서버에서만 실행)
-        if (!HasStateAuthority) return;
-        
-        // 사망 상태에서는 던진 상태 설정 불가
-        if (IsDead) return;
-        
-        // 무적 상태에서는 던진 상태 설정 불가
-        if (IsInvincible) return;
+        if (!HasStateAuthority) return;    
         
         IsThrown = true;
         ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
