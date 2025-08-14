@@ -47,11 +47,11 @@ public class ShopkeeperAttack : NetworkBehaviour
         {
             Debug.Log("상점주인 공격이 플레이어와 충돌");
             // 대상에서 PlayerHealth 컴포넌트를 찾음
-            PlayerHealth playerHealth = other.GetComponentInParent<PlayerHealth>();
-            if (playerHealth != null)
+            PlayerInteractionBase player = other.GetComponentInParent<PlayerInteractionBase>();
+            if (player != null)
             {
                 // 데미지 처리
-                playerHealth.TakeDamage(damage);
+                player.TakeDamage(damage);
 
                 // 한 번의 공격에 여러 번 피해를 입지 않도록 즉시 콜라이더를 비활성화
                 //DisableAttackCollider();
