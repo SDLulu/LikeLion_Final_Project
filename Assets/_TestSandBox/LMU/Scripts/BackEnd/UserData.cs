@@ -11,9 +11,6 @@ public class PlayerSessionRecord
 	public int ItemScore;
 	public int KillScore;
 
-	/// <summary>
-	/// 총 점수 (아이템 점수 + 킬 점수)
-	/// </summary>
 	public int TotalScore => ItemScore + KillScore;
 
 	public PlayerSessionRecord()
@@ -27,7 +24,6 @@ public class PlayerSessionRecord
 		Stage = json["Stage"].ToString();
 		ItemScore = int.Parse(json["ItemScore"].ToString());
 		KillScore = int.Parse(json["KillScore"].ToString());
-		// TotalScore는 계산된 속성이므로 별도로 파싱하지 않음
 	}
 
 	/// <summary>
@@ -82,10 +78,7 @@ public static class UserData
 				Debug.LogError("세션 데이터 삽입 실패 : " + callback);
 			}
 
-			if (onCompleted != null)
-			{
-				onCompleted(callback);
-			}
+			onCompleted?.Invoke(callback);
 		});
 	}
 
