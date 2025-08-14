@@ -147,6 +147,12 @@ public class SpeedCollisionHandler : NetworkBehaviour
         if (itemInteraction != null)
         {
             ApplyKnockbackOnly(target, itemInteraction);
+            // 아이템도 데미지를 받을 수 있다면 체력 감소 처리
+            var damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(speedAttackDamage);
+            }
             didHit = true;
         }
 

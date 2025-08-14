@@ -28,8 +28,14 @@ public class Food : NetworkBehaviour
         {
             // 플레이어 체력 컴포넌트 찾기
             var playerHealth = other.GetComponentInChildren<PlayerHealth>();
+            var deathState = other.GetComponent<PlayerStunInvincibleDie>();
             if (playerHealth != null)
             {
+                // 사망 중이면 획득 금지
+                if (deathState != null && deathState.IsDead)
+                {
+                    return;
+                }
                 // 체력 회복 및 수집 완료
                 CollectFood(playerHealth);
             }

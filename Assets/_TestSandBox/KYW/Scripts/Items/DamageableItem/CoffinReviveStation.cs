@@ -2,16 +2,19 @@ using Fusion;
 using UnityEngine;
 
 // 관(부활 스테이션): 파괴되면 가장 가까운 유령을 이 위치로 이동시키고 해당 플레이어를 이 자리에서 부활시킴
-public class CoffinReviveStation : NetworkBehaviour, IDamageable
+public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteraction
 {
     [Header("Coffin Settings")]
-    [SerializeField] private int maxHealth = 3;
+    [SerializeField] private int maxHealth = 1;
     [SerializeField] private bool destroyOnUse = true; // true면 사용 후 소멸
 
     [Networked] private int CurrentHealth { get; set; }
+    [Networked] private NetworkBool IsHeldNet { get; set; }
 
     public override void Spawned()
     {
+        // 네트워크 시뮬레이션 활성화
+        Runner.SetIsSimulated(Object, true);
         // 서버 권한에서 초기화
         if (HasStateAuthority)
         {
@@ -43,6 +46,42 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable
             }
         }
     }
+
+    // --- IItemInteraction 구현 ---
+    // 들기 상태 노출
+    bool IItemInteraction.IsHeld
+    {
+        get { return IsHeldNet; }
+    }
+
+    // 넉백 적용 (옵션: 리지드바디가 있을 때만)
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
+    {
+        if (!HasStateAuthority) return;
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
+
+    // 들기/놓기 이벤트 (관은 기본적으로 들 수 없게 설계하므로 내부 상태만 유지)
+    public void OnPickedUp()
+    {
+        if (!HasStateAuthority) return;
+        IsHeldNet = true;
+    }
+
+    public void OnReleased()
+    {
+        if (!HasStateAuthority) return;
+        IsHeldNet = false;
+    }
+
+    // 사용 입력 (관은 사용 동작 없음; 데미지로만 부활 트리거)
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 
     private void TryReviveNearestGhost()
     {

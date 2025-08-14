@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 5123644052545637484}
   - component: {fileID: 2521671384153698669}
   - component: {fileID: 7061504841261015218}
+  - component: {fileID: 5937094057461422527}
   m_Layer: 0
   m_Name: GhostPlayer
   m_TagString: Untagged
@@ -148,6 +149,7 @@ MonoBehaviour:
   - {fileID: 1345135363816216854}
   - {fileID: 2521671384153698669}
   - {fileID: 7061504841261015218}
+  - {fileID: 5937094057461422527}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2521671384153698669
 MonoBehaviour:
@@ -190,6 +192,23 @@ MonoBehaviour:
     _length: 8
     _data:
       Data: 4d000000750000007300000068000000720000006f0000006f0000006d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+--- !u!114 &5937094057461422527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2255852619988363092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0
 --- !u!1 &5288189172278999355
 GameObject:
   m_ObjectHideFlags: 0
