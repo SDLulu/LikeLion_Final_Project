@@ -14,10 +14,11 @@ public class AttackCollisionHandler : NetworkBehaviour
     
     private IItemInteraction weaponItem;
     
-    [Header("Tile Break / Item Cleanup Settings (단일 마스크)")]
-    [SerializeField] private LayerMask tileLayerMask; // 타일 + 타일아이템/파괴오브젝트 공용 레이어
-    [SerializeField] private bool breakGroundTile = false; // 타일 파괴 사용 여부
-    [SerializeField] private float sweepMargin = 0.2f; // 콜라이더 경계 보정 마진
+    [Header("Tile Destruction (Explosion-style)")]
+    [SerializeField] private bool enableTileDestruction = true; // 폭발 방식의 타일/오브젝트 처리 사용
+    [SerializeField] private LayerMask destroyLayer; // 타일/파괴 대상 레이어
+    [SerializeField] private float gridSampleStep = 0.5f; // 영역 내 포인트 샘플링 간격
+    [SerializeField] private float fallbackRadius = 0f; // 콜라이더가 없을 때 사용할 반경(0이면 비활성)
     [SerializeField] private string tileItemTag = "Tileitem";
     [SerializeField] private string destroyObjectTag = "BoobDestoryObj";
 
@@ -39,44 +40,88 @@ public class AttackCollisionHandler : NetworkBehaviour
         
         if (weaponItem == null) return;
         if (!weaponItem.IsHeld) return;
+        // 1) 타일/파괴 오브젝트 처리 (폭발 방식)
+        if (enableTileDestruction)
+        {
+            DestroyTilesAndObjectsWithinAttackArea();
+        }
         
-        // 접촉 기준점 계산
-        Vector2 hitPoint = other.ClosestPoint(AttackCollider != null ? (Vector2)AttackCollider.bounds.center : (Vector2)transform.position);
-
-        // 1) 영역 스윕 처리
-        if (breakGroundTile) SweepAndProcessArea(hitPoint, other);
-        
-        // 2) 캐릭터/아이템 상호작용 처리 (동시에 수행)
+        // 2) 캐릭터/아이템 상호작용 처리
         HandleCollision(other.gameObject);
     }
 
-    private void SweepAndProcessArea(Vector2 hitPoint, Collider2D other)
+    // 폭발 핸들러와 동일한 방식: 공격 콜라이더 영역을 샘플링하며 파괴/정리
+    private void DestroyTilesAndObjectsWithinAttackArea()
     {
-        // 영역: 공격 콜라이더와 상대 콜라이더의 경계를 합치고 마진만큼 확장
-        Bounds region = AttackCollider != null ? AttackCollider.bounds : new Bounds(transform.position, Vector3.zero);
-        region.Encapsulate(other.bounds);
-        region.Expand(new Vector3(sweepMargin, sweepMargin, 0f));
+        bool usedColliderArea = false;
+        if (AttackCollider != null)
+        {
+            SampleAndDestroyInCollider(AttackCollider);
+            usedColliderArea = true;
+        }
 
-        Vector2 center = region.center;
-        Vector2 size = region.size;
+        // 콜라이더가 없고 폴백 반경이 지정되어 있으면 원형 샘플링
+        if (!usedColliderArea && fallbackRadius > 0f)
+        {
+            SampleAndDestroyInCircle((Vector2)transform.position, fallbackRadius);
+        }
+    }
 
-        var hits = Physics2D.OverlapBoxAll(center, size, 0f, tileLayerMask);
-        if (hits == null || hits.Length == 0) return;
+    private void SampleAndDestroyInCollider(Collider2D areaCollider)
+    {
+        Bounds b = areaCollider.bounds;
+        float step = Mathf.Max(0.05f, gridSampleStep);
+        for (float x = b.min.x; x <= b.max.x; x += step)
+        {
+            for (float y = b.min.y; y <= b.max.y; y += step)
+            {
+                Vector2 p = new Vector2(x, y);
+                // 실제 콜라이더 내부만 처리
+                if (!areaCollider.OverlapPoint(p)) continue;
+                ProcessDestroyAtPoint(p);
+            }
+        }
+    }
 
+    private void SampleAndDestroyInCircle(Vector2 origin, float radius)
+    {
+        float step = Mathf.Max(0.05f, gridSampleStep);
+        for (float x = -radius; x <= radius; x += step)
+        {
+            for (float y = -radius; y <= radius; y += step)
+            {
+                Vector2 p = origin + new Vector2(x, y);
+                if (Vector2.SqrMagnitude(new Vector2(x, y)) > radius * radius) continue;
+                ProcessDestroyAtPoint(p);
+            }
+        }
+    }
+
+    private void ProcessDestroyAtPoint(Vector2 point)
+    {
+        // 셀 기반 RPC로 일원화: 히트 지점 기준 가장 가까운 1셀 파괴 + 해당 셀 아이템/파괴오브젝트 정리
+        var mgr = UnityEngine.Object.FindAnyObjectByType<PMK_TileRPC_Manager>();
+        if (mgr != null)
+        {
+            mgr.Rpc_DestroyTileAndCleanup(point);
+            return;
+        }
+        // 폴백: 매니저를 찾지 못한 경우 기존 포인트 기반 처리를 최소한으로 수행
+        Collider2D tileCol = Physics2D.OverlapPoint(point, destroyLayer);
+        if (tileCol != null)
+        {
+            var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
+            if (tileLogic != null)
+            {
+                tileLogic.Rpc_DestroyTile(point);
+            }
+        }
+        Collider2D[] hits = Physics2D.OverlapPointAll(point, destroyLayer);
+        if (hits == null) return;
         for (int i = 0; i < hits.Length; i++)
         {
             var col = hits[i];
             if (col == null) continue;
-
-            // 1) 타일 파괴 (옵션)
-            var tileMgr = col.GetComponent<PMK_TileRPC_Manager>();
-            if (tileMgr != null)
-            {
-                Vector2 destroyPoint = col.ClosestPoint(hitPoint);
-                tileMgr.Rpc_DestroyTile(destroyPoint);
-            }
-
-            // 2) 타일 아이템/파괴 오브젝트 정리
             if (col.CompareTag(tileItemTag))
             {
                 var item = col.GetComponent<PMK_TileItem>();

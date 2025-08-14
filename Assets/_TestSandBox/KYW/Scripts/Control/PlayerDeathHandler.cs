@@ -41,12 +41,23 @@ public class PlayerDeathHandler : NetworkBehaviour
     private PlayerObjectThrower playerThrower;
     private PlayerStunInvincibleDie stunInvincibleDie;
     
+    // DeadPos 태그 지점 캐시
+    private Transform _deadPos;
+    // 플레이어 루트 캐시
+    private Transform _playerRoot;
+    private Rigidbody2D _playerRootRb;
+    
     public override void Spawned()
     {
         // 컴포넌트 참조 찾기
         playerInventory = GetComponentInChildren<PlayerInventory>();
         playerThrower = GetComponentInChildren<PlayerObjectThrower>();
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
+        // DeadPos 태그된 허브 지점 캐시 시도
+        _deadPos = GameObject.FindWithTag("DeadPos")?.transform;
+        // 플레이어 루트/리짓바디 캐시
+        _playerRoot = transform.root;
+        _playerRootRb = _playerRoot != null ? _playerRoot.GetComponent<Rigidbody2D>() : null;
         
         if (playerInventory == null)
         {
@@ -86,8 +97,8 @@ public class PlayerDeathHandler : NetworkBehaviour
             stunInvincibleDie.SetDead(true); // 죽음 상태 설정 (외부 참조용)
         }
         
-        // 원래 위치 저장
-        DeathSpawnPosition = transform.position;
+        // 원래 위치 저장 (플레이어 루트 기준)
+        DeathSpawnPosition = _playerRoot != null ? _playerRoot.position : transform.position;
         
         // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
         DropHandObject();
@@ -103,8 +114,10 @@ public class PlayerDeathHandler : NetworkBehaviour
         // 카메라 전환 (RPC로 클라이언트에 알림)
         RPC_TransferCameraToGhost(GhostObject);
         
-        // 플레이어를 죽음 위치로 이동 (마지막에)
-        transform.position = deathPosition;
+        // 플레이어를 DeadPos(허브)로 이동 (마지막에)
+        Vector3 hubPos = GetDeadPosOrFallback();
+        TeleportPlayer(hubPos);
+        RPC_TeleportPlayer(hubPos);
         
         // 처리 완료 표시
         HasSpawnedDeathObjects = true;
@@ -115,7 +128,8 @@ public class PlayerDeathHandler : NetworkBehaviour
     // 🔄 부활 처리 (외부에서 호출)
     public void Resurrect()
     {
-        ResurrectAt(DeathSpawnPosition);
+        // 기본 부활은 DeadPos(허브) 위치로 이동
+        ResurrectAt(GetDeadPosOrFallback());
     }
 
     // 🔄 부활 처리 (지정 위치로)
@@ -127,7 +141,11 @@ public class PlayerDeathHandler : NetworkBehaviour
         // 사망 상태가 아니라면 처리 불필요
         if (!IsDead) return;
         
-        // 유령 제거
+        // 전달받은 위치로 부활 (유령 위치로 강제 덮어쓰지 않음)
+        TeleportPlayer(respawnPosition);
+        RPC_TeleportPlayer(respawnPosition);
+        
+        // 유령 제거(이동 후)
         if (GhostObject != null)
         {
             var ghostController = GhostObject.GetComponent<PlayerGhostController>();
@@ -144,9 +162,6 @@ public class PlayerDeathHandler : NetworkBehaviour
         
         // 카메라를 원래 플레이어로 복귀
         RPC_TransferCameraToPlayer();
-        
-        // 플레이어를 지정한 위치로 복귀
-        transform.position = respawnPosition;
         
         // 상태 초기화
         HasSpawnedDeathObjects = false;
@@ -281,7 +296,8 @@ public class PlayerDeathHandler : NetworkBehaviour
             var mover = CameraMover.Inst;
             if (mover != null)
             {
-                mover.SetFollowAndLookAtForAll(transform);
+                var target = _playerRoot != null ? _playerRoot : transform;
+                mover.SetFollowAndLookAtForAll(target);
                 Debug.Log($"[{name}] 모든 카메라 Follow/LookAt을 플레이어로 복귀");
             }
             else
@@ -289,8 +305,9 @@ public class PlayerDeathHandler : NetworkBehaviour
                 var cinemachineCamera = UnityEngine.Object.FindFirstObjectByType<CinemachineCamera>();
                 if (cinemachineCamera != null)
                 {
-                    cinemachineCamera.Follow = transform;
-                    cinemachineCamera.LookAt = transform;
+                    var target = _playerRoot != null ? _playerRoot : transform;
+                    cinemachineCamera.Follow = target;
+                    cinemachineCamera.LookAt = target;
                 }
                 Debug.LogWarning($"[{name}] CameraMover가 없어 폴백 경로 사용");
             }
@@ -339,30 +356,58 @@ public class PlayerDeathHandler : NetworkBehaviour
         if (!HasStateAuthority) return;
         if (playerInventory == null) return;
 
-        int amount = playerInventory.CurrentMoney;
-        if (amount <= 0) return;
+        int total = playerInventory.CurrentMoney;
+        if (total <= 0) return;
 
-        int thousands = amount / 1000; amount %= 1000;
-        int fiveHundreds = amount / 500; amount %= 500;
-        int hundreds = amount / 100; amount %= 100;
+        int tmp = total;
+        int thousands = tmp / 1000; tmp %= 1000;
+        int fiveHundreds = tmp / 500; tmp %= 500;
+        int hundreds = tmp / 100; tmp %= 100;
+
+        Debug.Log($"[DropMoney] total={total} -> 1000x{thousands}, 500x{fiveHundreds}, 100x{hundreds}, remainder(calc)={tmp}");
+        if (thousands > 0 && coin1000PrefabRef == NetworkPrefabRef.Empty)
+        {
+            Debug.LogWarning("[DropMoney] coin1000PrefabRef is EMPTY. 1000원 권종이 스폰되지 않습니다.");
+        }
+        if (fiveHundreds > 0 && coin500PrefabRef == NetworkPrefabRef.Empty)
+        {
+            Debug.LogWarning("[DropMoney] coin500PrefabRef is EMPTY. 500원 권종이 스폰되지 않습니다.");
+        }
+        if (hundreds > 0 && coin100PrefabRef == NetworkPrefabRef.Empty)
+        {
+            Debug.LogWarning("[DropMoney] coin100PrefabRef is EMPTY. 100원 권종이 스폰되지 않습니다.");
+        }
 
         Vector3 center = DeathSpawnPosition;
 
-        void SpawnMany(NetworkPrefabRef prefabRef, int count)
+        int SpawnMany(NetworkPrefabRef prefabRef, int count)
         {
-            if (prefabRef == NetworkPrefabRef.Empty) return;
+            if (prefabRef == NetworkPrefabRef.Empty) return 0;
+            int success = 0;
             for (int i = 0; i < count; i++)
             {
-                SpawnAndImpulse(prefabRef, center, dropForce, dropRadius);
+                var spawned = SpawnAndImpulse(prefabRef, center, dropForce, dropRadius);
+                if (spawned == null)
+                {
+                    Debug.LogWarning($"[DropMoney] Spawn failed for coin prefab (i={i})");
+                }
+                else
+                {
+                    Debug.Log($"[DropMoney] Spawned coin prefab={spawned.name} at {spawned.transform.position}");
+                    success++;
+                }
             }
+            return success;
         }
 
-        SpawnMany(coin1000PrefabRef, thousands);
-        SpawnMany(coin500PrefabRef, fiveHundreds);
-        SpawnMany(coin100PrefabRef, hundreds);
+        int success1000 = SpawnMany(coin1000PrefabRef, thousands);
+        int success500 = SpawnMany(coin500PrefabRef, fiveHundreds);
+        int success100 = SpawnMany(coin100PrefabRef, hundreds);
 
-        // 남은 잔액(< 100)은 보유로 유지
-        playerInventory.CurrentMoney = amount;
+        int droppedAmount = success1000 * 1000 + success500 * 500 + success100 * 100;
+        int newBalance = Mathf.Max(0, playerInventory.CurrentMoney - droppedAmount);
+        playerInventory.CurrentMoney = newBalance;
+        Debug.Log($"[DropMoney] dropped={droppedAmount}, newBalance={newBalance}");
     }
 
     // 공통: 네트워크 스폰 + 랜덤 임펄스
@@ -391,5 +436,74 @@ public class PlayerDeathHandler : NetworkBehaviour
         }
 
         return spawned;
+    }
+
+    // DeadPos 허브 위치 반환 (없으면 기존 deathPosition 사용)
+    private Vector3 GetDeadPosOrFallback()
+    {
+        if (_deadPos == null)
+        {
+            _deadPos = GameObject.FindWithTag("DeadPos")?.transform;
+        }
+        return _deadPos != null ? _deadPos.position : deathPosition;
+    }
+
+    // 플레이어 텔레포트 + 속도 초기화
+    private void TeleportPlayer(Vector3 targetPosition)
+    {
+        if (_playerRoot != null)
+        {
+            if (_playerRootRb != null)
+            {
+                _playerRootRb.position = targetPosition;
+                _playerRootRb.linearVelocity = Vector2.zero;
+                _playerRootRb.angularVelocity = 0f;
+            }
+            else
+            {
+                _playerRoot.position = targetPosition;
+            }
+        }
+        else
+        {
+            transform.position = targetPosition;
+            var rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = targetPosition;
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+        }
+    }
+
+    // 시각 위치를 모든 클라이언트에 즉시 반영 (NetworkTransform이 없을 때 보정)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_TeleportPlayer(Vector3 targetPosition)
+    {
+        // 서버는 이미 텔레포트 수행, 클라이언트만 보정
+        if (HasStateAuthority) return;
+        if (_playerRoot != null)
+        {
+            _playerRoot.position = targetPosition;
+            var rb = _playerRootRb ?? _playerRoot.GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = targetPosition;
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+        }
+        else
+        {
+            transform.position = targetPosition;
+            var rb = GetComponent<Rigidbody2D>();
+            if (rb != null)
+            {
+                rb.position = targetPosition;
+                rb.linearVelocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+        }
     }
 } 
