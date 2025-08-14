@@ -10,7 +10,7 @@ public class PlayerObjectThrower : NetworkBehaviour
     [Header("Throw Settings")]
     [SerializeField] private float throwForce = 10f;      // 💪 던지기 힘 (Rigidbody2D.velocity에 적용)
 
-    
+
     // 📎 참조할 다른 컴포넌트
     // private PlayerItemPickup itemPickup;  // 📦 아이템 보유 상태 확인용 (삭제)
     private PlayerInventory inventory; // 인벤토리 참조
@@ -18,11 +18,11 @@ public class PlayerObjectThrower : NetworkBehaviour
     // 🌐 네트워크 동기화: 버튼 래칭용
     [Networked]
     private NetworkButtons ButtonsPrevious { get; set; }  // 🎮 이전 프레임 버튼 상태 (클릭 래칭용)
-    
+
     // 아이템 던질 때 부모 해제 지연용 타이머
     [Networked] private TickTimer delayedParentReleaseTimer { get; set; }
     private GameObject delayedParentReleaseObject;
-    
+
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
@@ -40,7 +40,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerObjectThrower이 Player 오브젝트의 하위가 아닙니다!");
         }
     }
-    
+
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)
     // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
     public void ProcessInput(SpelunkyPlayerInputData input)
@@ -54,7 +54,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             ThrowObjectRpc(input.MouseWorldPosition);
         }
     }
-    
+
     public override void FixedUpdateNetwork()
     {
         // 지연된 부모 해제 타이머 체크 (TickTimer는 자동으로 시간이 흐름)
@@ -67,7 +67,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
         }
     }
-    
+
     // 📡 RPC: InputAuthority → StateAuthority로 던지기 요청
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
     private void ThrowObjectRpc(Vector2 mouseWorldPosition)
@@ -90,7 +90,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             ReleaseObject(obj, true, direction);
         }
     }
-    
+
     // ⚡ 아이템의 물리 시뮬레이션 활성화 (던졌을 때)
     private void EnableItemPhysics(GameObject item, Vector2 direction)
     {
@@ -105,56 +105,53 @@ public class PlayerObjectThrower : NetworkBehaviour
             rigidbody.gravityScale = 1f; // 중력 복구
             rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
             rigidbody.angularVelocity = 0f; // 회전 속도 초기화
-            
+
             // 🚀 던지기 힘 적용 (AddForce 사용)
             rigidbody.AddForce(direction * throwForce, ForceMode2D.Impulse);
         }
-        
+
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.isTrigger = false;
     }
-    
-    // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
+
+ // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
     public void ReleaseObject(GameObject obj, bool applyForce = false, Vector2 forceDirection = default)
     {
         if (!Object.HasStateAuthority) return;
         
         var netObj = obj.GetComponent<NetworkObject>();
         int layer = obj.layer;
-        
-        // 플레이어인 경우 특별 처리
-        if (layer == LayerMask.NameToLayer("Player"))
+
+        // 1) 캐릭터(IPlayerInteraction)
+        var character = obj.GetComponent<IPlayerInteraction>();
+        if (character != null)
         {
-            var playerInteraction = obj.GetComponent<PlayerInteractionBase>();
-            if (playerInteraction != null)
-            {
-                // 들린 플레이어 해제
-                playerInteraction.OnReleased();
-            }
-            
-            // 🚀 던진 상태 설정 (던질 때만)
+            character.OnReleased();
+
+            // 던진 상태 설정 (던질 때만)
             if (applyForce)
             {
-                var stunInvincibleDie = obj.GetComponent<PlayerStunInvincibleDie>();
-                if (stunInvincibleDie != null)
-                {
-                    stunInvincibleDie.SetThrown(1.5f); // 1.5초간 던진 상태
-                }
+                // 플레이어: PlayerStunInvincibleDie, 적/NPC: 각자 구현에서 처리되도록 위임
+                var stun = obj.GetComponent<PlayerStunInvincibleDie>();
+                if (stun != null) stun.SetThrown(1.5f);
+                var enemy = obj.GetComponent<EnemyBase>();
+                if (enemy != null) enemy.SetThrown(1.5f);
             }
         }
-        
-        // 아이템인 경우 IItemInteraction 체크
-        if (layer == LayerMask.NameToLayer("Item"))
+        else
         {
-            var itemInteraction = obj.GetComponent<IItemInteraction>();
-            if (itemInteraction != null)
+            // 2) 아이템(IItemInteraction)
+            var item = obj.GetComponent<IItemInteraction>();
+            if (item != null)
             {
-                // 아이템의 OnReleased 호출
-                itemInteraction.OnReleased();
+                item.OnReleased();
             }
-            
-
+            var shopobj = obj.GetComponent<ShopItem>();
+            if (shopobj != null)
+            {
+              shopobj.OnReleased();
+            }
         }
         
         // 🎮 InputAuthority 해제 (아이템만)
@@ -205,6 +202,7 @@ public class PlayerObjectThrower : NetworkBehaviour
         }
     }
     
+
     // ⚡ 아이템의 물리 시뮬레이션 활성화 (힘 없이)
     private void EnableItemPhysicsWithoutForce(GameObject item)
     {
@@ -220,11 +218,11 @@ public class PlayerObjectThrower : NetworkBehaviour
             rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
             rigidbody.angularVelocity = 0f; // 회전 속도 초기화
         }
-        
+
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.isTrigger = false;
     }
-    
 
-} 
+
+}

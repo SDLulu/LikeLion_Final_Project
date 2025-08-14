@@ -13,7 +13,7 @@ public class SacrificeAltar : NetworkBehaviour
     [Networked] private TickTimer SacrificeDelayTimer { get; set; } // 제물화 지연 타이머
     [Networked] private NetworkObject PotentialSacrifice { get; set; } // 제물 후보 네트워크 오브젝트
 
-    
+
 
     public override void FixedUpdateNetwork()
     {
@@ -29,15 +29,30 @@ public class SacrificeAltar : NetworkBehaviour
     {
         if (!HasStateAuthority || !CooldownTimer.ExpiredOrNotRunning(Runner)) return;
 
-        var targetComponent = other.GetComponentInParent<PlayerStunInvincibleDie>();
+        var targetPlayerComponent = other.GetComponentInParent<PlayerStunInvincibleDie>();
+        var targetEnemyComponent = other.GetComponentInParent<EnemyBase>();
 
         // 스턴 상태인 유효한 대상이 들어왔을 때
-        if (targetComponent != null && targetComponent.IsStunned && !targetComponent.IsDead)
+        if (targetPlayerComponent != null && !targetPlayerComponent.IsHeld)
         {
-            Debug.Log($"Host: 제물 후보 [{targetComponent.name}]가 제단에 올라왔습니다. 1초 카운트다운을 시작합니다.");
-            // 제물 후보로 설정하고, 지연 타이머를 시작합니다.
-            PotentialSacrifice = targetComponent.Object;
-            SacrificeDelayTimer = TickTimer.CreateFromSeconds(Runner, sacrificeDelay);
+            if (targetPlayerComponent.IsStunned || targetPlayerComponent.IsDead)
+            {
+                Debug.Log($"Host: 제물 후보 [{targetPlayerComponent.name}]가 제단에 올라왔습니다. 1초 카운트다운을 시작합니다.");
+                // 제물 후보로 설정하고, 지연 타이머를 시작합니다.
+                PotentialSacrifice = targetPlayerComponent.Object;
+                SacrificeDelayTimer = TickTimer.CreateFromSeconds(Runner, sacrificeDelay);
+            }
+
+        }
+        if (targetEnemyComponent != null && !targetEnemyComponent.IsHeld)
+        {
+            if (targetEnemyComponent.IsStunned || targetEnemyComponent.IsDead)
+            {
+                Debug.Log($"Host: 제물 후보 [{targetEnemyComponent.name}]가 제단에 올라왔습니다. 1초 카운트다운을 시작합니다.");
+                PotentialSacrifice = targetEnemyComponent.Object;
+                SacrificeDelayTimer = TickTimer.CreateFromSeconds(Runner, sacrificeDelay);
+            }
+
         }
     }
 
@@ -65,25 +80,35 @@ public class SacrificeAltar : NetworkBehaviour
             ResetAltarState();
             return;
         }
+        var targetToSacrifice = PotentialSacrifice;
 
-        var targetComponent = PotentialSacrifice.GetComponent<PlayerStunInvincibleDie>();
+        ResetAltarState();
 
-        // 1초가 지난 지금도 여전히 스턴 상태인지 최종 확인합니다.
-        if (targetComponent != null && targetComponent.IsStunned)
+        var targetPlayerComponent = targetToSacrifice.GetComponent<PlayerStunInvincibleDie>();
+        var targetEnemyComponent = targetToSacrifice.GetComponent<EnemyBase>();
+
+        // 1초가 지난 지금도 여전히 유효한지 최종 확인합니다.
+        if (targetPlayerComponent != null)
         {
-            if (targetComponent.IsStunned || targetComponent.IsDead)
-                PerformSacrifice(targetComponent);
+            if (targetPlayerComponent.IsStunned || targetPlayerComponent.IsDead)
+                PerformPlayerSacrifice(targetPlayerComponent);
+        }
+        else if (targetEnemyComponent != null)
+        {
+            if (targetEnemyComponent.IsStunned || targetEnemyComponent.IsDead)
+            {
+                PerformEnemySacrifice(targetEnemyComponent);
+            }
         }
         else
         {
-            Debug.Log($"Host: [{targetComponent?.name}]이(가) 제물로 바쳐지기 전에 스턴에서 풀려났습니다.");
+            Debug.Log($"Host: [{targetPlayerComponent?.name}]이(가) 제물로 바쳐지기 전에 스턴에서 풀려났습니다.");
         }
 
         // 시도가 끝났으므로 상태를 초기화합니다.
-        ResetAltarState();
-    }
 
-    private void PerformSacrifice(PlayerStunInvincibleDie target)
+    }
+    private void PerformEnemySacrifice(EnemyBase target)
     {
         Debug.Log($"Host: [{target.name}]을(를) 제물로 바칩니다!");
         CooldownTimer = TickTimer.CreateFromSeconds(Runner, cooldownDuration);
@@ -92,23 +117,60 @@ public class SacrificeAltar : NetworkBehaviour
         {
             Instantiate(sacrificeEffectPrefab, target.transform.position, Quaternion.identity);
         }
-        if (target.IsStunned)
+        AltarManager manager = FindFirstObjectByType<AltarManager>();
+        if (manager != null)
         {
-            AltarManager.Instance.AddFavor(8, target.transform.position);
-            //살아 있는 점수
-        }else if (target.IsDead)
+            if (target.IsStunned)
+            {
+                //살아 있는 점수
+                manager.AddFavor(8, target.transform.position);
+                Debug.Log("몬스터 점수 추가 8점");
+            }
+            else if (target.IsDead)
+            {
+                //죽은 점수
+                manager.AddFavor(6, target.transform.position);
+                Debug.Log("몬스터 점수 추가 6점");
+            }
+
+            if (target.Object != null && target.Object.IsValid)
+            {
+                Runner.Despawn(target.Object);
+            }
+        }
+        else
         {
-            AltarManager.Instance.AddFavor(6, target.transform.position);
-            //죽은 점수
+            Debug.LogError("Host: AltarManager 인스턴스를 찾을 수 없습니다!");
+        }
+        // TODO: 여기에 보상 시스템을 구현합니다.
+        // AltarManager Ddol -> 제단 호의 점수 정보 저장. 및 일정 호의 점수 도달 시 아이템 생성
+    }
+    private void PerformPlayerSacrifice(PlayerStunInvincibleDie target)
+    {
+
+        AltarManager manager = FindFirstObjectByType<AltarManager>();
+
+        if (manager != null)
+        {
+            if (target.IsStunned)
+            {
+                manager.AddFavor(8, target.transform.position);
+            }
+            else if (target.IsDead)
+            {
+                manager.AddFavor(6, target.transform.position);
+            }
+        }
+        else
+        {
+            Debug.LogError("--- ERROR: AltarManager를 씬에서 찾을 수 없습니다! ---");
         }
 
         if (target.Object != null && target.Object.IsValid)
         {
             Runner.Despawn(target.Object);
         }
-
-        // TODO: 여기에 보상 시스템을 구현합니다.
-        // AltarManager Ddol -> 제단 호의 점수 정보 저장. 및 일정 호의 점수 도달 시 아이템 생성
+        
     }
 
     private void ResetAltarState()

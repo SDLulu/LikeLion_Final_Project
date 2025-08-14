@@ -1,0 +1,15 @@
+using UnityEngine;
+
+public class TitleScene : MonoBehaviour
+{
+    private static bool _inited = false;
+    private async void Awake()
+    {
+        if (_inited)
+            return;
+        _inited = true;
+
+        await BackEndWorkFlow.Inst.LoginGuest();
+        LobbyUI_Manager.Inst.ActiveTitlePanel(true);
+    }
+}

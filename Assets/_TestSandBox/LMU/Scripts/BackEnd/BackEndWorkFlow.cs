@@ -39,13 +39,15 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
         string nickName = UI_CreateNickName.InputFieldStr;
         Debug.Log($"<color=yellow>닉네임설정 : {nickName}</color>");
         NickName = nickName;
-        UpdateBackendNickName(nickName, onSuccess: () =>
-        {
-            Debug.Log("닉네임 업데이트 성공");
-            CompleteCreateNickName();
-        }, onFail: () =>
-        {
-        });
+        UpdateBackendNickName(nickName, 
+            onSuccess: () =>
+            {
+                Debug.Log("닉네임 업데이트 성공");
+                CompleteCreateNickName();
+            }, 
+            onFail: () =>
+            {
+            });
     }
 
     public static FakeClient.Data FakeNickNameData { get; private set; }
@@ -55,6 +57,13 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
     private AwaitableCompletionSource<bool> _createNickNameTCS;
     public async Awaitable LoginGuest()
     {
+        if (GlobalSetting.Inst.IsEnableBackend == false)
+        {
+            IsFakeClient = true;
+            Debug.Log("백앤드 비활성화");
+            return;
+        }
+
         // 첫화면 페이드
         Fader.Inst.ActiveBGImage(true, Color.black);
         await Awaitable.WaitForSecondsAsync(0.5f);
@@ -147,6 +156,36 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             Debug.LogError("초기화 실패 : " + ret.GetStatusCode());
             Debug.LogError("오류 메시지 : " + ret.GetErrorMessage());
             return false;
+        }
+    }
+
+    public void SubmitStageRunRecord(
+        string stageId,
+        double elapsedSeconds,
+        string endReason,
+        System.Action onSuccess = null,
+        System.Action<string, string> onFail = null)
+    {
+        if (GlobalSetting.Inst.IsEnableBackend == false)
+        {
+            onSuccess?.Invoke();
+            return;
+        }
+
+        bool initOk = InitBackend();
+        if (initOk == false)
+        {
+            onFail?.Invoke("InitFailed", "뒤끝 초기화 실패");
+            return;
+        }
+
+        try
+        {
+            onSuccess?.Invoke();
+        }
+        catch (System.Exception e)
+        {
+            onFail?.Invoke("Exception", e.Message);
         }
     }
 

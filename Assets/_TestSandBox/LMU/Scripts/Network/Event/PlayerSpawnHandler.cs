@@ -11,19 +11,24 @@ public class PlayerSpawnHandler : MonoBehaviour
     [SerializeField] private PlayerManager hostPlayerManage;
     [SerializeField] private GameStates gameStates;
     [SerializeField] private ChatManager chatManager;
+    [SerializeField] private AltarManager altarManager;
+    
 
     private const string PLAYER_MANAGER_PREFAB_PATH = "Prefabs/PlayerManager";
     private const string GAME_STATES_PREFAB_PATH = "Prefabs/GameStates";
     private const string CHAT_MANAGER_PREFAB_PATH = "Prefabs/ChatManager";
+    
     public GameObject PlayerManagerPrefab => Resources.Load<GameObject>(PLAYER_MANAGER_PREFAB_PATH);
     public GameObject GameStatesPrefab => Resources.Load<GameObject>(GAME_STATES_PREFAB_PATH);
     public GameObject ChatManagerPrefab => Resources.Load<GameObject>(CHAT_MANAGER_PREFAB_PATH);
+    public GameObject altarManangerPrefab;
 
     private void OnDestroy()
     {
         hostPlayerManage = null;
         gameStates = null;
         chatManager = null;
+        altarManager = null;
     }
 
     #region 플레이어 입장 및 퇴장
@@ -50,18 +55,18 @@ public class PlayerSpawnHandler : MonoBehaviour
         localGameMode = runner.GameMode;
         if (runner.IsServer && runner.GameMode == GameMode.Host && hostPlayerManage == null)
         {
-            OnHostPlayerJoinAsync(runner, player);
+            OnHostPlayerJoin(runner, player);
         }
         else if (runner.IsServer)
         {
-            OnClientPlayerJoinAsync(runner, player);
+            OnClientPlayerJoin(runner, player);
         }
     }
 
     /// <summary>
     /// 호스트 입장 처리
     /// </summary>
-    private void OnHostPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnHostPlayerJoin(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 
@@ -78,19 +83,20 @@ public class PlayerSpawnHandler : MonoBehaviour
         var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
         hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
 
-
         var chatManagerObj = runner.Spawn(ChatManagerPrefab, Vector3.zero, Quaternion.identity, player);
         chatManager = chatManagerObj.GetComponent<ChatManager>();
 
-
         var gameStatesObj = runner.Spawn(GameStatesPrefab, Vector3.zero, Quaternion.identity, player);
         gameStates = gameStatesObj.GetComponent<GameStates>();
+
+        var altarManagerObj = runner.Spawn(altarManangerPrefab, Vector3.zero, Quaternion.identity);
+        altarManager = altarManagerObj.GetComponent<AltarManager>();
     }
 
     /// <summary>
     /// 클라이언트 입장처리
     /// </summary>
-    private void OnClientPlayerJoinAsync(NetworkRunner runner, PlayerRef player)
+    private void OnClientPlayerJoin(NetworkRunner runner, PlayerRef player)
     {
         Vector3 playerSpawnPos = GlobalSetting.Inst.GetRandomLobbySpawnPos();
 

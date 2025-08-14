@@ -12,7 +12,9 @@ GameObject:
   - component: {fileID: 6678292916413992203}
   - component: {fileID: 5927336736063456179}
   - component: {fileID: 5020810653289183323}
-  - component: {fileID: 4639333899981903039}
+  - component: {fileID: 1077488816018223321}
+  - component: {fileID: 7201304057115362276}
+  - component: {fileID: 3129272500132848800}
   m_Layer: 8
   m_Name: BoomMon!!!!!
   m_TagString: Untagged
@@ -154,7 +156,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &4639333899981903039
+--- !u!114 &1077488816018223321
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -163,16 +165,59 @@ MonoBehaviour:
   m_GameObject: {fileID: 4569764235285626125}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13074c3f2d36bae40823df4488a9addb, type: 3}
+  m_Script: {fileID: 11500000, guid: bc8f2167298ed6f41a00f47428972ae3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   destroyArea: {fileID: 7953718114797873995}
   destroyCollider2D: {fileID: 6111369041995829154}
   destroyLayer:
     serializedVersion: 2
-    m_Bits: 262208
+    m_Bits: 64
   deleteRadius: 3
   delayBeforeBoom: 3
+--- !u!114 &7201304057115362276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4569764235285626125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 3824617502
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 1077488816018223321}
+  - {fileID: 3129272500132848800}
+  ForceRemoteRenderTimeframe: 0
+--- !u!114 &3129272500132848800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4569764235285626125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5e690b5fb1084f5ab1c86457af401d4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  SyncScale: 0
+  SyncParent: 1
+  _interpolationTarget: {fileID: 0}
+  UsePreciseRotation: 0
+  UseRenderSleepThresholds: 1
+  RenderThresholds:
+    UseEnergy: 1
+    Position: 0.01
+    Rotation: 0.01
+    Scale: 0.01
 --- !u!1 &7953718114797873995
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,8 @@ public class PlasmaGun : NetworkBehaviour, IItemInteraction
     [Header("Weapon Settings")]
     [SerializeField] private float fireRate = 1f;        // 연사 간격(초)
     [SerializeField] private float bulletSpeed = 15f;      // 총알 속도 - 샷건보다 빠름
+    [SerializeField] private float plasmaRecoilForce = 3f;  // 플라즈마 리코일 힘
+    [SerializeField] private float plasmaRecoilStun = 0.12f; // 입력/물리 차단 스턴 시간
 
     [Networked] private TickTimer fireRateTimer { get; set; }
     [Networked] private NetworkBool IsHeld { get; set; }
@@ -75,6 +77,26 @@ public class PlasmaGun : NetworkBehaviour, IItemInteraction
             {
                 bulletRb.linearVelocity = fireDirection * bulletSpeed;
             }
+
+            // 리코일 적용 (발사 반대 방향으로 임펄스)
+            ApplyRecoil(fireDirection, plasmaRecoilForce);
+        }
+    }
+
+    private void ApplyRecoil(Vector2 fireDirection, float force)
+    {
+        // Host 전용 적용
+        if (!Object.HasStateAuthority) return;
+
+        var ownerObject = Runner.GetPlayerObject(Object.InputAuthority);
+        if (ownerObject == null) return;
+        
+        var interaction = ownerObject.GetComponent<IPlayerInteraction>();
+        if (interaction != null)
+        {
+            Vector2 recoilDir = (-fireDirection).normalized;
+            Vector2 forceVec = recoilDir * force;
+            interaction.ApplyKnockback(forceVec, plasmaRecoilStun);
         }
     }
 

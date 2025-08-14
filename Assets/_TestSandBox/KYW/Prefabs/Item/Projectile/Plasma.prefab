@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 4032576789227302020}
   - component: {fileID: -4579649423864152679}
   - component: {fileID: 702364514405067859}
+  - component: {fileID: 793066679219270279}
   m_Layer: 0
   m_Name: Plasma
   m_TagString: Untagged
@@ -34,7 +35,8 @@ Transform:
   m_LocalPosition: {x: 5.030058, y: 0.045045972, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8026651431570810486}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &8258603192634274948
@@ -133,6 +135,7 @@ MonoBehaviour:
   NetworkedBehaviours:
   - {fileID: -4579649423864152679}
   - {fileID: 702364514405067859}
+  - {fileID: 8557503785741504482}
   ForceRemoteRenderTimeframe: 0
 --- !u!50 &4032576789227302020
 Rigidbody2D:
@@ -196,9 +199,140 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 16d95a67e714f764aa5516c95eb27ce1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 4
   lifetime: 5
   hitLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 264128
   hitEffectPrefab: {fileID: 0}
+  explosionDespawnDelay: 0.06
+--- !u!58 &793066679219270279
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2161275529307465011}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: -0.0037503242, y: 0}
+  m_Radius: 0.26122808
+--- !u!1 &6423307321519102768
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8026651431570810486}
+  - component: {fileID: 5344400716340261900}
+  - component: {fileID: 8557503785741504482}
+  m_Layer: 12
+  m_Name: explosionArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8026651431570810486
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6423307321519102768}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4293887653363445692}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!58 &5344400716340261900
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6423307321519102768}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 3
+--- !u!114 &8557503785741504482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6423307321519102768}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f63269e77008b494694bdf051d97e900, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  explosionDamage: 2
+  explosionKnockbackForce: 8
+  explosionKnockbackDuration: 0.4
+  activeWindowSeconds: 0.05
+  explosionColliders:
+  - {fileID: 5344400716340261900}
+  enableTileDestruction: 1
+  destroyLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  gridSampleStep: 0.5
+  fallbackRadius: 0
+  tileItemTag: Tileitem
+  destroyObjectTag: BoobDestoryObj

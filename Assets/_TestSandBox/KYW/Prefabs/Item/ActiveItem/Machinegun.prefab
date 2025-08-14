@@ -199,7 +199,6 @@ GameObject:
   - component: {fileID: 4938946146775174615}
   - component: {fileID: 3788740264407151019}
   - component: {fileID: 5601891940202695214}
-  - component: {fileID: -3604761816382227766}
   m_Layer: 8
   m_Name: Machinegun
   m_TagString: Untagged
@@ -314,6 +313,8 @@ MonoBehaviour:
   bulletSpeed: 15
   maxAmmo: 30
   reloadTime: 2
+  machineGunRecoilForce: 2
+  machineGunRecoilStun: 0.06
 --- !u!61 &5601891940202695214
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -360,20 +361,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.3752688, y: 0.49424043}
   m_EdgeRadius: 0
---- !u!114 &-3604761816382227766
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5756569690549096951}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1541381998, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Guid:
-    RawGuidValue: 7a9a3c90c8a084045aa8e39557fbf0bd
 --- !u!1 &7548608445228635529
 GameObject:
   m_ObjectHideFlags: 0

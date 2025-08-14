@@ -8,14 +8,12 @@ using Fusion.Addons.Physics;
 // ItemType, ShopItemData는 이전 답변에서 정의된 대로 유지됩니다.
 // ShopItemData struct는 ItemName 필드가 NetworkString<NXX> 타입으로 변경되었어야 합니다.
 
-public class ShopItem : NetworkBehaviour, IUsableItem
+public class ShopItem : NetworkBehaviour, IItemInteraction, IInteractable
 {
     public NetworkId ItemId => Object.Id;
 
     [Networked]
     public ShopItemData ItemData { get; set; }
-    [Networked]
-    private NetworkButtons _previousInteractingPlayerButtons { get; set; }
 
     [Header("UI Settings")]
     [SerializeField] private GameObject purchaseUIPrefab;
@@ -27,6 +25,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
     [Networked] // ⭐️ 이 변수는 Networked로 선언되어야 모든 클라이언트가 알 수 있습니다.
     private PlayerRef _currentInteractingPlayer { get; set; } = PlayerRef.None; // ⭐️ 초기값 설정
 
+    public bool IsHeld => throw new System.NotImplementedException();
 
     private NetworkRigidbody2D _netRigidbody;
     private Collider2D _collider;
@@ -39,7 +38,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         _netRigidbody = GetComponent<NetworkRigidbody2D>();
         _collider = GetComponent<Collider2D>();
         _shopManager = FindFirstObjectByType<ShopManager>();
-        _previousInteractingPlayerButtons = default;
+
 
         // ⭐️ ShopItemVisual 컴포넌트 참조 가져오기 (자식 오브젝트에도 있을 수 있으므로 GetComponentsInChildren 사용)
         _shopItemVisual = GetComponentInChildren<ShopItemVisual>();
@@ -48,24 +47,6 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             Debug.LogError($"ShopItem {name}: ShopItemVisual component not found on this object or its children!", this);
         }
 
-        //if (purchaseUIPrefab != null)
-        //{
-        //    _spawnedPurchaseUI = Instantiate(purchaseUIPrefab);
-        //    _spawnedPurchaseUI.SetActive(false);
-
-        //    // ⭐️ 중요: UI를 적절한 UI Canvas의 자식으로 설정해야 화면에 보입니다.
-        //    // 씬에 "MainCanvas" 같은 이름의 Canvas가 있다고 가정합니다.
-        //    Canvas mainCanvas = FindObjectOfType<Canvas>();
-        //    if (mainCanvas != null)
-        //    {
-        //        _spawnedPurchaseUI.transform.SetParent(mainCanvas.transform, false); // false: 월드 좌표 유지 안함 (UI에 적합)
-        //        Debug.Log($"ShopItem {name}: Purchase UI instantiated and parented to {mainCanvas.name}.");
-        //    }
-        //    else
-        //    {
-        //        Debug.LogWarning($"ShopItem {name}: No Canvas found in scene. Purchase UI might not be visible.");
-        //    }
-        //}
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -74,6 +55,17 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         //{
         //    Destroy(_spawnedPurchaseUI);
         //}
+    }
+    public void OnInteract(PlayerInteraction interactor)
+    {
+        if (ItemData.IsAvailable && !ItemData.IsPicked)
+        {
+            var shopManager = FindFirstObjectByType<ShopManager>();
+            if (shopManager != null)
+            {
+                shopManager.Rpc_RequestPurchase(interactor.Object.InputAuthority, Object.Id);
+            }
+        }
     }
 
     public void InitializeItemData(ItemType type, int price, string name)
@@ -87,7 +79,6 @@ public class ShopItem : NetworkBehaviour, IUsableItem
                 Price = price,
                 IsAvailable = true,
                 IsPicked = false,
-                CurrentHolder = default,
                 OriginalPosition = transform.position,
                 ItemName = name // NetworkString<N> 타입으로 자동 변환될 것입니다.
             };
@@ -107,39 +98,6 @@ public class ShopItem : NetworkBehaviour, IUsableItem
     public override void FixedUpdateNetwork()
     {
 
-        if (Object.HasStateAuthority)
-        {
-            // FixedUpdateNetwork에서 _currentInteractingPlayer를 사용하는 로직은 기존과 동일합니다.
-            if (!_currentInteractingPlayer.IsNone && Runner.TryGetInputForPlayer(_currentInteractingPlayer, out SpelunkyPlayerInputData input))
-            {
-                const SpelunkyInputButtons PICKUP_BUTTON_MASK = SpelunkyInputButtons.pick;
-                const SpelunkyInputButtons BUY_BUTTON_MASK = SpelunkyInputButtons.buy;
-
-                if (input.NetworkButtons.IsSet(PICKUP_BUTTON_MASK) && !_previousInteractingPlayerButtons.IsSet(PICKUP_BUTTON_MASK))
-                {
-                    Debug.Log($"Host: Player {_currentInteractingPlayer.PlayerId} pressed PICK for purchase on {ItemData.ItemName}.");
-                    if (_shopManager != null)
-                    {
-                        _shopManager.Rpc_RequestItemPickup(Object.Id, _currentInteractingPlayer);
-                    }
-                }
-                if (input.NetworkButtons.IsSet(BUY_BUTTON_MASK) && !_previousInteractingPlayerButtons.IsSet(BUY_BUTTON_MASK))
-                {
-                    Debug.Log($"Host: Player {_currentInteractingPlayer.PlayerId} pressed BUY for purchase on {ItemData.ItemName}.");
-                    if (_shopManager != null)
-                    {
-                        _shopManager.Rpc_RequestPurchase(_currentInteractingPlayer, Object.Id);
-                    }
-                }
-
-                _previousInteractingPlayerButtons = input.NetworkButtons;
-
-            }
-            else if (_currentInteractingPlayer.IsNone)
-            {
-                _previousInteractingPlayerButtons = default;
-            }
-        }
     }
 
     public override void Render()
@@ -152,7 +110,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
             _shopItemVisual.UpdatePriceText(ItemData.Price); // 가격 업데이트
             _shopItemVisual.UpdateItemColorAndPriceTag(ItemData.IsAvailable, ItemData.IsPicked); // 색상 및 가격표 활성화/비활성화
         }
-        
+
 
         // ⭐️ 구매 UI 표시 로직 (로컬 플레이어에게만)
         // 로컬 플레이어가 현재 이 아이템과 충돌 중인지 확인합니다.
@@ -188,7 +146,7 @@ public class ShopItem : NetworkBehaviour, IUsableItem
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        if(Object == null)
+        if (Object == null)
         {
             Debug.LogWarning($"ShopItem {name}: NetworkObject is null in OnTriggerExit2D. Skipping processing.");
             return; // Object가 null이면 더 이상 진행하지 않습니다.
@@ -211,76 +169,40 @@ public class ShopItem : NetworkBehaviour, IUsableItem
 
     private void ShowPurchaseUI()
     {
-        if (purchaseUIPrefab != null )
+        if (purchaseUIPrefab != null)
         {
-            //_spawnedPurchaseUI.SetActive(true);
+
             purchaseUIPrefab.SetActive(true);
-            //TextMeshProUGUI uiText = _spawnedPurchaseUI.GetComponentInChildren<TextMeshProUGUI>();
-            //if (uiText != null)
-            //{
-            //    uiText.text = $"[좌클릭] 구매: {ItemData.ItemName}\n({ItemData.Price}G)";
-            //    // ⭐️ UI 위치를 아이템 오브젝트의 스크린 좌표로 업데이트 (Render에서 매 프레임 업데이트)
-            //    Vector2 screenPoint = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * 1f); // 아이템 위 1유닛
-            //    _spawnedPurchaseUI.transform.position = screenPoint;
-            //}
+
         }
     }
 
     private void HidePurchaseUI()
     {
         purchaseUIPrefab.SetActive(false);
-        //if (_spawnedPurchaseUI != null && _spawnedPurchaseUI.activeSelf)
-        //{
-        //    _spawnedPurchaseUI.SetActive(false);
-        //}
+
     }
 
     // OnPickedUp, OnDropped, OnPurchased, OnUsePress, OnUseHold, OnUseRelease, UpdatePhysicsState는 기존과 동일
-    public void OnPickedUp(PlayerRef picker)
+    public void OnPickedUp()
     {
         if (!Object.HasStateAuthority) return;
-
-        ItemData = new ShopItemData
-        {
-            ItemNetworkId = ItemData.ItemNetworkId,
-            ItemType = ItemData.ItemType,
-            Price = ItemData.Price,
-            IsAvailable = ItemData.IsAvailable,
-            IsPicked = true,
-            CurrentHolder = picker,
-            OriginalPosition = ItemData.OriginalPosition,
-            ItemName = ItemData.ItemName
-        };
-        
-
-        UpdatePhysicsState(false, true); // 시뮬레이션 비활성, 트리거 활성
-
-        _isPlayerColliding = false;
-        _currentInteractingPlayer = PlayerRef.None;
-
-        Debug.Log($"Host: Item {ItemData.ItemName} picked up by Player {picker.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
+        var data = ItemData;
+        data.IsPicked = true;
+        ItemData = data;
+        _shopItemVisual.enabled = false;
     }
 
-    public void OnDropped(PlayerRef dropper)
+    public void OnReleased()
     {
         if (!Object.HasStateAuthority) return;
-
-        ItemData = new ShopItemData
+        var data = ItemData;
+        data.IsPicked = false;
+        ItemData = data;
+        if (data.IsAvailable)
         {
-            ItemNetworkId = ItemData.ItemNetworkId,
-            ItemType = ItemData.ItemType,
-            Price = ItemData.Price,
-            IsAvailable = ItemData.IsAvailable,
-            IsPicked = false,
-            CurrentHolder = default,
-            OriginalPosition = ItemData.OriginalPosition,
-            ItemName = ItemData.ItemName
-            
-        };
-
-        UpdatePhysicsState(true, false); // 시뮬레이션 활성, 트리거 비활성
-
-        Debug.Log($"Host: Item {ItemData.ItemName} dropped by Player {dropper.PlayerId}. ItemData.IsPicked: {ItemData.IsPicked}");
+            _shopItemVisual.enabled = true;
+        }
     }
 
     public void MarkAsSold()
@@ -291,12 +213,37 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         var data = ItemData;
         data.IsAvailable = false; // 판매 불가능 상태로 변경
         ItemData = data;
+        _shopItemVisual.enabled = false;
+
     }
 
     // IUsableItem 구현
+    // ShopItem.cs의 OnUsePress 메서드를 아래 코드로 교체합니다.
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        Debug.Log($"ShopItem {ItemData.ItemName} used (Press). Implement actual item effect here.");
+        if (!Object.HasStateAuthority) return;
+
+        // 도둑질 확인
+        if (ItemData.IsAvailable)
+        {
+            Debug.LogWarning($"Host: 도둑질 감지! 미구매 아이템 '{ItemData.ItemName}' 사용 시도.");
+
+            var shopManager = FindFirstObjectByType<ShopManager>();
+            if (shopManager != null)
+            {
+                // ⭐️ 중요: NetworkObject 대신 ItemData 구조체를 복사해서 새 RPC로 신고합니다.
+                shopManager.Rpc_ReportTheftByData(this.ItemData);
+            }
+
+            // 여기서 return 할 필요는 없습니다. 어차피 아이템 사용 시스템이
+            // 이 메서드 호출 후에 아이템을 Despawn 시킬 것이기 때문입니다.
+        }
+        else
+        {
+            // 정상적인 아이템 사용 로직
+            Debug.Log($"Host: 구매한 아이템 '{ItemData.ItemName}'을 사용했습니다.");
+            // 여기에 실제 아이템 효과 구현...
+        }
     }
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
@@ -320,5 +267,10 @@ public class ShopItem : NetworkBehaviour, IUsableItem
         {
             _collider.isTrigger = isTriggerCollider;
         }
+    }
+
+    public void ApplyKnockback(Vector2 force, float duration = 0)
+    {
+
     }
 }

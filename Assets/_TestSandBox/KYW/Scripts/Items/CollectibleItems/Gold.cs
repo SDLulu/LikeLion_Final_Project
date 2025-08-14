@@ -28,8 +28,14 @@ public class Gold : NetworkBehaviour
         {
             // 플레이어 인벤토리 찾기
             var playerInventory = other.GetComponentInChildren<PlayerInventory>();
+            var deathState = other.GetComponent<PlayerStunInvincibleDie>();
             if (playerInventory != null)
             {
+                // 사망 중이면 획득 금지
+                if (deathState != null && deathState.IsDead)
+                {
+                    return;
+                }
                 // 골드 추가 및 수집 완료
                 CollectGold(playerInventory);
             }

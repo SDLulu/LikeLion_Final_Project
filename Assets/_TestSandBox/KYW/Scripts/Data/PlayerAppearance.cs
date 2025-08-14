@@ -9,6 +9,7 @@ public class PlayerAppearance : NetworkBehaviour
     [SerializeField] private PlayerSkinDatabase skinDatabase;
     [SerializeField, Tooltip("플레이어의 시각 루트(Visual) Transform. 비워두면 자동 탐색")]
     private Transform visualRoot;
+    [SerializeField, Tooltip("체크 시 유령용 애니메이터를 적용합니다")] private bool useGhostAnimator = false;
 
     [Networked] public NetworkString<_32> SkinKey { get; set; }
 
@@ -50,7 +51,10 @@ public class PlayerAppearance : NetworkBehaviour
     {
         if (animator == null || skinDatabase == null) return;
 
-        var targetController = skinDatabase.GetAnimatorByKey(SkinKey.ToString());
+        var key = SkinKey.ToString();
+        var targetController = useGhostAnimator
+            ? skinDatabase.GetGhostAnimatorByKey(key)
+            : skinDatabase.GetAnimatorByKey(key);
         if (targetController != null && animator.runtimeAnimatorController != targetController)
         {
             animator.runtimeAnimatorController = targetController;

@@ -6,13 +6,11 @@ using UnityEngine;
 using System.Reflection;
 
 
-[RequiredManager(typeof(GameStates))]
-public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
+[NetworkSpawnDelay(typeof(GameStates))]
+public class GameStates : NetworkBehaviour, IStateMachineOwner
 {
     public static GameStates Inst => BaseManager<GameStates>.Inst;
     
-    private E_StateName _previousStateName = E_StateName.GameStageWaitingState;
-
     public void Collect()
     {
         if (_allStates == null || _allStates.Length <= 0)
@@ -33,23 +31,22 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
     public bool IsSpawned { get; set; }
 
+    private E_StateName _previousStateName = E_StateName.GameStageWaitingState;
     public override void Spawned()
     {
         IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone();
-    }
-
-    public void AfterSpawned()
-    {
-        NetworkEventSystem.Inst.RegisterManager(this);
-    }
-
-    // Note - CutSceneController가 GameScene에 존재해서 게임씬 로드시점까지 대기후 Inject 처리
-    public void OnSceneLoadDone()
-    {
+        NetworkEventSystem.Inst.RegisterNetDelay(this);
+        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone(sceneName);
         ApplyInject();
+    }
+    
+    public void OnSceneLoadDone(string sceneName)
+    {   
+        // CutSceneController가 GameScene에 존재해서 씬변경시 한번더 주입
+        if (sceneName == GlobalSetting.Inst.GameScenePath)
+            ApplyInject();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -159,13 +156,14 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner, IAfterSpawned
 
     private void ApplyInject()
     {
+        _cutSceneController = this.FindObjectByTypeAtCurScene<CutSceneController>();
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
             { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
             { typeof(Fader), _fader != null ? _fader : Fader.Inst },
             { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },
-            { typeof(CutSceneController), _cutSceneController != null ? _cutSceneController : this.FindObjectByTypeAtCurScene<CutSceneController>() },
+            { typeof(CutSceneController), _cutSceneController },
             { typeof(NetworkEventSystem), _networkEventSystem != null ? _networkEventSystem : NetworkEventSystem.Inst }
         };
 

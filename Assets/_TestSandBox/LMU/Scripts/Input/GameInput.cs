@@ -52,4 +52,8 @@ public class GameInput : MonoBehaviour, GameInputAction.IGameActions
             UIEventSystem.Inst.TriggerPauseUIToggle();
         }
     }
+
+    public void OnVoice(InputAction.CallbackContext context)
+    {
+    }
 }

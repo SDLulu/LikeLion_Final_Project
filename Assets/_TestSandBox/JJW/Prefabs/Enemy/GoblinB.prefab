@@ -48,7 +48,7 @@ MonoBehaviour:
   _checkPriorityOnExit: 1
   fsmRef: {fileID: 3883700753701265616}
   anim: {fileID: 4681379106166098211}
-  animState: Idle Blinking
+  animState: Idle
   animTransitionLength: 0.06666667
 --- !u!1 &1040471351150448465
 GameObject:
@@ -642,6 +642,7 @@ MonoBehaviour:
   fsm: {fileID: 3883700753701265616}
   _CurrentHealth: 0
   _CurrentState: 0
+  _IsDead: 0
   _IsStunned: 0
   _IsInvincible: 0
   _IsHeld: 0

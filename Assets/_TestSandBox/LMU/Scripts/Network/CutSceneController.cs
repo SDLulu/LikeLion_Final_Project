@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DG.Tweening;
+using LMCore;
 using Unity.Cinemachine;
 using UnityEngine;
 
@@ -16,8 +17,8 @@ public class CutSceneController : MonoBehaviour
     [field: SerializeField] public Transform EndPoint { get; private set; }
     [field: SerializeField] public CinemachineCamera CutSceneCamera { get; private set; }
 
-    public Vector3 GetStartPoint() => StartPoint.position;
-    public Vector3 GetEndPoint() => EndPoint.position;
+    public Vector3 GetStartPos() => StartPoint.position;
+    public Vector3 GetEndPos() => EndPoint.position;
 
     private List<Tween> cutTweens = new();
     private List<GameObject> cutPlayers = new();
