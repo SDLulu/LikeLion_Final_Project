@@ -255,13 +255,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         StartCoroutine(DelayCreate_Map(mapType, randomIndex, spawnXpos, spawnYpos));
     }
-    #endregion
 
     private IEnumerator DelayCreate_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
-        //// 다른 맵 생성이 진행 중이면 대기
-        //while (isCreatingMap)
-        //    yield return null;
 
         isCreatingMap = true; // 락 걸기
 
@@ -285,14 +281,24 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 GameObject prefab = child.gameObject;
 
 
-                if (prefab.GetComponent<EnemyFSM>() != null)
+                if (prefab.GetComponent<NetworkObject>() != null)
                 {
-
-                    Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                    if (prefab.GetComponent<ShopManager>() != null)
                     {
-                        obj.transform.SetParent(parentTrans);
-                        obj.name = prefab.name;
-                    });
+                        yield return new WaitForSeconds(3f); // ShopManager가 초기화될 시간을 주기 위해 잠시 대기
+
+                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                        {
+                            obj.transform.SetParent(parentTrans);
+                            obj.name = prefab.name;
+                        });
+                    }
+                    else
+                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+                        {
+                            obj.transform.SetParent(parentTrans);
+                            obj.name = prefab.name;
+                        });
                 }
                 else
                 {
@@ -305,6 +311,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
             Destroy(temp);
 
+            bool shouldSpawnEnemy = mapType != "S" && mapType != "C";
 
             // 생성할 위치가 타일맵의 셀 좌표로 변환
             foreach (Tilemap sourceTilemap in tilemaps)
@@ -328,7 +335,10 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
                             tilePositions.Add(targetPos);
 
-                            StartCoroutine(DelayedCreateEnemy(targetPos));
+                            if (shouldSpawnEnemy)
+                            {
+                                StartCoroutine(DelayedCreateEnemy(targetPos));
+                            }
 
 
                             yield return null; // 한 프레임 대기
@@ -340,6 +350,20 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         isCreatingMap = false; // 혹시 실패했을 경우도 해제
     }
+
+
+    private IEnumerator DelayShopManager(GameObject prefab, Vector3 spawnPosition, Transform child)
+    {
+        yield return new WaitForSeconds(5f); // ShopManager가 초기화될 시간을 주기 위해 잠시 대기
+
+        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(parentTrans);
+            obj.name = prefab.name;
+        });
+    }
+    #endregion
+
 
     #region 타일에 아이템 생성
     public void Create_TileItem(Vector3Int targetPos)
