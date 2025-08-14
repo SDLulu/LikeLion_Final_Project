@@ -11,17 +11,17 @@ public class PMK_TileZoneSpawner : MonoBehaviour
     [SerializeField] private TileBase ruleTile;
 
     [SerializeField] private int trapSpawnChance = 50;
-    private int rnd;
 
     private void Start()
     {
-        TryPlaceTileIfEmpty();
-
-        StartCoroutine(DelayedTileSpawn());
+        StartCoroutine(TryPlaceTileIfEmpty());
     }
 
-    private void TryPlaceTileIfEmpty()
+    private IEnumerator TryPlaceTileIfEmpty()
     {
+        while (tileRogic.isCreatingMap)
+            yield return null;
+
         Vector2 pos = transform.position;
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);
 
@@ -30,25 +30,14 @@ public class PMK_TileZoneSpawner : MonoBehaviour
         // 해당 셀에 타일이 있는지 확인합니다.
         if (hits == null)
         {
-            rnd = Random.Range(0, 100);
+            int rnd1 = Random.Range(0, 100);
+            int rnd2 = Random.Range(0, 100);
             if (tileRPCManager.HasStateAuthority)
             {
-                tileRPCManager.RPC_RndTileSpawn(rnd, cellPos, trapSpawnChance);
+                tileRPCManager.RPC_RndTileSpawn(rnd1, rnd2, cellPos, trapSpawnChance);
             }
         }
-    }
 
-
-    private IEnumerator DelayedTileSpawn()
-    {
-        yield return null;
-
-        if (tileRPCManager.HasStateAuthority)
-        {
-            Vector2 pos = transform.position;
-            Vector3Int cellPos = tileRogic.mainTilemap.WorldToCell(pos);
-            tileRPCManager.DelayedTileSpawnBool(cellPos);
-        }
         Destroy(gameObject);
     }
 }

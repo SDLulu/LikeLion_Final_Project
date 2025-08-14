@@ -16,7 +16,7 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
         SceneManager.UnloadSceneAsync(sceneName);
     }
 
-    public async Awaitable LoadSceneAsync(string sceneName, 
+    public async Awaitable LoadSceneAsync(string sceneName,
                                             LoadSceneMode mode = LoadSceneMode.Single,
                                             bool activeScene = false,
                                             Action onPreLoad = default,
@@ -56,7 +56,7 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
     {
         List<Scene> loadedScenes = new List<Scene>();
         int sceneCount = SceneManager.sceneCount;
-        
+
         for (int i = 0; i < sceneCount; i++)
         {
             Scene scene = SceneManager.GetSceneAt(i);
@@ -65,7 +65,26 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
                 loadedScenes.Add(scene);
             }
         }
-        
+
         return loadedScenes;
+    }
+
+    /// <summary>
+    /// 특정 씬이 현재 로드되어 있는지 여부 반환
+    /// </summary>
+    public bool IsSceneLoaded(string sceneName)
+    {
+        int sceneCount = SceneManager.sceneCount;
+
+        for (int i = 0; i < sceneCount; i++)
+        {
+            Scene scene = SceneManager.GetSceneAt(i);
+            if (scene.isLoaded && scene.name == sceneName)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

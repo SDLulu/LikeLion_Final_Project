@@ -17,7 +17,7 @@ public class PMK_TileDestroyer : MonoBehaviour
 
     private IEnumerator DelayedTilePlace()
     {
-        yield return new WaitForSeconds(0.05f); // Physics2D 반영을 기다림
+        yield return new WaitForSeconds(3f); // Physics2D 반영을 기다림
         TryPlaceTileIfEmpty();
     }
 

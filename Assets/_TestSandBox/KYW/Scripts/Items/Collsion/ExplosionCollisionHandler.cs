@@ -189,7 +189,8 @@ public class ExplosionCollisionHandler : NetworkBehaviour
             var tileLogic = tileCol.GetComponent<PMK_TileRPC_Manager>();
             if (tileLogic != null)
             {
-                tileLogic.Rpc_DestroyTile(point);
+                Vector3Int cellPos = Vector3Int.FloorToInt(point);
+                tileLogic.Rpc_DestroyTile(cellPos);
             }
         }
         Collider2D[] hits = Physics2D.OverlapPointAll(point, destroyLayer);

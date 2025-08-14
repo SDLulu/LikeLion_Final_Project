@@ -16,6 +16,8 @@ public class LobbyManager : BaseManager<LobbyManager>
     public PlayerRef LocalPlayer { get; private set; }
 
     public Func<Awaitable> OnEnterLobbyAction { get; set; }
+    public event Action OnNetworkEventsBound;
+
     private byte[] connectionToken;
     private bool _isCancel = false;
 
@@ -55,6 +57,7 @@ public class LobbyManager : BaseManager<LobbyManager>
     }
     [SerializeField] private Recorder _voiceRecorder;
     public Recorder VoiceRecorder => _voiceRecorder ?? FindAnyObjectByType<Recorder>();
+
 
     /// <summary>
     /// 외부에서 강제로 Runner 설정
@@ -152,6 +155,7 @@ public class LobbyManager : BaseManager<LobbyManager>
                 string sceneName = GlobalSetting.Inst.LobbyScenePath;
                 await LocalSceneManager.Inst.LoadSceneAsync(sceneName, LoadSceneMode.Additive, true);
                 OnEnterLobby?.Invoke();
+                OnNetworkEventsBound?.Invoke();
             }
             else
             {
@@ -198,12 +202,14 @@ public class LobbyManager : BaseManager<LobbyManager>
             {
                 Debug.LogError("NetworkRunner가 실행 중이지 않습니다.");
                 LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
+                CameraMover.Inst.SetSkyBoxEnv();
                 if (isShowWideFade)
                     await Fader.Inst.WideFadeInAsync(1.5f);
                 return;
             }
 
             await runner.Shutdown(true);
+            // 네트워크 해제 알림
 
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
@@ -221,6 +227,7 @@ public class LobbyManager : BaseManager<LobbyManager>
                 }
             }
             LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
+            CameraMover.Inst.SetSkyBoxEnv();
 
             localGameMode = default;
             localRoomName = default;
@@ -238,6 +245,8 @@ public class LobbyManager : BaseManager<LobbyManager>
         finally
         {
             _isLeaveGame = false;
+            CameraMover.Inst.SetSkyBoxEnv();
+            LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
         }
 
     }
