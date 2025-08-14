@@ -16,6 +16,7 @@ public class ShopManager : NetworkBehaviour
     // ⭐️ 스폰된 아이템들을 로컬 리스트로 관리 (Despawn 시 필요)
     private List<NetworkObject> _spawnedItems = new List<NetworkObject>();
 
+    private PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
     // ❌ NetworkArray<ShopItemData> ShopItems => default; // 이중 상태 관리 제거
 
     public override void Spawned()
@@ -38,6 +39,7 @@ public class ShopManager : NetworkBehaviour
 
             NetworkObject spawnedItemObj = Runner.Spawn(randomStaticItem.itemPrefab, itemSpawnPoints[i].position, Quaternion.identity,
                 onBeforeSpawned: (runner, obj) => {
+                    obj.transform.SetParent(tileRogic.parentTrans);
                     var shopItem = obj.GetComponent<ShopItem>();
                     if (shopItem != null)
                     {
@@ -45,7 +47,7 @@ public class ShopManager : NetworkBehaviour
                     }
                 });
 
-            _spawnedItems.Add(spawnedItemObj); // ⭐️ Despawn을 위해 로컬 리스트에 추가
+        _spawnedItems.Add(spawnedItemObj); // ⭐️ Despawn을 위해 로컬 리스트에 추가
         }
     }
 
@@ -122,7 +124,10 @@ public class ShopManager : NetworkBehaviour
         }
 
         // ⭐️ 수정: 스폰된 NetworkObject를 변수에 저장합니다.
-        NetworkObject spawnedShopkeeperObject = Runner.Spawn(shopkeeperPrefab, shopkeeperSpawnPoint.position, shopkeeperSpawnPoint.rotation);
+        NetworkObject spawnedShopkeeperObject = Runner.Spawn(shopkeeperPrefab, shopkeeperSpawnPoint.position, shopkeeperSpawnPoint.rotation, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(tileRogic.parentTrans);
+        });
 
         // ⭐️ 수정: 스폰된 오브젝트에서 Shopkeeper 컴포넌트를 찾아 변수에 할당합니다.
         if (spawnedShopkeeperObject != null)
