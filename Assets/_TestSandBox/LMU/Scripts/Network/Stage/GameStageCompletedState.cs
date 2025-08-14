@@ -8,15 +8,17 @@ using UnityEngine;
 
 public class GameStageCompletedState : BaseStateBehaviour
 {
-    public override E_StateName StateName => E_StateName.GameStageCompletedState;
+    public override E_StateName StateName => E_StateName.CompletedState;
+
+    [Networked] public bool IsCutSceneActive { get; set; } = false;
 
     [Header("설정")]
-    [SerializeField, Range(10.0f, 15.0f)] private float minWaitingTime = 15.0f;
-    [SerializeField] private float cutDuration = 2.0f;
+    [SerializeField, Range(10.0f, 15.0f)] private float _minWaitingTime = 15.0f;
+    [SerializeField] private float _cutDuration = 2.0f;
 
     // 서버 - 백그라운드 작업진행 - 컷신 재생과 맵 로딩을 병렬실행 - 0: 컷신, 1: 맵 로딩
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;
-    private TickTimer minWaitingTimer = TickTimer.None;
+    private TickTimer _minWaitingTimer = TickTimer.None;
     private int _stageDataIndex = -1;
     public override void Spawned()
     {
@@ -40,7 +42,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             await Awaitable.NextFrameAsync();
             var players = PlayerM.GetPlayers();
             InitTCS(players);
-            minWaitingTimer = TickTimer.CreateFromSeconds(Runner, minWaitingTime);
+            _minWaitingTimer = TickTimer.CreateFromSeconds(Runner, _minWaitingTime);
             RPC_StartFadeOut();
         }
     }
@@ -52,9 +54,9 @@ public class GameStageCompletedState : BaseStateBehaviour
             Debug.Log("모든 플레이어가 컷신을 완료했습니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
         }
-        else if (Runner.IsServer && minWaitingTimer.Expired(Runner))
+        else if (Runner.IsServer && _minWaitingTimer.Expired(Runner))
         {
-            Debug.Log($"최대 대기시간 {minWaitingTime}초가 초과되었습니다.");
+            Debug.Log($"최대 대기시간 {_minWaitingTime}초가 초과되었습니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
         }
     }
@@ -64,7 +66,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     /// </summary>
     protected override void OnExitState()
     {
-        minWaitingTimer = TickTimer.None;
+        _minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
         base.OnExitState();
@@ -126,6 +128,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
         NetEvent.TriggerCutSceneActiveEvent(false);
+        UIEventSystem.Inst.TriggerCutSceneActive(false);
     }
 
 
@@ -156,7 +159,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
-            NetEvent.TriggerCutSceneActiveEvent(true);
+            UIEventSystem.Inst.TriggerCutSceneActive(true);
 
             _ = PlayCutSceneAsync(() =>
             {
@@ -189,7 +192,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
-            await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, cutDuration);
+            await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, _cutDuration);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
             onCompleted?.Invoke();
         }
@@ -214,13 +217,6 @@ public class GameStageCompletedState : BaseStateBehaviour
                 await Awaitable.WaitForSecondsAsync(1.5f);
                 var nextStageData = DataManager.Inst.GetStageData(_stageDataIndex);
                 NetEvent.TriggerStageLoadDoneEvent(nextStageData);
-
-                var startPos = new Vector2(15.0f, 15.0f);
-                foreach (var player in PlayerM.Players)
-                {
-                    var playerC = player.Value.GetComponent<PlayerStageController>();
-                    playerC.SetPosition(startPos);
-                }
                 onComplete?.Invoke();
                 Debug.Log("다음 스테이지 로딩이 완료되었습니다.");
             }

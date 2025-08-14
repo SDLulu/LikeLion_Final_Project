@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 4953509807823813209}
   - component: {fileID: 8445627991254014887}
   - component: {fileID: 1403474399189599118}
+  - component: {fileID: 4757705535627683625}
   m_Layer: 0
   m_Name: LocalManagers
   m_TagString: Untagged
@@ -53,6 +54,7 @@ MonoBehaviour:
   localGameMode: 0
   localRoomName: 
   netRunner: {fileID: 0}
+  _voiceRecorder: {fileID: 0}
   <IsSoloPlay>k__BackingField: 0
 --- !u!114 &3028390764888244836
 MonoBehaviour:
@@ -129,5 +131,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: eea617a5393979c4eb73623033581f7b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &4757705535627683625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6081568648639787522}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da5d944ef87ae134fbc2ee843e7469c0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

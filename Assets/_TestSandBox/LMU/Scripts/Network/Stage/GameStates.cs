@@ -29,17 +29,23 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     [SerializeField] private NetworkEventSystem _networkEventSystem = null;
     [SerializeField] private StateBehaviour[] _allStates;
     [field: SerializeField] public StateMachine<StateBehaviour> StateMachine { get; private set; }
-    public bool IsSpawned { get; set; }
-
-    private E_StateName _previousStateName = E_StateName.GameStageWaitingState;
+    [Networked] public E_StateName NetState { get; set; }
+    private E_StateName _lastNotifiedState = E_StateName.WaitingState;
+    private E_StateName _previousStateName = E_StateName.WaitingState;
+    
     public override void Spawned()
     {
-        IsSpawned = true;
         base.Spawned();
         DontDestroyOnLoad(this);
         NetworkEventSystem.Inst.RegisterNetDelay(this);
         NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) => OnSceneLoadDone(sceneName);
         ApplyInject();
+        if (Object.HasStateAuthority)
+        {
+            NetState = GetActiveStateName();
+            _previousStateName = NetState;
+        }
+        _lastNotifiedState = NetState;
     }
     
     public void OnSceneLoadDone(string sceneName)
@@ -73,7 +79,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     {
         var state = StateMachine.ActiveState as BaseStateBehaviour;
         if (state == null)
-            return E_StateName.GameStageWaitingState;
+            return E_StateName.WaitingState;
 
         return state.StateName;
     }
@@ -107,10 +113,8 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
             delayedState = null;
         }
         
-        if (Runner.IsServer)
-        {
-            CheckStateChange();
-        }
+        CheckStateChange();
+        NotifyIfNetStateChanged();
     }
     
     /// <summary>
@@ -118,12 +122,27 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     /// </summary>
     private void CheckStateChange()
     {
+        if (Object.HasStateAuthority == false)
+        {
+            return;
+        }
+
         var currentStateName = GetActiveStateName();
-        
+
         if (_previousStateName != currentStateName)
         {
-            NetworkEventSystem.Inst?.TriggerGameStateChangedEvent(_previousStateName, currentStateName);
+            NetState = currentStateName;
             _previousStateName = currentStateName;
+        }
+    }
+
+    private void NotifyIfNetStateChanged()
+    {
+        var currentNetState = NetState;
+        if (_lastNotifiedState != currentNetState)
+        {
+            NetworkEventSystem.Inst?.TriggerGameStateChangedEvent(Runner, _lastNotifiedState, currentNetState);
+            _lastNotifiedState = currentNetState;
         }
     }
 
@@ -138,7 +157,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
-    public static async void RPC_FadeInUI(NetworkRunner runner)
+    public static async void RPC_FadeInUI(NetworkRunner runner, float duration = 1.0f)
     {
         while (Fader.Inst.IsFading)
         {
@@ -147,11 +166,11 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
         UIEventSystem.Inst.TriggerGameUIActive(true);
         LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
-        _ = Fader.Inst.FadeInAsync(Color.black, 1.0f);
+        _ = Fader.Inst.FadeInAsync(Color.black, duration);
     }
 
 
-    // --- 인젝트
+    #region 인젝트
     private Dictionary<System.Type, object> refs;
 
     private void ApplyInject()
@@ -160,6 +179,7 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
         // Note - CutSceneController는 게임씬에 존재, Manager아님
         refs = new Dictionary<System.Type, object>
         {
+            { typeof(GameStates), this },
             { typeof(LobbyUI_Manager), _uiController != null ? _uiController : LobbyUI_Manager.Inst },
             { typeof(Fader), _fader != null ? _fader : Fader.Inst },
             { typeof(PlayerManager), _playerManager != null ? _playerManager : PlayerManager.Inst },
@@ -211,15 +231,5 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
 
         refs.Clear();
     }
-
-    public async Awaitable<bool> IsPollingSpawned()
-    {
-        while (IsSpawned == false)
-        {
-            await Awaitable.NextFrameAsync();
-        }
-        return true;
-    }
-
-
+    #endregion
 } 

@@ -33,6 +33,14 @@ public class LevelManager : NetworkSceneManagerDefault
         }
     }
 
+    public static async Awaitable UnloadSceneAsync(string sceneName, string activeSceneName)
+    {
+        await Inst.Runner.UnloadScene(sceneName);
+        await Awaitable.NextFrameAsync();
+        SceneManager.SetActiveScene(SceneManager.GetSceneByName(activeSceneName));
+        await Awaitable.NextFrameAsync();
+    }
+
     protected override IEnumerator LoadSceneCoroutine(SceneRef sceneRef, NetworkLoadSceneParameters sceneParams)
     {
         yield return base.LoadSceneCoroutine(sceneRef, sceneParams);

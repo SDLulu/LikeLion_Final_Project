@@ -82,22 +82,22 @@ public class ConnectionHandler : MonoBehaviour
             request.Refuse();
             return;
         }
+        return;
+        // bool isGameBlocked = false;
+        // bool inGame = PlayerManager.Inst.IsInGame;
+        // bool loadingGame = PlayerManager.Inst.IsGameSceneLoading;
 
-        bool isGameBlocked = false;
-        bool inGame = PlayerManager.Inst.IsInGame;
-        bool loadingGame = PlayerManager.Inst.IsGameSceneLoading;
+        // if (inGame || loadingGame)
+        // {
+        //     isGameBlocked = true;
+        // }
 
-        if (inGame || loadingGame)
-        {
-            isGameBlocked = true;
-        }
-
-        if (isGameBlocked)
-        {
-            Debug.Log("진행 중인 게임 세션입니다. 새로운 접속을 거부합니다.");
-            request.Refuse();
-            return;
-        }
+        // if (isGameBlocked)
+        // {
+        //     Debug.Log("진행 중인 게임 세션입니다. 새로운 접속을 거부합니다.");
+        //     request.Refuse();
+        //     return;
+        // }
 
         request.Accept();
     }
