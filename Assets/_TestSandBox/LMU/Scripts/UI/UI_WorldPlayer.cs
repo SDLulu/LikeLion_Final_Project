@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_WorldPlayer : NetworkBehaviour
+public class UI_WorldPlayer : MonoBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private PlayerData _ownerPlayerData;
@@ -39,39 +39,11 @@ public class UI_WorldPlayer : NetworkBehaviour
 
     public void OnInit()
     {
+        // 게임 진행중일때만 비활성화
+        UIEventSystem.Inst.OnGameUIActiveEvent -= ActiveReadyIcon;
+        UIEventSystem.Inst.OnGameUIActiveEvent += ActiveReadyIcon;
         PlayerManager.Inst.AddPlayerDataAction(UpdateData);
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += (runner, sceneName) =>
-        {
-            OnSceneLoadDone(sceneName);
-        };
-        NetworkEventSystem.Inst.OnGameStateChangedEvent += (runner, oldState, newState) =>
-        {
-            OnStageChanged(runner, oldState, newState);
-        };
-
         OnSceneLoadDone(GlobalSetting.Inst.LobbyScenePath);
-    }
-
-    private void OnStageChanged(NetworkRunner runner, E_StateName oldState, E_StateName newState)
-    {
-        if (runner.IsServer == false)
-            return;
-
-        if (newState == E_StateName.LobbyState)
-        {
-            RPC_ActiveReadyIcon(true);
-            _ownerPlayerData.RPC_ToggleReady(false);
-        }
-        else
-        {
-            RPC_ActiveReadyIcon(false);
-        }
-    }
-
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_ActiveReadyIcon(bool value)
-    {
-        ActiveReadyIcon(value);
     }
 
     public async void OnSceneLoadDone(string sceneName)
@@ -89,20 +61,9 @@ public class UI_WorldPlayer : NetworkBehaviour
 
             _readyButton.onClick.AddListener(OnReadyButtonClicked);
         }
-
-        if (Runner.IsServer)
-        {
-            RPC_ActiveReadyIcon(true);
-            _ownerPlayerData.RPC_ToggleReady(false);
-        }
     }
 
-    private void ActiveReadyIcon(bool value)
-    {
-        _playerReadyIcon.gameObject.SetActive(value);
-    }
-
-    private void OnReadyButtonClicked()
+    public void OnReadyButtonClicked()
     {
         _ownerPlayerData.RPC_ToggleReady(_ownerPlayerData.IsReady == false);
     }
@@ -117,5 +78,15 @@ public class UI_WorldPlayer : NetworkBehaviour
 
         _playerName.text = _ownerPlayerData.NickName;
         _playerReadyIcon.color = _ownerPlayerData.IsReady ? _readyColor : _unReadyColor;
+    }
+
+    private void ActiveReadyIcon(bool value)
+    {
+        if (this == null)
+            return;
+        if (_playerReadyIcon == null || _playerReadyIcon.Equals(null))
+            return;
+
+        _playerReadyIcon.gameObject.SetActive(value == false);
     }
 }

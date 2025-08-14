@@ -79,6 +79,16 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         _isGameSceneLoaded = false;
 
         _fadingTCS.Clear();
+
+        if (Runner.IsServer)
+        {
+            // 모든 플레이어의 준비 상태를 초기화
+            foreach (var player in PlayerM.GetPlayers())
+            {
+                var playerData = player.Value.GetComponent<PlayerData>();
+                playerData.RPC_RequestToggleReady(false);
+            }
+        }
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)

@@ -30,7 +30,6 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<PlayerRef, EnemyData> OnEnemyKilledEvent;           // 적 처치 (플레이어, 가중치)
     public event Action<PlayerRef, int> OnItemCollectedEvent;               // 아이템 획득 (플레이어, 가중치)
     public event Action<PlayerRef> OnScoreChangedEvent;                     // 점수 변경 알림 
-    public event Action<string> OnStageIdChangedEvent;                      // 스테이지 ID 변경 (복제용 경량 이벤트)
 
     public void TriggerEnemyKilled(PlayerRef attacker, EnemyData enemyData)
     {
@@ -200,8 +199,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnEnemyKilledEvent = null;
         OnItemCollectedEvent = null;
         OnScoreChangedEvent = null;
-        OnStageIdChangedEvent = null;
-
+        OnCutSceneActiveEvent = null;
         _spawnHandler = null;
         _connectionHandler = null;
     }

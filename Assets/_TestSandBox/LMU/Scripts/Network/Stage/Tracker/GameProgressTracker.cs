@@ -15,18 +15,34 @@ public class GameProgressTracker : NetworkBehaviour
     private bool _isSessionActive = false;
     private bool _isStageActive = false;
     private bool _isCutSceneActive = false;
-    private Dictionary<PlayerRef, string> _playerInDateMap = new Dictionary<PlayerRef, string>();
-    private Dictionary<PlayerRef, int> _playerBestTotalMap = new Dictionary<PlayerRef, int>();
+
+    // 서버의 InDade 캐시 기록용
+    private Dictionary<PlayerRef, string> _playerInDateMap = new();
+    private Dictionary<PlayerRef, int> _playerBestTotalMap = new();
+
+    private E_StateName _curState = E_StateName.None;
+
+    private void SetDefaultData()
+    {
+        _isSessionActive = true;
+        _playerInDateMap.Clear();
+        _playerBestTotalMap.Clear();
+        NetStageElapsedSeconds = 0.0f;
+        NetSessionElapsedSeconds = 0.0f;
+        NetStageId = string.Empty;
+        _scoreTracker.ClearScore();
+    }
 
     public override void Spawned()
     {
         base.Spawned();
         _isSessionActive = true;
 
-        NetworkEventSystem.Inst.OnSceneLoadDoneEvent += OnSceneLoadDone;
         NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
         NetworkEventSystem.Inst.OnStageLoadDoneEvent += OnStageLoadDone;
         NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
+
+        SetDefaultData();
     }
 
     public override void Despawned(NetworkRunner runner, bool hasState)
@@ -36,7 +52,6 @@ public class GameProgressTracker : NetworkBehaviour
         _isCutSceneActive = false;
         if (NetworkEventSystem.HasInstance)
         {
-            NetworkEventSystem.Inst.OnSceneLoadDoneEvent -= OnSceneLoadDone;
             NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
             NetworkEventSystem.Inst.OnStageLoadDoneEvent -= OnStageLoadDone;
             NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
@@ -46,6 +61,9 @@ public class GameProgressTracker : NetworkBehaviour
 
     public override void FixedUpdateNetwork()
     {
+        if (_curState == E_StateName.LobbyState)
+            return;
+
         if (Object.HasStateAuthority)
         {
             if (_isSessionActive)
@@ -71,19 +89,17 @@ public class GameProgressTracker : NetworkBehaviour
         );
     }
 
-    private void OnSceneLoadDone(NetworkRunner runner, string sceneName)
-    {
-        // 세션 타임은 게임 시작부터 종료까지 계속 진행
-        _isSessionActive = true;
-    }
-
-    private void OnGameStateChanged(NetworkRunner runner, E_StateName prev, E_StateName curr)
+    private async void OnGameStateChanged(NetworkRunner runner, E_StateName prev, E_StateName current)
     {
         if (runner.IsServer)
         {
-            if (curr == E_StateName.FailedState)
+            _curState = current;
+            // 게임을 실패하면 현재 기록에 대한 정보를 넘기고 데이터 초기화
+            if (current == E_StateName.FailedState)
             {
-                TrySubmitAllPlayers(runner, true);
+                TrySubmitAllPlayers(runner);
+                await Awaitable.WaitForSecondsAsync(2.0f);
+                SetDefaultData();
             }
         }
     }
@@ -112,21 +128,18 @@ public class GameProgressTracker : NetworkBehaviour
                 NetStageElapsedSeconds = 0f;
             }
         }
-        else
-        {
-            // 컷씬 종료 후에는 다음 스테이지 진행 중일 수 있으므로 스테이지 타임 재개는
-            // 스테이지 로드 완료 이벤트에서 보장
-        }
     }
 
 
+    /// <summary>
+    /// 개별 플레이어에 대한 서버 세션 데이터 전송
+    /// </summary>
     private void TrySubmitSinglePlayer(NetworkRunner runner, PlayerRef player)
 	{
 		if (runner.IsServer == false)
-		{
 			return;
-		}
 
+        // 세션정보 초기화
         int item = _scoreTracker != null ? _scoreTracker.GetItemScoreOf(player) : 0;
         int kill = _scoreTracker != null ? _scoreTracker.GetMonsterScoreOf(player) : 0;
 		int total = item + kill;
@@ -138,67 +151,66 @@ public class GameProgressTracker : NetworkBehaviour
 		record.Stage = stageId;
 		record.ItemScore = item;
 		record.KillScore = kill;
-        // 닉네임은 네트워크 플레이어 데이터에서 가져옵니다
+
+        // 닉네임
         var playerObj = runner.GetPlayerObject(player);
         if (playerObj != null)
         {
             var pdata = playerObj.GetComponent<PlayerData>();
             if (pdata != null)
-            {
                 record.NickName = pdata.NickName;
-            }
         }
 
         SubmitBestRecord(player, record, total);
 	}
 
-    private void TrySubmitAllPlayers(NetworkRunner runner, bool forceInsert)
+    private void TrySubmitAllPlayers(NetworkRunner runner)
 	{
 		if (runner.IsServer == false)
-		{
 			return;
-		}
 
-        foreach (var kv in runner.ActivePlayers)
-		{
-			TrySubmitSinglePlayer(runner, kv);
-		}
+        foreach (var player in runner.ActivePlayers)
+			TrySubmitSinglePlayer(runner, player);
 	}
 
+    private const string TABLE_NAME = "PlayerSession";
     private void SubmitBestRecord(PlayerRef player, PlayerSessionRecord newRecord, int newTotal)
 	{
 		if (GlobalSetting.Inst.IsEnableBackend == false)
-		{
 			return;
-		}
 
-        // 유저당 1행 정책: 서버 세션 내에서는 inDate 캐시를 사용해 비교 업데이트
-		string table = "PlayerSession";
+        // 유저당 1행 정책 - 서버 세션 내에서 inDate 캐시를 사용해 비교 업데이트
         if (_playerInDateMap.ContainsKey(player) == false)
-		{
-            string inserted = UserData.InsertSession(table, newRecord);
-            if (string.IsNullOrEmpty(inserted) == false)
+        {
+            UserData.InsertSessionAsync(TABLE_NAME, newRecord, callback =>
             {
-                _playerInDateMap[player] = inserted;
-                _playerBestTotalMap[player] = newTotal;
-            }
+                if (callback.IsSuccess())
+                {
+                    string insertInDate = callback.GetInDate();
+                    if (string.IsNullOrEmpty(insertInDate) == false)
+                    {
+                        _playerInDateMap[player] = insertInDate;
+                        _playerBestTotalMap[player] = newTotal;
+                    }
+                }
+            });
             return;
-		}
+        }
 
         int prevTotal = 0;
         if (_playerBestTotalMap.ContainsKey(player))
-        {
             prevTotal = _playerBestTotalMap[player];
-        }
 
         if (newTotal > prevTotal)
         {
             string inDate = _playerInDateMap[player];
-            bool ok = UserData.UpdateSession(table, inDate, newRecord);
-            if (ok)
+            UserData.UpdateSessionAsync(TABLE_NAME, inDate, newRecord, callback =>
             {
-                _playerBestTotalMap[player] = newTotal;
-            }
+                if (callback.IsSuccess())
+                {
+                    _playerBestTotalMap[player] = newTotal;
+                }
+            });
         }
 	}
 }

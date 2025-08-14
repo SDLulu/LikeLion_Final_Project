@@ -15,6 +15,12 @@ public class PlayerScoreTracker : NetworkBehaviour
 
     private PlayerRef _localPlayer;
 
+	public void ClearScore()
+	{
+		ItemScores.Clear();
+		MonsterScores.Clear();
+	}
+
 	private int GetMonsterScore(PlayerRef player)
 	{
 		if (MonsterScores.ContainsKey(player) == false)

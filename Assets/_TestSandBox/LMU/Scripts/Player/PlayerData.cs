@@ -116,4 +116,10 @@ public class PlayerData : NetworkBehaviour
         IsReady = isReady;
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
     }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    public void RPC_RequestToggleReady(bool isReady)
+    {
+        RPC_ToggleReady(isReady);
+    }
 }

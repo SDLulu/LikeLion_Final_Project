@@ -10,39 +10,62 @@ public class UI_Game : MonoBehaviour
     {
         ActivePauseUI(false);
         
-        // 이벤트 구독
         UIEventSystem.Inst.OnPauseUIToggleEvent += TogglePauseUI;
         UIEventSystem.Inst.OnPauseUIActiveEvent += ActivePauseUI;
         UIEventSystem.Inst.OnGameUIActiveEvent += SetGameUIActive;
+        UIEventSystem.Inst.OnCutSceneActiveEvent += SetGameUIByCutSceneActive;
     }
 
     private void OnDestroy()
     {
-        // 이벤트 구독 해제
         if (UIEventSystem.HasInstance)
         {
             UIEventSystem.Inst.OnPauseUIToggleEvent -= TogglePauseUI;
             UIEventSystem.Inst.OnPauseUIActiveEvent -= ActivePauseUI;
             UIEventSystem.Inst.OnGameUIActiveEvent -= SetGameUIActive;
+            UIEventSystem.Inst.OnCutSceneActiveEvent -= SetGameUIByCutSceneActive;
         }
     }
 
+
     public void TogglePauseUI()
     {
+        if (IsValid() == false)
+            return;
+
         var value = _uiPause.gameObject.activeSelf == false;
         _uiPause.gameObject.SetActive(value);
     }
 
     public void ActivePauseUI(bool value)
     {
+        if (IsValid() == false)
+            return;
         _uiPause.gameObject.SetActive(value);
     }
     
-    /// <summary>
-    /// 게임 UI 전체 활성화/비활성화 (UIEventSystem에서 호출)
-    /// </summary>
     private void SetGameUIActive(bool active)
     {
+        if (IsValid() == false)
+            return;
         this.gameObject.SetActive(active);
+    }
+
+    private void SetGameUIByCutSceneActive(bool isCutSceneActive)
+    {
+        if (IsValid() == false)
+            return;
+        this.gameObject.SetActive(isCutSceneActive == false);
+    }
+
+    private bool IsValid()
+    {
+        if (this == null)
+            return false;
+        if (_uiPause == null || _uiPause.Equals(null))
+            return false;
+        if (_playerSlotContainer == null || _playerSlotContainer.Equals(null))
+            return false;
+        return true;
     }
 }
