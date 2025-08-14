@@ -11,15 +11,14 @@ public class PlayerManager : NetworkBehaviour
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
 
-    // -- 서버 전용 필드
+    // --- 서버 전용
     private List<NetworkObject> _alivePlayers = new();
     private Dictionary<PlayerRef, ChangeDetector> _changeDetectors = new();
 
-    // -- 네트워크 필드
+    // --- 네트워크
     [Networked, Capacity(4)]
     public NetworkDictionary<PlayerRef, NetworkObject> Players => default;
 
-    // ---
     private Dictionary<PlayerRef, PlayerData> _cacheDatas = new();
 
     public override void Spawned()

@@ -209,7 +209,6 @@ public class LobbyManager : BaseManager<LobbyManager>
             }
 
             await runner.Shutdown(true);
-            // 네트워크 해제 알림
 
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();

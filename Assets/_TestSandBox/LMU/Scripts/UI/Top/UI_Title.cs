@@ -47,7 +47,14 @@ public class UI_Title : MonoBehaviour
 
     public void ActiveBackButton(bool active)
     {
-        _backButton.gameObject.SetActive(active);
+        if (active)
+        {
+            _backButton.gameObject.SetActive(true);
+        }
+        else
+        {
+            _backButton.Hide();
+        }
     }
 
     public void ShowTitle()

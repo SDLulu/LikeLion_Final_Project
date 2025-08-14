@@ -4,7 +4,7 @@ using DG.Tweening;
 
 // 🎨 패시브 아이템 비주얼 효과 관리 컴포넌트
 // 로켓과 날개의 비주얼 효과를 담당
-public class PlayerPassiveItemVisual : NetworkBehaviour
+public class PlayerPassiveItemVisual : NetworkBehaviour, ISoftReset
 {
     [Header("Visual References")]
     [SerializeField] private Transform backTransform; // Back 오브젝트 (로켓/날개 부모)
@@ -232,5 +232,20 @@ public class PlayerPassiveItemVisual : NetworkBehaviour
         {
             rightWingFlapSequence.Kill();
         }
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 모든 비주얼 이펙트 상태를 초기화하고 꺼둡니다.
+    /// </summary>
+    public void SoftReset()
+    {
+        if (rocketVisual != null) rocketVisual.SetActive(false);
+        if (rocketFlame != null) rocketFlame.SetActive(false);
+        if (leftWingVisual != null) leftWingVisual.SetActive(false);
+        if (rightWingVisual != null) rightWingVisual.SetActive(false);
+        if (leftWingFlapSequence != null && leftWingFlapSequence.IsActive()) leftWingFlapSequence.Kill();
+        if (rightWingFlapSequence != null && rightWingFlapSequence.IsActive()) rightWingFlapSequence.Kill();
+        if (leftWingTransform != null) leftWingTransform.localEulerAngles = originalLeftWingRotation;
+        if (rightWingTransform != null) rightWingTransform.localEulerAngles = originalRightWingRotation;
     }
 }
