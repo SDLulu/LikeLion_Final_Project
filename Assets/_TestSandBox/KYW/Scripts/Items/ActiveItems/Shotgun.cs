@@ -13,6 +13,8 @@ public class Shotgun : NetworkBehaviour, IItemInteraction
     [SerializeField] private float bulletSpeed = 12f; // 총알 속도
     [SerializeField] private int bulletCount = 5;     // 한 번에 발사할 총알 수
     [SerializeField] private float spreadAngle = 30f; // 총알 퍼짐 각도 (도)
+    [SerializeField] private float shotgunRecoilForce = 3f; // 샷건 리코일 힘
+    [SerializeField] private float shotgunRecoilStun = 0.12f; // 입력/물리 차단 스턴 시간
 
     [Networked] private TickTimer fireRateTimer { get; set; }
     [Networked] private NetworkBool IsHeld { get; set; }
@@ -88,6 +90,25 @@ public class Shotgun : NetworkBehaviour, IItemInteraction
                 }
                 
             }
+
+            // 리코일 적용: 기본 발사 방향의 반대 방향으로 넉백+스턴
+            ApplyRecoil(baseDirection, shotgunRecoilForce, shotgunRecoilStun);
+        }
+    }
+
+    private void ApplyRecoil(Vector2 fireDirection, float force, float stunSeconds)
+    {
+        if (!Object.HasStateAuthority) return;
+
+        var ownerObject = Runner.GetPlayerObject(Object.InputAuthority);
+        if (ownerObject == null) return;
+        
+        var interaction = ownerObject.GetComponent<IPlayerInteraction>();
+        if (interaction != null)
+        {
+            Vector2 recoilDir = (-fireDirection).normalized;
+            Vector2 forceVec = recoilDir * force;
+            interaction.ApplyKnockback(forceVec, stunSeconds);
         }
     }
 

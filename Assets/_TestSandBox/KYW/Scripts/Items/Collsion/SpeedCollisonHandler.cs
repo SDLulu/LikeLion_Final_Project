@@ -48,7 +48,9 @@ public class SpeedCollisionHandler : NetworkBehaviour
     public override void FixedUpdateNetwork()
     {
         if (!HasStateAuthority) return;
-        if (itemInteraction == null || itemInteraction.IsHeld) return; // 들린 상태면 무시 (IsHeld = true일 때)
+        // 아이템이 아닌 총알 등에서도 동작해야 하므로 null은 허용
+        // 단, 아이템인 경우 들린 상태(IsHeld)일 때만 무시
+        if (itemInteraction != null && itemInteraction.IsHeld) return;
         
 
         
@@ -117,7 +119,9 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!HasStateAuthority) return;
-        if (itemInteraction == null || itemInteraction.IsHeld) return; // 들린 상태면 무시 (IsHeld = true일 때)
+        // 아이템이 아닌 총알 등에서도 동작해야 하므로 null은 허용
+        // 단, 아이템인 경우 들린 상태(IsHeld)일 때만 무시
+        if (itemInteraction != null && itemInteraction.IsHeld) return;
         if (!IsInSpeedAttackMode) return;
         
         // 자기 자신 또는 같은 아이템의 다른 콜라이더와의 충돌 방지
@@ -128,12 +132,14 @@ public class SpeedCollisionHandler : NetworkBehaviour
     
     private void HandleCollision(GameObject target)
     {
+        bool didHit = false;
         // 플레이어, 적, NPC는 모두 IPlayerInteraction 사용 (나중에 적/NPC 처리를 다르게 할 수 있음)
         var playerInteraction = target.GetComponent<IPlayerInteraction>();
         if (playerInteraction != null)
         {
             ApplyDamageAndKnockback(target, playerInteraction);
-            return;
+            didHit = true;
+            // return; -> 아이템 충돌도 함께 체크할 수 있도록 반환 제거
         }
         
         // 아이템 충돌 처리
@@ -141,6 +147,14 @@ public class SpeedCollisionHandler : NetworkBehaviour
         if (itemInteraction != null)
         {
             ApplyKnockbackOnly(target, itemInteraction);
+            didHit = true;
+        }
+
+        // 총알에 부착된 스피드콜라이더인 경우, 유효한 히트가 있었다면 다음 틱에 소멸 요청
+        if (didHit)
+        {
+            var bullet = GetComponentInParent<Bullets>();
+            bullet?.RequestDespawn();
         }
     }
     

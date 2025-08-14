@@ -33,10 +33,4 @@ public class PlayerStageController : NetworkBehaviour
         var screenPos = Camera.main.WorldToScreenPoint(worldPos);
         return screenPos;
     }
-
-    public bool IsAlive()
-    {
-        // Todo
-        return true;
-    }
 }

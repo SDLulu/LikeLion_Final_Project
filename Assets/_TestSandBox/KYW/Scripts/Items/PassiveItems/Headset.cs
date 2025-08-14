@@ -80,6 +80,15 @@ public class Headset : NetworkBehaviour, IItemInteraction
         
         // 자신을 들고 있는 플레이어의 던지기 컴포넌트 찾기
         var playerThrower = GetComponentInParent<PlayerObjectThrower>();
+        var shopitem = GetComponent<ShopItem>();
+        var shopmanager = FindFirstObjectByType<ShopManager>();
+        if(shopitem != null)
+        {
+            if (shopitem.ItemData.IsAvailable)
+            {
+                shopmanager.Rpc_ReportTheftByData(shopitem.ItemData);
+            }
+        }
         if (playerThrower != null)
         {
             playerThrower.ReleaseObject(gameObject, false); // applyForce = false

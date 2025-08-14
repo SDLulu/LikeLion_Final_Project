@@ -43,7 +43,7 @@ public class PlayerInteraction : NetworkBehaviour
         ButtonsPrevious = input.NetworkButtons;
         
         // 🎮 상호작용 입력 감지 (F키)
-        if (pressed.IsSet(SpelunkyInputButtons.Interact))
+        if (pressed.IsSet(SpelunkyInputButtons.buy))
         {
             Debug.Log("[PlayerInteraction] 상호작용 입력 감지됨");
             
@@ -73,10 +73,11 @@ public class PlayerInteraction : NetworkBehaviour
     {
         // IInteractable 인터페이스를 구현한 컴포넌트 찾기 여기에 이거대신 스크립트 연결해주면댐댐
         var interactableComponent = interactable.GetComponent<IInteractable>();
+        var shopitem = interactable.GetComponent<ShopItem>();
         if (interactableComponent != null)
         {
             // 상호작용 실행
-            interactableComponent.OnInteract(this);
+            shopitem.OnInteract(this);
             Debug.Log($"[PlayerInteraction] {interactable.name}과 상호작용 완료");
         }
         else
@@ -129,4 +130,4 @@ public class PlayerInteraction : NetworkBehaviour
 public interface IInteractable
 {
     void OnInteract(PlayerInteraction player);
-} 
+}

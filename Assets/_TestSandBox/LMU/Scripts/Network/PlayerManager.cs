@@ -5,7 +5,7 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
-[RequiredManager(typeof(PlayerManager))]
+[NetworkSpawnDelay(typeof(PlayerManager))]
 public class PlayerManager : NetworkBehaviour
 {
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
@@ -30,10 +30,13 @@ public class PlayerManager : NetworkBehaviour
     [Networked, Capacity(4)]
     public NetworkDictionary<PlayerRef, NetworkObject> Players => default;
 
+    // ---
+    private Dictionary<PlayerRef, PlayerData> _cacheDatas = new();
+
     public override void Spawned()
     {
         DontDestroyOnLoad(this.gameObject);
-        NetworkEventSystem.Inst.RegisterManager(this);
+        NetworkEventSystem.Inst.RegisterNetDelay(this);
 
         // Note - 기획변경으로 더이상 사용하지않음
         // var uiController = FindAnyObjectByType<LobbyUI_Manager>();
@@ -52,6 +55,7 @@ public class PlayerManager : NetworkBehaviour
         Players.Clear();
         _alivePlayers.Clear();
         _changeDetectors.Clear();
+        _cacheDatas.Clear();
     }
 
     public override async void FixedUpdateNetwork()
@@ -181,14 +185,23 @@ public class PlayerManager : NetworkBehaviour
         return null;
     }
 
+    public PlayerVoice GetPlayerVoice(PlayerRef player)
+    {
+        if (Players.ContainsKey(player))
+        {
+            return Players[player].GetComponentInChildren<PlayerVoice>();
+        }
+        return null;
+    }
+
     public Dictionary<PlayerRef, PlayerData> GetPlayerDatas()
     {
-        var dict = new Dictionary<PlayerRef, PlayerData>();
+        _cacheDatas.Clear();
         foreach (var player in Players)
         {
-            dict.Add(player.Key, player.Value.GetComponent<PlayerData>());
+            _cacheDatas.Add(player.Key, player.Value.GetComponent<PlayerData>());
         }
-        return dict;
+        return _cacheDatas;
     }
 
     public NetworkDictionary<PlayerRef, NetworkObject> GetPlayers()
@@ -216,12 +229,12 @@ public class PlayerManager : NetworkBehaviour
     public List<NetworkObject> GetAlivePlayers()
     {
         _alivePlayers.Clear();
-        foreach (var player in Players)
+        foreach (var player in GetPlayerDatas())
         {
-            var p = player.Value.GetComponent<PlayerStageController>();
-            if (p.IsAlive())
-                _alivePlayers.Add(player.Value);
+            if (player.Value.IsAlive)
+                _alivePlayers.Add(player.Value.GetComponent<NetworkObject>());
         }
+
         return _alivePlayers;
     }
 
@@ -238,6 +251,7 @@ public class PlayerManager : NetworkBehaviour
     public void AddPlayerDataAction(Action<Dictionary<PlayerRef, PlayerData>> action)
     {
         OnPlayerDataChanged += action;
+        OnPlayerDataChanged?.Invoke(GetPlayerDatas());
     }
     public void RemovePlayerDataAction(Action<Dictionary<PlayerRef, PlayerData>> action)
     {

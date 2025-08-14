@@ -1,6 +1,7 @@
 using System;
 using Fusion;
 using LMCore;
+using Photon.Voice.Unity;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -32,7 +33,7 @@ public class LobbyManager : BaseManager<LobbyManager>
         localRoomName = default;
     }
 
-    public string NetworkRunnerPath => "Prefabs/TitleBatchModule/@NetworkRunner";
+    public string NetworkRunnerPath => "Prefabs/@NetworkRunner";
     public GameObject NetworkRunnerPrefab => Resources.Load<GameObject>(NetworkRunnerPath);
     [SerializeField] private NetworkRunner netRunner;
     public NetworkRunner NetRunner
@@ -52,6 +53,8 @@ public class LobbyManager : BaseManager<LobbyManager>
             return netRunner;
         }
     }
+    [SerializeField] private Recorder _voiceRecorder;
+    public Recorder VoiceRecorder => _voiceRecorder ?? FindAnyObjectByType<Recorder>();
 
     /// <summary>
     /// 외부에서 강제로 Runner 설정

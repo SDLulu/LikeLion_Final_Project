@@ -44,7 +44,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     [Networked] public int CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
     [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
     [Networked, OnChangedRender(nameof(OnDirectionChanged))] private NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
-    [Networked] protected bool IsDead { get; set; }
+    [Networked] public bool IsDead { get; set; }
     [Networked] public bool IsStunned { get; private set; }
     [Networked] public bool IsInvincible { get; private set; }
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
@@ -124,7 +124,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
 
     protected virtual void UpdateIdleState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(0f);
 
         //타겟이 감지되면 Chase 상태로 전환
         if (TargetPlayer != null)
@@ -157,7 +157,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
 
         // 정찰 로직
         float moveDirection = IsFacingRight ? 1f : -1f;
-        nrb.Rigidbody.linearVelocity = new Vector2(moveDirection * enemyData.moveSpeed, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(moveDirection * enemyData.moveSpeed);
 
         //벽 또는 절벽 감지 시 방향 전환
         if ((IsDetectingWall() || !IsDetectingGround()) && FlipTimer.ExpiredOrNotRunning(Runner))
@@ -193,12 +193,12 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
             Flip();
         }
 
-        nrb.Rigidbody.linearVelocity = new Vector2(Mathf.Sign(directionToTarget) * enemyData.moveSpeed, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(Mathf.Sign(directionToTarget) * enemyData.moveSpeed);
     }
 
     protected virtual void UpdateAttackState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(0f);
 
         if (StateTimer.ExpiredOrNotRunning(Runner))
         {
@@ -208,7 +208,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     }
     protected virtual void UpdateHitReactState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(0f);
 
         if (StateTimer.ExpiredOrNotRunning(Runner))
         {
@@ -218,13 +218,13 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     }
     protected virtual void UpdateDeadState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(0f);
         //coll.enabled = false; //다른 오브젝트와 충돌하지 않도록 비활성화
     }
 
     protected virtual void UpdateStunState()
     {
-        nrb.Rigidbody.linearVelocity = new Vector2(0, nrb.Rigidbody.linearVelocity.y);
+        SetVelocityX(0f);
 
         if (IsStunned && StateTimer.ExpiredOrNotRunning(Runner))
         {
@@ -252,6 +252,18 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     {
         FlipTimer = TickTimer.CreateFromSeconds(Runner, 0.5f); //빠른 플립을 방지하기 위한 플립타이머 설정
         IsFacingRight = !IsFacingRight;
+    }
+
+    // 상태 기반 물리 게이트: 강제 속도 대입을 한 곳에서 통제
+    protected void SetVelocityX(float x)
+    {
+        if (nrb == null) return;
+        // 플레이어와 동일 정책: 조작이 불가한 4상태에서는 인위적 속도 제어 차단
+        if (IsDead || IsStunned || IsHeld || IsThrown)
+        {
+            return;
+        }
+        nrb.Rigidbody.linearVelocity = new Vector2(x, nrb.Rigidbody.linearVelocity.y);
     }
 
     public void OnDirectionChanged()
@@ -422,14 +434,20 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         // 사망 상태에서는 무적 설정 불가
         if (IsDead) return;
 
-        IsInvincible = value;
-
-        if (value && duration > 0f)
+        if (value)
         {
-            InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+            // 이미 무적이면 갱신하지 않음 (연속 히트로 무적시간이 계속 리셋되는 문제 방지)
+            if (IsInvincible) return;
+            IsInvincible = true;
+            if (duration > 0f)
+            {
+                InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+            }
         }
-        else if (!value)
+        else
         {
+            if (!IsInvincible) return;
+            IsInvincible = false;
             InvincibleTimer = TickTimer.None;
         }
     }

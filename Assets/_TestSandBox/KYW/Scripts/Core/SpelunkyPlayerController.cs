@@ -52,8 +52,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     private PlayerMovement movement;
     private PlayerJump jump;
     private PlayerClimbing climbing;
-    private testPlayerInventory inventory;
-
+    
     private PlayerStunInvincibleDie stunInvincibleDie;
     private PlayerDeathHandler playerDeathHandler;
     
@@ -80,7 +79,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
         movement = GetComponent<PlayerMovement>();
         jump = GetComponent<PlayerJump>();
         climbing = GetComponent<PlayerClimbing>();
-        inventory = GetComponent<testPlayerInventory>();
 
         stunInvincibleDie = GetComponent<PlayerStunInvincibleDie>();
         playerDeathHandler = GetComponent<PlayerDeathHandler>();
@@ -162,26 +160,12 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             return;
         }
 
-
         // 🎮 상태 확인 - 입력 불가능한 상태면 입력 무시
         if (IsDead || IsStunned || IsHeld || IsThrown)
         {
-            // 입력 변수들 초기화
-            horizontalInput = 0f;
-            verticalInput = 0f;
-            mouseScrollWheel = 0f;
-            jumpPressed = false;
-            downJumpPressed = false;
-            pickupItemPressed = false;
-            throwItemPressed = false;
-            useItemHeld = false;
-            interactPressed = false;
-            skillPressed = false;
-            deathPressed = false;
+            ResetInput();
             return;
         }
-
-
 
         if (Object.HasInputAuthority)
         {
@@ -240,7 +224,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
             itemPickup?.ProcessInput(input);
             itemUsage?.ProcessInput(input);
             itemThrower?.ProcessInput(input);
-            inventory?.ProcessInput(input);
             interaction?.ProcessInput(input);
         }
         
@@ -283,7 +266,6 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public bool IsInvincible => stunInvincibleDie?.IsInvincible ?? false;
     public bool IsHeld => stunInvincibleDie?.IsHeld ?? false;
     public bool IsThrown => stunInvincibleDie?.IsThrown ?? false;
-    public bool IsNormal => !(playerDeathHandler?.IsDead ?? false) && !(stunInvincibleDie?.IsStunned ?? false) && !(stunInvincibleDie?.IsHeld ?? false) && !(stunInvincibleDie?.IsThrown ?? false);
     
     // 🎯 들린 상태에서 탈출 처리 (던지기와 동일한 로직)
     private void EscapeFromBeingHeld()
