@@ -25,7 +25,7 @@ Transform:
   m_GameObject: {fileID: 341211699525651198}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.23, y: -2.07, z: 0}
+  m_LocalPosition: {x: 2.35, y: -2.07, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -56,7 +56,7 @@ Transform:
   m_GameObject: {fileID: 402608013330455404}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.94, y: -2.09, z: 0}
+  m_LocalPosition: {x: 5.51, y: -2.09, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -87,7 +87,7 @@ Transform:
   m_GameObject: {fileID: 712599035728351655}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6.95, y: -2.07, z: 0}
+  m_LocalPosition: {x: 8.66, y: -2.07, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -118,7 +118,7 @@ Transform:
   m_GameObject: {fileID: 3309101499148911022}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 11.49, y: -0.51, z: 0}
+  m_LocalPosition: {x: 13.97, y: -0.51, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -177,7 +177,6 @@ MonoBehaviour:
   shopkeeperPrefab:
     RawGuidValue: 1f9bfeaad3c7dcb41a6d867263fe0a59
   shopkeeperSpawnPoint: {fileID: 8211421452019672159}
-  maxShopItems: 3
   itemSpawnPoints:
   - {fileID: 4819140521062488592}
   - {fileID: 2942115880849145758}
@@ -205,7 +204,7 @@ MonoBehaviour:
     itemName: 
     basePrice: 0
     itemPrefab:
-      RawGuidValue: bed109405a357684d8d0d33db28bdafd
+      RawGuidValue: 8cd3109f35905a743a214c959a4d77c6
     itemSprite: {fileID: 0}
   - itemType: 0
     itemName: 
@@ -213,20 +212,6 @@ MonoBehaviour:
     itemPrefab:
       RawGuidValue: 39d68aa59d2b90148b4b8ea7c78122f5
     itemSprite: {fileID: 0}
-  shopAreaTrigger: {fileID: 7306228366429866015}
-  _shopAreaCollider: {fileID: 0}
-  _ShopItems:
-  - ItemNetworkId:
-      Raw: 0
-    ItemType: 0
-    Price: 0
-    IsAvailable: 0
-    IsPicked: 0
-    OriginalPosition: {x: 0, y: 0, z: 0}
-    ItemName:
-      _length: 0
-      _data:
-        Data: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 --- !u!114 &7041268730039732480
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -314,7 +299,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 4.8757887, y: 0.14959192}
+  m_Offset: {x: 7.5471, y: 0.44640446}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -324,7 +309,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 15.853857, y: 4.4494295}
+  m_Size: {x: 16.051731, y: 9.923969}
   m_EdgeRadius: 0
 --- !u!114 &6515108224218623186
 MonoBehaviour:
