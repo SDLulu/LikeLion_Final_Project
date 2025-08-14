@@ -24,31 +24,18 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, PlayerRef> OnPlayerSpawnedEvent;
 
     // --- 커스텀 이벤트
-    public event Action<E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
+    public event Action<NetworkRunner, E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
     public event Action<Stage.Data> OnStageLoadDoneEvent;                   // 스테이지 정보 - "3-1 or 5-4"
     public event Action<bool> OnCutSceneActiveEvent;                        // 컷씬 활성화 여부
-    public event Action<PlayerRef, int> OnEnemyKilledEvent;                 // 적 처치 (플레이어, 가중치)
+    public event Action<PlayerRef, EnemyData> OnEnemyKilledEvent;           // 적 처치 (플레이어, 가중치)
     public event Action<PlayerRef, int> OnItemCollectedEvent;               // 아이템 획득 (플레이어, 가중치)
-    public event Action<PlayerRef, int> OnScoreChangedEvent;                // 점수 변경 알림 (플레이어, 변경 후 점수)
+    public event Action<PlayerRef> OnScoreChangedEvent;                     // 점수 변경 알림 
 
-    public void TriggerStageLoadDoneEvent(Stage.Data stageInfo)   
-    {
-        OnStageLoadDoneEvent?.Invoke(stageInfo);
-    }
-    public void TriggerGameStateChangedEvent(E_StateName previousState, E_StateName currentState)
-    {
-        OnGameStateChangedEvent?.Invoke(previousState, currentState);
-    }
-    public void TriggerCutSceneActiveEvent(bool isActive)
-    {
-        OnCutSceneActiveEvent?.Invoke(isActive);
-    }
-
-    public void TriggerEnemyKilled(PlayerRef attacker, int scoreWeight = 1)
+    public void TriggerEnemyKilled(PlayerRef attacker, EnemyData enemyData)
     {
         if (IsServer() == false)
             return;
-        OnEnemyKilledEvent?.Invoke(attacker, scoreWeight);
+        OnEnemyKilledEvent?.Invoke(attacker, enemyData);
     }
 
     public void TriggerItemCollected(PlayerRef attacker, int scoreWeight = 1)
@@ -58,11 +45,77 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnItemCollectedEvent?.Invoke(attacker, scoreWeight);
     }
 
-    public void TriggerScoreChanged(PlayerRef attacker, int newScore)
+    public void TriggerScoreChanged(PlayerRef attacker)
     {
         if (IsServer() == false)
             return;
-        OnScoreChangedEvent?.Invoke(attacker, newScore);
+        OnScoreChangedEvent?.Invoke(attacker);
+    }
+
+    public void TriggerGameStateChangedEvent(NetworkRunner runner, E_StateName previous, E_StateName current)
+    {
+        if (IsServer() == false)
+            return;
+        OnGameStateChangedEvent?.Invoke(runner, previous, current);
+    }
+
+    public void TriggerCutSceneActiveEvent(bool isActive)
+    {
+        if (IsServer() == false)
+            return;
+        OnCutSceneActiveEvent?.Invoke(isActive);
+    }
+
+    public void TriggerStageLoadDoneEvent(Stage.Data stageData)
+    {
+        if (IsServer() == false)
+        {
+            return;
+        }
+        var handler = OnStageLoadDoneEvent;
+        if (handler == null)
+        {
+            return;
+        }
+        foreach (var del in handler.GetInvocationList())
+        {
+            var action = del as Action<Stage.Data>;
+            if (action == null)
+            {
+                continue;
+            }
+
+            var method = action.Method;
+            var target = action.Target;
+            string targetInfo = "static";
+            if (target is UnityEngine.MonoBehaviour mb)
+            {
+                // 파괴된 컴포넌트는 Unity의 null 비교에서 null로 동작함
+                if (mb == null)
+                {
+                    targetInfo = "Destroyed(MonoBehaviour)";
+                }
+                else
+                {
+                    var go = mb.gameObject;
+                    targetInfo = $"{mb.GetType().FullName} on GO='{go.name}' Scene='{go.scene.name}'";
+                }
+            }
+            else if (target != null)
+            {
+                targetInfo = target.GetType().FullName;
+            }
+
+            try
+            {
+                action.Invoke(stageData);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning(
+                    $"[StageLoadDoneEvent] 예외 발생 - {method.DeclaringType.FullName}.{method.Name} | Target={targetInfo}\n{ex}");
+            }
+        }
     }
 
 #region NewtorkSpawn 시점에 따른 초기화 이벤트 처리
@@ -146,7 +199,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         OnEnemyKilledEvent = null;
         OnItemCollectedEvent = null;
         OnScoreChangedEvent = null;
-
+        OnCutSceneActiveEvent = null;
         _spawnHandler = null;
         _connectionHandler = null;
     }

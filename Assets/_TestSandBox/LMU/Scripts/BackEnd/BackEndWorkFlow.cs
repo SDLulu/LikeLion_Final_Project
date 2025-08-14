@@ -1,10 +1,17 @@
 using System;
+using System.Reflection;
 using BackEnd;
+using LitJson;
 using LMCore;
 using UnityEngine;
 
 public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
+
+
+
+    [field: SerializeField] public string LeaderboardUUID { get; private set; } = "0198a6bc-a05b-704f-ac2c-6aa44dbe42d3";
+
     [ContextMenu("로컬 뒤끝 정보 삭제")]
     public void DeleteLocalBackend()
     {
@@ -39,12 +46,12 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
         string nickName = UI_CreateNickName.InputFieldStr;
         Debug.Log($"<color=yellow>닉네임설정 : {nickName}</color>");
         NickName = nickName;
-        UpdateBackendNickName(nickName, 
+        UpdateBackendNickName(nickName,
             onSuccess: () =>
             {
                 Debug.Log("닉네임 업데이트 성공");
                 CompleteCreateNickName();
-            }, 
+            },
             onFail: () =>
             {
             });
@@ -52,7 +59,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 
     public static FakeClient.Data FakeNickNameData { get; private set; }
     public static bool IsFakeClient { get; private set; } = false;
-    public static string NickName {get; private set;} = "백앤드는 아직 테스트중";
+    public static string NickName { get; private set; } = "백앤드는 아직 테스트중";
 
     private AwaitableCompletionSource<bool> _createNickNameTCS;
     public async Awaitable LoginGuest()
@@ -70,7 +77,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
         await Fader.Inst.FadeInAsync(seconds: 0.5f);
 
         // 로딩 표시 후 백엔드 초기화
-        await Fader.Inst.ShowLoadingAsync(onCancel:() => Quit());
+        await Fader.Inst.ShowLoadingAsync(onCancel: () => Quit());
         InitBackend();
 
         var loginTCS = new AwaitableCompletionSource<bool>();

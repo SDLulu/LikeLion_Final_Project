@@ -38,8 +38,6 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
     }
 
 
-
-
     [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public static void RPC_SendChatMessage(NetworkRunner runner, PlayerRef sender, string message, ChatChannel channel = ChatChannel.None, RpcInfo rpcInfo = default)
     {

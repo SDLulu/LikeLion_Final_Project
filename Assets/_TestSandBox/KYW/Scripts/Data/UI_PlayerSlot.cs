@@ -1,3 +1,4 @@
+using Fusion;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,9 +30,7 @@ public class UI_PlayerSlot : MonoBehaviour
 
     private void Awake()
     {
-        // 같은 부모 아래의 컴포넌트들 찾기
-        _playerInventory = transform.parent.parent.GetComponentInChildren<PlayerInventory>();
-        _playerHealth = transform.parent.parent.GetComponentInChildren<PlayerHealth>();
+        // 바인딩은 외부에서 명시적으로 수행합니다.
     }
 
     private void Start()
@@ -42,7 +41,10 @@ public class UI_PlayerSlot : MonoBehaviour
 
     private void InitializeUI()
     {
-        if (_isInitialized) return;
+        if (_isInitialized)
+        {
+            return;
+        }
 
         // 컴포넌트들이 모두 있는지 확인
         if (_playerInventory == null || _playerHealth == null)
@@ -58,10 +60,67 @@ public class UI_PlayerSlot : MonoBehaviour
         UpdateUI();
         
         // PlayerSlotUIManager에 등록
-        PlayerSlotUIManager.Inst.RegisterPlayerUI(this);
+        // PlayerSlotUIManager.Inst.RegisterPlayerUI(this);
         
         _isInitialized = true;
         Debug.Log($"📱 UI_PlayerSlot: 초기화 완료");
+    }
+
+    /// <summary>
+    /// 이 UI 슬롯이 참조할 실제 플레이어 오브젝트를 바인딩합니다.
+    /// </summary>
+    /// <param name="ownerRoot">플레이어의 루트 GameObject</param>
+    public void BindOwner(GameObject ownerRoot)
+    {
+        if (ownerRoot == null)
+        {
+            Debug.LogWarning("📱 UI_PlayerSlot: ownerRoot 가 null 입니다.");
+            return;
+        }
+
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        _playerInventory = ownerRoot.GetComponentInChildren<PlayerInventory>();
+        _playerHealth = ownerRoot.GetComponentInChildren<PlayerHealth>();
+
+        if (_playerInventory == null || _playerHealth == null)
+        {
+            Debug.LogWarning("📱 UI_PlayerSlot: 필요한 컴포넌트를 ownerRoot 에서 찾지 못했습니다.");
+            return;
+        }
+
+        InitializeUI();
+    }
+
+    /// <summary>
+    /// 이 UI 슬롯이 참조하는 실제 플레이어 오브젝트가 유효한지 검사합니다.
+    /// </summary>
+    public bool IsOwnerValid()
+    {
+        if (this == null)
+        {
+            return false;
+        }
+
+        if (gameObject == null)
+        {
+            return false;
+        }
+
+        if (_playerInventory == null)
+        {
+            return false;
+        }
+
+        if (_playerHealth == null)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private void SubscribeToEvents()
@@ -78,6 +137,10 @@ public class UI_PlayerSlot : MonoBehaviour
     }
 
 
+    public void UpdateData()
+    {
+        UpdateUI();
+    }
 
     private void UpdateUI()
     {
@@ -142,16 +205,40 @@ public class UI_PlayerSlot : MonoBehaviour
 
     private void UpdateItemIcons()
     {
-        if (_playerInventory == null) return;
+        if (_playerInventory == null)
+        {
+            return;
+        }
 
         // 각 패시브 아이템 아이콘 활성화/비활성화
-        if (_rocketIcon != null) _rocketIcon.SetActive(_playerInventory.hasRocket);
-        if (_wingsIcon != null) _wingsIcon.SetActive(_playerInventory.hasWings);
-        if (_speedShoesIcon != null) _speedShoesIcon.SetActive(_playerInventory.hasSpeedShoes);
-        if (_jumpShoesIcon != null) _jumpShoesIcon.SetActive(_playerInventory.hasJumpShoes);
-        if (_magnetIcon != null) _magnetIcon.SetActive(_playerInventory.hasMagnet);
-        if (_headsetIcon != null) _headsetIcon.SetActive(_playerInventory.hasHeadset);
-        if (_sunglassesIcon != null) _sunglassesIcon.SetActive(_playerInventory.hasSunglasses);
+        if (_rocketIcon != null)
+        {
+            _rocketIcon.SetActive(_playerInventory.hasRocket);
+        }
+        if (_wingsIcon != null)
+        {
+            _wingsIcon.SetActive(_playerInventory.hasWings);
+        }
+        if (_speedShoesIcon != null)
+        {
+            _speedShoesIcon.SetActive(_playerInventory.hasSpeedShoes);
+        }
+        if (_jumpShoesIcon != null)
+        {
+            _jumpShoesIcon.SetActive(_playerInventory.hasJumpShoes);
+        }
+        if (_magnetIcon != null)
+        {
+            _magnetIcon.SetActive(_playerInventory.hasMagnet);
+        }
+        if (_headsetIcon != null)
+        {
+            _headsetIcon.SetActive(_playerInventory.hasHeadset);
+        }
+        if (_sunglassesIcon != null)
+        {
+            _sunglassesIcon.SetActive(_playerInventory.hasSunglasses);
+        }
     }
 
     // --- Event Handlers ---
@@ -170,7 +257,7 @@ public class UI_PlayerSlot : MonoBehaviour
     private void OnDestroy()
     {
         // PlayerSlotUIManager에서 제거
-        PlayerSlotUIManager.Inst?.UnregisterPlayerUI(this);
+        // PlayerSlotUIManager.Inst?.UnregisterPlayerUI(this);
         
         // 이벤트 구독 해제
         if (_playerInventory != null)
@@ -188,4 +275,5 @@ public class UI_PlayerSlot : MonoBehaviour
         _playerHealth = null;
         _isInitialized = false;
     }
+
 }

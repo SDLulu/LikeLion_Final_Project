@@ -8,8 +8,20 @@ public class UIEventSystem : BaseManager<UIEventSystem>
     public event Action OnPauseUIToggleEvent;
     public event Action<bool> OnPauseUIActiveEvent;
     public event Action<bool> OnGameUIActiveEvent;
-    
+    public event Action<bool> OnCutSceneActiveEvent;
 
+    private void OnDestroy()
+    {
+        OnPauseUIToggleEvent = null;
+        OnPauseUIActiveEvent = null;
+        OnGameUIActiveEvent = null;
+        OnCutSceneActiveEvent = null;
+    }
+
+    public void TriggerCutSceneActive(bool active)
+    {
+        OnCutSceneActiveEvent?.Invoke(active);
+    }
     public void TriggerPauseUIToggle()
     {
         OnPauseUIToggleEvent?.Invoke();
