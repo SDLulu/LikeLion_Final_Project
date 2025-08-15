@@ -124,7 +124,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private void LoadMapPrefabsAutomatically()
     {
         // 모든 맵 프리팹 불러오기
-        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps");
+        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
 
         Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
 
@@ -250,6 +250,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
 
     public bool isCreatingMap = false;
+
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
@@ -283,22 +284,11 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
                 if (prefab.GetComponent<NetworkObject>() != null)
                 {
-                    if (prefab.GetComponent<ShopManager>() != null)
+                    Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
                     {
-                        yield return new WaitForSeconds(3f); // ShopManager가 초기화될 시간을 주기 위해 잠시 대기
-
-                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
-                        {
-                            obj.transform.SetParent(parentTrans);
-                            obj.name = prefab.name;
-                        });
-                    }
-                    else
-                        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
-                        {
-                            obj.transform.SetParent(parentTrans);
-                            obj.name = prefab.name;
-                        });
+                        obj.transform.SetParent(parentTrans);
+                        obj.name = prefab.name;
+                    });
                 }
                 else
                 {
@@ -420,9 +410,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #region 타일 위에 적 생성
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
-        while (isCreatingMap)
-            yield return null;
-
         yield return new WaitForSeconds(2f);
 
         if (Random.value > 0.1f) yield break;
@@ -451,18 +438,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
         {
             Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
             {
-            obj.transform.SetParent(parentTrans);
-            obj.name = objectToSpawnIfTileExists.name;
+                obj.transform.SetParent(parentTrans);
+                obj.name = objectToSpawnIfTileExists.name;
 
-            var netObj = obj.GetComponent<NetworkObject>();
-            if (netObj != null)
-            {
-                Runner.SetIsSimulated(netObj, true); // ← 반드시 추가
-            }
-        });
+                var netObj = obj.GetComponent<NetworkObject>();
+                if (netObj != null)
+                {
+                    Runner.SetIsSimulated(netObj, true); // ← 반드시 추가
+                }
+            });
         }
 
-       
+
     }
     #endregion
 
