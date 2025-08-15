@@ -15,6 +15,11 @@ public class SO_GlobalSetting : ScriptableObject
     [field: SerializeField] public bool IsEnableBackend {get; private set;} = false;
     [field: SerializeField] public bool IsEnableVoice {get; private set;} = false;
 
+    public void SetGameSceneName(string sceneName)
+    {
+        GameScenePath = sceneName;
+    }
+
 #if UNITY_EDITOR
     [SerializeField] private List<SceneAsset> _sceneInfoList;
     public List<SceneAsset> SceneInfoList => _sceneInfoList;

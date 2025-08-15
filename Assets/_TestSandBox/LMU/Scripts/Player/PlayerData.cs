@@ -65,6 +65,8 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
+    public bool IsDead => IsAlive == false;
+
     public bool IsSpawned = false;
 
     public override void Spawned()
