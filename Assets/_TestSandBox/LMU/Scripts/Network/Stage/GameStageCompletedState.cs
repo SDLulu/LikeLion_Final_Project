@@ -24,7 +24,8 @@ public class GameStageCompletedState : BaseStateBehaviour
     {
         if (Runner.IsServer)
         {
-            _stageDataIndex = DataManager.Inst.StageData.First().Key;
+            // 첫번째 스테이지 로드는 WaitingState에서 진행하고, 이후 스테이지는 이 클래스에서 진행
+            _stageDataIndex = DataManager.Inst.StageData.First().Key + 1;
         }
     }
 
@@ -69,6 +70,8 @@ public class GameStageCompletedState : BaseStateBehaviour
         _minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
+        _stageDataIndex++;
+        Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
         base.OnExitState();
     }
 
@@ -231,11 +234,6 @@ public class GameStageCompletedState : BaseStateBehaviour
             onComplete?.Invoke();
             Debug.LogError("LoadNextMapAsync 오류");
             Debug.LogError(e.Message);
-        }
-        finally
-        {
-            _stageDataIndex++;
-            Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
         }
     }
 
