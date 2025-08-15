@@ -3,6 +3,7 @@ using Fusion;
 using LMCore;
 using UnityEngine;
 
+[NetworkSpawnDelay(typeof(ChatManager))]
 public class ChatManager : NetworkBehaviour, IAfterSpawned
 {
     public static ChatManager Inst => BaseManager<ChatManager>.Inst;
@@ -15,7 +16,6 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
     {
         NetworkEventSystem.Inst.RegisterNetDelay(this);
     }
-
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
         ChatHistories.Clear();
@@ -50,4 +50,11 @@ public class ChatManager : NetworkBehaviour, IAfterSpawned
         Inst.ChatHistories.Add(chat);
     }
 
+    public void ClearChatHistories()
+    {
+        if (Runner.IsServer == false)
+            return;
+
+        ChatHistories.Clear();
+    }
 }

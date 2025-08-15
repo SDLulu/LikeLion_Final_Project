@@ -23,7 +23,6 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
     public bool IsGameSceneLoaded => _isGameSceneLoaded;
     private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
     private TickTimer _playerSoftResetTimer;
-    private static bool _isFirst = true;
 
     // 로비씬에 플레이어가 참가할때
     public void PlayerJoined(PlayerRef player)
@@ -34,6 +33,7 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         }
     }
 
+    private static bool _isFirst = true;
     protected override async void OnEnterState()
     {
         if (Runner.IsServer)
@@ -43,12 +43,15 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
 
             _playerSoftResetTimer = TickTimer.None;
             _playerSoftResetInterval = 10.0f;
-            if (_isFirst == false)
+
+            if (_isFirst)
             {
-                await Awaitable.WaitForSecondsAsync(3.0f);
-                RPC_FadeInUI();
+                _isFirst = false;
+                return;
             }
-            _isFirst = false;
+
+            await Awaitable.WaitForSecondsAsync(3.0f);
+            RPC_FadeInUI();
         }
 
     }
@@ -63,7 +66,7 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         // 일정주기마다 플레이어 스탯정보 초기화
         if (_isIntervalSoftReset && _playerSoftResetTimer.ExpiredOrNotRunning(Runner))
         {
-            PlayerM.SoftResetAllPlayers();
+            PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
             _playerSoftResetTimer = TickTimer.CreateFromSeconds(Runner, _playerSoftResetInterval);
         }
     }

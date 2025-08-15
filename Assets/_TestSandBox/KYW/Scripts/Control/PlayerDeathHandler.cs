@@ -89,9 +89,14 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
         {
             return;
         }
+        // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
+        DropHandObject();
+        DropPassiveItems();
+        DropMoney();
+
         if (IsDead)
         {
-            ResurrectAt(GetDeadPosOrFallback());
+            ResurrectAt(GlobalSetting.Inst.LobbySpawnPos);
         }
         else
         {
