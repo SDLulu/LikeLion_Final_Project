@@ -7,14 +7,15 @@ using UnityEngine;
 public class PlayerSpawnHandler : MonoBehaviour
 {
     [Header("인스펙터 참조")]
-    [SerializeField] private AltarManager _altarManager;
+    public GameObject _altarManangerPrefab;
 
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private PlayerManager _hostPlayerManage;
     [SerializeField] private GameStates _gameStates;
     [SerializeField] private ChatManager _chatManager;
-    
+    [SerializeField] private AltarManager _altarManager;
+    [SerializeField] private LobbySpawnManager _lobbySpawnManager;
 
     private const string PLAYER_MANAGER_PREFAB_PATH = "Prefabs/PlayerManager";
     private const string GAME_STATES_PREFAB_PATH = "Prefabs/GameStates";
@@ -23,7 +24,6 @@ public class PlayerSpawnHandler : MonoBehaviour
     public GameObject PlayerManagerPrefab => Resources.Load<GameObject>(PLAYER_MANAGER_PREFAB_PATH);
     public GameObject GameStatesPrefab => Resources.Load<GameObject>(GAME_STATES_PREFAB_PATH);
     public GameObject ChatManagerPrefab => Resources.Load<GameObject>(CHAT_MANAGER_PREFAB_PATH);
-    public GameObject altarManangerPrefab;
 
     private void OnDestroy()
     {
@@ -79,20 +79,7 @@ public class PlayerSpawnHandler : MonoBehaviour
         _hostPlayerManage.AddPlayer(player);
     }
 
-
     public void SpawnManagers(NetworkRunner runner, PlayerRef player)
-    {
-        // 기존 방식으로 스폰 (하위 호환성 유지)
-        SpawnManagersLegacy(runner, player);
-        
-        // LobbySpawnManager를 통한 추가 스폰
-        SpawnManagersFromLobbyManager(runner, player);
-    }
-    
-    /// <summary>
-    /// 기존 방식으로 매니저들을 스폰 (하위 호환성 유지)
-    /// </summary>
-    private void SpawnManagersLegacy(NetworkRunner runner, PlayerRef player)
     {
         var gameManagerObj = runner.Spawn(PlayerManagerPrefab, Vector3.zero, Quaternion.identity, player);
         _hostPlayerManage = gameManagerObj.GetComponent<PlayerManager>();
@@ -103,34 +90,12 @@ public class PlayerSpawnHandler : MonoBehaviour
         var gameStatesObj = runner.Spawn(GameStatesPrefab, Vector3.zero, Quaternion.identity, player);
         _gameStates = gameStatesObj.GetComponent<GameStates>();
 
-        var altarManagerObj = runner.Spawn(altarManangerPrefab, Vector3.zero, Quaternion.identity);
+        var altarManagerObj = runner.Spawn(_altarManangerPrefab, Vector3.zero, Quaternion.identity);
         _altarManager = altarManagerObj.GetComponent<AltarManager>();
-    }
-    
-    /// <summary>
-    /// LobbySpawnManager에서 설정된 정보를 참고하여 프리팹들을 스폰
-    /// </summary>
-    private void SpawnManagersFromLobbyManager(NetworkRunner runner, PlayerRef player)
-    {
-        var lobbySpawnManager = FindObjectOfType<LobbySpawnManager>();
-        if (lobbySpawnManager == null) return;
-        
-        foreach (var spawnData in lobbySpawnManager.SpawnDataList)
-        {
-            if (spawnData.prefab != null && spawnData.spawnTransform != null)
-            {
-                try
-                {
-                    runner.Spawn(spawnData.prefab, 
-                        spawnData.spawnTransform.position, 
-                        spawnData.spawnTransform.rotation);
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"LobbySpawnManager 스폰 실패: {spawnData.prefab.name}, 오류: {e.Message}");
-                }
-            }
-        }
+
+        // 로비씬에 종속적인 객체스폰
+        _lobbySpawnManager = FindAnyObjectByType<LobbySpawnManager>();
+        _lobbySpawnManager.Spawn(runner);
     }
 
     /// <summary>
