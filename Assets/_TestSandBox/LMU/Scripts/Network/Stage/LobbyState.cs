@@ -42,7 +42,7 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
             PlayerM.SetPlayerPositions(GlobalSetting.Inst.LobbySpawnPos);
 
             _playerSoftResetTimer = TickTimer.None;
-            _playerSoftResetInterval = 5.0f;
+            _playerSoftResetInterval = 10.0f;
             if (_isFirst == false)
             {
                 await Awaitable.WaitForSecondsAsync(3.0f);
