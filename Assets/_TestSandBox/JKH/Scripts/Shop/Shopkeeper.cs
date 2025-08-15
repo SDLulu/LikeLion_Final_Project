@@ -39,6 +39,8 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
     [Networked]
     private PlayerRef CurrentTarget { get; set; } = PlayerRef.None;
 
+    [Networked] public int CurrentHealth { get; private set; }
+
     // 로컬 클라이언트에서만 사용될 변수
     private float _speechTimer;
     private PlayerRef _currentInteractingPlayer = PlayerRef.None; // 현재 상호작용 중인 플레이어 (호스트에서만 설정)
@@ -50,6 +52,16 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
     [SerializeField] private float attackDamage = 10f;
     [SerializeField] private float attackCooldown = 1f;
     private TickTimer _attackTimer;
+
+    // 타이머들 
+    [Networked] private TickTimer InvincibleTimer { get; set; }
+    [Networked] private TickTimer StunTimer { get; set; }
+    [Networked] private TickTimer ThrownTimer { get; set; }
+
+    [Networked] public bool IsDead { get; set; }
+    [Networked] public bool IsStunned { get; private set; }
+    [Networked] public bool IsInvincible { get; private set; }
+    [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
 
     // IPlayerInteraction.IsHeld (bool)을 만족하기 위한 래핑
     [Networked] private NetworkBool heldFlag { get; set; }
@@ -75,6 +87,7 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
         {
             CurrentState = ShopkeeperState.Passive;
             LastAggressor = PlayerRef.None;
+            CurrentHealth = 1;
         }
 
         // 말풍선 초기 비활성화
@@ -87,9 +100,20 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
     // ⭐️ 수정: 로직과 비주얼이 분리된 FixedUpdateNetwork
     public override void FixedUpdateNetwork()
     {
+        if (IsDead) return;
         // 호스트(StateAuthority)에서만 로직 처리
         if (Object.HasStateAuthority)
         {
+            if (IsInvincible && InvincibleTimer.Expired(Runner))
+            {
+                IsInvincible = false;
+                _animator.SetBool("IsStunned", false);
+            }
+            if (StunTimer.Expired(Runner))
+            {
+                _animator.SetBool("IsStunned", false);
+            }
+
             switch (CurrentState)
             {
                 case ShopkeeperState.Passive:
@@ -130,6 +154,7 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
                     // 이 상태들에서는 특별한 로직이 없습니다.
                     break;
             }
+
         }
     }
 
@@ -384,6 +409,8 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
     // ⭐️ 수정: 이제 이 메서드는 '시각적인 처리'만 담당합니다.
     private void UpdateVisuals()
     {
+        if(IsDead) return;
+
         // 애니메이션 업데이트 로직
         bool isRunning = (CurrentState == ShopkeeperState.Aggressive || CurrentState == ShopkeeperState.Attacking) && _netRigidbody.Rigidbody.linearVelocity.x != 0;
         _animator.SetBool("IsRunning", isRunning);
@@ -436,22 +463,88 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
 
     public void ApplyKnockback(Vector2 force, float stunDuration = 0)
     {
-        throw new System.NotImplementedException();
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 무적 상태에서는 넉백 불가
+        if (IsInvincible == true) return;
+
+        // 기본 스턴 지속시간 0.5초로 설정 (stunDuration이 0이면)
+        if (stunDuration <= 0f) stunDuration = 0.5f;
+
+        if (_netRigidbody != null)
+        {
+            _netRigidbody.Rigidbody.AddForce(force, ForceMode2D.Impulse);
+        }
+        else
+        {
+            Debug.LogWarning($"[{name}] Rigidbody2D 컴포넌트를 찾을 수 없어 넉백을 적용할 수 없습니다!");
+        }
+
+        ApplyStun(stunDuration);
     }
 
     public void TakeDamage(int damage)
     {
-        throw new System.NotImplementedException();
+        //죽었다면 데미지 못받게 return
+        if (IsDead) return;
+
+        //무적상태라면 데미지 못받게 return
+        if (IsInvincible) return;
+
+        CurrentHealth -= damage;
+        SetInvincible(true, 0.2f);
+        UnityEngine.Debug.Log($"[Shopkeeper]상점주인 체력 : {CurrentHealth}");
+
+        if (CurrentHealth <= 0)
+        {
+            CurrentHealth = 0;
+            IsDead = true;
+            _animator.SetBool("IsStunned", false);
+            _animator.SetTrigger("IsDead");
+            
+        }
+        else
+        {
+            _animator.SetBool("IsStunned", true);
+        }
     }
 
     public void ApplyStun(float duration)
     {
-        throw new System.NotImplementedException();
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 무적 상태에서는 스턴 불가
+        if (IsInvincible == true) return;
+
+        // 사망 상태에서는 스턴 불가
+        if (IsDead) return;
+
+        IsStunned = true;
+
+        _animator.SetBool("IsStunned", true);
+        StunTimer = TickTimer.CreateFromSeconds(Runner, duration);
     }
 
     public void SetInvincible(bool value, float duration = 0)
     {
-        throw new System.NotImplementedException();
+        // 권한 확인 (호스트/서버에서만 실행)
+        if (!HasStateAuthority) return;
+
+        // 사망 상태에서는 무적 설정 불가
+        if (IsDead) return;
+
+        IsInvincible = value;
+
+        if (value && duration > 0f)
+        {
+            InvincibleTimer = TickTimer.CreateFromSeconds(Runner, duration);
+        }
+        else if (!value)
+        {
+            InvincibleTimer = TickTimer.None;
+        }
     }
 
     public void OnPickedUp()

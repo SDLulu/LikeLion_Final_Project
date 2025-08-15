@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using LMCore;
 using Photon.Voice.Unity;
@@ -248,5 +249,13 @@ public class LobbyManager : BaseManager<LobbyManager>
             LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
         }
 
+    }
+
+    // --- 세션정보 
+    public void UpdateSessionInfo(bool isInGame)
+    {
+        var sessionProperties = new Dictionary<string, SessionProperty>();
+        sessionProperties["InGame"] = isInGame;
+        NetRunner.SessionInfo.UpdateCustomProperties(sessionProperties);
     }
 }

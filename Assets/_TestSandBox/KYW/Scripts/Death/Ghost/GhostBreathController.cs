@@ -23,6 +23,8 @@ public class GhostBreathController : NetworkBehaviour
     
     public override void Spawned()
     {
+        // 네트워크 시뮬레이션 활성화
+        Runner.SetIsSimulated(Object, true);
         breathTransform = transform;
         initialScale = breathTransform.localScale;
         breathRigidbody = GetComponent<Rigidbody2D>();
