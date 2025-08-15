@@ -8,6 +8,7 @@ using UnityEngine;
 public class PlayerStageController : NetworkBehaviour
 {
     /// <summary>
+    /// 위치를 이동시키는 함수, NewtorkRigidbody2D 내에서 네트워크 동기화 보장
     /// Note : 매프레임 호출하니 위치가 튀는 문제 발생
     /// </summary>
     public void SetPosition(Vector2 position)
