@@ -85,7 +85,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
-        LoadMapPrefabsAutomatically();
+        LoadMapPrefabsAutomatically("1-1");
     }
 
     public bool IsStageTestNetwork = false;
@@ -94,21 +94,42 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         RunTestMode();
 
-        SaveMapPos(); // 전체 맵 위치 저장
-
-        if (mapPrefabDict == null)
+        if (Runner.IsServer && HasStateAuthority)
         {
-            mapPrefabDict = new Dictionary<string, GameObject[]>();
-
-            foreach (var set in mapPrefabSets)
+            Debug.Log("구독수행됨");
+            NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
             {
-                if (!mapPrefabDict.ContainsKey(set.mapType))
-                    mapPrefabDict.Add(set.mapType, set.prefabs);
-            }
-        }
+                Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
 
-        if (!HasStateAuthority) return;
-        RPC_ResetMap(); // 맵 초기화 및 재생성
+                LoadMapPrefabsAutomatically(stageInfo.CurrentStage);
+                SaveMapPos();
+                if (mapPrefabDict == null)
+                {
+                    mapPrefabDict = new Dictionary<string, GameObject[]>();
+
+                    foreach (var set in mapPrefabSets)
+                    {
+                        if (!mapPrefabDict.ContainsKey(set.mapType))
+                            mapPrefabDict.Add(set.mapType, set.prefabs);
+                    }
+                }
+
+                //스테이지 로더 추가 할 곳
+                if (stageInfo.IsBossStage == 1)
+                {
+                    Debug.Log("보스 스테이지 로드");
+                    ResetBoosMap();
+                    Create_Map("B", 0, 0, 0);
+                    return;
+                }
+                else if (stageInfo.IsBossStage == 0)
+                {
+                    Debug.Log("일반 스테이지 로드");
+                    RPC_ResetMap();
+                }
+            };
+            return;
+        }
     }
 
     private void Update()
@@ -121,10 +142,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
-    private void LoadMapPrefabsAutomatically()
+    private GameObject[] loadedPrefabs;
+    private void LoadMapPrefabsAutomatically(string StageName)
     {
         // 모든 맵 프리팹 불러오기
-        GameObject[] loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
+        if (StageName == "1-1")
+        {
+            loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
+        }
+        else if (StageName == "2-1")
+        {
+            loadedPrefabs = Resources.LoadAll<GameObject>("Maps/2Stage");
+        }
 
         Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
 
@@ -301,7 +330,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             // 원래 프리팹은 삭제 (타일맵에 추가를 하였으므로)
             Destroy(temp);
 
-            bool shouldSpawnEnemy = mapType != "S" && mapType != "C";
+            bool shouldSpawnEnemy = mapType != "S" && mapType != "C" && mapType != "B";
 
             // 생성할 위치가 타일맵의 셀 좌표로 변환
             foreach (Tilemap sourceTilemap in tilemaps)
@@ -339,18 +368,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
 
         isCreatingMap = false; // 혹시 실패했을 경우도 해제
-    }
-
-
-    private IEnumerator DelayShopManager(GameObject prefab, Vector3 spawnPosition, Transform child)
-    {
-        yield return new WaitForSeconds(5f); // ShopManager가 초기화될 시간을 주기 위해 잠시 대기
-
-        Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
-        {
-            obj.transform.SetParent(parentTrans);
-            obj.name = prefab.name;
-        });
     }
     #endregion
 
