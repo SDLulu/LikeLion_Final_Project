@@ -57,7 +57,7 @@ public class PlayerSessionRecord
 public static class UserData
 {
 	/// <summary>
-	/// 비동기 Insert. 콜백으로 Backend 응답을 전달합니다.
+	/// 유저 게임데이터 테이블에 행을 삽입하는 함수
 	/// </summary>
 	public static void InsertSessionAsync(string tableName, PlayerSessionRecord record, Action<BackendReturnObject> onCompleted)
 	{

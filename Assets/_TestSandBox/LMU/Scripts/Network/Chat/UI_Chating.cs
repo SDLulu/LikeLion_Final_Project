@@ -24,41 +24,33 @@ public class UI_Chating : MonoBehaviour
     [SerializeField] private InputActionReference _enterAction;
     [SerializeField] private RectTransform _frameBG;
 
-    [Header("채팅창 페이드 설정")]
-    [SerializeField] private float _hideChatViewSeconds = 5f;
-    [SerializeField] private float _fadeInChatViewSeconds = 0.3f;
-
-    [Header("디버그용")]
-    [SerializeField] private string _curChatString;
-    public string CurChatString => _curChatString = _inputField?.text;
     private ChatClient _chatClient;
     private List<string> _chatHistories = new List<string>();
-    private CanvasGroup _chatViewCanvasGroup;
-    private Coroutine _hideChatCoroutine;
 
     public static bool IsFocusChat { get; private set; } = false;
 
     private PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
 
-    private void OnDestroy() => OnReset();
-    public void OnReset()
+    private void OnDestroy() => Clear();
+    public void Clear()
     {
         RemoveAllMessageUI();
         _chatClient = null;
-        _originTicks.Clear();
+        _processedMessages.Clear();
         _inputField.onSubmit.RemoveAllListeners();
     }
+
 
     /// <summary>
     /// Note - 로컬 ChatClient가 네트워크 초기화가 이루어질때 호출
     /// </summary>
     public void OnInit(ChatClient chatClient)
     {
-        OnReset();
+        Clear();
         var localNickName = chatClient.GetComponentInParent<PlayerData>().NickName;
         Debug.Log($"UI_Chating OnInit {localNickName}");
         _chatClient = chatClient;
-        
+
         // InputField 설정 - 자동 활성화 방지
         _inputField.shouldHideMobileInput = true;
 
@@ -118,21 +110,24 @@ public class UI_Chating : MonoBehaviour
         _chatClient.SendChatMessage(text, channel);
     }
 
-    private List<Tick> _originTicks = new List<Tick>();
-    
+    private HashSet<string> _processedMessages = new HashSet<string>();
+
     /// <summary>
     /// 채팅 히스토리 업데이트 처리
     /// </summary>
     public void UpdateChatHistories(ChatHistoryList chatHistories)
     {
-        // 새로운 메시지만 필터링
+        // 새로운 메시지만 필터링 (틱 + 메시지 내용 + 채널 조합으로 고유 식별)
         List<ChatHistory> newMessages = new List<ChatHistory>();
         foreach (var chat in chatHistories.ChatHistories)
         {
-            if (_originTicks.Contains(chat.TickTime) == false)
+            // 메시지 고유 키 생성 (틱 + 발신자 + 메시지 + 채널)
+            string messageKey = $"{chat.TickTime}_{chat.Sender}_{chat.Message}_{chat.Channel}";
+            
+            if (_processedMessages.Contains(messageKey) == false)
             {
                 newMessages.Add(chat);
-                _originTicks.Add(chat.TickTime);
+                _processedMessages.Add(messageKey);
             }
         }
 
@@ -150,71 +145,7 @@ public class UI_Chating : MonoBehaviour
         // 스크롤을 맨 아래로 이동
         Canvas.ForceUpdateCanvases();
         _chatView.verticalNormalizedPosition = 0f;
-
-        // ShowChatView();
-        // HideChatViewAsync();
     }
-
-    public void OnSend()
-    {
-        if (_inputField == null || string.IsNullOrWhiteSpace(_inputField.text))
-            return;
-
-        //_chatClient?.SendChatMessage(chatHistory);
-
-        HideChatViewAsync();
-    }
-
-    public string InputText(string inputText)
-    {
-        if (_inputField != null)
-        {
-            _inputField.text = inputText;
-            ShowChatView();
-        }
-        return inputText;
-    }
-
-
-    private void HideChatViewAsync()
-    {
-        if (_hideChatCoroutine != null)
-        {
-            StopCoroutine(_hideChatCoroutine);
-        }
-
-        _hideChatCoroutine = StartCoroutine(HideChatViewCoroutine());
-    }
-
-    private IEnumerator HideChatViewCoroutine()
-    {
-        yield return new WaitForSeconds(_hideChatViewSeconds);
-
-        if (_chatViewCanvasGroup != null)
-        {
-            float startAlpha = _chatViewCanvasGroup.alpha;
-            float time = 0f;
-
-            while (time < _fadeInChatViewSeconds)
-            {
-                time += Time.deltaTime;
-                float alpha = Mathf.Lerp(startAlpha, 0f, time / _fadeInChatViewSeconds);
-                _chatViewCanvasGroup.alpha = alpha;
-                yield return null;
-            }
-
-            _chatViewCanvasGroup.alpha = 0f;
-        }
-    }
-
-    private void ShowChatView()
-    {
-        if (_chatViewCanvasGroup != null)
-        {
-            _chatViewCanvasGroup.alpha = 1f;
-        }
-    }
-
 
     private void CreateMessageUI(ChatHistory chatHistory)
     {
@@ -229,17 +160,27 @@ public class UI_Chating : MonoBehaviour
             return;
         }
 
-        var (inputText, msgColor) = _chatClient.GetMessage(chatHistory);
+        var inputText = _chatClient.GetMessage(chatHistory);
+
+        if (chatHistory.Channel == ChatChannel.System)
+            messageText.alignment = TextAlignmentOptions.Center;
+        else
+            messageText.alignment = TextAlignmentOptions.Left;
+
         messageText.text = inputText;
-        messageText.color = msgColor;
     }
 
-    private void RemoveAllMessageUI()
+    public void RemoveAllMessageUI()
     {
         foreach (Transform child in _contentPanel.transform)
         {
             GameObject.Destroy(child.gameObject);
         }
+    }
+
+    public void ClearMessageCache()
+    {
+        _processedMessages.Clear();
     }
 
 }

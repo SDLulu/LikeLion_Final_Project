@@ -193,6 +193,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
             await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, _cutDuration);
+            await CutSceneC.WaitForInputResponse();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
             onCompleted?.Invoke();
         }

@@ -3,7 +3,7 @@ using Fusion;
 using UnityEngine;
 
 // 플레이어 체력 관리 컴포넌트 (Fusion 네트워크 동기화)
-public class PlayerHealth : NetworkBehaviour
+public class PlayerHealth : NetworkBehaviour, ISoftReset
 {
     [Networked, OnChangedRender(nameof(OnHealthChanged))]
     public int Health { get; private set; } = 5;
@@ -21,6 +21,26 @@ public class PlayerHealth : NetworkBehaviour
         base.Spawned();
         Health = StartHealth;
         playerDeathHandler = GetComponentInParent<PlayerDeathHandler>();
+    }
+
+    /// <summary>
+    /// 소프트 리셋: 체력을 시작 체력으로 되돌립니다.
+    /// </summary>
+    public void SoftResetStats()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        Health = StartHealth;
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 체력을 시작 체력으로 복원합니다.
+    /// </summary>
+    public void SoftReset()
+    {
+        SoftResetStats();
     }
 
     // 데미지 처리

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using Fusion.Addons.FSM;
 using LMCore;
@@ -13,15 +14,18 @@ public class GameStageFailedState : BaseStateBehaviour
         {
             GameStates.RPC_FadeOutUI(this.Runner, 1.0f);
             await Awaitable.WaitForSecondsAsync(2.0f);
-            var sessionProperties = new System.Collections.Generic.Dictionary<string, SessionProperty>();
-            sessionProperties["InGame"] = false;
-            Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+
+            PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
+           
+            // 로비로 이동시 세션정보 초기화, 다른 유저의 네트워크 접속 허용
+            LobbyManager.Inst.UpdateSessionInfo(isInGame: false);
             StateOwner.DelayForceActiveState<LobbyState>();
         }
     }   
 
     protected override void OnFixedUpdate()
     {
+        
     }
 
     protected override void OnExitState()

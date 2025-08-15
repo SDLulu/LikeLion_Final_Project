@@ -2,7 +2,7 @@ using Fusion;
 using UnityEngine;
 
 // 플레이어 상태(웅크리기/위보기) 지속 시간에 따라 카메라 Y 오프셋을 적용/복원
-public class PlayerCameraStateOffset : NetworkBehaviour
+public class PlayerCameraStateOffset : NetworkBehaviour, ISoftReset
 {
     [Header("Offset Settings")]
     [SerializeField] private float offsetAmount = 2.0f; // 위보기 시 +, 웅크리기 시 - 적용할 크기
@@ -60,6 +60,16 @@ public class PlayerCameraStateOffset : NetworkBehaviour
         if (!offsetApplied) return;
         CameraMover.Inst?.ResetYOffset();
         offsetApplied = false;
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 카메라 오프셋 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        duckHeldTime = 0f;
+        lookHeldTime = 0f;
+        ResetOffsetIfNeeded();
     }
 }
 
