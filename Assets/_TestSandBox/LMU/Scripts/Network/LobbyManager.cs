@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Fusion;
 using LMCore;
 using Photon.Voice.Unity;
@@ -209,7 +210,6 @@ public class LobbyManager : BaseManager<LobbyManager>
             }
 
             await runner.Shutdown(true);
-            // 네트워크 해제 알림
 
             // 타이틀씬을 제외한 모든 씬을 UnLoad
             var scenes = LocalSceneManager.Inst.GetAllLoadedScenes();
@@ -249,5 +249,13 @@ public class LobbyManager : BaseManager<LobbyManager>
             LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
         }
 
+    }
+
+    // --- 세션정보 
+    public void UpdateSessionInfo(bool isInGame)
+    {
+        var sessionProperties = new Dictionary<string, SessionProperty>();
+        sessionProperties["InGame"] = isInGame;
+        NetRunner.SessionInfo.UpdateCustomProperties(sessionProperties);
     }
 }

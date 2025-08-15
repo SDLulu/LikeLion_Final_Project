@@ -16,254 +16,211 @@ public class LeaderBoard : BaseManager<LeaderBoard>
         public int TotalScore;
     }
 
-    
-
-    private List<LeaderboardTableItem> _cachedLeaderboardTables = new List<LeaderboardTableItem>();
-
     /// <summary>
-    /// 상위 10위 리더보드 로드
+    /// 리더보드 갱신 함수, PlayerSessionRecord 데이터로 리더보드를 업데이트
     /// </summary>
-    public void LoadTop10(string leaderboardUUID, Action<bool, List<LeaderBoardEntry>> onCompleted)
+    public void UpdateLeaderboardAsync(string leaderboardUuid, string tableName, string rowInDate, PlayerSessionRecord sessionRecord, Action<BackendReturnObject> onCompleted)
     {
-        if (string.IsNullOrEmpty(leaderboardUUID))
+        if (string.IsNullOrEmpty(leaderboardUuid))
         {
             Debug.LogError("리더보드 UUID가 비어있습니다.");
-            onCompleted?.Invoke(false, null);
+            onCompleted?.Invoke(null);
             return;
         }
 
-        if (GlobalSetting.Inst.IsEnableBackend == false)
+        if (string.IsNullOrEmpty(tableName))
         {
-            Debug.Log("백앤드 비활성화 상태이므로 리더보드를 불러오지 않습니다.");
-            onCompleted?.Invoke(false, null);
+            Debug.LogError("테이블 이름이 비어있습니다.");
+            onCompleted?.Invoke(null);
             return;
         }
 
-        // 상위 10위 조회
-        int limit = 10;
-        Backend.URank.User.GetRankList(leaderboardUUID, limit, bro =>
+        if (string.IsNullOrEmpty(rowInDate))
         {
-            if (bro.IsSuccess())
+            Debug.LogError("행 inDate가 비어있습니다.");
+            onCompleted?.Invoke(null);
+            return;
+        }
+
+        if (sessionRecord == null)
+        {
+            Debug.LogError("세션 기록이 null입니다.");
+            onCompleted?.Invoke(null);
+            return;
+        }
+
+        Param param = sessionRecord.ToParam();
+        
+        Backend.Leaderboard.User.UpdateMyDataAndRefreshLeaderboard(leaderboardUuid, tableName, rowInDate, param, callback =>
+        {
+            if (callback.IsSuccess())
             {
-                try
-                {
-                    var rankListJson = bro.GetFlattenJSON();
-                    List<LeaderBoardEntry> entries = new List<LeaderBoardEntry>();
-
-                    if (rankListJson["rows"] != null)
-                    {
-                        foreach (LitJson.JsonData jsonData in rankListJson["rows"])
-                        {
-                            LeaderBoardEntry entry = new LeaderBoardEntry
-                            {
-                                Rank = int.Parse(jsonData["Rank"].ToString()),
-                                NickName = jsonData["nickName"].ToString(),
-                                SessionDurationSec = int.Parse(jsonData["SessionDurationSec"].ToString()),
-                                Stage = jsonData["Stage"].ToString(),
-                                TotalScore = int.Parse(jsonData["TotalScore"].ToString())
-                            };
-                            entries.Add(entry);
-                        }
-                    }
-
-                    Debug.Log($"상위 10위 리더보드 조회 성공 - {entries.Count}개 항목");
-                    onCompleted?.Invoke(true, entries);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError($"상위 10위 데이터 파싱 오류: {e.Message}");
-                    onCompleted?.Invoke(false, null);
-                }
+                Debug.Log("<color=#00FF00>리더보드 갱신 성공</color>");
             }
             else
             {
-                Debug.LogError($"상위 10위 리더보드 조회 실패: {bro.GetStatusCode()} - {bro.GetErrorMessage()}");
-                onCompleted?.Invoke(false, null);
+                Debug.LogError("리더보드 갱신 실패 : " + callback);
             }
+
+            onCompleted?.Invoke(callback);
         });
     }
 
     /// <summary>
-    /// 내 랭킹 정보 로드
+    /// 내 리더보드 순위와 데이터를 조회
     /// </summary>
-    public void LoadMyRank(string leaderboardUUID, Action<bool, LeaderBoardEntry> onCompleted)
+    public void GetMyRankAsync(string leaderboardUuid, Action<bool, LeaderBoardEntry, BackendReturnObject> onCompleted)
     {
-        if (string.IsNullOrEmpty(leaderboardUUID))
+        if (string.IsNullOrEmpty(leaderboardUuid))
         {
             Debug.LogError("리더보드 UUID가 비어있습니다.");
-            onCompleted?.Invoke(false, null);
+            onCompleted?.Invoke(false, null, null);
             return;
         }
 
-        if (GlobalSetting.Inst.IsEnableBackend == false)
+        Backend.Leaderboard.User.GetMyLeaderboard(leaderboardUuid, callback =>
         {
-            Debug.Log("백앤드 비활성화 상태이므로 내 랭킹을 불러오지 않습니다.");
-            onCompleted?.Invoke(false, null);
+            if (callback.IsSuccess() == false)
+            {
+                Debug.LogError("내 순위 조회 실패 : " + callback);
+                onCompleted?.Invoke(false, null, callback);
+                return;
+            }
+
+            var userLeaderboardList = callback.GetUserLeaderboardList();
+            if (userLeaderboardList == null || userLeaderboardList.Count == 0)
+            {
+                Debug.Log("리더보드에 내 정보가 없습니다.");
+                onCompleted?.Invoke(false, null, callback);
+                return;
+            }
+
+            // 내 정보는 첫 번째 항목
+            var myInfo = userLeaderboardList[0];
+            var myEntry = ConvertToLeaderBoardEntry(myInfo);
+            
+            Debug.Log($"<color=#00FF00>내 순위 조회 성공: {myEntry.Rank}등</color>");
+            onCompleted?.Invoke(true, myEntry, callback);
+        });
+    }
+
+    /// <summary>
+    /// 1등부터 10등까지의 리더보드 순위를 조회
+    /// </summary>
+    public void GetTop10RankingsAsync(string leaderboardUuid, Action<bool, List<LeaderBoardEntry>, BackendReturnObject> onCompleted)
+    {
+        if (string.IsNullOrEmpty(leaderboardUuid))
+        {
+            Debug.LogError("리더보드 UUID가 비어있습니다.");
+            onCompleted?.Invoke(false, null, null);
             return;
         }
 
-        Backend.URank.User.GetMyRank(leaderboardUUID, bro =>
+        int limit = 10;  // 상위 10명
+        int offset = 0;  // 1등부터 시작
+
+        Backend.Leaderboard.User.GetLeaderboard(leaderboardUuid, limit, offset, callback =>
         {
-            if (bro.IsSuccess())
+            if (callback.IsSuccess() == false)
+            {
+                Debug.LogError("상위 랭킹 조회 실패 : " + callback);
+                onCompleted?.Invoke(false, null, callback);
+                return;
+            }
+
+            var userLeaderboardList = callback.GetUserLeaderboardList();
+            if (userLeaderboardList == null)
+            {
+                Debug.Log("리더보드가 비어있습니다.");
+                onCompleted?.Invoke(true, new List<LeaderBoardEntry>(), callback);
+                return;
+            }
+
+            List<LeaderBoardEntry> top10List = new List<LeaderBoardEntry>();
+            foreach (var item in userLeaderboardList)
+            {
+                var entry = ConvertToLeaderBoardEntry(item);
+                top10List.Add(entry);
+            }
+
+            Debug.Log($"<color=#00FF00>상위 랭킹 조회 성공: {top10List.Count}명</color>");
+            onCompleted?.Invoke(true, top10List, callback);
+        });
+    }
+
+    /// <summary>
+    /// UserLeaderboardItem을 LeaderBoardEntry로 변환
+    /// </summary>
+    private LeaderBoardEntry ConvertToLeaderBoardEntry(UserLeaderboardItem item)
+    {
+        var entry = new LeaderBoardEntry();
+        
+        // 기본 정보
+        entry.Rank = int.Parse(item.rank);
+        entry.NickName = item.nickname;
+        entry.TotalScore = int.Parse(item.score);
+        
+        // extraData 처리 - 뒤끝에서는 보통 JSON이 아닌 단순 값이 올 수 있음
+        if (string.IsNullOrEmpty(item.extraData) == false)
+        {
+            Debug.Log($"extraData 내용: '{item.extraData}'");
+            
+            // JSON 형태인지 확인 ('{' 로 시작하는지)
+            if (item.extraData.StartsWith("{"))
             {
                 try
                 {
-                    var myRankJson = bro.FlattenRows();
-                    if (myRankJson != null && myRankJson.Count > 0)
+                    var extraJson = LitJson.JsonMapper.ToObject(item.extraData);
+                    
+                    if (extraJson.ContainsKey("SessionDurationSec"))
                     {
-                        LitJson.JsonData jsonData = myRankJson[0];
-                        LeaderBoardEntry myRank = new LeaderBoardEntry
-                        {
-                            Rank = int.Parse(jsonData["Rank"].ToString()),
-                            NickName = jsonData["NickName"].ToString(),
-                            SessionDurationSec = int.Parse(jsonData["SessionDurationSec"].ToString()),
-                            Stage = jsonData["Stage"].ToString(),
-                            TotalScore = int.Parse(jsonData["TotalScore"].ToString())
-                        };
-
-                        Debug.Log($"내 랭킹 조회 성공 - 순위: {myRank.Rank}");
-                        onCompleted?.Invoke(true, myRank);
+                        entry.SessionDurationSec = int.Parse(extraJson["SessionDurationSec"].ToString());
+                    }
+                    
+                    if (extraJson.ContainsKey("Stage"))
+                    {
+                        entry.Stage = extraJson["Stage"].ToString();
                     }
                     else
                     {
-                        Debug.Log("내 랭킹 데이터가 존재하지 않습니다.");
-                        onCompleted?.Invoke(false, null);
+                        entry.Stage = "Unknown";
                     }
                 }
-                catch (Exception e)
+                catch (System.Exception ex)
                 {
-                    Debug.LogError($"내 랭킹 데이터 파싱 오류: {e.Message}");
-                    onCompleted?.Invoke(false, null);
+                    Debug.LogWarning($"extraData JSON 파싱 실패: {ex.Message}, 원본: '{item.extraData}'");
+                    SetDefaultExtraValues(entry);
                 }
             }
             else
             {
-                Debug.LogError($"내 랭킹 조회 실패: {bro.GetStatusCode()} - {bro.GetErrorMessage()}");
-                onCompleted?.Invoke(false, null);
+                // JSON이 아닌 경우 - extraData를 Stage로 사용하거나 기본값 설정
+                Debug.Log($"extraData가 JSON 형태가 아님: '{item.extraData}'");
+                entry.Stage = item.extraData; // extraData를 스테이지명으로 사용
+                entry.SessionDurationSec = 0;
             }
-        });
-    }
-
-    /// <summary>
-    /// 랭킹 점수 업데이트
-    /// </summary>
-    public void UpdateUserScore(string leaderboardUUID, int sessionDurationSec, string stage, int totalScore, Action<bool> onCompleted)
-    {
-        if (string.IsNullOrEmpty(leaderboardUUID))
-        {
-            Debug.LogError("리더보드 UUID가 비어있습니다.");
-            onCompleted?.Invoke(false);
-            return;
         }
-
-        if (GlobalSetting.Inst.IsEnableBackend == false)
+        else
         {
-            Debug.Log("백앤드 비활성화 상태이므로 랭킹을 업데이트하지 않습니다.");
-            onCompleted?.Invoke(false);
-            return;
+            SetDefaultExtraValues(entry);
         }
-
-        // TODO: 정확한 Backend URank API 시그니처 확인 후 구현
-        Debug.LogWarning($"랭킹 업데이트 요청됨 - UUID: {leaderboardUUID}, TotalScore: {totalScore}");
-        Debug.LogWarning("Backend URank API의 정확한 시그니처 확인 후 구현이 필요합니다.");
         
-        onCompleted?.Invoke(true);
-    }
-
-    /// <summary>
-    /// PlayerSessionRecord를 사용한 랭킹 점수 업데이트
-    /// </summary>
-    public void UpdateUserScore(string leaderboardUUID, PlayerSessionRecord sessionRecord, Action<bool> onCompleted)
-    {
-        if (sessionRecord == null)
+        // extraName도 확인해보자 (추가 정보가 있을 수 있음)
+        if (string.IsNullOrEmpty(item.extraName) == false)
         {
-            Debug.LogError("세션 레코드가 null입니다.");
-            onCompleted?.Invoke(false);
-            return;
+            Debug.Log($"extraName 내용: '{item.extraName}'");
         }
-
-        UpdateUserScore(leaderboardUUID, sessionRecord.SessionDurationSec, sessionRecord.Stage, sessionRecord.TotalScore, onCompleted);
+        
+        return entry;
     }
-
+    
     /// <summary>
-    /// 리더보드 테이블 목록 로드 (간단한 캐시)
+    /// 기본 extraData 값 설정
     /// </summary>
-    public void LoadLeaderboardTables(Action<bool, List<LeaderboardTableItem>> onCompleted)
+    private void SetDefaultExtraValues(LeaderBoardEntry entry)
     {
-        // 캐시 확인 - 한번 로드했으면 재사용
-        if (_cachedLeaderboardTables.Count > 0)
-        {
-            Debug.Log("캐시된 리더보드 테이블 목록을 사용합니다.");
-            onCompleted?.Invoke(true, new List<LeaderboardTableItem>(_cachedLeaderboardTables));
-            return;
-        }
-
-        if (GlobalSetting.Inst.IsEnableBackend == false)
-        {
-            Debug.Log("백앤드 비활성화 상태이므로 리더보드 목록을 불러오지 않습니다.");
-            onCompleted?.Invoke(false, null);
-            return;
-        }
-
-        Backend.Leaderboard.User.GetLeaderboards(bro =>
-        {
-            if (bro.IsSuccess())
-            {
-                List<LeaderboardTableItem> list = bro.GetLeaderboardTableList();
-                if (list != null && list.Count > 0)
-                {
-                    // 캐시에 저장
-                    _cachedLeaderboardTables.Clear();
-                    _cachedLeaderboardTables.AddRange(list);
-
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        LeaderboardTableItem item = list[i];
-                        Debug.Log($"[리더보드] title={item.title}, uuid={item.uuid}, table={item.table}, column={item.column}, order={item.order}");
-                    }
-
-                    Debug.Log($"리더보드 테이블 목록 캐시 완료 - {list.Count}개 테이블");
-                }
-
-                onCompleted?.Invoke(true, list);
-            }
-            else
-            {
-                Debug.LogError($"리더보드 목록 조회 실패 : {bro.GetStatusCode()} - {bro.GetErrorMessage()}");
-                onCompleted?.Invoke(false, null);
-            }
-        });
+        entry.SessionDurationSec = 0;
+        entry.Stage = "Unknown";
     }
 
-    /// <summary>
-    /// 캐시된 테이블 목록 가져오기
-    /// </summary>
-    public List<LeaderboardTableItem> GetCachedTables()
-    {
-        return new List<LeaderboardTableItem>(_cachedLeaderboardTables);
-    }
-
-    /// <summary>
-    /// 특정 UUID의 테이블 정보 찾기
-    /// </summary>
-    public LeaderboardTableItem FindTableByUUID(string uuid)
-    {
-        for (int i = 0; i < _cachedLeaderboardTables.Count; i++)
-        {
-            if (_cachedLeaderboardTables[i].uuid == uuid)
-            {
-                return _cachedLeaderboardTables[i];
-            }
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// 캐시 초기화
-    /// </summary>
-    public void ClearCache()
-    {
-        _cachedLeaderboardTables.Clear();
-        Debug.Log("리더보드 테이블 캐시가 초기화되었습니다.");
-    }
 }

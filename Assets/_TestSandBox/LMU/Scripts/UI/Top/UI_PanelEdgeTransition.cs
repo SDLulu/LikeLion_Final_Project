@@ -63,6 +63,16 @@ public class UI_PanelEdgeTransition : MonoBehaviour
         _originAnchoredPos = originAnchoredPosition;
     }
 
+    public void Show()
+    {
+        Show(null);
+    }
+
+    public void Hide()
+    {
+        Hide(null);
+    }
+
     /// <summary>
     /// 지정된 방향에서 등장
     /// </summary>

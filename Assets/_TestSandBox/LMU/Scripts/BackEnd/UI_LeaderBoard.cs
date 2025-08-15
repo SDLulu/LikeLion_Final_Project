@@ -24,8 +24,14 @@ public class UI_LeaderBoard : MonoBehaviour
             return;
         }
 
-        LeaderBoard.Inst.LoadTop10(_leaderboardUUID, OnLoadedTop10);
-        LeaderBoard.Inst.LoadMyRank(_leaderboardUUID, OnLoadedMyRank);
+        LeaderBoard.Inst.GetTop10RankingsAsync(_leaderboardUUID, (ok, list, callback) =>
+        {
+            OnLoadedTop10(ok, list);
+        });
+        LeaderBoard.Inst.GetMyRankAsync(_leaderboardUUID, (ok, e, callback) =>
+        {
+            OnLoadedMyRank(ok, e);
+        });
     }
 
     private void OnLoadedTop10(bool ok, List<LeaderBoard.LeaderBoardEntry> list)

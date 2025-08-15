@@ -67,69 +67,29 @@ public class UI_EnterOnline : MonoBehaviour
     {
         string roomName = "TestRoom" + Random.Range(1000, 9999);
         _preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.JoinOrCreateLobby(
-            mode: GameMode.AutoHostOrClient,
-            roomName: roomName,
-            OnEnterLobby: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            },
-            OnCancel: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            }
-        );
+        await LobbyManager.Inst.JoinOrCreateLobby(false, GameMode.AutoHostOrClient, roomName);
+        _preventPanel.gameObject.SetActive(false);
     }
 
     public async Awaitable RunFastMode()
     {
         _preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.JoinOrCreateLobby(
-            mode: GameMode.AutoHostOrClient,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            },
-            OnCancel: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            }
-        );
+        await LobbyManager.Inst.JoinOrCreateLobby(false, GameMode.AutoHostOrClient, "TestRoom");
+        _preventPanel.gameObject.SetActive(false);
     }
 
     public async Awaitable OnClickCreateRoomBtn()
     {
         _preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.JoinOrCreateLobby(
-            mode: GameMode.Host,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            },
-            OnCancel: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            }
-        );
+        await LobbyManager.Inst.JoinOrCreateLobby(false, GameMode.Host, "TestRoom");
+        _preventPanel.gameObject.SetActive(false);
     }
 
     private async void OnClickRandomJoinRoomBtn()
     {
         _preventPanel.gameObject.SetActive(true);
-        await LobbyManager.Inst.JoinOrCreateLobby(
-            mode: GameMode.AutoHostOrClient,
-            roomName: "TestRoom",
-            OnEnterLobby: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            },
-            OnCancel: () =>
-            {
-                _preventPanel.gameObject.SetActive(false);
-            }
-        );
+        await LobbyManager.Inst.JoinOrCreateLobby(false, GameMode.AutoHostOrClient, "TestRoom");
+        _preventPanel.gameObject.SetActive(false);
     }
 
 
