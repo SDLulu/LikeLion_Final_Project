@@ -44,6 +44,9 @@ public class PlayerGhostController : NetworkBehaviour, IBeforeUpdate
     
     public override void Spawned()
     {
+        // 네트워크 시뮬레이션 활성화 (클라 물리 예측/렌더 보간 반영)
+        Runner.SetIsSimulated(Object, true);
+
         // 스프라이트 렌더러 찾기
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer == null)

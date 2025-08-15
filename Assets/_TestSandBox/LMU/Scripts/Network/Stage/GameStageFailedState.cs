@@ -18,9 +18,7 @@ public class GameStageFailedState : BaseStateBehaviour
             PlayerM.SoftResetAllPlayers();
            
             // 로비로 이동시 세션정보 초기화, 다른 유저의 네트워크 접속 허용
-            var sessionProperties = new Dictionary<string, SessionProperty>();
-            sessionProperties["InGame"] = false;
-            Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+            LobbyManager.Inst.UpdateSessionInfo(isInGame: false);
             StateOwner.DelayForceActiveState<LobbyState>();
         }
     }   

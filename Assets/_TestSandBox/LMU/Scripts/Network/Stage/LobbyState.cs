@@ -229,16 +229,12 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
                     UnityEngine.SceneManagement.LoadSceneMode.Additive,
                     onLoadComplete: () =>
                     {
-                        var sessionProperties = new Dictionary<string, SessionProperty>();
-                        sessionProperties["InGame"] = true;
-                        Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+                        LobbyManager.Inst.UpdateSessionInfo(isInGame: true);
                     });
             }
             else
             {
-                var sessionProperties = new Dictionary<string, SessionProperty>();
-                sessionProperties["InGame"] = true;
-                Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+                LobbyManager.Inst.UpdateSessionInfo(isInGame: true);
             }
 
             // 씬 로드 여부와 관계 없이 플레이어는 게임씬으로 이동

@@ -61,7 +61,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -175,6 +175,7 @@ MonoBehaviour:
     m_Bits: 64
   deleteRadius: 3
   delayBeforeBoom: 3
+  startHealth: 1
 --- !u!114 &7201304057115362276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -300,7 +301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f63269e77008b494694bdf051d97e900, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  explosionDamage: 2
+  explosionDamage: 5
   explosionKnockbackForce: 8
   explosionKnockbackDuration: 0.4
   activeWindowSeconds: 0.05
