@@ -6,11 +6,6 @@ using UnityEngine;
 
 public class CutSceneController : MonoBehaviour
 {
-    private void OnValidate()
-    {
-        if (UICutSceneResult != null)
-            UICutSceneResult.gameObject.SetActive(false);
-    }
     [Header("인스펙터 참조")]
     [field: SerializeField] public UI_CutSceneResult UICutSceneResult { get; private set; }
     [field: SerializeField] public Transform StartPoint { get; private set; }
@@ -82,5 +77,10 @@ public class CutSceneController : MonoBehaviour
                 tween.Kill();
             _cutTweens.Clear();
         }
+    }
+
+    public async Awaitable WaitForInputResponse()
+    {
+        await UICutSceneResult.WaitForInputResponse(null);
     }
 }

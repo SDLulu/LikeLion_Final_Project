@@ -6,12 +6,15 @@ public class ChatClient : NetworkBehaviour
 {
     [Header("디버그용")]
     [SerializeField] private UI_Chating _uiChating;
-
     private const string WHISPER_COMMAND = "/w";
-
+    public PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
+    private bool _isFirstLobbyState = true;
+    private bool _isFirstChat = true;
     public override void Spawned()
     {
         base.Spawned();
+        NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
         if (NetworkEventSystem.Inst.IsReady)
         {
             OnInit();
@@ -21,8 +24,35 @@ public class ChatClient : NetworkBehaviour
             NetworkEventSystem.Inst.OnAllManagersReady += OnInit;
         }
     }
+
+    private void OnGameStateChanged(Fusion.NetworkRunner runner, E_StateName prevState, E_StateName nextState)
+    {
+        // 로비 상태로 진입시
+        if (runner.IsServer && nextState == E_StateName.LobbyState && _isFirstLobbyState == false)
+        {
+            this.SendChatMessage("재도전을 통해 더 재미있는 게임을 해보세요!", ChatChannel.System);
+        }
+
+        // 플레이모드 진입시 채팅 기록 정리
+        if (runner.IsServer && nextState == E_StateName.PlayingState)
+        {
+            ChatManager.Inst.ClearChatHistories();
+            RPC_AllRemoveChat();
+        }
+
+        if (runner.IsServer && nextState == E_StateName.LobbyState)
+            _isFirstLobbyState = false;
+    }
+
+
     public void OnInit()
     {
+        // 환영 메시지 전송
+        if (Runner.IsServer && _isFirstChat && Object.HasInputAuthority)
+        {
+            this.SendChatMessage("소환사의 협곡에 오신 것을 환영합니다.", ChatChannel.System);
+            _isFirstChat = false;
+        }
         if (Object.HasInputAuthority)
         {
             _uiChating = LobbyUI_Manager.Inst.UIChatting;
@@ -32,7 +62,7 @@ public class ChatClient : NetworkBehaviour
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
-        _uiChating?.OnReset();
+        _uiChating?.Clear();
         _uiChating = null;
     }
 
@@ -68,10 +98,9 @@ public class ChatClient : NetworkBehaviour
         return ret3;    
     }
 
-    public (string, Color) GetMessage(ChatHistory chatHistory)
+    public string GetMessage(ChatHistory chatHistory)
     {
         string inputText = "";
-        Color msgColor = Color.black;
 
         // 보내는 사람의 닉네임초기화
         string senderName = "";
@@ -101,37 +130,49 @@ public class ChatClient : NetworkBehaviour
         switch (chatHistory.Channel)
         {
             case ChatChannel.All:
-                inputText = $"[전체] {senderName}: {chatHistory.Message}";
-                msgColor = Color.black;
+                inputText = $"<color=#42a5f5>[전체] {senderName}:</color> <color=white>{chatHistory.Message}</color>";
                 break;
 
             case ChatChannel.Whisper:
-                inputText = $"[귓속말] {senderName} → {receiverName}: {chatHistory.Message}";
-                msgColor = Color.yellow;
+                inputText = $"<color=yellow>[귓속말] {senderName} → {receiverName}:</color> <color=white>{chatHistory.Message}</color>";
                 break;
 
             case ChatChannel.Mine:
-                inputText = $"[나에게만] : {chatHistory.Message}";
-                msgColor = Color.blue;
+                inputText = $"<color=blue>[나에게만] :</color> <color=white>{chatHistory.Message}</color>";
                 break;
 
             case ChatChannel.System:
-                inputText = $"{chatHistory.Message}";
-                msgColor = Color.green;
+                inputText = $"<color=green>{chatHistory.Message}</color>";
                 break;
         }
 
-        return (inputText, msgColor);
+        return inputText;
     }
 
-    public PlayerRef LocalPlayer => LobbyManager.Inst.LocalPlayer;
 
     public void SendChatMessage(string message, ChatChannel channel = ChatChannel.None)
     {
+        // 서버에서 System 메시지를 보낼 때는 InputAuthority 체크를 하지 않음
+        if (Runner.IsServer && channel == ChatChannel.System)
+        {
+            ChatManager.RPC_SendChatMessage(Runner, default, message, channel);
+            return;
+        }
+        
         if (Object.HasInputAuthority == false)
             return;
 
         PlayerRef localPlayer = Object.InputAuthority;
         ChatManager.RPC_SendChatMessage(Runner, localPlayer, message, channel);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_AllRemoveChat()
+    {
+        if (_uiChating != null)
+        {
+            _uiChating.RemoveAllMessageUI();
+            _uiChating.ClearMessageCache(); 
+        }
     }
 }

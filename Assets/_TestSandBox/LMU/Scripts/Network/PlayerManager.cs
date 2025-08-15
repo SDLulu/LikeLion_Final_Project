@@ -266,12 +266,21 @@ public class PlayerManager : NetworkBehaviour
     /// <summary>
     /// 모든 플레이어를 소프트 리셋
     /// </summary>
-    public void SoftResetAllPlayers()
+    public void SoftResetAllPlayers(Vector3 respawnPos)
     {
         if (Runner.IsServer == false)
             return;
 
         Debug.Log("<color=green>모든 플레이어를 소프트 리셋</color>");
+
+        // var players = GetPlayerDatas();
+        // foreach (var player in players)
+        // {
+        //     var deathHandler = player.Value.GetComponent<PlayerDeathHandler>();
+        //     deathHandler.Die();
+        //     deathHandler.ResurrectAt(respawnPos);
+        // }
+
 
         var players = GetPlayers();
         foreach (var kvp in players)
@@ -288,6 +297,11 @@ public class PlayerManager : NetworkBehaviour
                 sr.SoftReset();
             }
         }
+
+
+
+
+
     }
 
     #region 씬이동 및 RPC

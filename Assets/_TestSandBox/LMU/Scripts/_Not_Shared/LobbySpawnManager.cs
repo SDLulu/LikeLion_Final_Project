@@ -67,7 +67,6 @@ public class LobbySpawnManager : MonoBehaviour
             }
         }
         
-        // 잘못된 데이터 삭제 (역순으로 삭제하여 인덱스 문제 방지)
         for (int i = invalidIndices.Count - 1; i >= 0; i--)
         {
             int indexToRemove = invalidIndices[i];
