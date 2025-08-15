@@ -38,6 +38,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     [Networked] public TickTimer StateTimer { get; set; } //상태 시간(랜덤)을 저장할 타이머
     [Networked] public TickTimer AttackCooldownTimer { get; set; } // 공격 쿨타임을 위한 타이머
     [Networked] private TickTimer FlipTimer { get; set; } // 빠르게 플립되는 현상을 방지하기 위한 타이머
+    [Networked] private TickTimer StunTimer { get; set; }
     [Networked] private TickTimer InvincibleTimer { get; set; }
     [Networked] private TickTimer ThrownTimer { get; set; }
     // 상태 관련 네트워크 프로퍼티들
@@ -74,6 +75,10 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         {
             UpdateDeadState();
             return;
+        }
+        if (IsStunned && StunTimer.ExpiredOrNotRunning(Runner))
+        {
+            IsStunned = false;
         }
 
         // 무적 타이머 만료 시 무적 해제
@@ -112,9 +117,9 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
                 UpdateHitReactState();
                 break;
 
-            case EnemyStateName.Stun:
-                UpdateStunState();
-                break;
+            // case EnemyStateName.Stun:
+            //     UpdateStunState();
+            //     break;
 
             case EnemyStateName.Dead:
                 UpdateDeadState();
@@ -210,7 +215,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     {
         SetVelocityX(0f);
 
-        if (StateTimer.ExpiredOrNotRunning(Runner))
+        if (StateTimer.ExpiredOrNotRunning(Runner) && StunTimer.ExpiredOrNotRunning(Runner))
         {
             CurrentState = EnemyStateName.Move;
             fsm.StateMachine.ForceActivateState<EnemyMoveState>();
@@ -222,18 +227,19 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         //coll.enabled = false; //다른 오브젝트와 충돌하지 않도록 비활성화
     }
 
-    protected virtual void UpdateStunState()
-    {
-        SetVelocityX(0f);
+    // protected virtual void UpdateStunState()
+    // {
+    //     SetVelocityX(0f);
 
-        if (IsStunned && StateTimer.ExpiredOrNotRunning(Runner))
-        {
-            IsStunned = false;
-            //상태 전환
-            CurrentState = EnemyStateName.Chase;
-            fsm.StateMachine.ForceActivateState<EnemyChaseState>();
-        }
-    }
+    //     if (IsStunned && StateTimer.ExpiredOrNotRunning(Runner))
+    //     {
+    //         IsStunned = false;
+    //         Debug.Log("스턴상태 해제!!!!!!!!!!!!!!!!!!!");
+    //         //상태 전환
+    //         CurrentState = EnemyStateName.Chase;
+    //         fsm.StateMachine.ForceActivateState<EnemyChaseState>();
+    //     }
+    // }
 
     private bool IsDetectingWall()
     {
@@ -426,11 +432,11 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         if (IsDead) return;
 
         IsStunned = true;
-        StateTimer = TickTimer.CreateFromSeconds(Runner, duration);
+        StunTimer = TickTimer.CreateFromSeconds(Runner, duration);
 
         //StunState로 전환
-        CurrentState = EnemyStateName.Stun;
-        fsm.StateMachine.ForceActivateState<EnemyStunState>();
+        // CurrentState = EnemyStateName.Stun;
+        // fsm.StateMachine.ForceActivateState<EnemyStunState>();
     }
 
     public virtual void SetInvincible(bool value, float duration = 0)
