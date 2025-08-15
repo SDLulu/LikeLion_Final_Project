@@ -11,11 +11,6 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
         SceneManager.LoadScene(sceneName, mode);
     }
 
-    public void UnloadScene(string sceneName)
-    {
-        SceneManager.UnloadSceneAsync(sceneName);
-    }
-
     public async Awaitable LoadSceneAsync(string sceneName,
                                             LoadSceneMode mode = LoadSceneMode.Single,
                                             bool activeScene = false,
@@ -54,7 +49,7 @@ public class LocalSceneManager : BaseManager<LocalSceneManager>
     /// </summary>
     public List<Scene> GetAllLoadedScenes()
     {
-        List<Scene> loadedScenes = new List<Scene>();
+        List<Scene> loadedScenes = new();
         int sceneCount = SceneManager.sceneCount;
 
         for (int i = 0; i < sceneCount; i++)

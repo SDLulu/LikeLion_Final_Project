@@ -11,6 +11,8 @@ public class InputBlocker : MonoBehaviour
     [Header("디버그용")]
     [SerializeField] private List<GraphicRaycaster> _graphicRaycasters = new();
 
+    public static bool IsDragging { get; set; } = false;
+
     private EventSystem _eventSystem;
     private List<RaycastResult> _cacheRayResults = new();
     private PointerEventData _cacheEvt;

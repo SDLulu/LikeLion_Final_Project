@@ -3,7 +3,7 @@ using System;
 using UnityEngine;
 
 // 🎒 플레이어 인벤토리 시스템 (손에 든 것만 관리)
-public class PlayerInventory : NetworkBehaviour
+public class PlayerInventory : NetworkBehaviour, ISoftReset
 {
     // ===== 📦 핵심 데이터 =====
     [Header("Held Object (손에 든 것)")]
@@ -140,4 +140,51 @@ public class PlayerInventory : NetworkBehaviour
 
     // ===== UI 업데이트 이벤트 =====
     public event System.Action OnInventoryDataChanged;
+
+    /// <summary>
+    /// 소프트 리셋: 손에 든 오브젝트와 패시브 아이템 상태를 모두 초기화합니다.
+    /// </summary>
+    public void SoftResetEquips()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+
+        // 손에 든 오브젝트가 있다면 DeathHandler와 동일하게 해제
+        if (currentHeldObject != null)
+        {
+            var heldGO = currentHeldObject.gameObject;
+            var thrower = transform.root != null ? transform.root.GetComponentInChildren<PlayerObjectThrower>() : null;
+            if (thrower != null)
+            {
+                Vector2 randomDirection = UnityEngine.Random.insideUnitCircle.normalized;
+                thrower.ReleaseObject(heldGO, true, randomDirection);
+            }
+            else
+            {
+                currentHeldObject = null;
+            }
+        }
+
+        _heldShopItem = null;
+
+        hasRocket = false;
+        hasWings = false;
+        hasSpeedShoes = false;
+        hasJumpShoes = false;
+        hasMagnet = false;
+        hasHeadset = false;
+        hasSunglasses = false;
+
+        OnInventoryDataChanged?.Invoke();
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 인벤토리 관련 상태를 초기화합니다.
+    /// </summary>
+    public void SoftReset()
+    {
+        SoftResetEquips();
+    }
 }

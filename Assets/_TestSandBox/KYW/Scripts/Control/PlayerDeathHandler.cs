@@ -5,7 +5,7 @@ using Unity.Cinemachine;
 // 💀 플레이어 죽음 처리 전용 컴포넌트
 // 📍 위치: Player 하위 오브젝트 (Player > PlayerDeathHandler)
 // 🎯 목적: 플레이어 죽음 시 아이템 드롭, 시체/유령 스폰, 카메라 전환 등
-public class PlayerDeathHandler : NetworkBehaviour
+public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
 {
     [Header("💀 죽음 처리 설정")]
     [SerializeField] public Vector3 deathPosition = new Vector3(0, 10, 0); // 플레이어가 이동할 죽음 위치
@@ -78,6 +78,30 @@ public class PlayerDeathHandler : NetworkBehaviour
         }
         
         Debug.Log($"[{name}] PlayerDeathHandler 초기화 완료!");
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 사망 상태면 허브 위치에서 부활 처리, 아니면 카메라만 원복 보장.
+    /// </summary>
+    public void SoftReset()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
+        DropHandObject();
+        DropPassiveItems();
+        DropMoney();
+
+        if (IsDead)
+        {
+            ResurrectAt(GlobalSetting.Inst.LobbySpawnPos);
+        }
+        else
+        {
+            RPC_TransferCameraToPlayer();
+        }
     }
     
     // 💀 죽음 처리 (외부에서 호출)
