@@ -23,6 +23,13 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
     public bool IsGameSceneLoaded => _isGameSceneLoaded;
     private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
     private TickTimer _playerSoftResetTimer;
+    private static bool _isFirst = true;
+
+    public override void Spawned()
+    {
+        base.Spawned();
+        _isFirst = true;
+    }
 
     // 로비씬에 플레이어가 참가할때
     public void PlayerJoined(PlayerRef player)
@@ -33,7 +40,6 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         }
     }
 
-    private static bool _isFirst = true;
     protected override async void OnEnterState()
     {
         if (Runner.IsServer)
