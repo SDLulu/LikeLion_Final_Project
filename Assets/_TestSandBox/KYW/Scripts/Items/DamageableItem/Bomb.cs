@@ -55,6 +55,13 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
         if (!HasStateAuthority) return;
         if (HasExploded) return;
         HasExploded = true;
+        
+        // 손에 들고 있다면 손에서 놓기
+        if (IsHeld)
+        {
+            RemoveFromHand();
+        }
+        
         if (destroyArea != null)
         {
             destroyArea.SetActive(true);
@@ -68,8 +75,7 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
             explosionHandler.ActivateOnce();
         }
 
-        // 손에서 제거 후 Despawn
-        RemoveFromHand();
+        // Despawn
         if (Object != null)
         {
             Runner.Despawn(Object);
