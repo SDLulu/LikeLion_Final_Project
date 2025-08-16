@@ -63,7 +63,6 @@ namespace Item
 		public System.Int32 MinMoney;
 		public System.Int32 MaxMoney;
 		public System.Int32 IsPassiveItem;
-		public System.Int32 IsCollectItem;
 		public System.Int32 SpawnChance;
 		public System.String ItemIcon;
 		public System.String PrefabPath;
