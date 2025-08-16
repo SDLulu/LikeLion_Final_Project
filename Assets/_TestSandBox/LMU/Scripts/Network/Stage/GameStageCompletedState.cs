@@ -20,6 +20,8 @@ public class GameStageCompletedState : BaseStateBehaviour
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;
     private TickTimer _minWaitingTimer = TickTimer.None;
     private int _stageDataIndex = -1;
+    private bool _isStateActive = false;
+    private bool _isCompleted = false;
     public override void Spawned()
     {
         if (Runner.IsServer)
@@ -31,6 +33,7 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     public override void Despawned(NetworkRunner runner, bool hasState)
     {
+        _isStateActive = false;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
         base.Despawned(runner, hasState);
@@ -38,6 +41,8 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     protected override async void OnEnterState()
     {
+        _isStateActive = true;
+        _isCompleted = false;
         if (Runner.IsServer)
         {
             await Awaitable.NextFrameAsync();
@@ -50,15 +55,22 @@ public class GameStageCompletedState : BaseStateBehaviour
 
     protected override void OnFixedUpdate()
     {
-        if (Runner.IsServer && IsAllCompleted())
+        if (Runner.IsServer && _isCompleted == false)
         {
-            Debug.Log("모든 플레이어가 컷신을 완료했습니다.");
-            Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
-        }
-        else if (Runner.IsServer && _minWaitingTimer.Expired(Runner))
-        {
-            Debug.Log($"최대 대기시간 {_minWaitingTime}초가 초과되었습니다.");
-            Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
+            if (IsAllCompleted())
+            {
+                _isCompleted = true;
+                Debug.Log("모든 플레이어가 컷신을 완료했습니다.");
+                RPC_PostCutScene();
+                Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
+            }
+            else if (_minWaitingTimer.Expired(Runner))
+            {
+                _isCompleted = true;
+                Debug.Log($"최대 대기시간 {_minWaitingTime}초가 초과되었습니다.");
+                RPC_PostCutScene();
+                Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
+            }
         }
     }
 
@@ -67,6 +79,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     /// </summary>
     protected override void OnExitState()
     {
+        _isStateActive = false;
         _minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
@@ -91,12 +104,14 @@ public class GameStageCompletedState : BaseStateBehaviour
 
 
     /// <summary>
-    /// 모든 플레이어의 백그라운드 작업 완료여부 확인
+    /// 모든 플레이어의 백그라운드 작업 완료여부 확인 
     /// </summary>
     public bool IsAllCompleted()
     {
         if (_bgTaskTCS == null)
+        {
             return false;
+        }
 
         // 중간에 플레이어가 나간경우 완료처리
         foreach (var tcs in _bgTaskTCS)
@@ -114,10 +129,11 @@ public class GameStageCompletedState : BaseStateBehaviour
         foreach (var tcs in _bgTaskTCS)
         {
             if (tcs.Value.Any(t => t.Item2.Awaitable.IsCompleted == false))
+            {
                 return false;
+            }
         }
 
-        RPC_PostCutScene();
         return true;
     }
 
@@ -131,6 +147,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
         NetEvent.TriggerCutSceneActiveEvent(false);
+
         UIEventSystem.Inst.TriggerCutSceneActive(false);
     }
 
@@ -144,10 +161,22 @@ public class GameStageCompletedState : BaseStateBehaviour
         if (Runner.TryGetPlayerObject(Runner.LocalPlayer, out var playerObj))
         {
             var player = playerObj.GetComponent<PlayerStageController>();
-            playerWorldPos = player.GetPosition();
+            if (player != null)
+            {
+                playerWorldPos = player.GetPosition();
+            }
         }
-        var canvas = FindAnyObjectByType<UI_Game>().GetComponent<Canvas>();
-        FaderUtil.GetUIPosition(canvas, playerWorldPos);
+
+        var uiGame = FindAnyObjectByType<UI_Game>();
+        if (uiGame != null)
+        {
+            var canvas = uiGame.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                FaderUtil.GetUIPosition(canvas, playerWorldPos);
+            }
+        }
+
         return playerWorldPos;
     }
 
@@ -160,9 +189,17 @@ public class GameStageCompletedState : BaseStateBehaviour
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Awaitable.NextFrameAsync();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
-            CutSceneC.FocusCutSceneCamera();
-            CutSceneC.ActiveCutSceneResult(true);
-            UIEventSystem.Inst.TriggerCutSceneActive(true);
+
+            if (CutSceneC != null)
+            {
+                CutSceneC.FocusCutSceneCamera();
+                CutSceneC.ActiveCutSceneResult(true);
+            }
+
+            if (UIEventSystem.Inst != null)
+            {
+                UIEventSystem.Inst.TriggerCutSceneActive(true);
+            }
 
             _ = PlayCutSceneAsync(() =>
             {
@@ -195,7 +232,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
-            await CutSceneC.PlayCutScene(PlayerM.GetPlayerDatas().Count, _cutDuration);
+            await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
             await CutSceneC.WaitForInputResponse();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
             onCompleted?.Invoke();
@@ -253,9 +290,16 @@ public class GameStageCompletedState : BaseStateBehaviour
     {
         if (Runner.IsServer)
         {
+            // State가 비활성화된 경우 무시
+            if (_isStateActive == false)
+            {
+                Debug.LogWarning($"State가 비활성화되어 RPC_PlayerBackgroundCompleted 호출을 무시합니다. Player: {player}, TaskIndex: {taskIndex}");
+                return;
+            }
+
             if (_bgTaskTCS == null)
             {
-                Debug.LogError("RPC_PlayerCutSceneCompleted 호출 오류 - _waitingTCS가 null입니다.");
+                Debug.LogError("RPC_PlayerCutSceneCompleted 호출 오류 - _bgTaskTCS가 null입니다.");
                 return;
             }
 
@@ -264,7 +308,9 @@ public class GameStageCompletedState : BaseStateBehaviour
                 tcs.ForEach(t =>
                 {
                     if (t.Item1 == taskIndex)
+                    {
                         t.Item2.TrySetResult();
+                    }
                 });
             }
             else

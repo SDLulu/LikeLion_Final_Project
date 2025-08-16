@@ -11,10 +11,13 @@ public class UI_LeaderBoardSlot : MonoBehaviour
 	[SerializeField] private TMP_Text _sessionSecText;
 	[SerializeField] private TMP_Text _stageText;
 	[SerializeField] private TMP_Text _totalScoreText;
+	[SerializeField] private Image _rankImage;
 
-	/// <summary>
-	/// 슬롯 데이터 표시
-	/// </summary>
+	private void Awake()
+	{
+		SetColorByRank(4);
+	}
+
 	public void UpdateSlot(int rank, string nickName, int sessionDurationSec, string stage, int totalScore)
 	{
 		SetText(_rankText, rank.ToString());
@@ -22,6 +25,9 @@ public class UI_LeaderBoardSlot : MonoBehaviour
 		SetText(_sessionSecText, sessionDurationSec.ToString());
 		SetText(_stageText, stage);
 		SetText(_totalScoreText, totalScore.ToString());
+		
+		// 랭킹에 따라 색상 자동 설정
+		SetColorByRank(rank);
 	}
 
 	public void ClearSlot()
@@ -37,5 +43,21 @@ public class UI_LeaderBoardSlot : MonoBehaviour
 	{
 		if (text != null)
 			text.text = value;
+	}
+	
+	private void SetColorByRank(int rank)
+	{
+		Color rankColor;
+		
+		if (rank == 1)
+			rankColor = new Color(0.4f, 0.9f, 1.0f, 1.0f);
+		else if (rank == 2)
+			rankColor = new Color(0.6f, 0.7f, 1.0f, 1.0f);
+		else if (rank == 3)
+			rankColor = new Color(0.3f, 0.5f, 0.8f, 1.0f);
+		else
+			rankColor = new Color(0.7f, 0.8f, 0.9f, 1.0f);
+		
+		_rankImage.color = rankColor;
 	}
 }
