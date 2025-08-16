@@ -87,6 +87,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
+        if (HasStateAuthority) return;
         LoadMapPrefabsAutomatically("1-1"); // 초기 맵 프리팹 자동 로드
     }
 
@@ -96,7 +97,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         RunTestMode();
 
-        if (Runner.IsServer && HasStateAuthority)
+        if (HasStateAuthority)
         {
             Debug.Log("구독수행됨");
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
@@ -120,7 +121,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (stageInfo.IsBossStage == 1)
                 {
                     Debug.Log("보스 스테이지 로드");
-                    ResetBoosMap();
+                    RPC_ResetBoosMap();
                     Create_Map("B", 0, 0, 0);
                     return;
                 }
@@ -147,20 +148,40 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private GameObject StageWall; // 스테이지 벽 타일을 저장할 변수
     private void LoadMapPrefabsAutomatically(string StageName)
     {
+        int stageNumber = 1;
+
         // 모든 맵 프리팹 불러오기
         if (StageName == "1-1")
         {
-            ChangeStage(1);
+            stageNumber = 1;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
         }
         else if (StageName == "2-1")
         {
-            ChangeStage(2);
+            stageNumber = 2;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/2Stage"); // 2스테이지 맵 프리팹 불러오기
         }
         else if (StageName == "3-1")
         {
-            ChangeStage(3);
+            stageNumber = 3;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/3Stage"); // 3스테이지 맵 프리팹 불러오기
         }
 
@@ -195,6 +216,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         // Dictionary로도 구성
         mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_ChangeStage(int stageNumber)
+    {
+        ChangeStage(stageNumber);
     }
 
     private void ChangeStage(int ChooseStage)
@@ -239,6 +266,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
         mainTilemap.RefreshAllTiles();
     }
 
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_ResetBoosMap()
+    {
+        ResetBoosMap();
+    }
 
     public void ResetBoosMap()
     {
@@ -449,6 +482,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
         yield return new WaitForSeconds(2f);
+
+        if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
 
         if (Random.value > 0.1f) yield break;
 
