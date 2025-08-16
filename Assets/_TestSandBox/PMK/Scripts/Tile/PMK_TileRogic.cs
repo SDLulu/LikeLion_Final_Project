@@ -4,6 +4,7 @@ using System.Linq;
 using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -31,6 +32,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
     [field: SerializeField] public Tilemap mainTilemap { get; private set; } // 메인 타일맵 (맵 생성시 타일을 추가하는 타일맵)
+    [field: SerializeField] private GameObject[] backGroundTile; // 배경 타일
+    [field: SerializeField] private GameObject[] stageWallTileMap; // 스테이지 벽 타일맵
 
     [Header("최대 타일 설정")]
     [SerializeField] private int maxTileX = 5; // x위치에 생성할 최대 타일값
@@ -52,8 +55,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
     public GameObject objectToSpawnIfTileExists; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
 
     [Header("TileZoneSpawner 설정")]
-    [SerializeField] public TileBase RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
-    public TileBase ruleTile => RuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    [SerializeField] public TileBase[] setRuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
+    public TileBase _setRuleTile;
     [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
 
 
@@ -85,7 +88,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
-        LoadMapPrefabsAutomatically("1-1");
+        LoadMapPrefabsAutomatically("1-1"); // 초기 맵 프리팹 자동 로드
     }
 
     public bool IsStageTestNetwork = false;
@@ -143,16 +146,25 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
 
     private GameObject[] loadedPrefabs;
+    private GameObject StageBackGround; // 배경 타일을 저장할 변수
+    private GameObject StageWall; // 스테이지 벽 타일을 저장할 변수
     private void LoadMapPrefabsAutomatically(string StageName)
     {
         // 모든 맵 프리팹 불러오기
         if (StageName == "1-1")
         {
+            ChangeStage(1);
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
         }
         else if (StageName == "2-1")
         {
-            loadedPrefabs = Resources.LoadAll<GameObject>("Maps/2Stage");
+            ChangeStage(2);
+            loadedPrefabs = Resources.LoadAll<GameObject>("Maps/2Stage"); // 2스테이지 맵 프리팹 불러오기
+        }
+        else if (StageName == "3-1")
+        {
+            ChangeStage(3);
+            loadedPrefabs = Resources.LoadAll<GameObject>("Maps/3Stage"); // 3스테이지 맵 프리팹 불러오기
         }
 
         Dictionary<string, List<GameObject>> tempMap = new Dictionary<string, List<GameObject>>();
@@ -186,6 +198,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         // Dictionary로도 구성
         mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
+    private void ChangeStage(int ChooseStage)
+    {
+        ChooseStage -= 1; // 스테이지 번호를 0부터 시작하도록 조정
+
+        Destroy(StageBackGround); // 기존 배경 타일 제거
+        Destroy(StageWall); // 기존 스테이지 벽 타일 제거
+
+        _setRuleTile = setRuleTile[ChooseStage]; // 메인 타일맵을 2스테이지로 변경
+        StageWall = Instantiate(stageWallTileMap[ChooseStage], Vector3.zero, Quaternion.identity); // 스테이지 벽 타일 생성
+        StageBackGround = Instantiate(backGroundTile[ChooseStage], new Vector3(43, -22, 0), Quaternion.identity); // 배경 타일 생성
     }
 
 
