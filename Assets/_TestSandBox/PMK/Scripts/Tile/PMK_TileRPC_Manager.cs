@@ -30,7 +30,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_Create_Tile(Vector3Int cellPos)
     {
-        tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
+        tileRogic.mainTilemap.SetTile(cellPos, tileRogic._setRuleTile);
         Physics2D.SyncTransforms();
 
         tileRogic.Create_TileItem(cellPos);
