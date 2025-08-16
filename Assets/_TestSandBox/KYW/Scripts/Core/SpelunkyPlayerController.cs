@@ -154,7 +154,7 @@ public class SpelunkyPlayerController : NetworkBehaviour, IBeforeUpdate
     public void BeforeUpdate()
     {
         // 채팅창이 활성화된 경우 모든 입력 차단
-        if (UI_Chating.IsFocusChat)
+        if (UI_Chating.IsFocusChat || InputBlocker.IsDragging)
         {
             ResetInput();
             return;

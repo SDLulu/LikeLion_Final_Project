@@ -5,7 +5,7 @@ using UnityEngine.UI;
 // 🎭 플레이어 애니메이션 컴포넌트
 // 애니메이션과 시각적 요소(스프라이트 뒤집기 등) 관리
 // Visual 하위 오브젝트에 위치
-public class PlayerAnimation : NetworkBehaviour
+public class PlayerAnimation : NetworkBehaviour, ISoftReset
 {
     [Header("Visual Components")]
     [SerializeField] private Animator animator;
@@ -234,5 +234,22 @@ public class PlayerAnimation : NetworkBehaviour
         }
         
         wasStunned = false;
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 애니메이션/이펙트 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        if (animator != null)
+        {
+            animator.SetBool("IsDead", false);
+            animator.SetBool("IsStunned", false);
+        }
+        ResetInvincibleEffect();
+        ResetStunUIEffect();
+        wasInvincible = false;
+        invincibleEffectTimer = 0f;
+        isBlinkingOn = false;
     }
 } 

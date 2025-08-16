@@ -20,7 +20,7 @@ public class PlayerStateDebugger : MonoBehaviour
     
     [Header("부활 테스트")]
     [SerializeField] private Transform testRespawnPoint; // 지정 안하면 현 위치 사용
-    
+
     private void Start()
     {
         // 자동으로 컴포넌트 찾기
@@ -34,16 +34,27 @@ public class PlayerStateDebugger : MonoBehaviour
             playerDeathHandler = FindAnyObjectByType<PlayerDeathHandler>();
             
         Debug.Log("🧪 PlayerStateDebugger 초기화 완료!");
+
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
     }
     
+    private E_StateName _curState;
+    private void OnGameStateChanged(Fusion.NetworkRunner runner, E_StateName prevState, E_StateName nextState)
+    {
+        _curState = nextState;
+    }
+
     private void Update()
     {
+        if (_curState == E_StateName.LobbyState)
+            return;
+
         // 테스트 입력 처리만 수행
         HandleTestInput();
         
         // DisplayDebugInfo() 호출 제거 - OnGUI에서 처리
     }
-    
+
     private void HandleTestInput()
     {
         // 1: 스턴 테스트

@@ -1,10 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using Fusion;
 using Fusion.Addons.FSM;
 using UnityEngine;
 
+/// <summary>
+/// 로비에서 첫번째 스테이지로 진입시 수행되는 클래스
+/// 첫번째 스테이지 로딩이후로 사용되지않음
+/// </summary>
 public class GameStageWaitingState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.WaitingState;
@@ -18,6 +20,7 @@ public class GameStageWaitingState : BaseStateBehaviour
         {
             try
             {
+                PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
                 await LoadFirstMapAsync();
                 _isMapLoadCompleted = true;
             }
