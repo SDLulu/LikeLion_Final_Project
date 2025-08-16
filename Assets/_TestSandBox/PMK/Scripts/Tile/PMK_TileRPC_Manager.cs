@@ -28,102 +28,13 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     #region 타일 관련 RPC 메서드
     // 타일 생성
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_Create_Tile(Vector3Int cellPos, int tileIndex, string mapType)
+    public void RPC_Create_Tile(Vector3Int cellPos)
     {
-        // 맵 타입에 따라 적절한 타일 생성
-        if (tileRogic.mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
-        {
-            GameObject mapPrefab = prefabs[tileIndex];
-            Tilemap[] tilemaps = mapPrefab.GetComponentsInChildren<Tilemap>();
-            
-            // 첫 번째 타일맵에서 타일 가져오기
-            if (tilemaps.Length > 0)
-            {
-                Tilemap sourceTilemap = tilemaps[0];
-                BoundsInt bounds = sourceTilemap.cellBounds;
-                TileBase[] allTiles = sourceTilemap.GetTilesBlock(bounds);
-                
-                // 타일맵의 첫 번째 타일을 사용 (일반적으로 기본 타일)
-                if (allTiles.Length > 0 && allTiles[0] != null)
-                {
-                    tileRogic.mainTilemap.SetTile(cellPos, allTiles[0]);
-                }
-                else
-                {
-                    // 기본 룰 타일 사용
-                    tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-                }
-            }
-            else
-            {
-                // 기본 룰 타일 사용
-                tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-            }
-        }
-        else
-        {
-            // 기본 룰 타일 사용
-            tileRogic.mainTilemap.SetTile(cellPos, tileRogic.ruleTile);
-        }
-        
+        tileRogic.mainTilemap.SetTile(cellPos, tileRogic._setRuleTile);
         Physics2D.SyncTransforms();
-    }
 
-    // 맵 프리팹에서 특정 위치의 타일을 생성
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public void RPC_Create_TileFromMap(Vector3Int targetPos, Vector3Int relativePos, int tileIndex, string mapType)
-    {
-        // 맵 타입에 따라 적절한 타일 생성
-        if (tileRogic.mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
-        {
-            GameObject mapPrefab = prefabs[tileIndex];
-            Tilemap[] tilemaps = mapPrefab.GetComponentsInChildren<Tilemap>();
-            
-            // 첫 번째 타일맵에서 타일을 가져오기
-            if (tilemaps.Length > 0)
-            {
-                Tilemap sourceTilemap = tilemaps[0];
-                BoundsInt bounds = sourceTilemap.cellBounds;
-                
-                // 상대 위치가 범위 내에 있는지 확인
-                if (relativePos.x >= 0 && relativePos.x < bounds.size.x && 
-                    relativePos.y >= 0 && relativePos.y < bounds.size.y)
-                {
-                    // 해당 위치의 타일 가져오기
-                    Vector3Int sourcePos = new Vector3Int(bounds.xMin + relativePos.x, bounds.yMin + relativePos.y, 0);
-                    TileBase tile = sourceTilemap.GetTile(sourcePos);
-                    
-                    if (tile != null)
-                    {
-                        tileRogic.mainTilemap.SetTile(targetPos, tile);
-                    }
-                    else
-                    {
-                        // 기본 룰 타일 사용
-                        tileRogic.mainTilemap.SetTile(targetPos, tileRogic.ruleTile);
-                    }
-                }
-                else
-                {
-                    // 기본 룰 타일 사용
-                    tileRogic.mainTilemap.SetTile(targetPos, tileRogic.ruleTile);
-                }
-            }
-            else
-            {
-                // 기본 룰 타일 사용
-                tileRogic.mainTilemap.SetTile(targetPos, tileRogic.ruleTile);
-            }
-        }
-        else
-        {
-            // 기본 룰 타일 사용
-            tileRogic.mainTilemap.SetTile(targetPos, tileRogic.ruleTile);
-        }
-        
-        Physics2D.SyncTransforms();
+        tileRogic.Create_TileItem(cellPos);
     }
-
 
     // 타일 파괴
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
@@ -243,6 +154,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     private IEnumerator DelayedTrapSpawn(Vector3Int cellPos)
     {
         yield return null;
+        if (!HasStateAuthority) yield break;
 
         bool isThreeAboveEmpty =
         tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
@@ -266,7 +178,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
         else
         {
-            RPC_Create_Tile(cellPos, 0, "C"); // 기본 타일 생성
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
 
@@ -288,14 +200,15 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
 
-        if (isThreeAboveEmpty)
+        if (isThreeAboveEmpty && HasStateAuthority)
         {
             RPC_SpawnTrap(worldPos, 1);
             Rpc_DestroyItem(cellPos);
         }
         else
         {
-            RPC_Create_Tile(cellPos, 0, "C"); // 기본 타일 생성
+            if (!HasStateAuthority) return; // 클라이언트는 타일 생성 못 함
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
 
@@ -329,9 +242,9 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
                                                 colUp == null && tileDown != null && tileCenter == null ||
                                                             colUp == null && tileUp != null && tileCenter == null;
 
-        if (isTileEmpty)
+        if (isTileEmpty && HasStateAuthority)
         {
-            RPC_Create_Tile(cellPos, 0, "C"); // 기본 타일 생성
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
     #endregion
