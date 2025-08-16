@@ -4,7 +4,6 @@ using System.Linq;
 using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEngine.UIElements;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -137,10 +136,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     private void Update()
     {
-
-        if (Input.GetKeyDown(KeyCode.Alpha1)) // 1번 키를 누르면 맵 초기화 및 재생성
+        if (Input.GetKeyDown(KeyCode.Alpha1) && HasStateAuthority) // 1번 키를 누르면 맵 초기화 및 재생성
         {
-            if (!HasStateAuthority) return;
             RPC_ResetMap();
         }
     }
@@ -276,13 +273,13 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 원하는 맵 생성
+
     private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
-        if (!HasStateAuthority) return;
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            if (mapType != "B" && mapType != "C")
+            if (mapType != "B" && mapType != "C" && Runner.IsServer)
             {
                 randomIndex = Random.Range(0, prefabs.Length);
             }
@@ -302,40 +299,38 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
-    public bool isCreatingMap = false;
-
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
         StartCoroutine(DelayCreate_Map(mapType, randomIndex, spawnXpos, spawnYpos));
     }
 
+    public bool isCreatingMap = false;
+
+    GameObject temp;
     private IEnumerator DelayCreate_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
-
         isCreatingMap = true; // 락 걸기
 
         List<Vector3Int> tilePositions = new List<Vector3Int>();
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
+            GameObject mapPrefab = prefabs[randomIndex];
+            Transform[] children = mapPrefab.transform.Cast<Transform>().ToArray(); // 자식들 복사
 
-            Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
-            Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
+            Tilemap[] tilemaps = mapPrefab.GetComponentsInChildren<Tilemap>(); // 타일맵만 추출
+            Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성 위치
 
-
-            // 생성된 맵을 부모 오브젝트에 자식으로 추가
-            foreach (Transform child in temp.transform)
+            foreach (Transform child in children)
             {
                 if (child.GetComponent<Tilemap>() != null)
                     continue;
 
-                Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
+                Vector3 spawnPosition = child.localPosition + (Vector3)offset;
                 GameObject prefab = child.gameObject;
 
-
-                if (prefab.GetComponent<NetworkObject>() != null)
+                if (prefab.GetComponent<NetworkObject>() != null && HasStateAuthority)
                 {
                     Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
                     {
@@ -343,9 +338,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
                         obj.name = prefab.name;
                     });
                 }
-                else
+                else if (prefab.GetComponent<NetworkObject>() == null)
                 {
-                    // 일반 오브젝트일 경우
                     GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
                     obj.name = prefab.name;
                 }
@@ -377,8 +371,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             {
                                 // 타일맵 내의 상대 위치를 계산하여 RPC로 전달
                                 Vector3Int relativePos = new Vector3Int(x, y, 0);
-                                tileRPCManager.RPC_Create_TileFromMap(targetPos, relativePos, randomIndex, mapType);
-                                Create_TileItem(targetPos);
+                                tileRPCManager.RPC_Create_Tile(targetPos);
                             }
 
                             tilePositions.Add(targetPos);
