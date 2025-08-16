@@ -52,7 +52,7 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
         }
         
         // 프리팹 스폰
-        SpawnRandomPrefab();
+        SpawnRandomPrefabs();
         
         // 상자 오브젝트 제거
         if (Object != null)
@@ -66,19 +66,28 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
     }
     
     // 랜덤 프리팹 스폰
-    private void SpawnRandomPrefab()
+    private void SpawnRandomPrefabs()
     {
         if (spawnPool == null || !spawnPool.HasPrefabs) return;
         
-        // 스폰 풀에서 랜덤으로 프리팹 선택
+        // 단일 프리팹 스폰
         GameObject randomPrefab = spawnPool.GetRandomPrefab();
-        if (randomPrefab == null) return;
+        if (randomPrefab != null)
+        {
+            SpawnPrefabAtPosition(randomPrefab);
+        }
+    }
+    
+    // 특정 위치에 프리팹 스폰
+    private void SpawnPrefabAtPosition(GameObject prefab)
+    {
+        if (prefab == null) return;
         
         // 상자 위치에 스폰
         Vector3 spawnPosition = transform.position;
         spawnPosition.z = 0; // 2D 게임이므로 Z축 고정
         
-        Instantiate(randomPrefab, spawnPosition, Quaternion.identity);
+        Instantiate(prefab, spawnPosition, Quaternion.identity);
     }
     
     // 손에서 놓기
