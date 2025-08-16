@@ -20,6 +20,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
             {
                 Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
+
+                LoadMapPrefabsAutomatically(stageInfo.CurrentStage);
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
