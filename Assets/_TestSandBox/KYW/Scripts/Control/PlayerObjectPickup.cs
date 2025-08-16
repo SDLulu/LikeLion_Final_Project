@@ -187,6 +187,10 @@ public class PlayerObjectPickup : NetworkBehaviour, ISoftReset
         }
 
         DisableItemPhysics(obj);
+        
+        // 아이템 들기 소리 재생
+        RPC_PlayPickupSound();
+        
         Debug.Log($"[PlayerObjectPickup] FinalizePickup 완료: {obj.name} (isCharacter:{isCharacter})");
         return true;
     }
@@ -281,5 +285,13 @@ public class PlayerObjectPickup : NetworkBehaviour, ISoftReset
     {
         ButtonsPrevious = default;
         nearbyObjects.Clear();
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayPickupSound()
+    {
+        // 아이템 들기 소리 재생
+        AudioManager.Inst.PlaySound("들기", transform.position);
     }
 }
