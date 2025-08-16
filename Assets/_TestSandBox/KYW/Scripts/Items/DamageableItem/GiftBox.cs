@@ -28,6 +28,7 @@ public class GiftBox : NetworkBehaviour, IDamageable, IItemInteraction
     // 데미지 받기
     public void TakeDamage(int damage)
     {
+        if (!HasStateAuthority) return;
         if (isDestroyed) return;
         
         currentHealth -= damage;
@@ -40,9 +41,10 @@ public class GiftBox : NetworkBehaviour, IDamageable, IItemInteraction
     }
     
     // 선물상자 파괴 RPC
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.StateAuthority)]
     private void RPC_DestroyGiftBox()
     {
+        if (!HasStateAuthority) return;
         if (isDestroyed) return;
         isDestroyed = true;
         
@@ -52,6 +54,8 @@ public class GiftBox : NetworkBehaviour, IDamageable, IItemInteraction
             RemoveFromHand();
         }
         
+        // 모든 클라이언트에 피드백 브로드캐스트
+        RPC_PlayBreakFeedback(transform.position);
         // 프리팹 스폰
         SpawnRandomPrefabs();
         
@@ -65,22 +69,43 @@ public class GiftBox : NetworkBehaviour, IDamageable, IItemInteraction
             Destroy(gameObject, destroyDelay);
         }
     }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayBreakFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("선물상자", pos);
+        EffectManager.Inst.PlayEffect("폭죽", pos);
+    }
     
     // 랜덤 프리팹 스폰
     private void SpawnRandomPrefabs()
     {
-        if (spawnPool == null || !spawnPool.HasPrefabs) return;
+        if (!HasStateAuthority) return;
+        if (spawnPool == null)
+        {
+            Debug.LogError("[GiftBox] spawnPool is null");
+            return;
+        }
+        if (!spawnPool.HasPrefabs)
+        {
+            Debug.LogWarning("[GiftBox] spawnPool has no prefabs configured");
+            return;
+        }
         
         // 단일 프리팹 스폰
-        GameObject randomPrefab = spawnPool.GetRandomPrefab();
+        NetworkObject randomPrefab = spawnPool.GetRandomPrefab();
         if (randomPrefab != null)
         {
             SpawnPrefabAtPosition(randomPrefab);
         }
+        else
+        {
+            Debug.LogWarning("[GiftBox] GetRandomPrefab returned null");
+        }
     }
     
     // 특정 위치에 프리팹 스폰
-    private void SpawnPrefabAtPosition(GameObject prefab)
+    private void SpawnPrefabAtPosition(NetworkObject prefab)
     {
         if (prefab == null) return;
         
@@ -88,7 +113,11 @@ public class GiftBox : NetworkBehaviour, IDamageable, IItemInteraction
         Vector3 spawnPosition = transform.position;
         spawnPosition.z = 0; // 2D 게임이므로 Z축 고정
         
-        Instantiate(prefab, spawnPosition, Quaternion.identity);
+        var spawned = Runner.Spawn(prefab, spawnPosition, Quaternion.identity);
+        if (spawned == null)
+        {
+            Debug.LogError($"[GiftBox] Runner.Spawn failed. Is the prefab registered in NetworkProjectConfig? Prefab={prefab.name}");
+        }
     }
     
     // 손에서 놓기

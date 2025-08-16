@@ -37,17 +37,14 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
                 RemoveFromHand();
             }
             
-            TryReviveNearestGhost();
+            // 서버 권한에서 RPC로 부활 시도 및 피드백 브로드캐스트
+            RPC_TryReviveNearestGhost(transform.position);
 
             if (destroyOnUse)
             {
                 if (Object != null)
                 {
                     Runner.Despawn(Object);
-                }
-                else
-                {
-                    Destroy(gameObject);
                 }
             }
         }
@@ -89,7 +86,7 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
 
-    private void TryReviveNearestGhost()
+    private void TryReviveNearestGhost(Vector3 origin)
     {
         // 가장 가까운 유령 찾기
         PlayerGhostController[] ghosts = UnityEngine.Object.FindObjectsByType<PlayerGhostController>(FindObjectsSortMode.None);
@@ -97,7 +94,6 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
 
         PlayerGhostController nearest = null;
         float bestDistSqr = float.MaxValue;
-        Vector3 origin = transform.position;
 
         for (int i = 0; i < ghosts.Length; i++)
         {
@@ -139,6 +135,25 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
 
         // 관 위치에서 부활
         targetHandler.ResurrectAt(origin);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.StateAuthority)]
+    private void RPC_TryReviveNearestGhost(Vector3 origin)
+    {
+        // 서버 권한에서만 부활 시도
+        if (!HasStateAuthority) return;
+
+        TryReviveNearestGhost(origin);
+
+        // 유령이 없거나 부활 실패해도 항상 피드백은 재생
+        RPC_PlayBreakFeedback(origin);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayBreakFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("나무부서짐/돌부서짐", pos);
+        EffectManager.Inst.PlayEffect("돌폭발", pos);
     }
 
     private void TeleportTransform(Transform t, Vector3 pos)
