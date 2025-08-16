@@ -3,7 +3,7 @@ using UnityEngine;
 
 // 🎯 플레이어 쉬프트 스킬 컴포넌트
 // 쉬프트키를 눌러서 특수 스킬을 사용하는 시스템
-public class PlayerShiftSkill : NetworkBehaviour
+public class PlayerShiftSkill : NetworkBehaviour, ISoftReset
 {
     [Header("Skill Settings")]
     [SerializeField] private float skillCooldown = 1f;    // 스킬 쿨다운 시간
@@ -139,5 +139,20 @@ public class PlayerShiftSkill : NetworkBehaviour
             return 1f - (skillCooldownTimer.RemainingTime(Runner) ?? 0f) / skillCooldown;
         }
         return 1f; // 쿨다운 완료
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 스킬 진행/쿨다운 및 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        if (!Object.HasStateAuthority) return;
+        IsSkillActive = false;
+        skillCooldownTimer = TickTimer.None;
+        skillDurationTimer = TickTimer.None;
+        if (animator != null)
+        {
+            animator.SetBool("SkillActive", false);
+        }
     }
 } 

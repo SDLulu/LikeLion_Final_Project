@@ -51,7 +51,7 @@ public class ConnectionHandler : MonoBehaviour
                     _ = LocalSceneManager.Inst.UnloadSceneAsync(scene.name);
                 }
             }
-            LobbyUI_Manager.Inst.ActiveTitlePanel();
+            LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
             await Fader.Inst.FadeInAsync(Color.black, 1.0f);
         }
         catch (System.Exception e)

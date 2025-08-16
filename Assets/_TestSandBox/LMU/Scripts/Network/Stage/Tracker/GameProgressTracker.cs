@@ -173,7 +173,6 @@ public class GameProgressTracker : NetworkBehaviour
 			TrySubmitSinglePlayer(runner, player);
 	}
 
-    private const string TABLE_NAME = "PlayerSession";
     private void SubmitBestRecord(PlayerRef player, PlayerSessionRecord newRecord, int newTotal)
 	{
 		if (GlobalSetting.Inst.IsEnableBackend == false)
@@ -182,7 +181,8 @@ public class GameProgressTracker : NetworkBehaviour
         // 유저당 1행 정책 - 서버 세션 내에서 inDate 캐시를 사용해 비교 업데이트
         if (_playerInDateMap.ContainsKey(player) == false)
         {
-            UserData.InsertSessionAsync(TABLE_NAME, newRecord, callback =>
+            string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+            UserData.InsertSessionAsync(BackEndWorkFlow.Inst.TABLE_NAME, newRecord, callback =>
             {
                 if (callback.IsSuccess())
                 {
@@ -191,6 +191,7 @@ public class GameProgressTracker : NetworkBehaviour
                     {
                         _playerInDateMap[player] = insertInDate;
                         _playerBestTotalMap[player] = newTotal;
+                        UpdateLeaderboardAfterInsert(insertInDate, newRecord);
                     }
                 }
             });
@@ -204,15 +205,69 @@ public class GameProgressTracker : NetworkBehaviour
         if (newTotal > prevTotal)
         {
             string inDate = _playerInDateMap[player];
-            UserData.UpdateSessionAsync(TABLE_NAME, inDate, newRecord, callback =>
+            string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+            UserData.UpdateSessionAsync(tableName, inDate, newRecord, callback =>
             {
                 if (callback.IsSuccess())
                 {
                     _playerBestTotalMap[player] = newTotal;
+                    
+                    // 기존 데이터 업데이트 후 리더보드 업데이트
+                    UpdateLeaderboardAfterUpdate(inDate, newRecord);
                 }
             });
         }
 	}
+
+    /// <summary>
+    /// 새 데이터 삽입 후 리더보드 업데이트
+    /// </summary>
+    private void UpdateLeaderboardAfterInsert(string inDate, PlayerSessionRecord record)
+    {
+        if (LeaderBoard.HasInstance == false)
+        {
+            Debug.LogWarning("LeaderBoard 인스턴스가 없습니다.");
+            return;
+        }
+
+        string leaderboardUuid = BackEndWorkFlow.Inst.LeaderboardUUID;
+        string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+        LeaderBoard.Inst.UpdateLeaderboardAsync(leaderboardUuid, tableName, inDate, record, callback =>
+        {
+            if (callback != null && callback.IsSuccess())
+            {
+            }
+            else
+            {
+            }
+        });
+    }
+
+    /// <summary>
+    /// 기존 데이터 업데이트 후 리더보드 업데이트
+    /// </summary>
+    private void UpdateLeaderboardAfterUpdate(string inDate, PlayerSessionRecord record)
+    {
+        if (LeaderBoard.HasInstance == false)
+        {
+            Debug.LogWarning("LeaderBoard 인스턴스가 없습니다.");
+            return;
+        }
+
+        string leaderboardUuid = BackEndWorkFlow.Inst.LeaderboardUUID;
+        string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+            LeaderBoard.Inst.UpdateLeaderboardAsync(leaderboardUuid, tableName, inDate, record, callback =>
+        {
+            if (callback != null && callback.IsSuccess())
+            {
+                Debug.Log("<color=#00FF00>기존 데이터 업데이트 후 리더보드 갱신 완료</color>");
+            }
+            else
+            {
+                Debug.LogError("기존 데이터 업데이트 후 리더보드 갱신 실패: " + callback?.ToString());
+            }
+        });
+    }
 }
 
 

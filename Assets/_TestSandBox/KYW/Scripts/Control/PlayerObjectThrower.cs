@@ -5,12 +5,12 @@ using UnityEngine.UIElements;
 // 아이템 던지기 담당 컴포넌트
 // 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemThrower)
 // 🎯 목적: 우클릭으로 현재 들고 있는 아이템을 마우스 방향으로 던지기
-public class PlayerObjectThrower : NetworkBehaviour
+public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
 {
     [Header("Throw Settings")]
     [SerializeField] private float throwForce = 10f;      // 💪 던지기 힘 (Rigidbody2D.velocity에 적용)
 
-
+    
     // 📎 참조할 다른 컴포넌트
     // private PlayerItemPickup itemPickup;  // 📦 아이템 보유 상태 확인용 (삭제)
     private PlayerInventory inventory; // 인벤토리 참조
@@ -18,11 +18,11 @@ public class PlayerObjectThrower : NetworkBehaviour
     // 🌐 네트워크 동기화: 버튼 래칭용
     [Networked]
     private NetworkButtons ButtonsPrevious { get; set; }  // 🎮 이전 프레임 버튼 상태 (클릭 래칭용)
-
+    
     // 아이템 던질 때 부모 해제 지연용 타이머
     [Networked] private TickTimer delayedParentReleaseTimer { get; set; }
     private GameObject delayedParentReleaseObject;
-
+    
     // 🚀 NetworkBehaviour 생성 시 호출 (모든 클라이언트에서 실행)
     public override void Spawned()
     {
@@ -40,7 +40,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerObjectThrower이 Player 오브젝트의 하위가 아닙니다!");
         }
     }
-
+    
     // 🎮 입력 처리 (SpelunkyPlayerController에서 호출)
     // 👉 InputAuthority(로컬 플레이어)에서만 호출됨
     public void ProcessInput(SpelunkyPlayerInputData input)
@@ -55,6 +55,16 @@ public class PlayerObjectThrower : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// ISoftReset 구현: 입력/지연 부모 해제 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        ButtonsPrevious = default;
+        delayedParentReleaseTimer = TickTimer.None;
+        delayedParentReleaseObject = null;
+    }
+
     public override void FixedUpdateNetwork()
     {
         // 지연된 부모 해제 타이머 체크 (TickTimer는 자동으로 시간이 흐름)
@@ -67,7 +77,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
         }
     }
-
+    
     // 📡 RPC: InputAuthority → StateAuthority로 던지기 요청
     [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
     private void ThrowObjectRpc(Vector2 mouseWorldPosition)
@@ -90,7 +100,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             ReleaseObject(obj, true, direction);
         }
     }
-
+    
     // ⚡ 아이템의 물리 시뮬레이션 활성화 (던졌을 때)
     private void EnableItemPhysics(GameObject item, Vector2 direction)
     {
@@ -105,18 +115,18 @@ public class PlayerObjectThrower : NetworkBehaviour
             rigidbody.gravityScale = 1f; // 중력 복구
             rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
             rigidbody.angularVelocity = 0f; // 회전 속도 초기화
-
+            
             // 🚀 던지기 힘 적용 (AddForce 사용)
             rigidbody.AddForce(direction * throwForce, ForceMode2D.Impulse);
         }
-
+        
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.isTrigger = false;
     }
-
- // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
-    public void ReleaseObject(GameObject obj, bool applyForce = false, Vector2 forceDirection = default)
+    
+    // 🎯 공통: 오브젝트 해제 및 물리 복구 (던지기/탈출 공통 로직)
+    public void ReleaseObject(GameObject obj, bool applyForce = false, Vector2 forceDirection = default, bool immediateParentRelease = false)
     {
         if (!Object.HasStateAuthority) return;
         
@@ -147,11 +157,6 @@ public class PlayerObjectThrower : NetworkBehaviour
             {
                 item.OnReleased();
             }
-            var shopobj = obj.GetComponent<ShopItem>();
-            if (shopobj != null)
-            {
-              shopobj.OnReleased();
-            }
         }
         
         // 🎮 InputAuthority 해제 (아이템만)
@@ -177,8 +182,8 @@ public class PlayerObjectThrower : NetworkBehaviour
         }
         else
         {
-            // 아이템의 경우 부모 해제를 살짝 늦춰서 던진 직후 바로 맞는 것을 방지
-            if (applyForce)
+            // 아이템의 경우 기본은 부모 해제를 살짝 늦춤, 하지만 즉시 해제가 요구되면 예외 처리
+            if (applyForce && !immediateParentRelease)
             {
                 // 던지기인 경우 TickTimer로 부모 해제를 지연
                 delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.05f);
@@ -186,7 +191,7 @@ public class PlayerObjectThrower : NetworkBehaviour
             }
             else
             {
-                // 일반 해제인 경우 즉시 부모 해제
+                // 즉시 해제 (사망 드롭 등 위치 이동 전에 해제 필요할 때)
                 obj.transform.SetParent(null);
             }
         }
@@ -202,7 +207,6 @@ public class PlayerObjectThrower : NetworkBehaviour
         }
     }
     
-
     // ⚡ 아이템의 물리 시뮬레이션 활성화 (힘 없이)
     private void EnableItemPhysicsWithoutForce(GameObject item)
     {
@@ -218,11 +222,11 @@ public class PlayerObjectThrower : NetworkBehaviour
             rigidbody.linearVelocity = Vector2.zero; // 속도 초기화
             rigidbody.angularVelocity = 0f; // 회전 속도 초기화
         }
-
+        
         var collider = item.GetComponent<Collider2D>();
         if (collider != null)
             collider.isTrigger = false;
     }
+    
 
-
-}
+} 

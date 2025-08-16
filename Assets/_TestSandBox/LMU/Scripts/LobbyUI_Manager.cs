@@ -12,6 +12,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
     [field: SerializeField] public UI_Title UITitle {get; private set;}
     [field: SerializeField] public UI_Chating UIChatting {get; private set;}
     [field: SerializeField] public UI_BackEnd UIBackEnd {get; private set;}
+    [field: SerializeField] public UI_Friend UI_Friend {get; private set;}
 
     [Header("인스펙터 참조")]
     [SerializeField] private TMP_Text _curSceneNameText;
@@ -48,6 +49,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
             UIChatting.gameObject.SetActive(false);
             UITitle.TitleTransition.gameObject.SetActive(false);
             UITitle.ActiveBackButton(true);
+            UI_Friend.Clear();
         }
         else
         {
@@ -61,6 +63,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.ActiveOnlinePanel();
         UIChatting.gameObject.SetActive(true);
+        UI_Friend.Clear();
     }
 
     public void DeactiveAllLobbyUI()
@@ -68,6 +71,7 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
         UIEnterOnline.gameObject.SetActive(false);
         UILobby.gameObject.SetActive(false);
         UIChatting.gameObject.SetActive(false);
+        UI_Friend.Clear();
     }
 
     public void UpdateData(NetworkDictionary<PlayerRef, PlayerData> players)

@@ -69,53 +69,8 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public void TriggerStageLoadDoneEvent(Stage.Data stageData)
     {
         if (IsServer() == false)
-        {
             return;
-        }
-        var handler = OnStageLoadDoneEvent;
-        if (handler == null)
-        {
-            return;
-        }
-        foreach (var del in handler.GetInvocationList())
-        {
-            var action = del as Action<Stage.Data>;
-            if (action == null)
-            {
-                continue;
-            }
-
-            var method = action.Method;
-            var target = action.Target;
-            string targetInfo = "static";
-            if (target is UnityEngine.MonoBehaviour mb)
-            {
-                // 파괴된 컴포넌트는 Unity의 null 비교에서 null로 동작함
-                if (mb == null)
-                {
-                    targetInfo = "Destroyed(MonoBehaviour)";
-                }
-                else
-                {
-                    var go = mb.gameObject;
-                    targetInfo = $"{mb.GetType().FullName} on GO='{go.name}' Scene='{go.scene.name}'";
-                }
-            }
-            else if (target != null)
-            {
-                targetInfo = target.GetType().FullName;
-            }
-
-            try
-            {
-                action.Invoke(stageData);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogWarning(
-                    $"[StageLoadDoneEvent] 예외 발생 - {method.DeclaringType.FullName}.{method.Name} | Target={targetInfo}\n{ex}");
-            }
-        }
+        OnStageLoadDoneEvent?.Invoke(stageData);
     }
 
 #region NewtorkSpawn 시점에 따른 초기화 이벤트 처리
@@ -167,9 +122,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     private bool IsServer()
     {
         if (_runner == null)
-        {
             return true;
-        }
         return _runner.IsServer;
     }
 
@@ -180,6 +133,7 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         _spawnHandler = this.GetOrAddComponent<PlayerSpawnHandler>();
         _connectionHandler = this.GetOrAddComponent<ConnectionHandler>();
 
+        // 퓨전2 이벤트 초기화
         OnConnectRequestEvent += _connectionHandler.OnConnectRequest;
         OnPlayerJoinedEvent += _spawnHandler.OnPlayerJoined;
         OnPlayerLeftEvent += _spawnHandler.OnPlayerLeft;
@@ -250,7 +204,6 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
         }
         catch (System.Exception)
         {
-            // UI 싱글톤이 아직 준비되지 않은 경우 무시
         }
     }
 

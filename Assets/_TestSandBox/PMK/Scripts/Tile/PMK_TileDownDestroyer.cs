@@ -34,7 +34,7 @@ public class PMK_TileDownDestroyer : MonoBehaviour
         {
             if (tileRPCManager.HasStateAuthority)
             {
-                tileRPCManager.RPC_Create_Tile(cellPos);
+                tileRPCManager.RPC_Create_Tile(cellPos, 0, "C"); // 기본 타일 생성
             }
 
             Destroy(gameObject);

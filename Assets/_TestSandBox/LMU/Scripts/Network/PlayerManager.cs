@@ -11,16 +11,17 @@ public class PlayerManager : NetworkBehaviour
     public static PlayerManager Inst => BaseManager<PlayerManager>.Inst;
     public static bool HasInstance => BaseManager<PlayerManager>.HasInstance;
 
-    // -- 서버 전용 필드
+    // --- 서버 전용
     private List<NetworkObject> _alivePlayers = new();
     private Dictionary<PlayerRef, ChangeDetector> _changeDetectors = new();
 
-    // -- 네트워크 필드
+    // --- 네트워크
     [Networked, Capacity(4)]
     public NetworkDictionary<PlayerRef, NetworkObject> Players => default;
 
-    // ---
     private Dictionary<PlayerRef, PlayerData> _cacheDatas = new();
+    private List<InputBlocker> _cacheBlockers = new();
+    private List<PlayerStageController> _cacheStageControllers = new();
 
     public override void Spawned()
     {
@@ -170,13 +171,24 @@ public class PlayerManager : NetworkBehaviour
 
     public List<InputBlocker> GetPlayerInputBlockers()
     {
-        var list = new List<InputBlocker>();
+        _cacheBlockers.Clear();
         foreach (var player in Players)
         {
-            list.Add(player.Value.GetComponent<InputBlocker>());
+            _cacheBlockers.Add(player.Value.GetComponent<InputBlocker>());
         }
-        return list;
+        return _cacheBlockers;
     }
+
+    public List<PlayerStageController> GetPlayerStageControllers()
+    {
+        _cacheStageControllers.Clear();
+        foreach (var player in Players)
+        {
+            _cacheStageControllers.Add(player.Value.GetComponent<PlayerStageController>());
+        }
+        return _cacheStageControllers;
+    }
+
 
     public List<NetworkObject> GetAlivePlayers()
     {
@@ -250,8 +262,70 @@ public class PlayerManager : NetworkBehaviour
         return false;
     }
     #endregion
+    
+    /// <summary>
+    /// 모든 플레이어가 죽었는지의 여부를 반환
+    /// </summary>
+    public bool IsAllPlayerDead()
+    {
+        var players = GetPlayerDatas();
+        foreach (var player in players)
+        {
+            if (player.Value.IsAlive)
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// 모든 플레이어를 소프트 리셋
+    /// </summary>
+    public void SoftResetAllPlayers(Vector3 respawnPos)
+    {
+        if (Runner.IsServer == false)
+            return;
+
+        Debug.Log("<color=green>모든 플레이어를 소프트 리셋</color>");
+
+        // var players = GetPlayerDatas();
+        // foreach (var player in players)
+        // {
+        //     var deathHandler = player.Value.GetComponent<PlayerDeathHandler>();
+        //     deathHandler.Die();
+        //     await Awaitable.WaitForSecondsAsync(0.5f);
+        //     deathHandler.ResurrectAt(respawnPos);
+        // }
+
+        var players = GetPlayers();
+        foreach (var kvp in players)
+        {
+            var netObj = kvp.Value;
+            if (netObj == null)
+                continue;
+
+            var softResets = netObj.GetComponentsInChildren<ISoftReset>(true);
+            foreach (var sr in softResets)
+            {
+                if (sr == null)
+                    continue;
+                sr.SoftReset();
+            }
+        }
+    }
 
     #region 씬이동 및 RPC
+
+    public void SetPlayerPositions(Vector2 targetPos)
+    {
+        if (Runner.IsServer == false)
+            return;
+
+        var players = GetPlayerStageControllers();
+        foreach (var player in players)
+        {
+            player.SetPosition(targetPos);
+        }
+    }
 
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public async void RPC_MoveToGameScene()
@@ -297,10 +371,10 @@ public class PlayerManager : NetworkBehaviour
     /// 특정 플레이어만 로비 씬으로 이동시키는 RPC
     /// </summary>
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    public async void RPC_MoveToLobbyScene_Target([RpcTarget] PlayerRef targetPlayer)
+    public async void RPC_MoveToLobbyScene_Target([RpcTarget] PlayerRef targetPlayer, Vector3 targetPos)
     {
         await WaitForScene("LobbyScene");
-        Internal_MovePlayerToScene("LobbyScene", targetPlayer, GlobalSetting.Inst.LobbySpawnPos);
+        Internal_MovePlayerToScene("LobbyScene", targetPlayer, targetPos);
 
         Debug.Log("<color=green>로비씬 이동 (타깃)</color>");
 
