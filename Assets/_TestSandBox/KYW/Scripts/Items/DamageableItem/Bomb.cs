@@ -24,6 +24,7 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
     [Networked] private TickTimer explosionTimer { get; set; }
     [Networked] private int CurrentHealth { get; set; }
     [Networked] private NetworkBool HasExploded { get; set; }
+    [Networked] private NetworkBool IsTickingSoundPlaying { get; set; }
 
     // 파괴 로직은 ExplosionCollisionHandler로 이관
 
@@ -38,6 +39,7 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
         // 체력 초기화
         CurrentHealth = startHealth;
         HasExploded = false;
+        IsTickingSoundPlaying = false;
     }
 
     public override void FixedUpdateNetwork()
@@ -75,6 +77,9 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
             explosionHandler.ActivateOnce();
         }
 
+        // 폭발 소리와 이펙트 재생
+        RPC_PlayExplosionFeedback(transform.position);
+
         // Despawn
         if (Object != null)
         {
@@ -108,6 +113,9 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
         // 타이머 장전
         IsArmed = true;
         explosionTimer = TickTimer.CreateFromSeconds(Runner, delayBeforeBoom);
+        
+        // 틱틱 소리 시작
+        RPC_StartTickingSound();
     }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
@@ -147,11 +155,46 @@ public class Bomb : NetworkBehaviour, IItemInteraction, IDamageable
 
     private void RemoveFromHand()
     {
+        AudioManager.Inst.StopLoopingSound("도화선타는소리");
         if (!Object.HasStateAuthority) return;
         var playerThrower = GetComponentInParent<PlayerObjectThrower>();
         if (playerThrower != null)
         {
             playerThrower.ReleaseObject(gameObject, false);
         }
+    }
+
+    private void OnDisable()
+    {
+        // 오브젝트가 비활성화/제거될 때 도화선 루프 사운드가 남지 않도록 정지
+        if (IsTickingSoundPlaying)
+        {
+            AudioManager.Inst.StopLoopingSound("도화선타는소리");
+            IsTickingSoundPlaying = false;
+        }
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_StartTickingSound()
+    {
+        // 틱틱 소리 시작 (지속 재생)
+        AudioManager.Inst.PlayLoopingSound("도화선타는소리", transform.position);
+        IsTickingSoundPlaying = true;
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayExplosionFeedback(Vector3 pos)
+    {
+        // 틱틱 소리 중지
+        if (IsTickingSoundPlaying)
+        {
+            AudioManager.Inst.StopLoopingSound("도화선타는소리");
+            IsTickingSoundPlaying = false;
+        }
+        
+        // 폭발 소리와 이펙트 재생
+        AudioManager.Inst.PlaySound("폭발2", pos);
+        EffectManager.Inst.PlayEffect("폭탄", pos);
     }
 }

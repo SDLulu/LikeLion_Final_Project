@@ -8,6 +8,8 @@ public class PlayerStunInvincibleDie : NetworkBehaviour, ISoftReset
     [Networked] private TickTimer StunTimer { get; set; }
     [Networked] private TickTimer InvincibleTimer { get; set; }
     [Networked] private TickTimer ThrownTimer { get; set; }
+    [Networked] private TickTimer StunNoAnimationTimer { get; set; } // 애니메이션 없는 스턴 타이머
+    [Networked] private TickTimer StunDeadAnimationTimer { get; set; } // 죽음 애니메이션 스턴 타이머
     
     // 🛑 상태 관련 네트워크 프로퍼티들
     [Networked] public bool IsStunned { get; private set; }
@@ -15,6 +17,8 @@ public class PlayerStunInvincibleDie : NetworkBehaviour, ISoftReset
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
     [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
     [Networked] public bool IsDead { get; private set; } // 죽음 상태 (외부 참조용)
+    [Networked] public bool IsStunnedNoAnimation { get; private set; } // 애니메이션 없는 스턴
+    [Networked] public bool IsStunnedDeadAnimation { get; private set; } // 죽음 애니메이션 스턴
 
     public override void Spawned()
     {

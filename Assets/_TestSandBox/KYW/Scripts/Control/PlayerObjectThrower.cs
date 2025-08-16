@@ -98,6 +98,9 @@ public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
         {
             // 공통 해제 로직 사용 (힘 적용)
             ReleaseObject(obj, true, direction);
+            
+            // 던지기 소리 재생
+            RPC_PlayThrowSound();
         }
     }
     
@@ -228,5 +231,11 @@ public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
             collider.isTrigger = false;
     }
     
-
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayThrowSound()
+    {
+        // 던지기 소리 재생
+        AudioManager.Inst.PlaySound("던지기", transform.position);
+    }
 } 

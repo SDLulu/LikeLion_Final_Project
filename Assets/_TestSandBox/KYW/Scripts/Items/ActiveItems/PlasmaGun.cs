@@ -57,6 +57,9 @@ public class PlasmaGun : NetworkBehaviour, IItemInteraction
         
         // 발사 후 쿨다운 타이머 시작
         fireRateTimer = TickTimer.CreateFromSeconds(Runner, fireRate);
+        
+        // 플라즈마 발사 소리와 이펙트 재생
+        RPC_PlayPlasmaFireFeedback();
     }
 
     private void FirePlasma(Vector2 mouseWorldPosition)
@@ -121,5 +124,14 @@ public class PlasmaGun : NetworkBehaviour, IItemInteraction
         {
             rb.AddForce(force, ForceMode2D.Impulse);
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayPlasmaFireFeedback()
+    {
+        // 플라즈마 발사 소리와 이펙트 재생
+        AudioManager.Inst.PlaySound("플라즈마건", transform.position);
+        EffectManager.Inst.PlayEffect("플라즈마발사", transform.position);
     }
 } 
