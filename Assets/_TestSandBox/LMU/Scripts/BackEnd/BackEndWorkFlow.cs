@@ -79,9 +79,9 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                 // 로그인후 닉네임을 로드
                 else if (callback.IsSuccess() && callback.GetStatusCode() == "200")
                 {
-                    Debug.Log("이미 회원가입된 게스트 로그인");
                     await Fader.Inst.HideLoadingAsync();
                     await LoadNickname();
+                    Debug.Log($"이미 회원가입된 게스트 로그인 - {NickName}");
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
                     return;
