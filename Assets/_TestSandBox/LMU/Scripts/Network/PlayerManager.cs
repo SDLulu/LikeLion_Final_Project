@@ -262,6 +262,20 @@ public class PlayerManager : NetworkBehaviour
         return false;
     }
     #endregion
+    
+    /// <summary>
+    /// 모든 플레이어가 죽었는지의 여부를 반환
+    /// </summary>
+    public bool IsAllPlayerDead()
+    {
+        var players = GetPlayerDatas();
+        foreach (var player in players)
+        {
+            if (player.Value.IsAlive)
+                return false;
+        }
+        return true;
+    }
 
     /// <summary>
     /// 모든 플레이어를 소프트 리셋
@@ -278,9 +292,9 @@ public class PlayerManager : NetworkBehaviour
         // {
         //     var deathHandler = player.Value.GetComponent<PlayerDeathHandler>();
         //     deathHandler.Die();
+        //     await Awaitable.WaitForSecondsAsync(0.5f);
         //     deathHandler.ResurrectAt(respawnPos);
         // }
-
 
         var players = GetPlayers();
         foreach (var kvp in players)
@@ -297,11 +311,6 @@ public class PlayerManager : NetworkBehaviour
                 sr.SoftReset();
             }
         }
-
-
-
-
-
     }
 
     #region 씬이동 및 RPC
