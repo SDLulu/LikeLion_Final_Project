@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &3986104838838289686
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 309514004865827309}
+  - component: {fileID: 5011735983723752000}
+  m_Layer: 0
+  m_Name: EffectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &309514004865827309
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3986104838838289686}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5011735983723752000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3986104838838289686}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75e018fe54a4a944184c9b82c0c9bb4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerEffects: []
+  enemyEffects: []
+  itemEffects:
+  - effectName: "\uD790\uC774\uD399\uD2B8"
+    effectPrefab: {fileID: 509918449434181441, guid: 328ca60503746384dab223aaa0e441ec, type: 3}
+    duration: 0
+  - effectName: "\uB3C8\uC774\uD399\uD2B8"
+    effectPrefab: {fileID: 7382628394740287454, guid: 20a0a3dd01f1cf744812330a5636de51, type: 3}
+    duration: 0
+  - effectName: "\uB098\uBB34\uC0C1\uC790\uAE68\uC9D0"
+    effectPrefab: {fileID: 8341981486102602151, guid: c4b41368cbcbec345bc63c1f0298ac86, type: 3}
+    duration: 0
+  - effectName: "\uB3CC\uAE68\uC9D0"
+    effectPrefab: {fileID: 1093586342970929616, guid: 678f1bc90812412459ef649d2261f51c, type: 3}
+    duration: 0
+  - effectName: "\uD56D\uC544\uB9AC\uAE68\uC9D0"
+    effectPrefab: {fileID: 4868547957771786811, guid: cdf63e35c0b62e74283cb04817fe47bd, type: 3}
+    duration: 0
+  - effectName: "\uC120\uBB3C\uC0C1\uC790\uAE68\uC9D0"
+    effectPrefab: {fileID: 6957767854060015655, guid: e5166899f11f5df4d9d2466f9edc6832, type: 3}
+    duration: 0
+  - effectName: "\uD53C"
+    effectPrefab: {fileID: 827877611014762225, guid: 130db80b149c8644688bce79c2cc0593, type: 3}
+    duration: 0
+  - effectName: "\uD0C0\uACA9\uBCC4"
+    effectPrefab: {fileID: 2060772446180427674, guid: 452bd958c19369349941cdcf0c32c507, type: 3}
+    duration: 0
+  - effectName: "\uD3ED\uD0C4"
+    effectPrefab: {fileID: 5622377033732779185, guid: f81e0ec2182caba47b58f9af7574e48a, type: 3}
+    duration: 0
+  - effectName: "\uC544\uC774\uD15C\uBE5B\uB0A8"
+    effectPrefab: {fileID: 3439076471438468578, guid: e99b97eaa967f2c4cb874df6ff53cbbb, type: 3}
+    duration: 0
+  - effectName: "\uD558\uD2B8"
+    effectPrefab: {fileID: 8764091968604046574, guid: 3bcdfaeee6967ea4cb1e6e90a4bb83d7, type: 3}
+    duration: 0
+  environmentEffects: []
+  poolSize: 10
