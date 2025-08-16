@@ -36,6 +36,14 @@ public class GameStageCompletedState : BaseStateBehaviour
         _isStateActive = false;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
+        
+        // 클라이언트 TCS 정리
+        if (_clientFadeOutTCS != null)
+        {
+            _clientFadeOutTCS.TrySetResult();
+            _clientFadeOutTCS = null;
+        }
+        
         base.Despawned(runner, hasState);
     }
 
@@ -83,6 +91,14 @@ public class GameStageCompletedState : BaseStateBehaviour
         _minWaitingTimer = TickTimer.None;
         _bgTaskTCS?.Clear();
         _bgTaskTCS = null;
+        
+        // 클라이언트 TCS 정리
+        if (_clientFadeOutTCS != null)
+        {
+            _clientFadeOutTCS.TrySetResult();
+            _clientFadeOutTCS = null;
+        }
+        
         _stageDataIndex++;
         Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
         base.OnExitState();
@@ -190,21 +206,28 @@ public class GameStageCompletedState : BaseStateBehaviour
             await Awaitable.NextFrameAsync();
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
 
-            if (CutSceneC != null)
-            {
-                CutSceneC.FocusCutSceneCamera();
-                CutSceneC.ActiveCutSceneResult(true);
-            }
+            CutSceneC.FocusCutSceneCamera();
+            CutSceneC.ActiveCutSceneResult(true);
+            UIEventSystem.Inst.TriggerCutSceneActive(true);
 
-            if (UIEventSystem.Inst != null)
+            // 서버에서만 실제 컷신 로직을 처리
+            if (Runner.IsServer)
             {
-                UIEventSystem.Inst.TriggerCutSceneActive(true);
+                _ = PlayServerCutSceneAsync(() =>
+                {
+                    // 서버가 입력 완료하면 모든 클라이언트에게 FadeOut 신호
+                    RPC_NotifyClientsToFadeOut();
+                    RPC_PlayerBackgroundCompleted(Runner.LocalPlayer, 0);
+                });
             }
-
-            _ = PlayCutSceneAsync(() =>
+            else
             {
-                RPC_PlayerBackgroundCompleted(Runner.LocalPlayer, 0);
-            });
+                // 클라이언트는 컷신 + UI 표시하고 서버 신호 대기
+                _ = PlayClientCutSceneAndWaitAsync(() =>
+                {
+                    RPC_PlayerBackgroundCompleted(Runner.LocalPlayer, 0);
+                });
+            }
 
             _ = LoadNextMapAsync(() =>
             {
@@ -224,9 +247,9 @@ public class GameStageCompletedState : BaseStateBehaviour
     }
 
     /// <summary>
-    /// 컷신 재생 처리
+    /// 서버에서만 실행되는 컷신 재생 처리 (입력 대기 포함)
     /// </summary>
-    private async Awaitable PlayCutSceneAsync(Action onCompleted)
+    private async Awaitable PlayServerCutSceneAsync(Action onCompleted)
     {
         try
         {
@@ -242,6 +265,47 @@ public class GameStageCompletedState : BaseStateBehaviour
             onCompleted?.Invoke();
             Debug.LogError("PlayCutSceneAsync 오류");
             Debug.LogError(e.Message);
+        }
+    }
+
+    private AwaitableCompletionSource _clientFadeOutTCS;
+
+    /// <summary>
+    /// 클라이언트에서 실행되는 컷신 + UI 표시 후 서버 신호 대기
+    /// </summary>
+    private async Awaitable PlayClientCutSceneAndWaitAsync(Action onCompleted)
+    {
+        try
+        {
+            await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
+            await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
+            
+            // 클라이언트는 UI를 보여주고 서버의 신호를 대기
+            _clientFadeOutTCS = new AwaitableCompletionSource();
+            await _clientFadeOutTCS.Awaitable;
+            
+            // 서버 신호가 오면 FadeOut 진행
+            await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
+            onCompleted?.Invoke();
+        }
+        catch (System.Exception e)
+        {
+            onCompleted?.Invoke();
+            Debug.LogError("PlayClientCutSceneAndWaitAsync 오류");
+            Debug.LogError(e.Message);
+        }
+    }
+
+    /// <summary>
+    /// 서버에서 클라이언트들에게 FadeOut 시작 신호
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_NotifyClientsToFadeOut()
+    {
+        if (Runner.IsClient && _clientFadeOutTCS != null)
+        {
+            _clientFadeOutTCS.TrySetResult();
+            _clientFadeOutTCS = null;
         }
     }
 

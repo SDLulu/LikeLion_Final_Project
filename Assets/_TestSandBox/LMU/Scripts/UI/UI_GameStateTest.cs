@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 using UnityEngine.UI;
 
 public class UI_GameStateTest : MonoBehaviour
@@ -9,6 +10,10 @@ public class UI_GameStateTest : MonoBehaviour
     [SerializeField] private Button _nextStageButton;
     [SerializeField] private Button _failButton;
 
+    [SerializeField] private float _keyCooldownTime = 5.0f;
+    private float _nextStageLastTime;
+    private float _failLastTime;
+
 
     private void Awake()
     {
@@ -17,6 +22,9 @@ public class UI_GameStateTest : MonoBehaviour
             _testHolder.gameObject.SetActive(false);
             return;
         }
+
+        NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChangedEvent;
+        NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChangedEvent;
 
 #if UNITY_EDITOR
         _testHolder.gameObject.SetActive(true);
@@ -41,5 +49,28 @@ public class UI_GameStateTest : MonoBehaviour
     private void OnClickFailButton()
     {
         GameStates.Inst.DelayForceActiveState<GameStageFailedState>();
+    }
+
+    private E_StateName _curState;
+    private void OnGameStateChangedEvent(Fusion.NetworkRunner runner, E_StateName prevState, E_StateName state)
+    {
+        _curState = state;
+    }
+    private void Update()
+    {
+        if (_curState != E_StateName.PlayingState)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.N) && Time.time >= _nextStageLastTime + _keyCooldownTime)
+        {
+            _nextStageLastTime = Time.time;
+            OnClickNextStageButton();
+        }
+        
+        if (Input.GetKeyDown(KeyCode.Backspace) && Time.time >= _failLastTime + _keyCooldownTime)
+        {
+            _failLastTime = Time.time;
+            OnClickFailButton();
+        }
     }
 }
