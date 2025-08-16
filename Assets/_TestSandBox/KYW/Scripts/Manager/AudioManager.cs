@@ -15,7 +15,17 @@ public class AudioManager : MonoBehaviour
     }
     
     [Header("🎵 사운드 이펙트 리스트")]
-    [SerializeField] private List<SoundData> soundList = new List<SoundData>();
+    [Header("👤 플레이어 사운드")]
+    [SerializeField] private List<SoundData> playerSounds = new List<SoundData>();
+
+    [Header("👹 적 사운드")]
+    [SerializeField] private List<SoundData> enemySounds = new List<SoundData>();
+
+    [Header("🎁 아이템 사운드")]
+    [SerializeField] private List<SoundData> itemSounds = new List<SoundData>();
+
+    [Header("🌍 환경 사운드")]
+    [SerializeField] private List<SoundData> environmentSounds = new List<SoundData>();
     
     [Header("🔊 설정")]
     [SerializeField] private int audioSourcePoolSize = 16;
@@ -55,7 +65,17 @@ public class AudioManager : MonoBehaviour
     private void InitializeSoundDictionary()
     {
         soundDictionary = new Dictionary<string, SoundData>();
-        foreach (var sound in soundList)
+        
+        // 각 섹션별로 사운드 추가
+        AddSoundsToDictionary(playerSounds);
+        AddSoundsToDictionary(enemySounds);
+        AddSoundsToDictionary(itemSounds);
+        AddSoundsToDictionary(environmentSounds);
+    }
+
+    private void AddSoundsToDictionary(List<SoundData> sounds)
+    {
+        foreach (var sound in sounds)
         {
             if (!string.IsNullOrEmpty(sound.soundName) && sound.audioClip != null)
             {

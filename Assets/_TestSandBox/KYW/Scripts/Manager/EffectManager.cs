@@ -14,7 +14,17 @@ public class EffectManager : MonoBehaviour
     }
     
     [Header("✨ 이펙트 프리팹 리스트")]
-    [SerializeField] private List<EffectData> effectList = new List<EffectData>();
+    [Header("👤 플레이어 이펙트")]
+    [SerializeField] private List<EffectData> playerEffects = new List<EffectData>();
+
+    [Header("👹 적 이펙트")]
+    [SerializeField] private List<EffectData> enemyEffects = new List<EffectData>();
+
+    [Header("🎁 아이템 이펙트")]
+    [SerializeField] private List<EffectData> itemEffects = new List<EffectData>();
+
+    [Header("🌍 환경 이펙트")]
+    [SerializeField] private List<EffectData> environmentEffects = new List<EffectData>();
     
     [Header("🎯 풀링 설정")]
     [SerializeField] private int poolSize = 10;
@@ -51,7 +61,17 @@ public class EffectManager : MonoBehaviour
     private void InitializeEffectDictionary()
     {
         effectDictionary = new Dictionary<string, EffectData>();
-        foreach (var effect in effectList)
+        
+        // 각 섹션별로 이펙트 추가
+        AddEffectsToDictionary(playerEffects);
+        AddEffectsToDictionary(enemyEffects);
+        AddEffectsToDictionary(itemEffects);
+        AddEffectsToDictionary(environmentEffects);
+    }
+
+    private void AddEffectsToDictionary(List<EffectData> effects)
+    {
+        foreach (var effect in effects)
         {
             if (!string.IsNullOrEmpty(effect.effectName) && effect.effectPrefab != null)
             {
@@ -65,7 +85,16 @@ public class EffectManager : MonoBehaviour
         effectPools = new Dictionary<GameObject, Queue<GameObject>>();
         activeEffects = new List<GameObject>();
         
-        foreach (var effectData in effectList)
+        // 각 섹션별로 풀 생성
+        CreatePoolsFromList(playerEffects);
+        CreatePoolsFromList(enemyEffects);
+        CreatePoolsFromList(itemEffects);
+        CreatePoolsFromList(environmentEffects);
+    }
+
+    private void CreatePoolsFromList(List<EffectData> effects)
+    {
+        foreach (var effectData in effects)
         {
             if (effectData.effectPrefab != null)
             {

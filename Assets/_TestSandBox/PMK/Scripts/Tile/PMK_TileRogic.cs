@@ -25,7 +25,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     // 맵 프리팹 세트 (맵 타입별로 프리팹을 저장하는 리스트)
     private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
-    private Dictionary<string, GameObject[]> mapPrefabDict;
+    public Dictionary<string, GameObject[]> mapPrefabDict { get; private set; }
 
     private int bossStage = 0;
 
@@ -329,9 +329,14 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
                             Vector3Int targetPos = sourcePos + offset;
 
-                            // 타일 생성 및 랜덤한 확률로 아이템 생성
-                            mainTilemap.SetTile(targetPos, tile);
-                            Create_TileItem(targetPos);
+                            // 타일 생성 및 랜덤한 확률로 아이템 생성 (RPC를 통해 동기화)
+                            if (HasStateAuthority)
+                            {
+                                // 타일맵 내의 상대 위치를 계산하여 RPC로 전달
+                                Vector3Int relativePos = new Vector3Int(x, y, 0);
+                                tileRPCManager.RPC_Create_TileFromMap(targetPos, relativePos, randomIndex, mapType);
+                                Create_TileItem(targetPos);
+                            }
 
                             tilePositions.Add(targetPos);
 
@@ -339,7 +344,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             {
                                 StartCoroutine(DelayedCreateEnemy(targetPos));
                             }
-
 
                             yield return null; // 한 프레임 대기
                         }

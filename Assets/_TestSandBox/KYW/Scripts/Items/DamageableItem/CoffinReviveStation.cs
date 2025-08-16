@@ -31,6 +31,12 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
         CurrentHealth -= Mathf.Max(1, damage);
         if (CurrentHealth <= 0)
         {
+            // 손에 들고 있다면 손에서 놓기
+            if (IsHeldNet)
+            {
+                RemoveFromHand();
+            }
+            
             TryReviveNearestGhost();
 
             if (destroyOnUse)
@@ -65,7 +71,7 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
         }
     }
 
-    // 들기/놓기 이벤트 (관은 기본적으로 들 수 없게 설계하므로 내부 상태만 유지)
+    // 들기/놓기 이벤트
     public void OnPickedUp()
     {
         if (!HasStateAuthority) return;
@@ -144,6 +150,17 @@ public class CoffinReviveStation : NetworkBehaviour, IDamageable, IItemInteracti
         {
             rb.linearVelocity = Vector2.zero;
             rb.angularVelocity = 0f;
+        }
+    }
+    
+    // 손에서 놓기
+    private void RemoveFromHand()
+    {
+        if (!Object.HasStateAuthority) return;
+        var playerThrower = GetComponentInParent<PlayerObjectThrower>();
+        if (playerThrower != null)
+        {
+            playerThrower.ReleaseObject(gameObject, false);
         }
     }
 }
