@@ -23,7 +23,8 @@ public class GameInput : MonoBehaviour, GameInputAction.IGameActions
     {
         // 현재 씬확인
         var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
-        if (sceneName != "DevGame")
+        if (sceneName != GlobalSetting.Inst.GameScenePath && 
+            sceneName != GlobalSetting.Inst.LobbyScenePath)
         {
             return false;
         }
@@ -34,7 +35,8 @@ public class GameInput : MonoBehaviour, GameInputAction.IGameActions
 
         // 현재 게임 상태확인
         var stateName = GameStates.Inst.GetActiveStateName();
-        if (stateName != E_StateName.PlayingState)
+        if (stateName != E_StateName.PlayingState && 
+            stateName != E_StateName.LobbyState)
         {
             return false;
         }
