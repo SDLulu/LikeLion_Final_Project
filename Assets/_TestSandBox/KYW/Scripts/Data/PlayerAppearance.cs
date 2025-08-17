@@ -85,6 +85,17 @@ public class PlayerAppearance : NetworkBehaviour
         if (skinDatabase == null) return null;
         return skinDatabase.GetSpriteByKey(skinKey);
     }
+
+    /// <summary>
+    /// 스킨 키에 해당하는 시체 프리팹을 가져옵니다.
+    /// </summary>
+    /// <param name="skinKey">스킨 키</param>
+    /// <returns>해당하는 시체 프리팹, 없으면 null</returns>
+    public GameObject GetCorpsePrefab(string skinKey)
+    {
+        if (skinDatabase == null) return null;
+        return skinDatabase.GetCorpsePrefabByKey(skinKey);
+    }
 }
 
 
