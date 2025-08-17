@@ -5,7 +5,7 @@ using LMCore;
 using Unity.Cinemachine;
 using UnityEngine;
 
-public class CutSceneController : MonoBehaviour
+public class CutSceneController : NetworkBehaviour
 {
     [Header("인스펙터 참조")]
     [field: SerializeField] public Transform StartPoint { get; private set; }
@@ -13,6 +13,7 @@ public class CutSceneController : MonoBehaviour
     [field: SerializeField] public CinemachineCamera CutSceneCamera { get; private set; }
     [field: SerializeField] public UI_StageProgress2 UIStageProgress { get; private set; }
     [field: SerializeField] public UI_Score UIScore { get; private set; }
+    [SerializeField] private RectTransform _cutResultRect;
 
     public Vector3 GetStartPos() => StartPoint.position;
     public Vector3 GetEndPos() => EndPoint.position;
@@ -93,20 +94,30 @@ public class CutSceneController : MonoBehaviour
 
     private bool _isWaiting = false;
 
-    public void UpdateStageUI()
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_UpdateStageUI()
     {
         // 스테이지 정보 업데이트
         var data = GetProgressData();
         UIStageProgress.UpdateTimeData(data.Item1, data.Item2, data.Item3, data.Item4);
     }
 
-    public void UpdateScoreUI(PlayerRef player)
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_UpdateScoreUI(PlayerRef player)
     {
         var playerData = PlayerManager.Inst.GetPlayerData(player);
         var scoreData = GetScoreData(player);
         string nickName = playerData.NickName;
         int hp = playerData.Health;
         UIScore.UpdateData(nickName, scoreData.Item1, scoreData.Item2, 0, hp);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_TweenCutResult()
+    {
+        _cutResultRect.localScale = Vector3.one * 0.8f;
+        _cutResultRect.DOScale(1.1f, 0.2f).SetLoops(2, LoopType.Yoyo);
+        SoundManager.Inst.PlaySFX("Cuts");
     }
 
     private async Awaitable WaitForInputResponse(List<PlayerRef> players)
@@ -119,8 +130,13 @@ public class CutSceneController : MonoBehaviour
             {
                 Debug.Log($"<color=red>대기중: {i}</color>");
 
-                UpdateScoreUI(players[i]);
+                RPC_UpdateScoreUI(players[i]);
                 await WaitForResponse();
+
+                // 마지막인 경우는 트윈 제외
+                if (i != players.Count - 1)
+                    RPC_TweenCutResult();
+
                 await Awaitable.NextFrameAsync();
             }
             await Awaitable.NextFrameAsync();
