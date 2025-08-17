@@ -47,7 +47,7 @@ public class Meteor : BossSkillBState, IAnimationTriggerReceiver
         {
             case "MeteorSpawn":
                 startMeteor = true;
-                anim.CrossFadeInFixedTime("Idle", animTransitionLength);
+                anim.CrossFadeInFixedTime("Flying", animTransitionLength);
                 break;
         }
     }
