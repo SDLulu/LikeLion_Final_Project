@@ -167,6 +167,16 @@ public class AttackCollisionHandler : NetworkBehaviour
     
     private void HandleCollision(GameObject target)
     {
+        // 보스 충돌 처리 (우선순위 높음)
+        var boss = target.GetComponent<BossBase>();
+        if (boss != null)
+        {
+            boss.TakeDamage(attackDamage);
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
+            return;
+        }
+
         var playerInteraction = target.GetComponent<IPlayerInteraction>();
         if (playerInteraction != null)
         {
