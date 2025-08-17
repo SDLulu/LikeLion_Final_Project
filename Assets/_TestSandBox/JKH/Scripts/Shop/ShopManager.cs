@@ -24,8 +24,8 @@ public class ShopManager : NetworkBehaviour
     {
         if (Object.HasStateAuthority)
         {
-            InitializeShopItems();
-            SpawnShopkeeper();
+            StartCoroutine(InitializeShopItems());
+            StartCoroutine(SpawnShopkeeper());
         }
     }
 
@@ -106,24 +106,26 @@ public class ShopManager : NetworkBehaviour
     }
 
     // 상점 주인을 스폰하고 참조를 저장하는 메서드
-    private void SpawnShopkeeper()
+    private IEnumerator SpawnShopkeeper()
     {
+        yield return new WaitForSeconds(3f); // 잠시 대기하여 네트워크 초기화 보장
+
         if (Runner == null)
         {
             Debug.LogError("NetworkRunner is not assigned or running in ShopManager!");
-            return;
+            yield break;
         }
 
         if (shopkeeperPrefab.IsValid == false)
         {
             Debug.LogError("Shopkeeper Prefab is not assigned in ShopManager!");
-            return;
+            yield break;
         }
 
         if (shopkeeperSpawnPoint == null)
         {
             Debug.LogError("Shopkeeper Spawn Point is not assigned in ShopManager!");
-            return;
+            yield break;
         }
 
         // ⭐️ 수정: 스폰된 NetworkObject를 변수에 저장합니다.
