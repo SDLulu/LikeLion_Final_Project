@@ -14,6 +14,8 @@ public class PlayerSkinDatabase : ScriptableObject
         public RuntimeAnimatorController GhostAnimatorController; // 유령용
         [Tooltip("UI에 표시할 스킨 스프라이트")]
         public Sprite SkinSprite; // UI용 스킨 스프라이트 추가
+        [Tooltip("해당 스킨의 시체 프리팹")]
+        public GameObject CorpsePrefab; // 스킨별 시체 프리팹 추가
     }
 
     [SerializeField]
@@ -81,6 +83,27 @@ public class PlayerSkinDatabase : ScriptableObject
             if (skin != null && skin.SkinKey.Equals(skinKey, System.StringComparison.OrdinalIgnoreCase))
             {
                 return skin.SkinSprite;
+            }
+        }
+        
+        return null;
+    }
+
+    /// <summary>
+    /// 스킨 키에 해당하는 시체 프리팹을 가져옵니다.
+    /// </summary>
+    /// <param name="skinKey">스킨 키</param>
+    /// <returns>해당하는 시체 프리팹, 없으면 null</returns>
+    public GameObject GetCorpsePrefabByKey(string skinKey)
+    {
+        if (string.IsNullOrEmpty(skinKey)) return null;
+        
+        // skins 리스트에서 직접 찾기
+        foreach (var skin in skins)
+        {
+            if (skin != null && skin.SkinKey.Equals(skinKey, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return skin.CorpsePrefab;
             }
         }
         

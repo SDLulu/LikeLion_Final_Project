@@ -31,6 +31,7 @@ public class SacrificeAltar : NetworkBehaviour
 
         var targetPlayerComponent = other.GetComponentInParent<PlayerStunInvincibleDie>();
         var targetEnemyComponent = other.GetComponentInParent<EnemyBase>();
+        var isCorpse = other.CompareTag("Corpse");
 
         // 스턴 상태인 유효한 대상이 들어왔을 때
         if (targetPlayerComponent != null && !targetPlayerComponent.IsHeld)
@@ -44,7 +45,7 @@ public class SacrificeAltar : NetworkBehaviour
             }
 
         }
-        if (targetEnemyComponent != null && !targetEnemyComponent.IsHeld)
+        else if (targetEnemyComponent != null && !targetEnemyComponent.IsHeld)
         {
             if (targetEnemyComponent.IsStunned || targetEnemyComponent.IsDead)
             {
@@ -53,6 +54,17 @@ public class SacrificeAltar : NetworkBehaviour
                 SacrificeDelayTimer = TickTimer.CreateFromSeconds(Runner, sacrificeDelay);
             }
 
+        }
+        else if (isCorpse)
+        {
+            var targetCorpseObject = other.GetComponentInParent<NetworkObject>();
+            if (targetCorpseObject != null)
+            {
+                Debug.Log($"Host: 제물 후보 [Corpse]가 제단에 올라왔습니다. 1초 카운트다운을 시작합니다.");
+                // 제물 후보로 설정하고, 지연 타이머를 시작합니다.
+                PotentialSacrifice = targetCorpseObject;
+                SacrificeDelayTimer = TickTimer.CreateFromSeconds(Runner, sacrificeDelay);
+            }
         }
     }
 
@@ -86,6 +98,7 @@ public class SacrificeAltar : NetworkBehaviour
 
         var targetPlayerComponent = targetToSacrifice.GetComponent<PlayerStunInvincibleDie>();
         var targetEnemyComponent = targetToSacrifice.GetComponent<EnemyBase>();
+        var isCorpse = targetToSacrifice.CompareTag("Corpse");
 
         // 1초가 지난 지금도 여전히 유효한지 최종 확인합니다.
         if (targetPlayerComponent != null)
@@ -100,6 +113,10 @@ public class SacrificeAltar : NetworkBehaviour
                 PerformEnemySacrifice(targetEnemyComponent);
             }
         }
+        else if (isCorpse)
+        {
+            PerformCorpseSacrifice(targetToSacrifice);
+        }
         else
         {
             Debug.Log($"Host: [{targetPlayerComponent?.name}]이(가) 제물로 바쳐지기 전에 스턴에서 풀려났습니다.");
@@ -112,6 +129,9 @@ public class SacrificeAltar : NetworkBehaviour
     {
         Debug.Log($"Host: [{target.name}]을(를) 제물로 바칩니다!");
         CooldownTimer = TickTimer.CreateFromSeconds(Runner, cooldownDuration);
+
+        // 제물 바칠 때 소리와 이펙트 재생
+        RPC_PlaySacrificeEffects(target.transform.position);
 
         if (sacrificeEffectPrefab != null)
         {
@@ -148,6 +168,9 @@ public class SacrificeAltar : NetworkBehaviour
     private void PerformPlayerSacrifice(PlayerStunInvincibleDie target)
     {
 
+        // 제물 바칠 때 소리와 이펙트 재생
+        RPC_PlaySacrificeEffects(target.transform.position);
+
         AltarManager manager = FindFirstObjectByType<AltarManager>();
 
         if (manager != null)
@@ -173,9 +196,68 @@ public class SacrificeAltar : NetworkBehaviour
         
     }
 
+    private void PerformCorpseSacrifice(NetworkObject target)
+    {
+        Debug.Log($"Host: [Corpse]을(를) 제물로 바칩니다!");
+        CooldownTimer = TickTimer.CreateFromSeconds(Runner, cooldownDuration);
+
+        // 제물 바칠 때 소리와 이펙트 재생
+        RPC_PlaySacrificeEffects(target.transform.position);
+
+        if (sacrificeEffectPrefab != null)
+        {
+            Instantiate(sacrificeEffectPrefab, target.transform.position, Quaternion.identity);
+        }
+
+        AltarManager manager = FindFirstObjectByType<AltarManager>();
+        if (manager != null)
+        {
+            // Corpse는 죽은 상태로 간주하여 6점 추가
+            manager.AddFavor(6, target.transform.position);
+            Debug.Log("Corpse 점수 추가 6점");
+        }
+        else
+        {
+            Debug.LogError("Host: AltarManager 인스턴스를 찾을 수 없습니다!");
+        }
+
+        if (target != null && target.IsValid)
+        {
+            Runner.Despawn(target);
+        }
+    }
+
     private void ResetAltarState()
     {
         PotentialSacrifice = null;
         SacrificeDelayTimer = TickTimer.None;
+    }
+
+    // --- RPC 메서드들 ---
+    /// <summary>
+    /// 제물 바칠 때 소리와 이펙트를 재생합니다.
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlaySacrificeEffects(Vector3 sacrificePosition)
+    {
+        // 제물 바칠 때 소리 재생
+        if (AudioManager.Inst != null)
+        {
+            AudioManager.Inst.PlaySound("제물", sacrificePosition);
+        }
+        else
+        {
+            Debug.LogWarning("[SacrificeAltar] AudioManager를 찾을 수 없어 제물 소리를 재생할 수 없습니다.");
+        }
+
+        // 제물 바칠 때 이펙트 재생
+        if (EffectManager.Inst != null)
+        {
+            EffectManager.Inst.PlayEffect("제물", sacrificePosition);
+        }
+        else
+        {
+            Debug.LogWarning("[SacrificeAltar] EffectManager를 찾을 수 없어 제물 이펙트를 재생할 수 없습니다.");
+        }
     }
 }
