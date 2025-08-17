@@ -83,7 +83,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                     await Fader.Inst.HideLoadingAsync();
                     await LoadNickname();
                     GameInviteManager.Inst.ConnectNotification();
-                    Debug.Log($"이미 회원가입된 게스트 로그인 - {NickName}");
+                    Debug.Log($"이미 회원가입된 게스트 로그인 - <color=green>{NickName}</color>");
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
                     return;
