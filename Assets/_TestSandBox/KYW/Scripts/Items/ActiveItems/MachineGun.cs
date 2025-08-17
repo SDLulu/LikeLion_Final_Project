@@ -47,7 +47,10 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
         }
     }
 
-    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition) 
+    { 
+        // 클릭 시 아무것도 하지 않음 (지속 사운드 제거)
+    }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
@@ -62,7 +65,10 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
         FireBulletRpc(mouseWorldPosition);
     }
 
-    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition) 
+    { 
+        // 떼기 시 아무것도 하지 않음 (지속 사운드 제거)
+    }
 
     [Rpc(RpcSources.InputAuthority, RpcTargets.StateAuthority)]
     private void FireBulletRpc(Vector2 mouseWorldPosition)
@@ -90,6 +96,9 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
         if (reloadTimer.IsRunning) return;
         
         reloadTimer = TickTimer.CreateFromSeconds(Runner, reloadTime);
+        
+        // 장전 소리 재생
+        RPC_PlayReloadSound();
     }
 
     private void FireBullet(Vector2 mouseWorldPosition)
@@ -114,6 +123,8 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
             // 리코일 적용 (발사 반대 방향으로 넉백+짧은 스턴)
             ApplyRecoil(fireDirection, machineGunRecoilForce, machineGunRecoilStun);
             
+            // 발사 사운드 재생
+            RPC_PlayFireSound();
         }
     }
 
@@ -154,5 +165,20 @@ public class MachineGun : NetworkBehaviour, IItemInteraction
         {
             rb.AddForce(force, ForceMode2D.Impulse);
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayReloadSound()
+    {
+        // 장전 소리 재생
+        AudioManager.Inst.PlaySound("장전", transform.position);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayFireSound()
+    {
+        // 발사 사운드 재생
+        AudioManager.Inst.PlaySound("나무파편튀기기", transform.position);
     }
 } 

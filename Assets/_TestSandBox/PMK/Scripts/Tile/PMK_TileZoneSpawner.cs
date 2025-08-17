@@ -14,13 +14,11 @@ public class PMK_TileZoneSpawner : MonoBehaviour
 
     private void Start()
     {
-        StartCoroutine(TryPlaceTileIfEmpty());
+        TryPlaceTileIfEmpty();
     }
 
-    private IEnumerator TryPlaceTileIfEmpty()
+    private void TryPlaceTileIfEmpty()
     {
-        while (tileRogic.isCreatingMap)
-            yield return null;
 
         Vector2 pos = transform.position;
         Collider2D hits = Physics2D.OverlapCircle(pos, 0.01f, whatisPlatform);

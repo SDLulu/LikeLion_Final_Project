@@ -3,7 +3,7 @@ using UnityEngine;
 
 // 🪜 플레이어 사다리 오르기 컴포넌트
 // 사다리 감지, 사다리 상태 관리, 사다리 오르기 처리 담당
-public class PlayerClimbing : NetworkBehaviour
+public class PlayerClimbing : NetworkBehaviour, ISoftReset
 {
     [Header("Climbing Settings")]
     [SerializeField] private float climbingSpeed = 3f;      // 사다리 오르기 속도
@@ -51,6 +51,25 @@ public class PlayerClimbing : NetworkBehaviour
             Debug.LogError($"[{name}] PlayerJump 컴포넌트를 찾을 수 없습니다!");
         if (playerController == null)
             Debug.LogError($"[{name}] SpelunkyPlayerController 컴포넌트를 찾을 수 없습니다!");
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 사다리 상태 및 타이머/물리값 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        IsClimbing = false;
+        climbRegrabCooldown = 0f;
+        climbRequested = false;
+        ButtonsPrevious = default;
+        if (rb != null)
+        {
+            rb.gravityScale = normalGravityScale;
+        }
     }
 
     public void ProcessInput(SpelunkyPlayerInputData input)

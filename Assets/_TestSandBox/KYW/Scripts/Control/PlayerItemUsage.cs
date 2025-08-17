@@ -4,7 +4,7 @@ using UnityEngine;
 // 🎮 플레이어 아이템 사용 컨트롤러
 // 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemUsage)
 // 🎯 목적: 1) 아이템/펀치를 마우스 방향으로 회전 2) 좌클릭으로 아이템/펀치 사용
-public class PlayerItemUsage : NetworkBehaviour
+public class PlayerItemUsage : NetworkBehaviour, ISoftReset
 {
     [Header("Rotation Settings")]
     [SerializeField] private bool enableItemRotation = true;  // ⚙️ 회전 기능 켜기/끄기
@@ -175,5 +175,14 @@ public class PlayerItemUsage : NetworkBehaviour
                 spriteRenderer.flipY = NetworkedFlipY;
             }
         }
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 입력 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        ButtonsPrevious = default;
+        WasHolding = false;
     }
 }

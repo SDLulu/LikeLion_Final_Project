@@ -65,6 +65,8 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
+    public bool IsDead => IsAlive == false;
+
     public bool IsSpawned = false;
 
     public override void Spawned()
@@ -81,7 +83,10 @@ public class PlayerData : NetworkBehaviour
                 RPC_SetNickName(randomFake.NickName);
             }
             else
+            {
+                BackEndWorkFlow.FakeNickName = BackEndWorkFlow.NickName;
                 RPC_SetNickName(BackEndWorkFlow.NickName);
+            }
         }
         else
         {
@@ -117,9 +122,13 @@ public class PlayerData : NetworkBehaviour
         Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
     }
 
-    [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
     public void RPC_RequestToggleReady(bool isReady)
     {
-        RPC_ToggleReady(isReady);
+        if (Runner.IsServer)
+        {
+            IsReady = isReady;
+            Debug.Log($"플레이어 {Static_PlayerData.NickName} Ready 상태: {IsReady}");
+        }
     }
 }

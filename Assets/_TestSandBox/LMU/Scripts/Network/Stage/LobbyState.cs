@@ -7,26 +7,36 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
 {
     public override E_StateName StateName => E_StateName.LobbyState;
 
+    [Header("설정")]
+    [SerializeField] private bool _isIntervalSoftReset = true;
+    [SerializeField] private float _playerSoftResetInterval = 5.0f;
+
     [Header("디버그용")]
     [SerializeField] private int _minPlayersToStart = 2;
     [SerializeField] private bool _isInGame = false;
     [SerializeField] private bool _isGameSceneLoading = false;
     [SerializeField] private bool _isGameSceneLoaded = false;
+
     public int MinPlayersToStart => _minPlayersToStart = (LobbyManager.Inst.IsSoloPlay ? 1 : 2);
     public bool IsInGame => _isInGame;
     public bool IsGameSceneLoading => _isGameSceneLoading;
     public bool IsGameSceneLoaded => _isGameSceneLoaded;
     private Dictionary<PlayerRef, AwaitableCompletionSource> _fadingTCS = new();
-
+    private TickTimer _playerSoftResetTimer;
     private static bool _isFirst = true;
 
+    public override void Spawned()
+    {
+        base.Spawned();
+        _isFirst = true;
+    }
 
     // 로비씬에 플레이어가 참가할때
     public void PlayerJoined(PlayerRef player)
     {
         if (Runner.IsServer)
         {
-            PlayerM.RPC_MoveToLobbyScene_Target(player);
+            PlayerM.RPC_MoveToLobbyScene_Target(player, GlobalSetting.Inst.LobbySpawnPos);
         }
     }
 
@@ -35,26 +45,39 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         if (Runner.IsServer)
         {
             PlayerM.RPC_MoveToLobbyScene();
+            PlayerM.SetPlayerPositions(GlobalSetting.Inst.LobbySpawnPos);
 
-            Vector3 targetPos = GlobalSetting.Inst.LobbySpawnPos;
-            var players = PlayerM.GetPlayers();
-            foreach (var player in players)
+            _playerSoftResetTimer = TickTimer.None;
+            _playerSoftResetInterval = 10.0f;
+
+            if (_isFirst)
             {
-                var stageController = player.Value.GetComponent<PlayerStageController>();
-                stageController.SetPosition(targetPos);
+                _isFirst = false;
+                return;
             }
 
-            if (_isFirst == false)
-            {
-                await Awaitable.WaitForSecondsAsync(3.0f);
-                RPC_FadeInUI();
-            }
-            _isFirst = false;
+            await Awaitable.WaitForSecondsAsync(3.0f);
+            RPC_FadeInUI();
         }
 
     }
 
-    protected override async void OnFixedUpdate()
+    protected override void OnFixedUpdate()
+    {
+        if (Runner.IsServer == false)
+            return;
+
+        CheckStartGame();
+
+        // 일정주기마다 플레이어 스탯정보 초기화
+        if (_isIntervalSoftReset && _playerSoftResetTimer.ExpiredOrNotRunning(Runner))
+        {
+            PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
+            _playerSoftResetTimer = TickTimer.CreateFromSeconds(Runner, _playerSoftResetInterval);
+        }
+    }
+
+    private async void CheckStartGame()
     {
         // 조건을 만족하면 게임 시작 - 씬변경후 게임의 상태를 PlayingState로 변경
         bool startCondition = Runner.IsServer &&
@@ -67,13 +90,13 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
 
         var result = await TryStartGameAsync(isStart: AreAllPlayersReady());
         if (result)
+        {
             GameStates.Inst.DelayForceActiveState<GameStageWaitingState>();
+        }
     }
 
     protected override void OnExitState()
     {
-        Debug.Log("LobbyState 퇴장");
-
         _isInGame = false;
         _isGameSceneLoading = false;
         _isGameSceneLoaded = false;
@@ -83,9 +106,10 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         if (Runner.IsServer)
         {
             // 모든 플레이어의 준비 상태를 초기화
-            foreach (var player in PlayerM.GetPlayers())
+            var players = PlayerM.GetPlayerDatas();
+            foreach (var p in players)
             {
-                var playerData = player.Value.GetComponent<PlayerData>();
+                var playerData = p.Value;
                 playerData.RPC_RequestToggleReady(false);
             }
         }
@@ -214,16 +238,12 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
                     UnityEngine.SceneManagement.LoadSceneMode.Additive,
                     onLoadComplete: () =>
                     {
-                        var sessionProperties = new Dictionary<string, SessionProperty>();
-                        sessionProperties["InGame"] = true;
-                        Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+                        LobbyManager.Inst.UpdateSessionInfo(isInGame: true);
                     });
             }
             else
             {
-                var sessionProperties = new Dictionary<string, SessionProperty>();
-                sessionProperties["InGame"] = true;
-                Runner.SessionInfo.UpdateCustomProperties(sessionProperties);
+                LobbyManager.Inst.UpdateSessionInfo(isInGame: true);
             }
 
             // 씬 로드 여부와 관계 없이 플레이어는 게임씬으로 이동

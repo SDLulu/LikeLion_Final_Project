@@ -22,10 +22,6 @@ public class PlasmaBullet : NetworkBehaviour
     {
         // 물리 시뮬레이션 설정
         Runner.SetIsSimulated(Object, true);
-        // 렌더링 소스 설정 (보간 사용)
-        base.Object.RenderSource = RenderSource.Interpolated;
-        // 원격 렌더링 타임프레임 강제 설정
-        base.Object.ForceRemoteRenderTimeframe = true;
 
         rb = GetComponent<Rigidbody2D>();
         bulletCollider = GetComponent<Collider2D>();
@@ -89,6 +85,9 @@ public class PlasmaBullet : NetworkBehaviour
             Runner.Spawn(hitEffectPrefab, transform.position, transform.rotation);
         }
 
+        // 폭발 소리와 이펙트 재생 (Bomb과 동일)
+        RPC_PlayExplosionFeedback(transform.position);
+
         // 총알 비활성화 후 폭발 창 종료 시점에 소멸
         if (bulletCollider != null) bulletCollider.enabled = false;
         if (rb != null)
@@ -109,4 +108,12 @@ public class PlasmaBullet : NetworkBehaviour
         }
     }
 
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayExplosionFeedback(Vector3 pos)
+    {
+        // 폭발 소리와 이펙트 재생 (Bomb과 동일)
+        AudioManager.Inst.PlaySound("폭발2", pos);
+        EffectManager.Inst.PlayEffect("폭탄", pos);
+    }
 } 

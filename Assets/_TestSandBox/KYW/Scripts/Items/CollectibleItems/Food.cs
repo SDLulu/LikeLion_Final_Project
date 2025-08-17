@@ -28,8 +28,14 @@ public class Food : NetworkBehaviour
         {
             // 플레이어 체력 컴포넌트 찾기
             var playerHealth = other.GetComponentInChildren<PlayerHealth>();
+            var deathState = other.GetComponent<PlayerStunInvincibleDie>();
             if (playerHealth != null)
             {
+                // 사망 중이면 획득 금지
+                if (deathState != null && deathState.IsDead)
+                {
+                    return;
+                }
                 // 체력 회복 및 수집 완료
                 CollectFood(playerHealth);
             }
@@ -63,6 +69,9 @@ public class Food : NetworkBehaviour
                 Destroy(effect, 2f); // 2초 후 효과 제거
             }
             
+            // 수집 소리와 이펙트 재생
+            RPC_PlayCollectFeedback(transform.position);
+            
             Debug.Log($"[Food] 체력 {healAmount} 회복! 현재 체력: {playerHealth.Health}/{playerHealth.MaxHealth}");
             var netObj = playerHealth.GetComponentInParent<NetworkObject>();
             if (netObj != null)
@@ -73,5 +82,13 @@ public class Food : NetworkBehaviour
             // 음식 오브젝트 제거
             Runner.Despawn(Object);
         }
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayCollectFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("힐", pos);
+        EffectManager.Inst.PlayEffect("힐하트", pos);
     }
 }

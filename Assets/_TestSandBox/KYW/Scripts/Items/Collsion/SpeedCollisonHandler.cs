@@ -139,6 +139,8 @@ public class SpeedCollisionHandler : NetworkBehaviour
         {
             ApplyDamageAndKnockback(target, playerInteraction);
             didHit = true;
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
             // return; -> 아이템 충돌도 함께 체크할 수 있도록 반환 제거
         }
         
@@ -147,7 +149,15 @@ public class SpeedCollisionHandler : NetworkBehaviour
         if (itemInteraction != null)
         {
             ApplyKnockbackOnly(target, itemInteraction);
+            // 아이템도 데미지를 받을 수 있다면 체력 감소 처리
+            var damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(speedAttackDamage);
+            }
             didHit = true;
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
         }
 
         // 총알에 부착된 스피드콜라이더인 경우, 유효한 히트가 있었다면 다음 틱에 소멸 요청
@@ -178,4 +188,12 @@ public class SpeedCollisionHandler : NetworkBehaviour
         interaction.ApplyKnockback(knockbackForceVector, speedAttackKnockbackDuration);
     }
     
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayHitEffect(Vector3 hitPosition)
+    {
+        // 타격음과 타격 이펙트 재생
+        AudioManager.Inst.PlaySound("충돌", hitPosition);
+        EffectManager.Inst.PlayEffect("충돌", hitPosition);
+    }
 } 
