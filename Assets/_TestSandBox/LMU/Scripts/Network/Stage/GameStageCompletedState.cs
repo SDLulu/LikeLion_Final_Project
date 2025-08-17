@@ -254,8 +254,8 @@ public class GameStageCompletedState : BaseStateBehaviour
         try
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
-            CutSceneC.UpdateStageUI();
-            CutSceneC.UpdateScoreUI(PlayerM.GetPlayerRefs()[0]);
+            CutSceneC.RPC_UpdateStageUI();
+            CutSceneC.RPC_UpdateScoreUI(PlayerM.GetPlayerRefs()[0]);
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
             await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
             await CutSceneC.WaitForNext(PlayerM.GetPlayerRefs());
