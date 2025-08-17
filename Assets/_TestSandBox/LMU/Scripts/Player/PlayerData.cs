@@ -65,6 +65,8 @@ public class PlayerData : NetworkBehaviour
         }
     }
 
+    public int Health => _playerHealth.Health;
+
     public bool IsDead => IsAlive == false;
 
     public bool IsSpawned = false;
