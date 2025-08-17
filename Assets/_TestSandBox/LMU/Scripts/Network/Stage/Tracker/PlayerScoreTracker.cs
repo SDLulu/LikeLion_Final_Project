@@ -17,6 +17,7 @@ public class PlayerScoreTracker : NetworkBehaviour
 
 	public void ClearScore()
 	{
+        Debug.Log("<color=#FF0000>[PlayerScoreTracker] 모든 점수 초기화</color>");
 		ItemScores.Clear();
 		MonsterScores.Clear();
 	}
@@ -83,6 +84,16 @@ public class PlayerScoreTracker : NetworkBehaviour
 		return value;
 	}
 
+	/// <summary>
+	/// 플레이어의 총 점수를 반환 - 아이템 점수 + 킬 점수
+	/// </summary>
+	public int GetTotalScoreOf(PlayerRef player)
+	{
+		int itemScore = GetItemScore(player);
+		int killScore = GetMonsterScore(player);
+		return itemScore + killScore;
+	}
+
     public override void Spawned()
     {
         _localPlayer = Runner.LocalPlayer; 
@@ -97,12 +108,16 @@ public class PlayerScoreTracker : NetworkBehaviour
     private void OnEnemyKilled(PlayerRef killer, EnemyData enemyData)
     {
 		AddMonsterScore(killer, 1);
+        int currentKillScore = GetMonsterScore(killer);
+        Debug.Log($"적 처치 - Player: {killer}, 현재 킬 점수: {currentKillScore}</color>");
         NetworkEventSystem.Inst.TriggerScoreChanged(killer);
     }
 
     private void OnItemCollected(PlayerRef player, int weight)
     {
 		AddItemScore(player, 1);
+        int currentItemScore = GetItemScore(player);
+        Debug.Log($"아이템 수집 - Player: {player}, 현재 아이템 점수: {currentItemScore}");
         NetworkEventSystem.Inst.TriggerScoreChanged(player);
     }
 

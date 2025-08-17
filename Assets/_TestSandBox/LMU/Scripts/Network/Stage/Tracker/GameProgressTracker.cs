@@ -16,17 +16,18 @@ public class GameProgressTracker : NetworkBehaviour
     private bool _isStageActive = false;
     private bool _isCutSceneActive = false;
 
-    // 서버의 InDade 캐시 기록용
-    private Dictionary<PlayerRef, string> _playerInDateMap = new();
-    private Dictionary<PlayerRef, int> _playerBestTotalMap = new();
+    // 사용하지 않음 - 새 구조에서는 매번 데이터베이스에서 최고점수 조회
+    // private Dictionary<PlayerRef, string> _playerInDateMap = new();
+    // private Dictionary<PlayerRef, int> _playerBestTotalMap = new();
 
     private E_StateName _curState = E_StateName.None;
 
     private void SetDefaultData()
     {
         _isSessionActive = true;
-        _playerInDateMap.Clear();
-        _playerBestTotalMap.Clear();
+        // 세션 기반 캐시는 더 이상 사용하지 않음
+        // _playerInDateMap.Clear();
+        // _playerBestTotalMap.Clear();
         NetStageElapsedSeconds = 0.0f;
         NetSessionElapsedSeconds = 0.0f;
         NetStageId = string.Empty;
@@ -98,7 +99,7 @@ public class GameProgressTracker : NetworkBehaviour
             if (current == E_StateName.FailedState)
             {
                 TrySubmitAllPlayers(runner);
-                await Awaitable.WaitForSecondsAsync(2.0f);
+                await Awaitable.WaitForSecondsAsync(5.0f);
                 SetDefaultData();
             }
         }
@@ -130,143 +131,170 @@ public class GameProgressTracker : NetworkBehaviour
         }
     }
 
-
-    /// <summary>
-    /// 개별 플레이어에 대한 서버 세션 데이터 전송
-    /// </summary>
-    private void TrySubmitSinglePlayer(NetworkRunner runner, PlayerRef player)
+    private async void TrySubmitAllPlayers(NetworkRunner runner)
 	{
 		if (runner.IsServer == false)
 			return;
 
-        // 세션정보 초기화
+        // 모든 플레이어의 기록을 수집
+        var playerRecords = new List<(PlayerRef player, PlayerSessionRecord record)>();
+        foreach (var player in runner.ActivePlayers)
+        {
+            var record = CollectPlayerRecord(runner, player);
+            if (record != null)
+            {
+                playerRecords.Add((player, record));
+            }
+        }
+
+        // 순차적으로 리더보드 업데이트 처리
+        await ProcessPlayerRecordsSequentially(playerRecords);
+	}
+
+    /// <summary>
+    /// 플레이어 기록 수집
+    /// </summary>
+    private PlayerSessionRecord CollectPlayerRecord(NetworkRunner runner, PlayerRef player)
+    {
+        if (runner.IsServer == false)
+            return null;
+
+        // 세션정보 초기화 - 총점 계산 및 닉네임 가져오기
         int item = _scoreTracker != null ? _scoreTracker.GetItemScoreOf(player) : 0;
         int kill = _scoreTracker != null ? _scoreTracker.GetMonsterScoreOf(player) : 0;
-		int total = item + kill;
-		string stageId = NetStageId.ToString();
-		int sessionSec = Mathf.RoundToInt(NetSessionElapsedSeconds);
+        int total = _scoreTracker != null ? _scoreTracker.GetTotalScoreOf(player) : 0;
+        string stageId = NetStageId.ToString();
+        int sessionSec = Mathf.RoundToInt(NetSessionElapsedSeconds);
 
-		var record = new PlayerSessionRecord();
-		record.SessionDurationSec = sessionSec;
-		record.Stage = stageId;
-		record.ItemScore = item;
-		record.KillScore = kill;
+        var data = PlayerManager.Inst.GetPlayerData(player);
+        if (data == null)
+            return null;
 
-        // 닉네임
-        var playerObj = runner.GetPlayerObject(player);
-        if (playerObj != null)
-        {
-            var pdata = playerObj.GetComponent<PlayerData>();
-            if (pdata != null)
-                record.NickName = pdata.NickName;
-        }
+        var record = new PlayerSessionRecord(data.NickName);
+        record.SessionDurationSec = sessionSec;
+        record.Stage = stageId;
+        record.TotalScore = total;
 
-        SubmitBestRecord(player, record, total);
-	}
-
-    private void TrySubmitAllPlayers(NetworkRunner runner)
-	{
-		if (runner.IsServer == false)
-			return;
-
-        foreach (var player in runner.ActivePlayers)
-			TrySubmitSinglePlayer(runner, player);
-	}
-
-    private void SubmitBestRecord(PlayerRef player, PlayerSessionRecord newRecord, int newTotal)
-	{
-		if (GlobalSetting.Inst.IsEnableBackend == false)
-			return;
-
-        // 유저당 1행 정책 - 서버 세션 내에서 inDate 캐시를 사용해 비교 업데이트
-        if (_playerInDateMap.ContainsKey(player) == false)
-        {
-            string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
-            UserData.InsertSessionAsync(BackEndWorkFlow.Inst.TABLE_NAME, newRecord, callback =>
-            {
-                if (callback.IsSuccess())
-                {
-                    string insertInDate = callback.GetInDate();
-                    if (string.IsNullOrEmpty(insertInDate) == false)
-                    {
-                        _playerInDateMap[player] = insertInDate;
-                        _playerBestTotalMap[player] = newTotal;
-                        UpdateLeaderboardAfterInsert(insertInDate, newRecord);
-                    }
-                }
-            });
-            return;
-        }
-
-        int prevTotal = 0;
-        if (_playerBestTotalMap.ContainsKey(player))
-            prevTotal = _playerBestTotalMap[player];
-
-        if (newTotal > prevTotal)
-        {
-            string inDate = _playerInDateMap[player];
-            string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
-            UserData.UpdateSessionAsync(tableName, inDate, newRecord, callback =>
-            {
-                if (callback.IsSuccess())
-                {
-                    _playerBestTotalMap[player] = newTotal;
-                    
-                    // 기존 데이터 업데이트 후 리더보드 업데이트
-                    UpdateLeaderboardAfterUpdate(inDate, newRecord);
-                }
-            });
-        }
-	}
-
-    /// <summary>
-    /// 새 데이터 삽입 후 리더보드 업데이트
-    /// </summary>
-    private void UpdateLeaderboardAfterInsert(string inDate, PlayerSessionRecord record)
-    {
-        if (LeaderBoard.HasInstance == false)
-        {
-            Debug.LogWarning("LeaderBoard 인스턴스가 없습니다.");
-            return;
-        }
-
-        string leaderboardUuid = BackEndWorkFlow.Inst.LeaderboardUUID;
-        string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
-        LeaderBoard.Inst.UpdateLeaderboardAsync(leaderboardUuid, tableName, inDate, record, callback =>
-        {
-            if (callback != null && callback.IsSuccess())
-            {
-            }
-            else
-            {
-            }
-        });
+        Debug.Log($"<color=#FFFF00> 플레이어 기록 수집 - " +
+        $"플레이어 닉네임: {record.NickName} " +
+        $"총점: {total} " +
+        $"스테이지: {stageId} " +
+        $"세션: {sessionSec}" +
+        "</color>");
+        
+        return record;
     }
 
     /// <summary>
-    /// 기존 데이터 업데이트 후 리더보드 업데이트
+    /// 플레이어 기록들을 순차적으로 처리
     /// </summary>
-    private void UpdateLeaderboardAfterUpdate(string inDate, PlayerSessionRecord record)
+    private async Awaitable ProcessPlayerRecordsSequentially(List<(PlayerRef player, PlayerSessionRecord record)> playerRecords)
     {
-        if (LeaderBoard.HasInstance == false)
+        foreach (var (player, record) in playerRecords)
         {
-            Debug.LogWarning("LeaderBoard 인스턴스가 없습니다.");
+            await ProcessSinglePlayerRecordAsync(player, record);
+            await Awaitable.WaitForSecondsAsync(2.0f);
+        }
+    }
+
+    /// <summary>
+    /// 단일 플레이어 기록을 비동기로 처리
+    /// </summary>
+    private async Awaitable ProcessSinglePlayerRecordAsync(PlayerRef player, PlayerSessionRecord record)
+    {
+        if (GlobalSetting.Inst.IsEnableBackend == false)
+        {
+            Debug.LogWarning("백엔드가 비활성화되어 점수 제출을 건너뜁니다.");
             return;
         }
 
-        string leaderboardUuid = BackEndWorkFlow.Inst.LeaderboardUUID;
+        // 데이터베이스에 기록 저장을 비동기 대기
+        var saveCompleted = new AwaitableCompletionSource<bool>();
+        
         string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
-            LeaderBoard.Inst.UpdateLeaderboardAsync(leaderboardUuid, tableName, inDate, record, callback =>
+        UserData.InsertSessionAsync(tableName, record, callback =>
         {
-            if (callback != null && callback.IsSuccess())
+            if (callback.IsSuccess())
             {
-                Debug.Log("<color=#00FF00>기존 데이터 업데이트 후 리더보드 갱신 완료</color>");
+                string insertInDate = callback.GetInDate();
+                Debug.Log($"<color=#00FF00>게임 기록 저장 성공 - " +
+                $"플레이어: {player} " +
+                $"InDate: {insertInDate} " +
+                $"총점: {record.TotalScore}" +
+                "</color>");
+                
+                saveCompleted.TrySetResult(true);
             }
             else
             {
-                Debug.LogError("기존 데이터 업데이트 후 리더보드 갱신 실패: " + callback?.ToString());
+                Debug.LogError($"[GameProgressTracker] 게임 기록 저장 실패 - Player: {player}, Error: {callback}");
+                saveCompleted.TrySetResult(false);
             }
         });
+
+        bool saveSuccess = await saveCompleted.Awaitable;
+        
+        if (saveSuccess)
+        {
+            // 서버에서 직접 리더보드 업데이트 (클라이언트 닉네임 포함)
+            await UpdateLeaderboardWithBestScoreAsync(record.NickName);
+        }
+    }
+
+
+
+    /// <summary>
+    /// 닉네임의 데이터베이스 전체 기록 중 최고 점수로 리더보드 업데이트
+    /// </summary>
+    private async Awaitable UpdateLeaderboardWithBestScoreAsync(string clientNickName)
+    {
+        if (string.IsNullOrEmpty(clientNickName))
+            return;
+
+        string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+        
+        // 최고 점수 조회를 비동기 대기
+        var bestScoreCompleted = new AwaitableCompletionSource<(bool success, PlayerSessionRecord record)>();
+        
+        UserData.GetBestScoreByNickNameAsync(tableName, clientNickName, (success, bestRecord, callback) =>
+        {
+            bestScoreCompleted.TrySetResult((success, bestRecord));
+        });
+
+        var (bestScoreSuccess, bestRecord) = await bestScoreCompleted.Awaitable;
+        
+        if (bestScoreSuccess && bestRecord != null)
+        {
+            // 리더보드 업데이트를 비동기 대기
+            var leaderboardCompleted = new AwaitableCompletionSource<bool>();
+            string leaderboardUuid = BackEndWorkFlow.Inst.LeaderboardUUID;
+            
+            var leaderboardRecord = new PlayerSessionRecord(clientNickName);
+            leaderboardRecord.SessionDurationSec = bestRecord.SessionDurationSec;
+            leaderboardRecord.Stage = bestRecord.Stage;
+            leaderboardRecord.TotalScore = bestRecord.TotalScore;
+            leaderboardRecord.InDate = bestRecord.InDate;
+            
+            LeaderBoard.Inst.UpdateLeaderboardAsync(leaderboardUuid, tableName, bestRecord.InDate, leaderboardRecord, leaderboardCallback =>
+            {
+                if (leaderboardCallback != null && leaderboardCallback.IsSuccess())
+                {
+                    Debug.Log($"<color=#00FF00>[서버] {clientNickName} 최고점수 {bestRecord.TotalScore}로 리더보드 업데이트 성공</color>");
+                    leaderboardCompleted.TrySetResult(true);
+                }
+                else
+                {
+                    Debug.LogWarning($"[서버] {clientNickName} 리더보드 업데이트 실패 - {leaderboardCallback?.ToString()}");
+                    leaderboardCompleted.TrySetResult(false);
+                }
+            });
+
+            await leaderboardCompleted.Awaitable;
+        }
+        else
+        {
+            Debug.LogError($"[서버] {clientNickName} 최고 점수 조회 실패");
+        }
     }
 }
 
