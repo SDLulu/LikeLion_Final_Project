@@ -72,5 +72,6 @@ public class PlayerHealth : NetworkBehaviour
         AudioManager.Inst.PlaySound("별", effectPosition);
         EffectManager.Inst.PlayEffect("별", effectPosition);
         EffectManager.Inst.PlayEffect("피", effectPosition);
+        AudioManager.Inst.PlaySound("피폭발", effectPosition);
     }
 } 

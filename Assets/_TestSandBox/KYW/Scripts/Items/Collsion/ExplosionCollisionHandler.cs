@@ -76,6 +76,13 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 
 		GameObject target = other.gameObject;
 
+		// 보스 충돌 처리 (우선순위 높음)
+		var boss = target.GetComponent<BossBase>();
+		if (boss != null)
+		{
+			boss.TakeDamage(explosionDamage);
+		}
+
 		// 플레이어/적/NPC
 		var playerInteraction = target.GetComponent<IPlayerInteraction>();
 		if (playerInteraction != null)

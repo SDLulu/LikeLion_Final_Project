@@ -133,6 +133,17 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void HandleCollision(GameObject target)
     {
         bool didHit = false;
+        
+        // 보스 충돌 처리 (우선순위 높음)
+        var boss = target.GetComponent<BossBase>();
+        if (boss != null)
+        {
+            boss.TakeDamage(speedAttackDamage);
+            didHit = true;
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
+        }
+        
         // 플레이어, 적, NPC는 모두 IPlayerInteraction 사용 (나중에 적/NPC 처리를 다르게 할 수 있음)
         var playerInteraction = target.GetComponent<IPlayerInteraction>();
         if (playerInteraction != null)
@@ -193,7 +204,7 @@ public class SpeedCollisionHandler : NetworkBehaviour
     private void RPC_PlayHitEffect(Vector3 hitPosition)
     {
         // 타격음과 타격 이펙트 재생
-        AudioManager.Inst.PlaySound("충돌", hitPosition);
-        EffectManager.Inst.PlayEffect("충돌", hitPosition);
+        // AudioManager.Inst.PlaySound("충돌", hitPosition);
+        // EffectManager.Inst.PlayEffect("충돌", hitPosition);
     }
 } 
