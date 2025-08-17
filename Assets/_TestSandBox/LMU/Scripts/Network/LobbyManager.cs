@@ -8,6 +8,9 @@ using UnityEngine.SceneManagement;
 
 public class LobbyManager : BaseManager<LobbyManager>
 {
+    [field: SerializeField] public GameProgressTracker ProgressTracker { get; set; }
+    [field: SerializeField] public PlayerScoreTracker PlayerScoreTracker { get; set; }
+
     [Header("디버그용")]
     [SerializeField] private GameMode localGameMode;
     [SerializeField] private string localRoomName;

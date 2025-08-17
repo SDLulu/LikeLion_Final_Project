@@ -1,9 +1,19 @@
 using UnityEngine;
+using TMPro;
 
 public class UI_Score : MonoBehaviour
 {
-    public void UpdateData(UI_CutSceneResult.ScoreData scoreData)
+    [Header("인스펙터 참조")]
+    [SerializeField] private TMP_Text _nickText;
+    [SerializeField] private TMP_Text _killText;
+    [SerializeField] private TMP_Text _itemText;
+    [SerializeField] private TMP_Text _hpText;
+
+    public void UpdateData(string nick, int kill, int item, int total, int health)
     {
-        Debug.Log($"<color=green>업데이트: </color>");
+        _nickText.text = nick;
+        _killText.text = kill.ToString();
+        _itemText.text = item.ToString();
+        _hpText.text = health.ToString();
     }
 }

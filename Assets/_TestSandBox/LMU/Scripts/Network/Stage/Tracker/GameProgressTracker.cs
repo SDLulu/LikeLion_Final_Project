@@ -8,37 +8,46 @@ public class GameProgressTracker : NetworkBehaviour
     [Header("인스펙터 참조")]
     [SerializeField] private UI_StageProgress _uiStageProgress;
     [SerializeField] private PlayerScoreTracker _scoreTracker;
-	[Networked] public float NetStageElapsedSeconds { get; private set; }
-	[Networked] public float NetSessionElapsedSeconds { get; private set; }
-	[Networked] public NetworkString<_8> NetStageId { get; private set; }
+	[Networked, OnChangedRender(nameof(OnChangedData))] public float NetStageElapsedSeconds { get; private set; }
+	[Networked, OnChangedRender(nameof(OnChangedData))] public float NetSessionElapsedSeconds { get; private set; }
+	[Networked, OnChangedRender(nameof(OnChangedData))] public NetworkString<_8> NetStageId { get; private set; }
 
     private bool _isSessionActive = false;
     private bool _isStageActive = false;
     private bool _isCutSceneActive = false;
-
-    // 사용하지 않음 - 새 구조에서는 매번 데이터베이스에서 최고점수 조회
-    // private Dictionary<PlayerRef, string> _playerInDateMap = new();
-    // private Dictionary<PlayerRef, int> _playerBestTotalMap = new();
 
     private E_StateName _curState = E_StateName.None;
 
     private void SetDefaultData()
     {
         _isSessionActive = true;
-        // 세션 기반 캐시는 더 이상 사용하지 않음
-        // _playerInDateMap.Clear();
-        // _playerBestTotalMap.Clear();
         NetStageElapsedSeconds = 0.0f;
         NetSessionElapsedSeconds = 0.0f;
         NetStageId = string.Empty;
         _scoreTracker.ClearScore();
     }
 
+    public event Action OnChangedDataEvent;
+    public void OnChangedData()
+    {
+        OnChangedDataEvent?.Invoke();
+    }
+
+    public void AddOnChangedDataEvent(Action action)
+    {
+        OnChangedDataEvent += action;
+    }
+
+    public void RemoveOnChangedDataEvent(Action action)
+    {
+        OnChangedDataEvent -= action;
+    }
+
     public override void Spawned()
     {
         base.Spawned();
         _isSessionActive = true;
-
+        LobbyManager.Inst.ProgressTracker = this;
         NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
         NetworkEventSystem.Inst.OnStageLoadDoneEvent += OnStageLoadDone;
         NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
@@ -51,6 +60,7 @@ public class GameProgressTracker : NetworkBehaviour
         _isSessionActive = false;
         _isStageActive = false;
         _isCutSceneActive = false;
+        LobbyManager.Inst.ProgressTracker = null;
         if (NetworkEventSystem.HasInstance)
         {
             NetworkEventSystem.Inst.OnGameStateChangedEvent -= OnGameStateChanged;
@@ -295,6 +305,13 @@ public class GameProgressTracker : NetworkBehaviour
         {
             Debug.LogError($"[서버] {clientNickName} 최고 점수 조회 실패");
         }
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.StateAuthority)]
+    public void RPC_ResetStage()
+    {
+        _isStageActive = false;
+        NetStageElapsedSeconds = 0f;
     }
 }
 

@@ -12,8 +12,29 @@ public class PlayerScoreTracker : NetworkBehaviour
 
     [Networked, OnChangedRender(nameof(OnMonsterScoreChanged))]
     private NetworkDictionary<PlayerRef, int> MonsterScores { get; }
-
     private PlayerRef _localPlayer;
+
+    public override void Spawned()
+    {
+        _localPlayer = Runner.LocalPlayer; 
+
+		LobbyManager.Inst.PlayerScoreTracker = this;
+        if (Runner.IsServer)
+        {
+            NetworkEventSystem.Inst.OnEnemyKilledEvent += OnEnemyKilled;
+            NetworkEventSystem.Inst.OnItemCollectedEvent += OnItemCollected;
+        }
+    }
+
+	public override void Despawned(NetworkRunner runner, bool hasState)
+	{
+		LobbyManager.Inst.PlayerScoreTracker = null;
+		if (NetworkEventSystem.HasInstance)
+		{
+			NetworkEventSystem.Inst.OnEnemyKilledEvent -= OnEnemyKilled;
+			NetworkEventSystem.Inst.OnItemCollectedEvent -= OnItemCollected;
+		}
+	}
 
 	public void ClearScore()
 	{
@@ -94,20 +115,9 @@ public class PlayerScoreTracker : NetworkBehaviour
 		return itemScore + killScore;
 	}
 
-    public override void Spawned()
+    private void OnEnemyKilled(PlayerRef killer, int scoreWeight)
     {
-        _localPlayer = Runner.LocalPlayer; 
-
-        if (Runner.IsServer)
-        {
-            NetworkEventSystem.Inst.OnEnemyKilledEvent += OnEnemyKilled;
-            NetworkEventSystem.Inst.OnItemCollectedEvent += OnItemCollected;
-        }
-    }
-
-    private void OnEnemyKilled(PlayerRef killer, EnemyData enemyData)
-    {
-		AddMonsterScore(killer, 1);
+		AddMonsterScore(killer, scoreWeight);
         int currentKillScore = GetMonsterScore(killer);
         Debug.Log($"적 처치 - Player: {killer}, 현재 킬 점수: {currentKillScore}</color>");
         NetworkEventSystem.Inst.TriggerScoreChanged(killer);
