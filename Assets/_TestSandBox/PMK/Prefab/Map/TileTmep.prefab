@@ -424,6 +424,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isTestMode: 0
+  currentStage: 1-1
   <parentTrans>k__BackingField: {fileID: 190244065567283491}
   <mainTilemap>k__BackingField: {fileID: 4055363432359766617}
   backGroundTile:
@@ -440,16 +441,48 @@ MonoBehaviour:
   nextTileY: 11
   itemSpawnChance: 15
   special_Map_Chance: 100
-  objectToSpawnIfTileExists: {fileID: 1164555603491010, guid: 1d137edf05b0fa24188f5a06147adb82, type: 3}
+  stage1EnemySpawn:
+  - {fileID: 1810954608829163206, guid: 90721c6b3afbfbc4f9c9b79cd924694e, type: 3}
+  - {fileID: 3334593684244115260, guid: 4c9d2db9c1525874d98fa57c1cf6fc16, type: 3}
+  - {fileID: 5126411175138963134, guid: b9b3cb38849219d4199f7e2749a1a39b, type: 3}
+  - {fileID: 5885017523752854389, guid: 65baafa74d720ba468d201277349a154, type: 3}
+  - {fileID: 6442970833637175232, guid: cf3548dec623570428c17280d91ac0ab, type: 3}
+  - {fileID: 4344136621851122242, guid: cb5e739f754d48c4b8a9930c6df6e31b, type: 3}
+  stage2EnemySpawn:
+  - {fileID: 1711502761559606436, guid: 87df0426cd37e4e4f884fbe364d601cb, type: 3}
+  - {fileID: 5205967525317767212, guid: 5dbcb40ab75abc54eab07b8d3df0b60a, type: 3}
+  - {fileID: 7888957575457023652, guid: dde5d73d20d3f9e49a8d909a46aebed9, type: 3}
+  - {fileID: 7255721253661014539, guid: 744b80171870e654bbdd581fb66777f7, type: 3}
+  - {fileID: 2080709105955597125, guid: 68e08bfb5bd14554e8f5f56d1e5903fd, type: 3}
+  - {fileID: 333174418787043906, guid: 6a4664b601e4d3f46963f018ee4df679, type: 3}
+  - {fileID: 6200036193438008604, guid: 0420901b66e133445b6039bc19eec4b2, type: 3}
+  - {fileID: 3572938310878210545, guid: 93d0a457b3873d8499ca996ad13b1eb0, type: 3}
+  - {fileID: 5464963267856096494, guid: 58e44c2ee1f582c42890a097dcfe1e91, type: 3}
+  stage3EnemySpawn:
+  - {fileID: 4313054035457963546, guid: 1cf42bd0867302a4e89b944c8934d58f, type: 3}
+  - {fileID: 7913157741831130366, guid: bd334af2c1c9671449bcaca39ea3f9d1, type: 3}
+  - {fileID: 3994398800107133871, guid: c46ae2b809bf351459330ea1e234897f, type: 3}
+  - {fileID: 2986669830295361808, guid: e45a23ccb74bf704e9bca11e6b863d09, type: 3}
+  - {fileID: 1874101565155958891, guid: 748563cf9ee096042a3f92ca2c751213, type: 3}
+  - {fileID: 6435876667111946223, guid: e78c11ca0a2cdd546b4e4595fa79b70e, type: 3}
+  objSpawn:
+  - {fileID: 1420795170686243739, guid: 462551a7b604b5048a59119a888749db, type: 3}
+  - {fileID: 4967835073624165229, guid: d3b6264241a2e5e4f8692802b25e4eb5, type: 3}
+  - {fileID: 3511612942964986851, guid: d061bf31077edb4438a94e1409fc4d5d, type: 3}
   setRuleTile:
   - {fileID: 11400000, guid: e5bfaeb1773fadf408135faf6502512a, type: 2}
   - {fileID: 11400000, guid: 2b1ef3026dcbced4a92dffca056b93ce, type: 2}
   - {fileID: 11400000, guid: 9bc1694432b12574ca2d47dee978507b, type: 2}
   _setRuleTile: {fileID: 11400000, guid: e5bfaeb1773fadf408135faf6502512a, type: 2}
   <trap>k__BackingField:
-  - {fileID: 2285204622532898624, guid: b9649cb108cb38b49a1a3422a2170762, type: 3}
-  - {fileID: 1280988488147050962, guid: 0cae3d72db7732d439d05d3a3de3e0dd, type: 3}
-  LaunchTrapPrefab: {fileID: 7015154416482876505, guid: cb7f0f943c6766f45acacea309377768, type: 3}
+  - {fileID: 9037530201405919534, guid: b9649cb108cb38b49a1a3422a2170762, type: 3}
+  - {fileID: -4045446925488909976, guid: f696036fa09331c4b9bc62b9d4777d01, type: 3}
+  - {fileID: -723589517531652242, guid: b865b324e71cf3945963c8209f6ed6c2, type: 3}
+  - {fileID: 1794360448395949436, guid: 0cae3d72db7732d439d05d3a3de3e0dd, type: 3}
+  LaunchTrapPrefab:
+  - {fileID: 7015154416482876505, guid: cb7f0f943c6766f45acacea309377768, type: 3}
+  - {fileID: 7015154416482876505, guid: b3030fbff01c0f34ea9ff2250a7bbd85, type: 3}
+  - {fileID: 7015154416482876505, guid: 569907f67c8b68d41ad6b75640cec2c1, type: 3}
   _ClearCount: 0
   IsStageTestNetwork: 0
   isCreatingMap: 0
