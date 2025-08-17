@@ -83,6 +83,8 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         if (IsDead)
         {
             UpdateDeadState();
+            CurrentState = EnemyStateName.Dead;
+            fsm.StateMachine.ForceActivateState<EnemyDeadState>();
             return;
         }
         if (IsStunned && StunTimer.ExpiredOrNotRunning(Runner))
