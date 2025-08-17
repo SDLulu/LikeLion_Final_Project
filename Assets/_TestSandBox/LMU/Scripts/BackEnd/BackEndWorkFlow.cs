@@ -30,6 +30,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             onSuccess: () =>
             {
                 Debug.Log("닉네임 업데이트 성공");
+                GameInviteManager.Inst.ConnectNotification();
                 CompleteCreateNickName();
             },
             onFail: () =>
@@ -81,6 +82,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                 {
                     await Fader.Inst.HideLoadingAsync();
                     await LoadNickname();
+                    GameInviteManager.Inst.ConnectNotification();
                     Debug.Log($"이미 회원가입된 게스트 로그인 - {NickName}");
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
