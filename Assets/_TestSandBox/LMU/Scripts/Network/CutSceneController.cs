@@ -13,7 +13,9 @@ public class CutSceneController : NetworkBehaviour
     [field: SerializeField] public CinemachineCamera CutSceneCamera { get; private set; }
     [field: SerializeField] public UI_StageProgress2 UIStageProgress { get; private set; }
     [field: SerializeField] public UI_Score UIScore { get; private set; }
+    [field: SerializeField] public Canvas CutSceneCanvas { get; private set; }
     [SerializeField] private RectTransform _cutResultRect;
+
 
     public Vector3 GetStartPos() => StartPoint.position;
     public Vector3 GetEndPos() => EndPoint.position;
@@ -67,7 +69,8 @@ public class CutSceneController : NetworkBehaviour
             obj.transform.position = StartPoint.position;
             var tween = obj.transform.DOMove(EndPoint.position, cutDuration);
             _cutTweens.Add(tween);
-            await Awaitable.WaitForSecondsAsync(intervalSeconds);
+            if (i != playerCount - 1)
+                await Awaitable.WaitForSecondsAsync(intervalSeconds);
         }
 
         await Awaitable.WaitForSecondsAsync(cutDuration);
@@ -132,11 +135,7 @@ public class CutSceneController : NetworkBehaviour
 
                 RPC_UpdateScoreUI(players[i]);
                 await WaitForResponse();
-
-                // 마지막인 경우는 트윈 제외
-                if (i != players.Count - 1)
-                    RPC_TweenCutResult();
-
+                RPC_TweenCutResult();
                 await Awaitable.NextFrameAsync();
             }
             await Awaitable.NextFrameAsync();
