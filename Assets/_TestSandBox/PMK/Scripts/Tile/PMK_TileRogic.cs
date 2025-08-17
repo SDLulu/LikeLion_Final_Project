@@ -70,10 +70,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
     public NetworkObject[] launchTrapPrefab => LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨, 네트워크 오브젝트)
 
 
-    [Header("PMK_NextStageDoor 설정")]
-    [Networked] public int ClearCount { get; set; } = 0; // 클리어 횟수 (PMK_NextStageDoor에서 사용됨, 네트워크 동기화됨)
-
-
     private Vector2[,] mapXY; // 전체 맵의 위치를 저장하기 위한 2차원 배열 (x, y 좌표에 해당하는 위치를 저장)
     private bool[,] useMapXY; // 전체 맵의 위치가 사용되었는지 여부를 저장하기 위한 2차원 배열 (true: 사용됨, false: 사용되지 않음)
 

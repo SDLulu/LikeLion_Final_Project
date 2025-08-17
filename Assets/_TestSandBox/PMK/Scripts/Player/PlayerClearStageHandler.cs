@@ -49,10 +49,7 @@ public class PlayerClearStageHandler : NetworkBehaviour
         {
             PlayerRef player = Object.InputAuthority;
 
-            if (!door.HasPlayerCleared(player))
-            {
-                door.MarkPlayerCleared(player); // 서버 내에서 판단 및 실행
-            }
+            door.MarkPlayerCleared(player); // 서버 내에서 판단 및 실행
         }
     }
 }
