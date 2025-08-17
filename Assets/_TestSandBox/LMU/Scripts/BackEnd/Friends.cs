@@ -32,6 +32,8 @@ public class Friends : BaseManager<Friends>
             return;
         }
 
+        Debug.Log("<color=yellow>친구 목록을 조회합니다...</color>");
+
         Backend.Friend.GetFriendList(callback =>
         {
             if (callback.IsSuccess())
@@ -63,7 +65,7 @@ public class Friends : BaseManager<Friends>
                         }
                     }
 
-                    Debug.Log($"<color=green>친구 목록 조회 성공! 총 {friendDataList.Count}명의 친구</color>");
+                    Debug.Log($"친구 목록 조회 성공 - 총 {friendDataList.Count}명의 친구</color>");
                     onSuccess?.Invoke(friendDataList.ToArray());
                 }
                 catch (Exception ex)
@@ -284,7 +286,7 @@ public class Friends : BaseManager<Friends>
                         return;
                     }
 
-                    Debug.Log($"<color=green>유저 '{targetNickname}'를 찾았습니다. 친구신청을 보냅니다...</color>");
+                    Debug.Log($"유저 '{targetNickname}'를 찾았습니다. 친구신청을 보냅니다...");
 
                     // 2. 찾은 유저에게 친구신청 보내기
                     SendFriendRequest(targetInDate, targetNickname, onSuccess, onFail);
@@ -356,7 +358,6 @@ public class Friends : BaseManager<Friends>
 
         Debug.Log("<color=yellow>받은 친구 요청 목록을 조회하여 모두 수락합니다...</color>");
 
-        // 1. 먼저 받은 친구 요청 목록을 조회
         GetReceivedFriendRequests(
             onSuccess: (requestData) =>
             {
@@ -368,8 +369,6 @@ public class Friends : BaseManager<Friends>
                 }
 
                 Debug.Log($"총 {requestData.Length}개의 친구 요청을 수락 처리 시작");
-                
-                // 2. 각 요청을 순차적으로 수락
                 AcceptFriendRequestsSequentially(requestData, 0, 0, onSuccess, onFail);
             },
             onFail: onFail
@@ -377,7 +376,7 @@ public class Friends : BaseManager<Friends>
     }
 
     /// <summary>
-    /// 친구 요청을 순차적으로 수락하는 내부 함수 (재귀 호출)
+    /// 친구 요청을 순차적으로 수락 - 재귀
     /// </summary>
     private void AcceptFriendRequestsSequentially(FriendData[] requests, int currentIndex, int successCount, Action<int> onSuccess, Action<string> onFail)
     {
@@ -392,22 +391,76 @@ public class Friends : BaseManager<Friends>
         var request = requests[currentIndex];
         Debug.Log($"친구 요청 수락 중: {request.NickName} ({currentIndex + 1}/{requests.Length})");
 
-        // Backend.Friend.AcceptFriend API 호출 (inDate 사용)
         Backend.Friend.AcceptFriend(request.InDate, callback =>
         {
             if (callback.IsSuccess())
             {
                 Debug.Log($"<color=green>'{request.NickName}' 님의 친구 요청 수락 성공!</color>");
-                
-                // 다음 요청 처리 (성공 카운트 증가)
                 AcceptFriendRequestsSequentially(requests, currentIndex + 1, successCount + 1, onSuccess, onFail);
             }
             else
             {
                 Debug.LogWarning($"'{request.NickName}' 님의 친구 요청 수락 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
-                
-                // 실패해도 다음 요청 계속 처리 (성공 카운트 증가하지 않음)
                 AcceptFriendRequestsSequentially(requests, currentIndex + 1, successCount, onSuccess, onFail);
+            }
+        });
+    }
+
+    /// <summary>
+    /// 친구에게 게임 초대를 보내는 함수
+    /// </summary>
+    public void SendGameInvite(string friendInDate, string friendNickname, Action onSuccess = null, Action<string> onFail = null)
+    {
+        if (string.IsNullOrEmpty(friendInDate))
+        {
+            Debug.LogError("친구 inDate가 비어있습니다.");
+            onFail?.Invoke("친구 정보가 유효하지 않습니다.");
+            return;
+        }
+
+        if (BackEndWorkFlow.IsFakeClient)
+        {
+            Debug.Log("페이크 클라이언트 모드에서는 게임 초대를 보낼 수 없습니다.");
+            onFail?.Invoke("오프라인 모드에서는 게임 초대를 보낼 수 없습니다.");
+            return;
+        }
+
+        // 현재 Photon Fusion 룸 정보 가져오기
+        var lobbyManager = LobbyManager.Inst;
+        if (lobbyManager?.NetRunner == null || lobbyManager.NetRunner.IsRunning == false)
+        {
+            Debug.LogError("현재 게임 룸에 접속되어 있지 않습니다.");
+            onFail?.Invoke("게임 룸에 접속된 상태에서만 초대할 수 있습니다.");
+            return;
+        }
+
+        string currentRoomID = lobbyManager.NetRunner.SessionInfo?.Name;
+        if (string.IsNullOrEmpty(currentRoomID))
+        {
+            Debug.LogError("현재 룸 ID를 가져올 수 없습니다.");
+            onFail?.Invoke("룸 정보를 가져올 수 없습니다.");
+            return;
+        }
+
+        string inviterName = BackEndWorkFlow.NickName ?? "알 수 없음";
+
+        Debug.Log($"<color=yellow>'{friendNickname}' 님에게 게임 초대를 보냅니다... (룸: {currentRoomID})</color>");
+
+        // 초대 페이로드 생성 및 메시지 전송
+        var invitePayload = new GameInvitePayload(currentRoomID, inviterName);
+        string jsonPayload = invitePayload.ToJson();
+        Backend.Message.SendMessage(friendInDate, jsonPayload, callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                Debug.Log($"<color=green>'{friendNickname}' 님에게 게임 초대를 성공적으로 보냈습니다!</color>");
+                onSuccess?.Invoke();
+            }
+            else
+            {
+                string errorMessage = $"게임 초대 전송 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}";
+                Debug.LogError(errorMessage);
+                onFail?.Invoke("게임 초대를 보내는 중 오류가 발생했습니다.");
             }
         });
     }
