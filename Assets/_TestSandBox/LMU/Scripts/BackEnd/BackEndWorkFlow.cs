@@ -207,8 +207,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
     /// <summary>
     /// 회원탈퇴 함수
     /// </summary>
-    [ContextMenu("로컬 뒤끝 정보 삭제")]
-    public void DeleteLocalBackend()
+    public void SignOut()
     {
         bool ret = InitBackend();
         if (ret == false)
@@ -219,8 +218,8 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             if (callback.IsSuccess())
             {
                 Debug.Log("회원 탈퇴 성공! 모든 데이터가 삭제되었습니다.");
-                Debug.Log("로컬 뒤끝 정보 삭제");
                 Backend.BMember.DeleteGuestInfo();
+                Debug.Log("로컬 뒤끝 정보 삭제");
                 Quit();
             }
             else
@@ -228,6 +227,19 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                 Debug.LogError($"회원 탈퇴 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
             }
         });
+    }
+
+    /// <summary>
+    /// 로컬 경로에 존재하는 게스트 정보 삭제
+    /// </summary>
+    public void DeleteGetstInfo()
+    {
+        bool ret = InitBackend();
+        if (ret == false)
+            return;
+        Backend.BMember.DeleteGuestInfo();
+        Debug.Log("로컬 뒤끝 정보 삭제");
+        Quit();
     }
 
 

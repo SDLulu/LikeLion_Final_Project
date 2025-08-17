@@ -5,10 +5,12 @@ using UnityEngine;
 // 🎵 BGM 전용 매니저
 public class BGMManager : MonoBehaviour
 {
+    private const string BGM_VOLUME_PREF_KEY = "BGMVolume";
     [System.Serializable]
     public class BGMData
     {
         public string stageName;        // 스테이지 이름 (키)
+        public string bgmName;          // BGM 이름
         public AudioClip bgmClip;       // BGM 오디오 클립
         public float volume = 1f;       // 개별 볼륨
         [Range(0f, 1f)]
@@ -61,6 +63,13 @@ public class BGMManager : MonoBehaviour
         }
         
         InitializeBGM();
+
+        float savedVolume = PlayerPrefs.GetFloat(BGM_VOLUME_PREF_KEY, 1f);
+        if (savedVolume < 0f || savedVolume > 1f)
+        {
+            savedVolume = 1f;
+        }
+        SetMasterVolume(savedVolume);
     }
     
     private void InitializeBGM()
@@ -76,56 +85,74 @@ public class BGMManager : MonoBehaviour
     }
     
     /// <summary>
-    /// 특정 스테이지의 BGM을 재생합니다.
+    /// 특정 BGM을 재생합니다.
     /// </summary>
-    /// <param name="stageName">스테이지 이름</param>
+    /// <param name="bgmName">BGM 이름</param>
     /// <param name="fadeIn">페이드인 사용 여부</param>
-    public void PlayBGM(string stageName, bool fadeIn = true)
+    public void PlayBGM(string bgmName, bool fadeIn = true)
     {
-        BGMData bgmData = GetBGMData(stageName);
+        BGMData bgmData = GetBGMDataByBGMName(bgmName);
         if (bgmData == null || bgmData.bgmClip == null)
         {
-            Debug.LogWarning($"[BGMManager] BGM을 찾을 수 없습니다: {stageName}");
+            Debug.LogWarning($"[BGMManager] BGM을 찾을 수 없습니다: {bgmName}");
             return;
         }
         
-        // 현재 재생 중인 BGM이 있다면 정지
+        // 동일한 BGM이 이미 재생 중이면 재생 요청 무시
         if (IsPlaying)
         {
-            StopBGM(fadeIn);
+            if (currentBGMName == bgmName)
+            {
+                if (bgmAudioSource != null)
+                {
+                    if (bgmAudioSource.clip == bgmData.bgmClip)
+                    {
+                        Debug.Log($"[BGMManager] 동일한 BGM이 이미 재생 중입니다: {bgmName}");
+                        return;
+                    }
+                }
+            }
+        }
+        
+        // 현재 재생 중인 BGM이 있다면 즉시 정지 (동일 AudioSource 충돌 방지)
+        if (IsPlaying)
+        {
+            StopBGM(false);
         }
         
         // 새로운 BGM 설정
-        currentBGMName = stageName;
+        currentBGMName = bgmName;
         bgmAudioSource.clip = bgmData.bgmClip;
-        bgmAudioSource.volume = bgmData.volume * masterVolume;
+        bgmAudioSource.volume = masterVolume;
         
         // 페이드인 적용
         if (fadeIn && bgmData.fadeInTime > 0f)
         {
-            StartFadeIn(bgmData.fadeInTime, bgmData.volume);
+            StartFadeIn(bgmData.fadeInTime, 1f);
         }
         else
         {
-            bgmAudioSource.volume = bgmData.volume * masterVolume;
+            bgmAudioSource.volume = masterVolume;
             bgmAudioSource.Play();
         }
         
-        Debug.Log($"[BGMManager] BGM 재생 시작: {stageName}");
+        Debug.Log($"[BGMManager] BGM 재생 시작: {bgmName}");
     }
     
     /// <summary>
     /// 현재 재생 중인 BGM을 정지합니다.
     /// </summary>
     /// <param name="fadeOut">페이드아웃 사용 여부</param>
-    public void StopBGM(bool fadeOut = true)
+    public void StopBGM(bool fadeOut = true, float fadeTime = 1f)
     {
-        if (!IsPlaying) return;
+        if (IsPlaying == false)
+        {
+            return;
+        }
         
         if (fadeOut)
         {
-            BGMData currentBGM = GetBGMData(currentBGMName);
-            float fadeTime = currentBGM != null ? currentBGM.fadeOutTime : 1f;
+            BGMData currentBGM = GetBGMDataByBGMName(currentBGMName);
             StartFadeOut(fadeTime);
         }
         else
@@ -153,7 +180,7 @@ public class BGMManager : MonoBehaviour
     /// </summary>
     public void ResumeBGM()
     {
-        if (bgmAudioSource.clip != null && !bgmAudioSource.isPlaying)
+        if (bgmAudioSource.clip != null && bgmAudioSource.isPlaying == false)
         {
             bgmAudioSource.UnPause();
             Debug.Log("[BGMManager] BGM 재개");
@@ -169,11 +196,7 @@ public class BGMManager : MonoBehaviour
         masterVolume = Mathf.Clamp01(volume);
         if (bgmAudioSource != null)
         {
-            BGMData currentBGM = GetBGMData(currentBGMName);
-            if (currentBGM != null)
-            {
-                bgmAudioSource.volume = currentBGM.volume * masterVolume;
-            }
+            bgmAudioSource.volume = masterVolume;
         }
     }
     
@@ -192,7 +215,7 @@ public class BGMManager : MonoBehaviour
             // 현재 재생 중인 BGM이라면 즉시 적용
             if (currentBGMName == stageName && IsPlaying)
             {
-                bgmAudioSource.volume = bgmData.volume * masterVolume;
+                bgmAudioSource.volume = masterVolume;
             }
         }
     }
@@ -232,7 +255,10 @@ public class BGMManager : MonoBehaviour
     /// <returns>BGM 데이터</returns>
     private BGMData GetBGMData(string stageName)
     {
-        if (string.IsNullOrEmpty(stageName)) return null;
+        if (string.IsNullOrEmpty(stageName))
+        {
+            return null;
+        }
         
         foreach (var bgm in bgmList)
         {
@@ -241,6 +267,29 @@ public class BGMManager : MonoBehaviour
                 return bgm;
             }
         }
+        return null;
+    }
+
+    /// <summary>
+    /// BGM 이름으로 BGM 데이터를 가져옵니다.
+    /// </summary>
+    /// <param name="bgmName">BGM 이름</param>
+    /// <returns>BGM 데이터</returns>
+    private BGMData GetBGMDataByBGMName(string bgmName)
+    {
+        if (string.IsNullOrEmpty(bgmName))
+        {
+            return null;
+        }
+
+        foreach (var bgm in bgmList)
+        {
+            if (bgm.bgmName == bgmName)
+            {
+                return bgm;
+            }
+        }
+
         return null;
     }
     

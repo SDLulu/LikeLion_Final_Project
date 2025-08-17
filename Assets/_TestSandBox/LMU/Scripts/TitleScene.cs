@@ -13,4 +13,10 @@ public class TitleScene : MonoBehaviour
         await BackEndWorkFlow.Inst.LoginGuest();
         LobbyUI_Manager.Inst.ActiveTitlePanel(true);
     }
+
+    private void Start()
+    {
+        UI_Setting.ApplyBGMVolume();
+        BGMManager.Inst.PlayBGM("Title");
+    }
 }
