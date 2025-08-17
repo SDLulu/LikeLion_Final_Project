@@ -147,6 +147,18 @@ public class GameStates : NetworkBehaviour, IStateMachineOwner
     }
 
     [Rpc(RpcSources.All, RpcTargets.All)]
+    public static void RPC_FadeOutBGM(NetworkRunner runner, bool fadeOut = true)
+    {
+        BGMManager.Inst.StopBGM(fadeOut);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
+    public static void RPC_PlayBGM(NetworkRunner runner, string bgmName)
+    {
+        BGMManager.Inst.PlayBGM(bgmName);
+    }
+
+    [Rpc(RpcSources.All, RpcTargets.All)]
     public static async void RPC_FadeOutUI(NetworkRunner runner, float duration = 1.0f)
     {
         while (Fader.Inst.IsFading)
