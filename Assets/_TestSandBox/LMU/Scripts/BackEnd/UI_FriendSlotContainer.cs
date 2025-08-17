@@ -172,15 +172,6 @@ public class UI_FriendSlotContainer : MonoBehaviour
         // 사용하지 않는 슬롯들 정리
         CleanupExtraSlots(targetUI, friendData.Length);
 
-        string formName = form switch
-        {
-            E_FriendSlotForm.Friend => "친구 목록",
-            E_FriendSlotForm.Request => "보낸 요청",
-            E_FriendSlotForm.Response => "받은 요청",
-            _ => "알 수 없음"
-        };
-
-        Debug.Log($"<color=cyan>{formName} 슬롯 업데이트 완료: {friendData.Length}개 슬롯</color>");
     }
 
     /// <summary>

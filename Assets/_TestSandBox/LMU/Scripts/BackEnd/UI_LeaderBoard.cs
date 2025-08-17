@@ -5,9 +5,8 @@ using LMCore;
 public class UI_LeaderBoard : MonoBehaviour
 {
     [Header("인스펙터 참조")]
-    [SerializeField] private List<UI_LeaderBoardSlot> _leaderBoardSlots;
-    [SerializeField] private UI_LeaderBoardSlot _mySlot;
-
+    [SerializeField] private List<UI_RankSlot> _leaderBoardSlots;
+    [SerializeField] private UI_RankSlot _mySlot;
     private string _leaderboardUUID;
 
     private void Awake()
@@ -64,7 +63,7 @@ public class UI_LeaderBoard : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             LeaderBoard.LeaderBoardEntry e = list[i];
-            _leaderBoardSlots[i]?.UpdateSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
+            _leaderBoardSlots[i]?.UpdateSlot(e.Rank, e.NickName, e.TotalScore);
         }
 
         // 남은 슬롯 초기화
@@ -88,6 +87,6 @@ public class UI_LeaderBoard : MonoBehaviour
             return;
         }
 
-        _mySlot?.UpdateSlot(e.Rank, e.NickName, e.SessionDurationSec, e.Stage, e.TotalScore);
+        _mySlot?.UpdateSlot(e.Rank, e.NickName, e.TotalScore);
     }
 }
