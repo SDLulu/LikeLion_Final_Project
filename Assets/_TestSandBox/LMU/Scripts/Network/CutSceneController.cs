@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DG.Tweening;
+using Fusion;
 using LMCore;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -11,6 +12,7 @@ public class CutSceneController : MonoBehaviour
     [field: SerializeField] public Transform EndPoint { get; private set; }
     [field: SerializeField] public CinemachineCamera CutSceneCamera { get; private set; }
     [field: SerializeField] public UI_StageProgress2 UIStageProgress { get; private set; }
+    [field: SerializeField] public UI_Score UIScore { get; private set; }
 
     public Vector3 GetStartPos() => StartPoint.position;
     public Vector3 GetEndPos() => EndPoint.position;
@@ -57,7 +59,7 @@ public class CutSceneController : MonoBehaviour
 
         CutTweenClear();
         float intervalSeconds = 0.15f;
-        for(int i = 0; i < playerCount; i++)
+        for (int i = 0; i < playerCount; i++)
         {
             var obj = Instantiate(cutsPlayerPrefab);
             _cutPlayers.Add(obj);
@@ -83,24 +85,41 @@ public class CutSceneController : MonoBehaviour
         }
     }
 
-    public async Awaitable WaitForNext(int playerCount)
+    public async Awaitable WaitForNext(List<PlayerRef> players)
     {
-        await WaitForInputResponse(playerCount);
+        await WaitForInputResponse(players);
     }
 
 
-     private bool _isWaiting = false;
-    private async Awaitable WaitForInputResponse(int playerCount)
+    private bool _isWaiting = false;
+
+    public void UpdateStageUI()
+    {
+        // 스테이지 정보 업데이트
+        var data = GetProgressData();
+        UIStageProgress.UpdateTimeData(data.Item1, data.Item2, data.Item3, data.Item4);
+    }
+
+    public void UpdateScoreUI(PlayerRef player)
+    {
+        var playerData = PlayerManager.Inst.GetPlayerData(player);
+        var scoreData = GetScoreData(player);
+        string nickName = playerData.NickName;
+        int hp = playerData.Health;
+        UIScore.UpdateData(nickName, scoreData.Item1, scoreData.Item2, 0, hp);
+    }
+
+    private async Awaitable WaitForInputResponse(List<PlayerRef> players)
     {
         try
         {
             _isWaiting = true;
-            // 스테이지 정보 업데이트
-            var data = GetProgressData();
-            UIStageProgress.UpdateTimeData(data.Item1, data.Item2, data.Item3, data.Item4);
-            for (int i = 0; i < playerCount; i++)
+
+            for (int i = 0; i < players.Count; i++)
             {
                 Debug.Log($"<color=red>대기중: {i}</color>");
+
+                UpdateScoreUI(players[i]);
                 await WaitForResponse();
                 await Awaitable.NextFrameAsync();
             }
@@ -137,6 +156,15 @@ public class CutSceneController : MonoBehaviour
             progressTracker.NetSessionElapsedSeconds,
             progressTracker.NetStageId.Length,
             progressTracker.NetStageId.ToString()
+        );
+    }
+
+    public (int, int) GetScoreData(PlayerRef player)
+    {
+        var scoreTracker = LobbyManager.Inst.PlayerScoreTracker;
+        return (
+            scoreTracker.GetMonsterScore(player),
+            scoreTracker.GetItemScore(player)
         );
     }
 }
