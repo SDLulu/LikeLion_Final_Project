@@ -290,37 +290,52 @@ public class PlayerManager : NetworkBehaviour
     /// <summary>
     /// 모든 플레이어를 소프트 리셋
     /// </summary>
-    public void SoftResetAllPlayers(Vector3 respawnPos)
+    public void SoftResetAllPlayers(Vector3 respawnPos, bool isDrop = true)
     {
         if (Runner.IsServer == false)
             return;
 
         Debug.Log("모든 플레이어를 소프트 리셋");
 
-        // var players = GetPlayerDatas();
-        // foreach (var player in players)
-        // {
-        //     var deathHandler = player.Value.GetComponent<PlayerDeathHandler>();
-        //     deathHandler.Die();
-        //     await Awaitable.WaitForSecondsAsync(0.5f);
-        //     deathHandler.ResurrectAt(respawnPos);
-        // }
-
-        var players = GetPlayers();
-        foreach (var kvp in players)
+        var players = GetPlayerDatas();
+        foreach (var player in players)
         {
-            var netObj = kvp.Value;
-            if (netObj == null)
-                continue;
-
-            var softResets = netObj.GetComponentsInChildren<ISoftReset>(true);
-            foreach (var sr in softResets)
-            {
-                if (sr == null)
-                    continue;
-                sr.SoftReset();
-            }
+            var deathHandler = player.Value.GetComponent<PlayerDeathHandler>();
+            bool isDead = player.Value.IsDead;
+            if (isDead)
+                deathHandler.ResurrectAt(respawnPos);
         }
+
+        
+                // if (isDrop == false && sr is PlayerDeathHandler deathHandler)
+                // {
+                //     deathHandler.SoftReset(isDrop);
+                //     Debug.Log("아이템 드랍하지 않음");
+                //     continue;
+                // }
+
+        // var players = GetPlayers();
+        // foreach (var kvp in players)
+        // {
+        //     var netObj = kvp.Value;
+        //     if (netObj == null)
+        //         continue;
+
+        //     var softResets = netObj.GetComponentsInChildren<ISoftReset>(true);
+        //     foreach (var sr in softResets)
+        //     {
+        //         if (sr == null)
+        //             continue;
+
+        //         if (isDrop == false && sr is PlayerDeathHandler deathHandler)
+        //         {
+        //             deathHandler.SoftReset(isDrop);
+        //             Debug.Log("아이템 드랍하지 않음");
+        //             continue;
+        //         }
+        //         sr.SoftReset();
+        //     }
+        // }
     }
 
     #region 씬이동 및 RPC

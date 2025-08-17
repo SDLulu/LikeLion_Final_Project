@@ -66,6 +66,7 @@ public class CutSceneController : NetworkBehaviour
         {
             var obj = Instantiate(cutsPlayerPrefab);
             _cutPlayers.Add(obj);
+            obj.GetComponentInChildren<Animator>().Play("Walk");
             obj.transform.position = StartPoint.position;
             var tween = obj.transform.DOMove(EndPoint.position, cutDuration);
             _cutTweens.Add(tween);
