@@ -146,6 +146,7 @@ GameObject:
   - component: {fileID: 1246015800712428494}
   - component: {fileID: 8960250372054908081}
   - component: {fileID: 2921922969442221345}
+  - component: {fileID: 1322931440421177524}
   m_Layer: 6
   m_Name: SacrificeAltar
   m_TagString: Untagged
@@ -187,6 +188,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 8960250372054908081}
+  - {fileID: 1322931440421177524}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &8960250372054908081
 MonoBehaviour:
@@ -249,3 +251,20 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.5549116, y: 0.26254612}
   m_EdgeRadius: 0
+--- !u!114 &1322931440421177524
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3989291697524380592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 158639473, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _stateAuthorityChangeErrorCorrectionDelta: 0.15
+  SyncScale: 0
+  SyncParent: 0
+  _autoAOIOverride: 1
+  DisableSharedModeInterpolation: 0

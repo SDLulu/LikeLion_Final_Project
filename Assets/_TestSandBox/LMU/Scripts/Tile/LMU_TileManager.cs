@@ -21,7 +21,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
             {
                 Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
 
-                LoadMapPrefabsAutomatically(stageInfo.CurrentStage);
+                currentStage = stageInfo.CurrentStage; // 현재 스테이지 이름 업데이트
+
+                LoadMapPrefabsAutomatically(currentStage);
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
@@ -37,16 +39,15 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 //스테이지 로더 추가 할 곳
                 if (stageInfo.IsBossStage == 1)
                 {
-                   Debug.Log("보스 스테이지 로드");
+                    Debug.Log("보스 스테이지 로드");
                     RPC_ResetBoosMap();
-                   Create_Map("B", bossStage, 0, 0);
-                   bossStage++;
-                   return;
+                    Create_Map("B", 0, 0, 0);
+                    return;
                 }
                 else if (stageInfo.IsBossStage == 0)
                 {
-                   Debug.Log("일반 스테이지 로드");
-                   RPC_ResetMap();
+                    Debug.Log("일반 스테이지 로드");
+                    RPC_ResetMap();
                 }
             };
             return true;

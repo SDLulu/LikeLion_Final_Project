@@ -52,12 +52,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     [Header("타일 위에 오브젝트 스폰 설정")]
-    [SerializeField] private GameObject[] stage1EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
-    [SerializeField] private GameObject[] stage2EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
-    [SerializeField] private GameObject[] stage3EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private NetworkObject[] stage1EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private NetworkObject[] stage2EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private NetworkObject[] stage3EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
     [SerializeField] private GameObject[] objSpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
 
-    private Dictionary<string, GameObject[]> enemySpawnsByStage;
+    private Dictionary<string, NetworkObject[]> enemySpawnsByStage;
 
     [Header("TileZoneSpawner 설정")]
     [SerializeField] public TileBase[] setRuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
@@ -93,7 +93,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
-        enemySpawnsByStage = new Dictionary<string, GameObject[]>
+        enemySpawnsByStage = new Dictionary<string, NetworkObject[]>
         {
             { "1-1", stage1EnemySpawn },
             { "2-1", stage2EnemySpawn },
@@ -267,6 +267,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
         foreach (Transform child in parentTrans) // 모든 자식 오브젝트를 제거합니다.
         {
             Destroy(child.gameObject);
+
+            if (child.GetComponent<NetworkObject>() != null)
+            {
+                // 네트워크 오브젝트가 있다면 제거
+                Runner.Despawn(child.GetComponent<NetworkObject>());
+            }
         }
         // 오브젝트 제거
         tileRPCManager.ClearAllArrows(); // 발사된 화살들을 모두 제거합니다.
@@ -379,13 +385,16 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 Vector3 spawnPosition = child.localPosition + (Vector3)offset;
                 GameObject prefab = child.gameObject;
 
-                if (prefab.GetComponent<NetworkObject>() != null && HasStateAuthority)
+                NetworkObject netObj = prefab.GetComponent<NetworkObject>();
+
+                if (netObj != null && HasStateAuthority)
                 {
-                    Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
-                    {
-                        obj.transform.SetParent(parentTrans);
-                        obj.name = prefab.name;
-                    });
+                    Runner.Spawn(netObj, spawnPosition, child.rotation, null, (runner, spawnedObj) =>
+                        {
+                            spawnedObj.transform.SetParent(parentTrans);
+                            spawnedObj.name = prefab.name;
+                        }
+                    );
                 }
                 else if (prefab.GetComponent<NetworkObject>() == null)
                 {
@@ -499,7 +508,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #region 타일 위에 적 생성
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(4f);
 
         if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
 
@@ -525,24 +534,17 @@ public partial class PMK_TileRogic : NetworkBehaviour
             yield break; // 위에 게임 오브젝트가 있음
         }
 
-
         SpawnRandomEnemy(currentStage, targetPos);
     }
 
     public void SpawnRandomEnemy(string stageName, Vector3Int targetPos)
     {
-        if (!HasInputAuthority) return;
+        if (!HasStateAuthority) return;
 
-        GameObject[] enemyArray = GetEnemiesForStage(stageName);
-
-        if (enemyArray == null || enemyArray.Length == 0)
-        {
-            Debug.LogWarning($"'{stageName}'의 적 배열이 비어있음");
-            return;
-        }
+        NetworkObject[] enemyArray = GetEnemiesForStage(stageName);
 
         int rand = Random.Range(0, enemyArray.Length);
-        GameObject enemyPrefab = enemyArray[rand];
+        NetworkObject enemyPrefab = enemyArray[rand];
 
         Runner.Spawn(enemyPrefab, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
         {
@@ -557,20 +559,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
         });
     }
 
-    private GameObject[] GetEnemiesForStage(string stageName)
+    private NetworkObject[] GetEnemiesForStage(string stageName)
     {
         if (enemySpawnsByStage.TryGetValue(stageName, out var enemies))
         {
             return enemies;
         }
-
-        Debug.LogWarning($"스테이지 '{stageName}'에 대한 적 정보가 없습니다.");
         return null;
     }
 
     IEnumerator DelayedCreateObj(Vector3Int targetPos)
     {
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(4f);
 
         if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
 
