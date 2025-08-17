@@ -1,5 +1,4 @@
 using System.Linq;
-using LMCore;
 using UnityEngine;
 using Fusion.Addons.FSM;
 
@@ -11,6 +10,7 @@ public class GameStagePlayingState : BaseStateBehaviour
     {
         if (Runner.IsServer)
         {
+            PlayBGM();
             var startPos = GameObject.FindGameObjectsWithTag("StartPos").ToList();
             if (startPos == null || startPos.Count <= 0)
             {
@@ -19,8 +19,28 @@ public class GameStagePlayingState : BaseStateBehaviour
                 return;
             }
             PlayerM.SetPlayerPositions(startPos[0].transform.position);
-            GameStates.RPC_FadeInUI(Runner, 1.0f);
+
+
         }
+    }
+
+    public void PlayBGM()
+    {
+        // BGM 재생
+        var completedState = Machine.GetState<GameStageCompletedState>();
+        if (completedState.StageDataIndex - 1 == 20000)
+            GameStates.RPC_PlayBGM(Runner, "1-1");
+        else if (completedState.StageDataIndex - 1 == 20001)
+            GameStates.RPC_PlayBGM(Runner, "1-2");
+        else if (completedState.StageDataIndex - 1 == 20002)
+            GameStates.RPC_PlayBGM(Runner, "2-1");
+        else if (completedState.StageDataIndex - 1 == 20003)
+            GameStates.RPC_PlayBGM(Runner, "2-2");
+        else if (completedState.StageDataIndex - 1 == 20004)
+            GameStates.RPC_PlayBGM(Runner, "3-1");
+        else if (completedState.StageDataIndex - 1 == 20005)
+            GameStates.RPC_PlayBGM(Runner, "3-2");
+        GameStates.RPC_FadeInUI(Runner, 1.0f);
     }
 
     protected override void OnExitState()

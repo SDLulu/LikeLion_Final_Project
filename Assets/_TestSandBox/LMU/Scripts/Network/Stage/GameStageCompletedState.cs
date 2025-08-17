@@ -19,7 +19,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     // 서버 - 백그라운드 작업진행 - 컷신 재생과 맵 로딩을 병렬실행 - 0: 컷신, 1: 맵 로딩
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;
     private TickTimer _minWaitingTimer = TickTimer.None;
-    private int _stageDataIndex = -1;
+    public int StageDataIndex { get; private set; } = -1;
     private bool _isStateActive = false;
     private bool _isCompleted = false;
     public override void Spawned()
@@ -27,7 +27,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         if (Runner.IsServer)
         {
             // 첫번째 스테이지 로드는 WaitingState에서 진행하고, 이후 스테이지는 이 클래스에서 진행
-            _stageDataIndex = DataManager.Inst.StageData.First().Key + 1;
+            StageDataIndex = DataManager.Inst.StageData.First().Key + 1;
         }
     }
 
@@ -47,13 +47,13 @@ public class GameStageCompletedState : BaseStateBehaviour
         base.Despawned(runner, hasState);
     }
 
-    protected override async void OnEnterState()
+    protected override void OnEnterState()
     {
         _isStateActive = true;
         _isCompleted = false;
         if (Runner.IsServer)
         {
-            await Awaitable.NextFrameAsync();
+            GameStates.RPC_FadeOutBGM(this.Runner, false);
             var players = PlayerM.GetPlayers();
             InitTCS(players);
             _minWaitingTimer = TickTimer.CreateFromSeconds(Runner, _minWaitingTime);
@@ -99,8 +99,8 @@ public class GameStageCompletedState : BaseStateBehaviour
             _clientFadeOutTCS = null;
         }
         
-        _stageDataIndex++;
-        Debug.Log("다음 스테이지 인덱스 : " + _stageDataIndex);
+        StageDataIndex++;
+        Debug.Log("다음 스테이지 인덱스 : " + StageDataIndex);
         base.OnExitState();
     }
 
@@ -320,7 +320,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             {
                 await Awaitable.NextFrameAsync();
                 await Awaitable.WaitForSecondsAsync(1.5f);
-                var nextStageData = DataManager.Inst.GetStageData(_stageDataIndex);
+                var nextStageData = DataManager.Inst.GetStageData(StageDataIndex);
                 NetEvent.TriggerStageLoadDoneEvent(nextStageData);
                 onComplete?.Invoke();
                 Debug.Log("다음 스테이지 로딩이 완료되었습니다.");

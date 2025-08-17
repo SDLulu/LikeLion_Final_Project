@@ -56,6 +56,7 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
                 return;
             }
 
+            GameStates.RPC_PlayBGM(this.Runner, "Title");
             await Awaitable.WaitForSecondsAsync(3.0f);
             RPC_FadeInUI();
         }
