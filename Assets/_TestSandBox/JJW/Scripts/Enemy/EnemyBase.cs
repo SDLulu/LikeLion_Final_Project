@@ -21,21 +21,21 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     [Networked] public SpelunkyPlayerController TargetPlayer { get; set; }
 
     // 벽, 절벽, 공격 판정 체크 위치
-    [SerializeField] private Transform groundCheck; // 절벽 감지를 위한 위치
-    [SerializeField] private Transform wallCheck; // 벽 감지를 위한 위치
-    [SerializeField] private Transform attackCheck; // 공격 판정 위치
-    [SerializeField] private float wallCheckDistance = 0.5f; // 벽 감지 거리
-    [SerializeField] private float groundCheckDistance = 0.2f; // 바닥 감지 거리
-    [SerializeField] private float attackCheckRadius = 0.5f; // 공격 판정 반지름
+    [SerializeField] protected Transform groundCheck; // 절벽 감지를 위한 위치
+    [SerializeField] protected Transform wallCheck; // 벽 감지를 위한 위치
+    [SerializeField] protected Transform attackCheck; // 공격 판정 위치
+    [SerializeField] protected float wallCheckDistance = 0.5f; // 벽 감지 거리
+    [SerializeField] protected float groundCheckDistance = 0.2f; // 바닥 감지 거리
+    [SerializeField] protected float attackCheckRadius = 0.5f; // 공격 판정 반지름
     
 
     [Header("Search & Attack Settings")]
     public Vector2 detectionBoxSize = new Vector2(10f, 2f); // 탐지 범위의 가로, 세로 크기
     public Vector2 detectionBoxOffset = new Vector2(0f, 1f); // 탐지 범위의 중심 위치 오프셋
-    [SerializeField] private Vector2 attackBoxSize = new Vector2(1.5f, 1f); // << 이 줄을 추가 (공격 판정 박스 크기)
-    [SerializeField] private Vector2 attackBoxOffset = new Vector2(0f, 0.5f); // << 이 줄을 추가 (공격 판정 박스 오프셋)
-    private Vector2 attackCenter;
-    private Collider2D[] _hitColliders = new Collider2D[5];
+    [SerializeField] protected Vector2 attackBoxSize = new Vector2(1.5f, 1f); // << 이 줄을 추가 (공격 판정 박스 크기)
+    [SerializeField] protected Vector2 attackBoxOffset = new Vector2(0f, 0.5f); // << 이 줄을 추가 (공격 판정 박스 오프셋)
+    protected Vector2 attackCenter;
+    protected Collider2D[] _hitColliders = new Collider2D[5];
 
     //컴포넌트들
     public EnemyData enemyData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
@@ -46,14 +46,14 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     // 타이머들 
     [Networked] public TickTimer StateTimer { get; set; } //상태 시간(랜덤)을 저장할 타이머
     [Networked] public TickTimer AttackCooldownTimer { get; set; } // 공격 쿨타임을 위한 타이머
-    [Networked] private TickTimer FlipTimer { get; set; } // 빠르게 플립되는 현상을 방지하기 위한 타이머
-    [Networked] private TickTimer StunTimer { get; set; }
-    [Networked] private TickTimer InvincibleTimer { get; set; }
-    [Networked] private TickTimer ThrownTimer { get; set; }
+    [Networked] protected TickTimer FlipTimer { get; set; } // 빠르게 플립되는 현상을 방지하기 위한 타이머
+    [Networked] protected TickTimer StunTimer { get; set; }
+    [Networked] protected TickTimer InvincibleTimer { get; set; }
+    [Networked] protected TickTimer ThrownTimer { get; set; }
     // 상태 관련 네트워크 프로퍼티들
     [Networked] public int CurrentHealth { get; private set; } //몬스터 Hp의 변경이 감지되면 OnHpChanged 호출, 현재 hp
     [Networked] public EnemyStateName CurrentState { get; set; } //현재 스테이트 (EnemyFsm과 동기화)
-    [Networked, OnChangedRender(nameof(OnDirectionChanged))] private NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
+    [Networked, OnChangedRender(nameof(OnDirectionChanged))] protected NetworkBool IsFacingRight { get; set; } //몬스터가 바라보는 방향
     [Networked] public bool IsDead { get; set; }
     [Networked] public bool IsStunned { get; private set; }
     [Networked] public bool IsInvincible { get; private set; }
@@ -479,7 +479,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         if (IsInvincible) return;
 
         CurrentHealth -= damage;
-        SetInvincible(true, 0.2f);
+        SetInvincible(true, 0.5f);
         UnityEngine.Debug.Log($"몬스터 체력 : {CurrentHealth}");
 
         if (CurrentHealth <= 0)
