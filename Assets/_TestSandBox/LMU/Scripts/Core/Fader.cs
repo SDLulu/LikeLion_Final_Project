@@ -192,7 +192,7 @@ namespace LMCore
         }
 
         // Note - AsyncWaitForCompletion / Task 사용중
-        public async Awaitable FadeInExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
+        public async Awaitable FadeInExpandAsync(Color color, float seconds = 2f, Vector2 worldPos = default, Canvas canvas = null)
         {
             try
             {
@@ -204,12 +204,25 @@ namespace LMCore
                 if (_bgImage != null)
                     _bgImage.color = color;
                 _contentsRoot.sizeDelta = _endSize;
-                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(GetComponent<Canvas>(), worldPos);
+                if (canvas == null)
+                    canvas = GetComponent<Canvas>();
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
 
-                await _contentsRoot.DOSizeDelta(_startSize, seconds)
-                    .SetEase(_fadeInEase)
-                    .SetUpdate(true)
-                    .AsyncWaitForCompletion();
+                _contentsRoot.gameObject.SetActive(true);
+
+                float elapsedTime = 0f;
+                Vector2 startSize = _endSize;
+                Vector2 targetSize = _startSize;
+
+                while (elapsedTime < seconds)
+                {
+                    float t = seconds <= 0f ? 1f : (elapsedTime / seconds);
+                    _contentsRoot.sizeDelta = Vector2.Lerp(startSize, targetSize, t);
+                    elapsedTime += Time.unscaledDeltaTime;
+                    await Awaitable.NextFrameAsync();
+                }
+
+                _contentsRoot.sizeDelta = targetSize;
                 _contentsRoot.gameObject.SetActive(false);
                 _isFading = false;
                 await Awaitable.NextFrameAsync();
@@ -225,7 +238,7 @@ namespace LMCore
         }
 
         // Note - AsyncWaitForCompletion / Task 사용중
-        public async Awaitable FadeOutExpandAsync(Color color, float seconds = 1f, Vector2 worldPos = default)
+        public async Awaitable FadeOutExpandAsync(Color color, float seconds = 2f, Vector2 worldPos = default, Canvas canvas = null)
         {
             try
             {
@@ -236,15 +249,26 @@ namespace LMCore
                 _isFading = true;
                 _contentsRoot.sizeDelta = _startSize;
 
-                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(GetComponent<Canvas>(), worldPos);
+                if (canvas == null)
+                    canvas = GetComponent<Canvas>();
+                _contentsRoot.anchoredPosition = FaderUtil.GetUIPosition(canvas, worldPos);
                 if (_bgImage != null)
                     _bgImage.color = color;
                 _contentsRoot.gameObject.SetActive(true);
-                await _contentsRoot
-                    .DOSizeDelta(_endSize, seconds)
-                    .SetEase(_fadeOutEase)
-                    .SetUpdate(true)
-                    .AsyncWaitForCompletion();
+
+                float elapsedTime = 0f;
+                Vector2 startSize = _startSize;
+                Vector2 targetSize = _endSize;
+
+                while (elapsedTime < seconds)
+                {
+                    float t = seconds <= 0f ? 1f : (elapsedTime / seconds);
+                    _contentsRoot.sizeDelta = Vector2.Lerp(startSize, targetSize, t);
+                    elapsedTime += Time.unscaledDeltaTime;
+                    await Awaitable.NextFrameAsync();
+                }
+
+                _contentsRoot.sizeDelta = targetSize;
                 _isFading = false;
                 await Awaitable.NextFrameAsync();
             }
