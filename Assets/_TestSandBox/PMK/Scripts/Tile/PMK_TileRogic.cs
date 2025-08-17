@@ -4,7 +4,6 @@ using System.Linq;
 using Fusion;
 using UnityEngine;
 using UnityEngine.Tilemaps;
-using UnityEngine.UIElements;
 
 // 맵 생성을 호스트가 담당하고, 클라이언트는 호스트가 생성한 맵을 받아서 타일맵에 추가하는 구조입니다.
 // 맵 프리팹에는 네트워크 오브젝트가 포함되어있지 않습니다.
@@ -26,7 +25,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     // 맵 프리팹 세트 (맵 타입별로 프리팹을 저장하는 리스트)
     private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
-    private Dictionary<string, GameObject[]> mapPrefabDict;
+    public Dictionary<string, GameObject[]> mapPrefabDict { get; private set; }
 
     private int bossStage = 0;
 
@@ -88,6 +87,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
+        if (HasStateAuthority) return;
         LoadMapPrefabsAutomatically("1-1"); // 초기 맵 프리팹 자동 로드
     }
 
@@ -97,7 +97,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         RunTestMode();
 
-        if (Runner.IsServer && HasStateAuthority)
+        if (HasStateAuthority)
         {
             Debug.Log("구독수행됨");
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
@@ -121,7 +121,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (stageInfo.IsBossStage == 1)
                 {
                     Debug.Log("보스 스테이지 로드");
-                    ResetBoosMap();
+                    RPC_ResetBoosMap();
                     Create_Map("B", 0, 0, 0);
                     return;
                 }
@@ -137,10 +137,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
     private void Update()
     {
-
-        if (Input.GetKeyDown(KeyCode.Alpha1)) // 1번 키를 누르면 맵 초기화 및 재생성
+        if (Input.GetKeyDown(KeyCode.Alpha1) && HasStateAuthority) // 1번 키를 누르면 맵 초기화 및 재생성
         {
-            if (!HasStateAuthority) return;
             RPC_ResetMap();
         }
     }
@@ -150,20 +148,40 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private GameObject StageWall; // 스테이지 벽 타일을 저장할 변수
     private void LoadMapPrefabsAutomatically(string StageName)
     {
+        int stageNumber = 1;
+
         // 모든 맵 프리팹 불러오기
         if (StageName == "1-1")
         {
-            ChangeStage(1);
+            stageNumber = 1;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/1Stage");
         }
         else if (StageName == "2-1")
         {
-            ChangeStage(2);
+            stageNumber = 2;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/2Stage"); // 2스테이지 맵 프리팹 불러오기
         }
         else if (StageName == "3-1")
         {
-            ChangeStage(3);
+            stageNumber = 3;
+
+            if (HasStateAuthority) // 서버일 경우에만 클라이언트들에게 알려줌
+            {
+                RPC_ChangeStage(stageNumber);
+            }
+
             loadedPrefabs = Resources.LoadAll<GameObject>("Maps/3Stage"); // 3스테이지 맵 프리팹 불러오기
         }
 
@@ -198,6 +216,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         // Dictionary로도 구성
         mapPrefabDict = mapPrefabSets.ToDictionary(set => set.mapType, set => set.prefabs);
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_ChangeStage(int stageNumber)
+    {
+        ChangeStage(stageNumber);
     }
 
     private void ChangeStage(int ChooseStage)
@@ -243,6 +267,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
     }
 
 
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_ResetBoosMap()
+    {
+        ResetBoosMap();
+    }
+
     public void ResetBoosMap()
     {
         mainTilemap.ClearAllTiles();
@@ -276,13 +306,13 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
 
     #region 원하는 맵 생성
+
     private void Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
-        if (!HasStateAuthority) return;
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            if (mapType != "B" && mapType != "C")
+            if (mapType != "B" && mapType != "C" && Runner.IsServer)
             {
                 randomIndex = Random.Range(0, prefabs.Length);
             }
@@ -302,40 +332,38 @@ public partial class PMK_TileRogic : NetworkBehaviour
         }
     }
 
-    public bool isCreatingMap = false;
-
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_Create_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
         StartCoroutine(DelayCreate_Map(mapType, randomIndex, spawnXpos, spawnYpos));
     }
 
+    public bool isCreatingMap = false;
+
+    GameObject temp;
     private IEnumerator DelayCreate_Map(string mapType, int randomIndex, float spawnXpos, float spawnYpos)
     {
-
         isCreatingMap = true; // 락 걸기
 
         List<Vector3Int> tilePositions = new List<Vector3Int>();
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
-            GameObject temp = Instantiate(prefabs[randomIndex], Vector3.zero, Quaternion.identity); // 맵 프리팹 저장
+            GameObject mapPrefab = prefabs[randomIndex];
+            Transform[] children = mapPrefab.transform.Cast<Transform>().ToArray(); // 자식들 복사
 
-            Tilemap[] tilemaps = temp.GetComponentsInChildren<Tilemap>(); // 타일맵 컴포넌트 가져오기
-            Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성할 위치 저장
+            Tilemap[] tilemaps = mapPrefab.GetComponentsInChildren<Tilemap>(); // 타일맵만 추출
+            Vector3Int offset = new Vector3Int((int)spawnXpos, (int)spawnYpos, 0); // 생성 위치
 
-
-            // 생성된 맵을 부모 오브젝트에 자식으로 추가
-            foreach (Transform child in temp.transform)
+            foreach (Transform child in children)
             {
                 if (child.GetComponent<Tilemap>() != null)
                     continue;
 
-                Vector3 spawnPosition = child.position + new Vector3(offset.x, offset.y, 0f);
+                Vector3 spawnPosition = child.localPosition + (Vector3)offset;
                 GameObject prefab = child.gameObject;
 
-
-                if (prefab.GetComponent<NetworkObject>() != null)
+                if (prefab.GetComponent<NetworkObject>() != null && HasStateAuthority)
                 {
                     Runner.Spawn(prefab, spawnPosition, child.rotation, null, (runner, obj) =>
                     {
@@ -343,9 +371,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
                         obj.name = prefab.name;
                     });
                 }
-                else
+                else if (prefab.GetComponent<NetworkObject>() == null)
                 {
-                    // 일반 오브젝트일 경우
                     GameObject obj = Instantiate(prefab, spawnPosition, child.rotation, parentTrans);
                     obj.name = prefab.name;
                 }
@@ -372,9 +399,13 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             Vector3Int sourcePos = new Vector3Int(bounds.xMin + x, bounds.yMin + y, 0);
                             Vector3Int targetPos = sourcePos + offset;
 
-                            // 타일 생성 및 랜덤한 확률로 아이템 생성
-                            mainTilemap.SetTile(targetPos, tile);
-                            Create_TileItem(targetPos);
+                            // 타일 생성 및 랜덤한 확률로 아이템 생성 (RPC를 통해 동기화)
+                            if (HasStateAuthority)
+                            {
+                                // 타일맵 내의 상대 위치를 계산하여 RPC로 전달
+                                Vector3Int relativePos = new Vector3Int(x, y, 0);
+                                tileRPCManager.RPC_Create_Tile(targetPos);
+                            }
 
                             tilePositions.Add(targetPos);
 
@@ -382,7 +413,6 @@ public partial class PMK_TileRogic : NetworkBehaviour
                             {
                                 StartCoroutine(DelayedCreateEnemy(targetPos));
                             }
-
 
                             yield return null; // 한 프레임 대기
                         }
@@ -452,6 +482,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
         yield return new WaitForSeconds(2f);
+
+        if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
 
         if (Random.value > 0.1f) yield break;
 

@@ -73,11 +73,31 @@ public class EffectManager : MonoBehaviour
     {
         foreach (var effect in effects)
         {
-            if (!string.IsNullOrEmpty(effect.effectName) && effect.effectPrefab != null)
+            if (effect == null || effect.effectPrefab == null) continue;
+
+            string keyByFileName = effect.effectPrefab.name;
+            string configuredKey = effect.effectName;
+
+            string primaryKey = !string.IsNullOrEmpty(configuredKey) ? configuredKey : keyByFileName;
+
+            // 비어있는 경우 자동으로 파일명으로 키를 설정
+            effect.effectName = primaryKey;
+
+            // 기본 키로 매핑
+            AddOrReplaceEffectMapping(primaryKey, effect);
+
+            // 파일명으로도 매핑하여 파일명 호출 지원
+            if (primaryKey != keyByFileName)
             {
-                effectDictionary[effect.effectName] = effect;
+                AddOrReplaceEffectMapping(keyByFileName, effect);
             }
         }
+    }
+
+    private void AddOrReplaceEffectMapping(string key, EffectData data)
+    {
+        if (string.IsNullOrEmpty(key) || data == null) return;
+        effectDictionary[key] = data;
     }
     
     private void InitializeEffectPools()

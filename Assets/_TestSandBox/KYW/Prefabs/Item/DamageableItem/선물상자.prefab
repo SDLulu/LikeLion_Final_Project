@@ -207,6 +207,7 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 979564679116390309}
+  - {fileID: 2577597674421656039}
   - {fileID: 6361894011394987183}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &2577597674421656039
@@ -223,7 +224,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 1
   destroyDelay: 0.1
-  spawnPrefabs: []
+  spawnPool: {fileID: 11400000, guid: 9857854320698ff4ebec78418fc6776c, type: 2}
 --- !u!1 &8657577080701986628
 GameObject:
   m_ObjectHideFlags: 0

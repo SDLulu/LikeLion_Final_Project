@@ -27,6 +27,15 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     [SerializeField] private float wallCheckDistance = 0.5f; // 벽 감지 거리
     [SerializeField] private float groundCheckDistance = 0.2f; // 바닥 감지 거리
     [SerializeField] private float attackCheckRadius = 0.5f; // 공격 판정 반지름
+    
+
+    [Header("Search & Attack Settings")]
+    public Vector2 detectionBoxSize = new Vector2(10f, 2f); // 탐지 범위의 가로, 세로 크기
+    public Vector2 detectionBoxOffset = new Vector2(0f, 1f); // 탐지 범위의 중심 위치 오프셋
+    [SerializeField] private Vector2 attackBoxSize = new Vector2(1.5f, 1f); // << 이 줄을 추가 (공격 판정 박스 크기)
+    [SerializeField] private Vector2 attackBoxOffset = new Vector2(0f, 0.5f); // << 이 줄을 추가 (공격 판정 박스 오프셋)
+    private Vector2 attackCenter;
+    private Collider2D[] _hitColliders = new Collider2D[5];
 
     //컴포넌트들
     public EnemyData enemyData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
@@ -182,8 +191,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         }
 
         //타겟이 공격사정거리 안에 들어왔다면
-        if (Vector2.Distance(transform.position, TargetPlayer.transform.position) < enemyData.attackRange
-            && AttackCooldownTimer.ExpiredOrNotRunning(Runner))
+        if (IsPlayerInAttackBox() && AttackCooldownTimer.ExpiredOrNotRunning(Runner))
         {
             CurrentState = EnemyStateName.Attack;
             fsm.StateMachine.ForceActivateState<EnemyAttackState>();
@@ -198,7 +206,7 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
             Flip();
         }
 
-        SetVelocityX(Mathf.Sign(directionToTarget) * enemyData.moveSpeed);
+        SetVelocityX(Mathf.Sign(directionToTarget) * enemyData.moveSpeed * 2);
     }
 
     protected virtual void UpdateAttackState()
@@ -240,7 +248,30 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
     //         fsm.StateMachine.ForceActivateState<EnemyChaseState>();
     //     }
     // }
+    protected virtual bool IsPlayerInAttackBox()
+    {
+    // 이 함수는 서버(제어 권한자)에서만 의미가 있습니다.
+    if (!Object.HasStateAuthority) return false;
 
+    // DealDamage와 동일한 로직으로 공격 박스의 중심 위치를 계산합니다.
+    attackCenter = (Vector2)transform.position;
+    attackCenter.x += IsFacingRight ? attackBoxOffset.x : -attackBoxOffset.x;
+    attackCenter.y += attackBoxOffset.y;
+
+    // LagCompensation.OverlapBox를 사용해 해당 영역을 확인합니다.
+    List<LagCompensatedHit> hits = new List<LagCompensatedHit>();
+    int hitCount = Runner.LagCompensation.OverlapBox(
+        attackCenter,
+        attackBoxSize / 2,
+        Quaternion.identity,
+        Object.InputAuthority,
+        hits,
+        enemyData.PlayerHitBoxLayer
+    );
+
+    // 감지된 플레이어가 1명 이상이면 true를 반환합니다.
+    return hitCount > 0;
+}
     private bool IsDetectingWall()
     {
         Vector2 direction = IsFacingRight ? Vector2.right : Vector2.left;
@@ -286,38 +317,77 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         }
     }
 
-    //매 틱마다 주변에 플레이어가 있는지 탐색
-    private void UpdateTarget()
+    public virtual void UpdateTarget()
     {
-        Collider2D[] hitColliders = new Collider2D[5];
-        int hitCounts = Runner.GetPhysicsScene2D().OverlapCircle(transform.position, enemyData.searchDistance, hitColliders, enemyData.PlayerLayer);
+        // 서버(제어 권한자)가 아니면 로직을 실행하지 않습니다.
+        if (!Object.HasStateAuthority) return;
+
+        // 탐지 박스의 두 꼭짓점 계산
+        Vector2 boxCenter = (Vector2)transform.position + detectionBoxOffset;
+        Vector2 pointA = boxCenter - (detectionBoxSize / 2);
+        Vector2 pointB = boxCenter + (detectionBoxSize / 2);
+        // 사각형 영역 내의 플레이어 레이어 콜라이더를 감지
+        int hitCounts = Runner.GetPhysicsScene2D().OverlapArea(pointA, pointB, _hitColliders, enemyData.PlayerLayer);
 
         SpelunkyPlayerController closestPlayer = null;
         float closestDistanceSqr = float.MaxValue;
+
         if (hitCounts > 0)
         {
-            // 감지된 모든 플레이어에 대해 반복
+            // 가장 가까운 플레이어를 찾는 로직은 EnemyBase와 동일
             for (int i = 0; i < hitCounts; i++)
             {
-                SpelunkyPlayerController player = hitColliders[i].GetComponent<SpelunkyPlayerController>();
+                SpelunkyPlayerController player = _hitColliders[i].GetComponent<SpelunkyPlayerController>();
                 if (player != null)
                 {
-                    // 몬스터와 플레이어 사이의 거리 제곱을 계산
                     float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
-
-                    // 더 가까운 플레이어를 찾으면, closestPlayer를 업데이트
                     if (distanceSqr < closestDistanceSqr)
                     {
                         closestDistanceSqr = distanceSqr;
                         closestPlayer = player;
                     }
                 }
+                // 배열 클리어 (다음 프레임에 이전 결과가 남지 않도록)
+                _hitColliders[i] = null;
             }
         }
 
-        // 가장 가까운 플레이어를 최종 타겟으로 설정합니다.
+        // 최종 타겟 설정
         TargetPlayer = closestPlayer;
     }
+
+    //매 틱마다 주변에 플레이어가 있는지 탐색
+    // public virtual void UpdateTarget()
+    // {
+    //     Collider2D[] hitColliders = new Collider2D[5];
+    //     int hitCounts = Runner.GetPhysicsScene2D().OverlapCircle(transform.position, enemyData.searchDistance, hitColliders, enemyData.PlayerLayer);
+
+    //     SpelunkyPlayerController closestPlayer = null;
+    //     float closestDistanceSqr = float.MaxValue;
+    //     if (hitCounts > 0)
+    //     {
+    //         // 감지된 모든 플레이어에 대해 반복
+    //         for (int i = 0; i < hitCounts; i++)
+    //         {
+    //             SpelunkyPlayerController player = hitColliders[i].GetComponent<SpelunkyPlayerController>();
+    //             if (player != null)
+    //             {
+    //                 // 몬스터와 플레이어 사이의 거리 제곱을 계산
+    //                 float distanceSqr = (player.transform.position - transform.position).sqrMagnitude;
+
+    //                 // 더 가까운 플레이어를 찾으면, closestPlayer를 업데이트
+    //                 if (distanceSqr < closestDistanceSqr)
+    //                 {
+    //                     closestDistanceSqr = distanceSqr;
+    //                     closestPlayer = player;
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     // 가장 가까운 플레이어를 최종 타겟으로 설정합니다.
+    //     TargetPlayer = closestPlayer;
+    // }
     public virtual void DealDamage()
     {
         // 서버(제어 권한자)가 아니면 로직을 실행하지 않습니다.
@@ -354,11 +424,24 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
 
     protected virtual void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.green;
         Gizmos.DrawLine(groundCheck.position, new Vector3(groundCheck.position.x, groundCheck.position.y - groundCheckDistance));
         Gizmos.DrawLine(wallCheck.position, new Vector3(wallCheck.position.x + wallCheckDistance, wallCheck.position.y));
+        //Gizmos.color = Color.green;
+        //Gizmos.DrawWireSphere(this.transform.position, enemyData.searchDistance); //탐색거리
         if (attackCheck == null) return;
+        Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(attackCheck.position, attackCheckRadius);
+
+        Gizmos.color = Color.magenta;
+        Vector3 boxCenter = transform.position;
+        boxCenter.x += attackBoxOffset.x;
+        boxCenter.y += attackBoxOffset.y;
+        Gizmos.DrawWireCube(boxCenter, attackBoxSize);
+
+        Gizmos.color = Color.cyan; // 눈에 잘 띄는 색으로 변경
+        Vector3 boxCenter2 = transform.position + (Vector3)detectionBoxOffset;
+        Gizmos.DrawWireCube(boxCenter2, detectionBoxSize);
     }
 
 
@@ -398,6 +481,9 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         CurrentHealth -= damage;
         SetInvincible(true, 0.2f);
         UnityEngine.Debug.Log($"몬스터 체력 : {CurrentHealth}");
+        
+        // 별 이펙트와 피 이펙트 재생
+        RPC_PlayDamageEffects();
 
         if (CurrentHealth <= 0)
         {
@@ -490,5 +576,16 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         
         IsThrown = true;
         ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayDamageEffects()
+    {
+        // 별 이펙트와 피 이펙트 재생 (+0.5y 높이에서 스폰)
+        Vector3 effectPosition = transform.position + Vector3.up * 0.5f;
+        AudioManager.Inst.PlaySound("별", effectPosition);
+        EffectManager.Inst.PlayEffect("별", effectPosition);
+        EffectManager.Inst.PlayEffect("피", effectPosition);
     }
 }    

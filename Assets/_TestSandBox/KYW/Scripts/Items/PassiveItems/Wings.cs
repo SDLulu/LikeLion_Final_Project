@@ -31,6 +31,9 @@ public class Wings : NetworkBehaviour, IItemInteraction
                 NetworkEventSystem.Inst.TriggerItemCollected(netObj.InputAuthority, 1);
             }
             Debug.Log($"[Wings] 플레이어 인벤토리에 날개 효과 적용됨");
+            
+            // 장착 사운드 재생
+            RPC_PlayEquipSound();
         }
         else
         {
@@ -106,5 +109,13 @@ public class Wings : NetworkBehaviour, IItemInteraction
         // 물리 활성화는 상관없음 (어차피 바로 Despawn)
         Runner.Despawn(Object);
         Debug.Log($"[Wings] {itemName} Despawn됨");
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayEquipSound()
+    {
+        // 날개 장착 사운드 재생
+        AudioManager.Inst.PlaySound("장착", transform.position);
     }
 } 
