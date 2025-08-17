@@ -27,15 +27,15 @@ public class NetworkEventSystem : BaseManager<NetworkEventSystem>, INetworkRunne
     public event Action<NetworkRunner, E_StateName, E_StateName> OnGameStateChangedEvent;  // (이전 상태, 현재 상태)
     public event Action<Stage.Data> OnStageLoadDoneEvent;                   // 스테이지 정보 - "3-1 or 5-4"
     public event Action<bool> OnCutSceneActiveEvent;                        // 컷씬 활성화 여부
-    public event Action<PlayerRef, EnemyData> OnEnemyKilledEvent;           // 적 처치 (플레이어, 가중치)
+    public event Action<PlayerRef, int> OnEnemyKilledEvent;           // 적 처치 (플레이어, 가중치)
     public event Action<PlayerRef, int> OnItemCollectedEvent;               // 아이템 획득 (플레이어, 가중치)
     public event Action<PlayerRef> OnScoreChangedEvent;                     // 점수 변경 알림 
 
-    public void TriggerEnemyKilled(PlayerRef attacker, EnemyData enemyData)
+    public void TriggerEnemyKilled(PlayerRef attacker, int scoreWeight = 1)
     {
         if (IsServer() == false)
             return;
-        OnEnemyKilledEvent?.Invoke(attacker, enemyData);
+        OnEnemyKilledEvent?.Invoke(attacker, scoreWeight);
     }
 
     public void TriggerItemCollected(PlayerRef attacker, int scoreWeight = 1)

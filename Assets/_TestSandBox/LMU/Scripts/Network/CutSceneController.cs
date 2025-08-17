@@ -7,10 +7,10 @@ using UnityEngine;
 public class CutSceneController : MonoBehaviour
 {
     [Header("인스펙터 참조")]
-    [field: SerializeField] public UI_CutSceneResult UICutSceneResult { get; private set; }
     [field: SerializeField] public Transform StartPoint { get; private set; }
     [field: SerializeField] public Transform EndPoint { get; private set; }
     [field: SerializeField] public CinemachineCamera CutSceneCamera { get; private set; }
+    [field: SerializeField] public UI_StageProgress2 UIStageProgress { get; private set; }
 
     public Vector3 GetStartPos() => StartPoint.position;
     public Vector3 GetEndPos() => EndPoint.position;
@@ -18,11 +18,15 @@ public class CutSceneController : MonoBehaviour
     private List<Tween> _cutTweens = new();
     private List<GameObject> _cutPlayers = new();
 
+    private GameProgressTracker _progressTracker;
     private void Awake()
     {
-        if (UICutSceneResult != null)
-            UICutSceneResult.gameObject.SetActive(false);
-        DefocusCutSceneCamera();
+        _progressTracker = LobbyManager.Inst.ProgressTracker;
+    }
+
+    private void OnDestroy()
+    {
+        _progressTracker = null;
     }
 
     public void FocusCutSceneCamera()
@@ -37,7 +41,7 @@ public class CutSceneController : MonoBehaviour
 
     public void ActiveCutSceneResult(bool value)
     {
-        UICutSceneResult.gameObject.SetActive(value);
+        UIStageProgress.gameObject.SetActive(value);
     }
 
     public async Awaitable PlayCutScene(int playerCount, float cutDuration)
@@ -79,8 +83,60 @@ public class CutSceneController : MonoBehaviour
         }
     }
 
-    public async Awaitable WaitForInputResponse()
+    public async Awaitable WaitForNext(int playerCount)
     {
-        await UICutSceneResult.WaitForInputResponse(null);
+        await WaitForInputResponse(playerCount);
+    }
+
+
+     private bool _isWaiting = false;
+    private async Awaitable WaitForInputResponse(int playerCount)
+    {
+        try
+        {
+            _isWaiting = true;
+            // 스테이지 정보 업데이트
+            var data = GetProgressData();
+            UIStageProgress.UpdateTimeData(data.Item1, data.Item2, data.Item3, data.Item4);
+            for (int i = 0; i < playerCount; i++)
+            {
+                Debug.Log($"<color=red>대기중: {i}</color>");
+                await WaitForResponse();
+                await Awaitable.NextFrameAsync();
+            }
+            await Awaitable.NextFrameAsync();
+            _isWaiting = false;
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError(e.Message);
+        }
+    }
+
+    private AwaitableCompletionSource _responseTCS;
+    private async Awaitable WaitForResponse()
+    {
+        _responseTCS = new AwaitableCompletionSource();
+        await _responseTCS.Awaitable;
+        _responseTCS = null;
+    }
+
+    public void Update()
+    {
+        if (_isWaiting && Input.GetKeyDown(KeyCode.K))
+        {
+            _responseTCS?.SetResult();
+        }
+    }
+
+    public (double, double, double, string) GetProgressData()
+    {
+        var progressTracker = LobbyManager.Inst.ProgressTracker;
+        return (
+            progressTracker.NetStageElapsedSeconds,
+            progressTracker.NetSessionElapsedSeconds,
+            progressTracker.NetStageId.Length,
+            progressTracker.NetStageId.ToString()
+        );
     }
 }

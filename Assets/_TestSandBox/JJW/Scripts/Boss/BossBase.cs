@@ -130,6 +130,11 @@ public class BossBase : NetworkBehaviour
             CurrentState = BossStateName.Dead;
             DespawnTimer = TickTimer.CreateFromSeconds(Runner, 5.0f);
             fsm.StateMachine.ForceActivateState<BossDeadState>();
+            // 적 처치 트리거 - 살아있는 플레이어들 대상
+            foreach (var player in PlayerManager.Inst.GetAlivePlayers())
+            {
+                NetworkEventSystem.Inst.TriggerEnemyKilled(player.InputAuthority, 20);
+            }
         }
     }
     public void OnCurrentHealthChanged()
