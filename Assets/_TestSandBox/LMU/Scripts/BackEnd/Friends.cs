@@ -200,8 +200,6 @@ public class Friends : BaseManager<Friends>
     /// </summary>
     private string _DetermineGameState(LitJson.JsonData friendRow)
     {
-        // Backend 응답에서 온라인 상태나 게임 상태 정보가 있다면 파싱
-        // 현재는 기본적으로 오프라인으로 설정 (실제 구현에서는 Backend 응답 구조에 따라 수정 필요)
         return "Offline";
     }
 
