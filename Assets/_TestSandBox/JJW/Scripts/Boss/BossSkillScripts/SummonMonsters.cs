@@ -125,7 +125,12 @@ public class SummonMonsters : BossSkillCState
 
             // 3. 몬스터를 소환하고, 보스의 기억(Dictionary)에 새로 등록합니다.
             NetworkPrefabRef monsterToSpawn = monsterPrefabs[i];
-            NetworkObject newMonster = Runner.Spawn(monsterToSpawn, spawnPoint.position, spawnPoint.rotation);
+             NetworkObject newMonster = Runner.Spawn(monsterToSpawn, 
+                                                spawnPoint.position, 
+                                                spawnPoint.rotation,
+                                                null,
+                                                (runner, obj) => { obj.transform.SetParent(boss.tileRogic.parentTrans);}); // boss의 NetworkObject를 부모로 설정
+
 
             if (newMonster != null)
             {
