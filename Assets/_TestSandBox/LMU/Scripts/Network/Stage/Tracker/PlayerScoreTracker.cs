@@ -7,10 +7,10 @@ public class PlayerScoreTracker : NetworkBehaviour
     [Header("인스펙터 참조")]
     [SerializeField] private UI_StageProgress _uiStageProgress;
 
-    [Networked, OnChangedRender(nameof(OnItemScoreChanged))]
+    [Networked, Capacity(4),OnChangedRender(nameof(OnItemScoreChanged))]
     private NetworkDictionary<PlayerRef, int> ItemScores { get; }
 
-    [Networked, OnChangedRender(nameof(OnMonsterScoreChanged))]
+    [Networked, Capacity(4), OnChangedRender(nameof(OnMonsterScoreChanged))]
     private NetworkDictionary<PlayerRef, int> MonsterScores { get; }
     private PlayerRef _localPlayer;
 

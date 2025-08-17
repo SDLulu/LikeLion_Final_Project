@@ -54,7 +54,6 @@ public class GameStageCompletedState : BaseStateBehaviour
         if (Runner.IsServer)
         {
             GameStates.RPC_FadeOutBGM(this.Runner, false);
-            PlayerM.SetPlayerPositions(new Vector3(-100.0f, -100.0f, 0.0f));
             var players = PlayerM.GetPlayers();
             InitTCS(players);
             _minWaitingTimer = TickTimer.CreateFromSeconds(Runner, _minWaitingTime);
@@ -101,6 +100,10 @@ public class GameStageCompletedState : BaseStateBehaviour
         }
         
         StageDataIndex++;
+        // int maxStageIndex =  DataManager.Inst.StageData.Last().Key;
+        // if (StageDataIndex > maxStageIndex)
+        //     StageDataIndex = 0;
+
         Debug.Log("다음 스테이지 인덱스 : " + StageDataIndex);
         base.OnExitState();
     }
@@ -205,6 +208,8 @@ public class GameStageCompletedState : BaseStateBehaviour
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Awaitable.NextFrameAsync();
             await Fader.FadeOutAsync(Color.black, 1.0f);
+            await Awaitable.WaitForSecondsAsync(0.5f);
+            PlayerM.SetPlayerPositions(new Vector3(-100.0f, -100.0f, 0.0f));
 
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);

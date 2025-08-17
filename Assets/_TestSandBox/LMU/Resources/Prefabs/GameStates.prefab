@@ -46,6 +46,58 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
+  _isIntervalSoftReset: 1
+  _playerSoftResetInterval: 5
+  _minPlayersToStart: 2
+  _isInGame: 0
+  _isGameSceneLoading: 0
+  _isGameSceneLoaded: 0
+--- !u!1 &2339208526396372544
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5891877565254515235}
+  - component: {fileID: 5684634361291222684}
+  m_Layer: 0
+  m_Name: EmptyState
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5891877565254515235
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2339208526396372544}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5153706847647877329}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5684634361291222684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2339208526396372544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c964d99fcb553d84498418f9afbb9797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _priority: 0
+  _checkPriorityOnExit: 1
 --- !u!1 &2637552345472169977
 GameObject:
   m_ObjectHideFlags: 0
@@ -92,7 +144,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  minWaitingTime: 3
 --- !u!1 &5091428481535042590
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,8 +190,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  minWaitingTime: 15
-  cutDuration: 2
+  _IsCutSceneActive: 0
+  _minWaitingTime: 15
+  _cutDuration: 2
 --- !u!1 &6817574703314393902
 GameObject:
   m_ObjectHideFlags: 0
@@ -233,8 +285,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _priority: 0
   _checkPriorityOnExit: 1
-  minWaitingTime: 15
-  cutDuration: 2
+  _IsCutSceneActive: 0
+  _minWaitingTime: 15
+  _cutDuration: 2
 --- !u!1 &8260035772065870977
 GameObject:
   m_ObjectHideFlags: 0
@@ -319,6 +372,7 @@ Transform:
   - {fileID: 7671985366890343227}
   - {fileID: 3699773553814207450}
   - {fileID: 2586127543881830833}
+  - {fileID: 5891877565254515235}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &816728155832290849
@@ -346,6 +400,7 @@ MonoBehaviour:
   - {fileID: 3097246407220455528}
   - {fileID: 2245225078627330675}
   - {fileID: 1826773309663941764}
+  - {fileID: 5684634361291222684}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6680545551392477647
 MonoBehaviour:
@@ -384,3 +439,5 @@ MonoBehaviour:
   - {fileID: 3097246407220455528}
   - {fileID: 2245225078627330675}
   - {fileID: 1826773309663941764}
+  - {fileID: 5684634361291222684}
+  _NetState: 0
