@@ -28,7 +28,11 @@ public class BossBase : NetworkBehaviour
     [HideInInspector]public Collider2D coll;
     [HideInInspector]public NetworkRigidbody2D nrb;
 
-     public override void Spawned() //네트워크 객체가 생성될 때 호출
+    // 소환된 몬스터를 관리하기 위한 Dictionary.
+    // Key: 몬스터가 소환된 위치(Transform), Value: 소환된 몬스터의 NetworkObject
+    public Dictionary<Transform, NetworkObject> SummonedMonsterMap { get; private set; } = new Dictionary<Transform, NetworkObject>();
+
+    public override void Spawned() //네트워크 객체가 생성될 때 호출
     {
         coll = GetComponent<Collider2D>();
         nrb = GetComponent<NetworkRigidbody2D>();

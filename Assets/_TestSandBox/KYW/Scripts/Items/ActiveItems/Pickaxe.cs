@@ -59,6 +59,9 @@ public class Pickaxe : NetworkBehaviour, IItemInteraction
         {
             attackCollider.enabled = true;
         }
+        
+        // 곡괭이 휘두르기 소리와 이펙트 재생
+        RPC_PlayPickaxeSwingFeedback();
     }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
@@ -135,5 +138,12 @@ public class Pickaxe : NetworkBehaviour, IItemInteraction
         }
     }
     
-
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayPickaxeSwingFeedback()
+    {
+        // 곡괭이 휘두르기 소리와 이펙트 재생
+        AudioManager.Inst.PlaySound("던지기2", transform.position);
+        EffectManager.Inst.PlayEffect("곡괭이휘두르기", transform.position);
+    }
 } 

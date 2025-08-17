@@ -55,4 +55,12 @@ public class Bullets : NetworkBehaviour
             Runner.Despawn(Object);
         }
     }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayBulletSpawnSound()
+    {
+        // 총알 한 발 소리 재생
+        AudioManager.Inst.PlaySound("총알한발", transform.position);
+    }
 } 

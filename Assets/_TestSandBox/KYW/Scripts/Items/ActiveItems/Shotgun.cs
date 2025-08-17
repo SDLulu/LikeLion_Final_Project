@@ -59,6 +59,9 @@ public class Shotgun : NetworkBehaviour, IItemInteraction
         
         // 발사 후 쿨다운 타이머 시작
         fireRateTimer = TickTimer.CreateFromSeconds(Runner, fireRate);
+        
+        // 샷건 발사 소리와 이펙트 재생
+        RPC_PlayShotgunFireFeedback();
     }
 
     private void FireShotgun(Vector2 mouseWorldPosition)
@@ -146,5 +149,14 @@ public class Shotgun : NetworkBehaviour, IItemInteraction
         {
             rb.AddForce(force, ForceMode2D.Impulse);
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayShotgunFireFeedback()
+    {
+        // 샷건 발사 소리와 이펙트 재생
+        AudioManager.Inst.PlaySound("샷건", transform.position);
+        EffectManager.Inst.PlayEffect("샷건", transform.position);
     }
 } 
