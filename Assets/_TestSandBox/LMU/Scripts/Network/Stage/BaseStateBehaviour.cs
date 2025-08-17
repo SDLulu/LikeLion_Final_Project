@@ -10,6 +10,7 @@ public enum E_StateName
     PlayingState,
     FailedState,
     CompletedState,
+    EmptyState,
 }
 
 public abstract class BaseStateBehaviour : StateBehaviour
