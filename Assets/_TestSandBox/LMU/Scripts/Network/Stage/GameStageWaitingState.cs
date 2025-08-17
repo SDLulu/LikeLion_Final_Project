@@ -23,7 +23,7 @@ public class GameStageWaitingState : BaseStateBehaviour
             try
             {
                 GameStates.RPC_FadeOutBGM(this.Runner, false);
-                PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
+                PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos, false);
 
                 // 첫번째 스테이지 로딩
                 if (Runner.IsServer)

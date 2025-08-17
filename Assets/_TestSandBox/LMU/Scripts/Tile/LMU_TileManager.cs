@@ -21,7 +21,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
             {
                 Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
 
-                LoadMapPrefabsAutomatically(stageInfo.CurrentStage);
+                currentStage = stageInfo.CurrentStage; // 현재 스테이지 이름 업데이트
+
+                LoadMapPrefabsAutomatically(currentStage);
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
@@ -37,25 +39,15 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 //스테이지 로더 추가 할 곳
                 if (stageInfo.IsBossStage == 1)
                 {
-                   Debug.Log("보스 스테이지 로드");
+                    Debug.Log("보스 스테이지 로드");
                     RPC_ResetBoosMap();
-                   // 보스 맵 인덱스를 안전하게 순환
-                   if (mapPrefabDict != null && mapPrefabDict.TryGetValue("B", out var bossPrefabs) && bossPrefabs != null && bossPrefabs.Length > 0)
-                   {
-                       int safeIndex = bossStage % bossPrefabs.Length;
-                       Create_Map("B", safeIndex, 0, 0);
-                       bossStage++;
-                   }
-                   else
-                   {
-                       Debug.LogError("보스 맵 프리팹을 찾을 수 없거나 비어있습니다. Resources/Maps/*Stage 아래의 'B' 타입 네이밍을 확인하세요.");
-                   }
-                   return;
+                    Create_Map("B", 0, 0, 0);
+                    return;
                 }
                 else if (stageInfo.IsBossStage == 0)
                 {
-                   Debug.Log("일반 스테이지 로드");
-                   RPC_ResetMap();
+                    Debug.Log("일반 스테이지 로드");
+                    RPC_ResetMap();
                 }
             };
             return true;
