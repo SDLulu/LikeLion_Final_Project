@@ -105,6 +105,9 @@ public class BasicPunchItem : NetworkBehaviour, IItemInteraction
         {
             attackCollider.enabled = true;
         }
+        
+        // 펀치 소리 재생
+        RPC_PlayPunchSound();
     }
 
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition) { }
@@ -131,5 +134,13 @@ public class BasicPunchItem : NetworkBehaviour, IItemInteraction
         {
             rb.AddForce(force, ForceMode2D.Impulse);
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_PlayPunchSound()
+    {
+        // 펀치 소리 재생
+        AudioManager.Inst.PlaySound("펀치", transform.position);
     }
 } 
