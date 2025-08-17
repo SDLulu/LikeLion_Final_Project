@@ -28,7 +28,7 @@ public class ShopItem : NetworkBehaviour, IItemInteraction, IInteractable
     public bool IsHeld => throw new System.NotImplementedException();
 
     private NetworkRigidbody2D _netRigidbody;
-    private Collider2D _collider;
+    [SerializeField] private Collider2D _collider;
     private ShopManager _shopManager;
 
     private ShopItemVisual _shopItemVisual;
@@ -190,6 +190,7 @@ public class ShopItem : NetworkBehaviour, IItemInteraction, IInteractable
         var data = ItemData;
         data.IsPicked = true;
         ItemData = data;
+        _shopItemVisual.priceText.enabled = false;
         _shopItemVisual.enabled = false;
     }
 
@@ -202,6 +203,7 @@ public class ShopItem : NetworkBehaviour, IItemInteraction, IInteractable
         if (data.IsAvailable)
         {
             _shopItemVisual.enabled = true;
+            _shopItemVisual.priceText.enabled = true;
         }
     }
 

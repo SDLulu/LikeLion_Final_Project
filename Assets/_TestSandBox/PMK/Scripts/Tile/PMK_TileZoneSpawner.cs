@@ -28,10 +28,10 @@ public class PMK_TileZoneSpawner : MonoBehaviour
         // 해당 셀에 타일이 있는지 확인합니다.
         if (hits == null)
         {
-            int rnd1 = Random.Range(0, 100);
-            int rnd2 = Random.Range(0, 100);
             if (tileRPCManager.HasStateAuthority)
             {
+                int rnd1 = Random.Range(0, 100);
+                int rnd2 = Random.Range(0, 100);
                 tileRPCManager.RPC_RndTileSpawn(rnd1, rnd2, cellPos, trapSpawnChance);
             }
         }

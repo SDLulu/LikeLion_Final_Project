@@ -87,7 +87,7 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
         {
             CurrentState = ShopkeeperState.Passive;
             LastAggressor = PlayerRef.None;
-            CurrentHealth = 1;
+            CurrentHealth = 10;
         }
 
         // 말풍선 초기 비활성화
@@ -212,7 +212,7 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
                     {
                         _currentInteractingPlayer = playerNetworkObject.InputAuthority;
                         SetShopkeeperState(ShopkeeperState.Talking);
-                        Rpc_DisplaySpeechBubble(_currentInteractingPlayer, "환영합니다, 손님!");
+                        Rpc_DisplaySpeechBubble("환영합니다, 손님!");
                         return; // 한 명의 플레이어만 감지하여 처리
                     }
                 }
@@ -265,70 +265,10 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
             _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
         }
     }
-    // Shopkeeper.cs 에 붙여넣을 수정된 ChasePlayer 메서드
-
-    private void ChasePlayer(PlayerRef target)
-    {
-        // ⭐️ 수정: 전달받은 target이 유효하지 않은 경우에만 Passive로 전환합니다.
-        // 기존의 LastAggressor 체크는 삭제합니다.
-        if (target.IsNone)
-        {
-            SetShopkeeperState(ShopkeeperState.Passive);
-            return;
-        }
-
-        NetworkObject aggressorObject = Runner.GetPlayerObject(target);
-        if (aggressorObject == null)
-        {
-            // 대상 플레이어가 사라졌다면 (예: 연결 끊김) 다시 Passive 상태로 돌아갑니다.
-            SetShopkeeperState(ShopkeeperState.Passive);
-
-            // 만약 특정 공격 대상이 있었다면 초기화해줍니다.
-            if (!LastAggressor.IsNone)
-            {
-                LastAggressor = PlayerRef.None;
-            }
-            return;
-        }
-
-        float distance = Vector2.Distance(transform.position, aggressorObject.transform.position);
-
-        // 공격 쿨다운이 끝났고, 플레이어가 공격 범위 안에 있다면
-        if (_attackTimer.ExpiredOrNotRunning(Runner) && distance <= attackRange)
-        {
-            // 1. 제자리에 멈춥니다.
-            if (_netRigidbody.Rigidbody.linearVelocity.sqrMagnitude > 0)
-            {
-                _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
-            }
-
-            // 2. 공격 RPC를 호출하고 타이머를 시작합니다.
-            Rpc_AttackPlayer(target, attackDamage);
-            _attackTimer = TickTimer.CreateFromSeconds(Runner, attackCooldown);
-
-            // 3. 상태를 'Attacking'으로 변경하여 이동을 막습니다.
-            SetShopkeeperState(ShopkeeperState.Attacking);
-            //_animator.SetTrigger("AttackTrigger");
-            Debug.Log($"Host: Shopkeeper changing state to Attacking.");
-        }
-        // 플레이어가 공격 범위 밖에 있다면 추적합니다.
-        else if (distance > stopDistance)
-        {
-            _animator.SetBool("IsRunning", true);
-            Vector2 directionToTarget = (aggressorObject.transform.position - transform.position).normalized;
-            _netRigidbody.Rigidbody.linearVelocity = new Vector2(directionToTarget.x * chaseSpeed, _netRigidbody.Rigidbody.linearVelocity.y);
-        }
-        // 공격 범위와 정지 거리 사이에 있다면 멈춥니다.
-        else
-        {
-            _animator.SetBool("IsRunning", false);
-            _netRigidbody.Rigidbody.linearVelocity = Vector2.zero;
-        }
-    }
 
     // --- RPC: 대화 말풍선 표시 (호스트 -> 특정 클라이언트) ---
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    private void Rpc_DisplaySpeechBubble(PlayerRef targetPlayer, string message)
+    private void Rpc_DisplaySpeechBubble(string message)
     {
         if (speechBubbleObject != null && speechBubbleText != null)
         {
@@ -347,20 +287,11 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
         if (_animator != null)
         {
             _animator.SetTrigger("AttackTrigger");
+            speechBubbleObject.SetActive(false);
         }
         // 예를 들어 Animator.SetTrigger("Attack")
         Debug.Log($"Client: Shopkeeper plays attack animation.");
 
-        // 데미지 적용은 PlayerHealth 컴포넌트에서 RPC를 받아 처리하는 것이 좋습니다.
-        // NetworkObject playerObject = Runner.GetPlayerObject(targetPlayer);
-        // if (playerObject != null)
-        // {
-        //     PlayerHealth playerHealth = playerObject.GetComponent<PlayerHealth>();
-        //     if (playerHealth != null)
-        //     {
-        //         playerHealth.Rpc_TakeDamage(damage);
-        //     }
-        // }
     }
 
     // --- OnChanged 콜백: ShopkeeperState 변경 감지 ---
@@ -372,16 +303,17 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
         Debug.Log($"Client (ID: {Object.Id}): Shopkeeper state changed to {CurrentState}");
 
         // 대화 상태가 아닐 때 말풍선 숨김
-        if (CurrentState != ShopkeeperState.Talking && speechBubbleObject != null && speechBubbleObject.activeSelf)
-        {
-            speechBubbleObject.SetActive(false);
-        }
+        //if (CurrentState != ShopkeeperState.Talking && speechBubbleObject != null && speechBubbleObject.activeSelf)
+        //{
+        //    speechBubbleObject.SetActive(false);
+        //}
     }
     // ⭐️ 특정 범인 없이 모두를 적대하는 상태로 변경하는 메서드
     public void EnrageAgainstAllPlayers()
     {
         if (!Object.HasStateAuthority) return;
         SetShopkeeperState(ShopkeeperState.Aggressive);
+        Rpc_DisplaySpeechBubble("도둑이야!");
         LastAggressor = PlayerRef.None; // 특정 공격 대상을 초기화
     }
 
@@ -491,6 +423,11 @@ public class Shopkeeper : NetworkBehaviour, IPlayerInteraction
 
         //무적상태라면 데미지 못받게 return
         if (IsInvincible) return;
+        if (CurrentState == ShopkeeperState.Passive || CurrentState == ShopkeeperState.Talking) 
+        {
+            CurrentState = ShopkeeperState.Aggressive;
+            Rpc_DisplaySpeechBubble("도둑이야!");
+        }
 
         CurrentHealth -= damage;
         SetInvincible(true, 0.2f);
