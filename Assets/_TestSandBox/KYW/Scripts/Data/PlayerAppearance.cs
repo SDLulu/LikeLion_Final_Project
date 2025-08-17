@@ -1,5 +1,6 @@
 using Fusion;
 using UnityEngine;
+using System;
 
 // 플레이어 외형(스킨) 동기화 및 적용 담당
 public class PlayerAppearance : NetworkBehaviour
@@ -12,6 +13,11 @@ public class PlayerAppearance : NetworkBehaviour
     [SerializeField, Tooltip("체크 시 유령용 애니메이터를 적용합니다")] private bool useGhostAnimator = false;
 
     [Networked] public NetworkString<_32> SkinKey { get; set; }
+    
+    // 스킨 변경 이벤트 추가
+    public event Action<string> OnSkinChanged;
+
+    private string _lastSkinKey = string.Empty;
 
     public override void Spawned()
     {
@@ -52,6 +58,14 @@ public class PlayerAppearance : NetworkBehaviour
         if (animator == null || skinDatabase == null) return;
 
         var key = SkinKey.ToString();
+        
+        // 스킨 변경 감지 및 이벤트 발생
+        if (key != _lastSkinKey)
+        {
+            _lastSkinKey = key;
+            OnSkinChanged?.Invoke(key);
+        }
+        
         var targetController = useGhostAnimator
             ? skinDatabase.GetGhostAnimatorByKey(key)
             : skinDatabase.GetAnimatorByKey(key);
@@ -59,6 +73,17 @@ public class PlayerAppearance : NetworkBehaviour
         {
             animator.runtimeAnimatorController = targetController;
         }
+    }
+    
+    /// <summary>
+    /// 스킨 키에 해당하는 스프라이트를 가져옵니다.
+    /// </summary>
+    /// <param name="skinKey">스킨 키</param>
+    /// <returns>해당하는 스프라이트, 없으면 null</returns>
+    public Sprite GetSkinSprite(string skinKey)
+    {
+        if (skinDatabase == null) return null;
+        return skinDatabase.GetSpriteByKey(skinKey);
     }
 }
 

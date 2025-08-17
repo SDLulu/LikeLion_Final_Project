@@ -94,6 +94,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1030292295293909244}
+  - component: {fileID: 134381511736741198}
   m_Layer: 0
   m_Name: Gargoyle Bundle
   m_TagString: Untagged
@@ -110,7 +111,7 @@ Transform:
   m_GameObject: {fileID: 1655514697940892494}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.54, y: 23.79, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -118,6 +119,25 @@ Transform:
   - {fileID: 1785975117756810630}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &134381511736741198
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1655514697940892494}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 1518443281
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects:
+  - {fileID: 9126518017561631343}
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &1846391022880525453
 GameObject:
   m_ObjectHideFlags: 0
@@ -251,7 +271,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7280301284825596023}
-  - component: {fileID: 6224300062167754124}
   - component: {fileID: 7477010174498456468}
   - component: {fileID: 6302580042756494159}
   - component: {fileID: 8225699131477691124}
@@ -259,6 +278,7 @@ GameObject:
   - component: {fileID: 6893465720336548775}
   - component: {fileID: 3026123180223727663}
   - component: {fileID: 6375634964620381611}
+  - component: {fileID: 9126518017561631343}
   m_Layer: 9
   m_Name: Gargoyle
   m_TagString: Untagged
@@ -282,34 +302,6 @@ Transform:
   - {fileID: 8993987711730574671}
   m_Father: {fileID: 1030292295293909244}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6224300062167754124
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1872818011375890549}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 730423437
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 6302580042756494159}
-  - {fileID: 8225699131477691124}
-  - {fileID: 2699044589694450891}
-  - {fileID: 6893465720336548775}
-  - {fileID: 3026123180223727663}
-  - {fileID: 9163916680703181277}
-  - {fileID: 4492277113100525645}
-  - {fileID: 9176901214873235688}
-  - {fileID: 5120272447903064513}
-  - {fileID: 3547769696787157709}
-  ForceRemoteRenderTimeframe: 0
 --- !u!50 &7477010174498456468
 Rigidbody2D:
   serializedVersion: 5
@@ -469,6 +461,34 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 2.0032525, y: 4.0109463}
   m_EdgeRadius: 0
+--- !u!114 &9126518017561631343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872818011375890549}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 595008990
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 6302580042756494159}
+  - {fileID: 8225699131477691124}
+  - {fileID: 2699044589694450891}
+  - {fileID: 6893465720336548775}
+  - {fileID: 3026123180223727663}
+  - {fileID: 9163916680703181277}
+  - {fileID: 4492277113100525645}
+  - {fileID: 9176901214873235688}
+  - {fileID: 5120272447903064513}
+  - {fileID: 3547769696787157709}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &2119484692348952109
 GameObject:
   m_ObjectHideFlags: 0
