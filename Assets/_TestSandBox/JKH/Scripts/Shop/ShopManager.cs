@@ -1,6 +1,7 @@
 // ShopManager.cs (리팩토링 버전)
 
 using Fusion;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -30,8 +31,10 @@ public class ShopManager : NetworkBehaviour
 
     // ❌ OnShopItemsNetworkedChanged, Rpc_RequestItemPickup, Rpc_UpdateItemState, Rpc_RequestItemDrop 삭제
 
-    void InitializeShopItems()
+    private IEnumerator InitializeShopItems()
     {
+        yield return new WaitForSeconds(3f); // 잠시 대기하여 네트워크 초기화 보장
+
         for (int i = 0; i < itemSpawnPoints.Length; i++)
         {
             // ... (아이템 데이터 랜덤 선택 로직은 동일) ...
