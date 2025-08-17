@@ -132,8 +132,8 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
         DropPassiveItems();
         DropMoney();
         
-        // 시체 프리팹 스폰 (원래 위치에서)
-        // SpawnCorpse();
+        // 시체 프리팹 스폰 (원래 위치에서, 스킨별로)
+        SpawnCorpse();
         
         // 유령 플레이어 스폰 (원래 위치에서, 입력권한과 함께)
         SpawnGhostPlayer();
@@ -243,21 +243,44 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
         
     }
     
-    // 💀 시체 프리팹 스폰
+    // 💀 시체 프리팹 스폰 (스킨별로)
     private void SpawnCorpse()
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
         
-        // 시체 프리팹 스폰
-        if (corpsePrefabRef != NetworkPrefabRef.Empty)
+        // PlayerAppearance 컴포넌트 찾기
+        var playerAppearance = GetComponentInChildren<PlayerAppearance>();
+        if (playerAppearance == null)
         {
-            var corpse = Runner.Spawn(corpsePrefabRef, DeathSpawnPosition, Quaternion.identity);
-            Debug.Log($"[{name}] 시체 프리팹 스폰됨: {corpse?.name ?? "null"}");
+            Debug.LogWarning($"[{name}] PlayerAppearance를 찾을 수 없어 스킨별 시체를 소환할 수 없습니다.");
+            return;
+        }
+
+        // 현재 스킨 키 가져오기
+        string currentSkinKey = playerAppearance.SkinKey.ToString();
+        
+        // 해당 스킨의 시체 프리팹 가져오기
+        GameObject corpsePrefab = playerAppearance.GetCorpsePrefab(currentSkinKey);
+        if (corpsePrefab == null)
+        {
+            Debug.LogWarning($"[{name}] 스킨 '{currentSkinKey}'에 해당하는 시체 프리팹이 없습니다.");
+            return;
+        }
+
+        // 시체 소환 위치 (죽은 위치에서)
+        Vector3 spawnPosition = DeathSpawnPosition;
+        spawnPosition.z = 0; // 2D 게임이므로 Z축 고정
+
+        // 시체 소환
+        var spawnedCorpse = Runner.Spawn(corpsePrefab, spawnPosition, Quaternion.identity);
+        if (spawnedCorpse != null)
+        {
+            Debug.Log($"[{name}] 스킨별 시체 소환 완료! 스킨: {currentSkinKey}, 위치: {spawnPosition}");
         }
         else
         {
-            Debug.LogWarning($"[{name}] 시체 프리팹이 설정되지 않았습니다!");
+            Debug.LogError($"[{name}] 시체 소환 실패! 프리팹: {corpsePrefab.name}");
         }
     }
     
