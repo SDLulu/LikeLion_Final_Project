@@ -98,7 +98,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: 4f605841ea5518d479c691cd8db07758, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -243,10 +243,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   projectileDmg: 0
   moveSpeed: 15
-  lifeTime: 4
+  lifeTime: 10
   playerLayerMask:
     serializedVersion: 2
     m_Bits: 2097152
   groundLayerMask:
     serializedVersion: 2
-    m_Bits: 65536
+    m_Bits: 16
