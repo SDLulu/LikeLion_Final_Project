@@ -25,12 +25,13 @@ public class BossBase : NetworkBehaviour
     //컴포넌트들
     public BossFSM fsm; //시각적 상태를 제어하는 fsm
     public BossData bossData; //ScriptableObject를 사용, 드래그앤드롭으로 적 기본 스탯 설정
-    [HideInInspector]public Collider2D coll;
-    [HideInInspector]public NetworkRigidbody2D nrb;
+    [HideInInspector] public Collider2D coll;
+    [HideInInspector] public NetworkRigidbody2D nrb;
 
     // 소환된 몬스터를 관리하기 위한 Dictionary.
     // Key: 몬스터가 소환된 위치(Transform), Value: 소환된 몬스터의 NetworkObject
     public Dictionary<Transform, NetworkObject> SummonedMonsterMap { get; private set; } = new Dictionary<Transform, NetworkObject>();
+    public PMK_TileRogic tileRogic => PMK_TileRogic.Instance;
 
     public override void Spawned() //네트워크 객체가 생성될 때 호출
     {
@@ -69,7 +70,7 @@ public class BossBase : NetworkBehaviour
 
         // 대기 시간이 끝나지 않았으면 아무것도 하지 않음
         if (StateTimer.ExpiredOrNotRunning(Runner) == false) return;
-        
+
         // 사용 가능한 모든 스킬 목록 생성
         List<BossStateName> availableSkills = new List<BossStateName>
         {
