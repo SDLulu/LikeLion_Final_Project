@@ -171,6 +171,8 @@ public class AttackCollisionHandler : NetworkBehaviour
         if (playerInteraction != null)
         {
             ApplyDamageAndKnockback(target, playerInteraction);
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
             return;
         }
         
@@ -185,6 +187,8 @@ public class AttackCollisionHandler : NetworkBehaviour
                 damageable.TakeDamage(attackDamage);
             }
             TryHandleStatueSwap(target);
+            // 타격 효과 재생
+            RPC_PlayHitEffect(target.transform.position);
         }
     }
 
@@ -277,4 +281,13 @@ public class AttackCollisionHandler : NetworkBehaviour
 		// Transform만 있는 경우
 		playerObj.transform.position = targetPos;
 	}
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayHitEffect(Vector3 hitPosition)
+    {
+        // 타격음과 타격 이펙트 재생
+        // AudioManager.Inst.PlaySound("충돌", hitPosition);
+        // EffectManager.Inst.PlayEffect("충돌", hitPosition);
+    }
 } 

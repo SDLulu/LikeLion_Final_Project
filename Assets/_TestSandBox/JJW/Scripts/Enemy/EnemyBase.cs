@@ -481,6 +481,9 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         CurrentHealth -= damage;
         SetInvincible(true, 0.5f);
         UnityEngine.Debug.Log($"몬스터 체력 : {CurrentHealth}");
+        
+        // 별 이펙트와 피 이펙트 재생
+        RPC_PlayDamageEffects();
 
         if (CurrentHealth <= 0)
         {
@@ -573,5 +576,16 @@ public class EnemyBase : NetworkBehaviour, IPlayerInteraction
         
         IsThrown = true;
         ThrownTimer = TickTimer.CreateFromSeconds(Runner, duration);
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayDamageEffects()
+    {
+        // 별 이펙트와 피 이펙트 재생 (+0.5y 높이에서 스폰)
+        Vector3 effectPosition = transform.position + Vector3.up * 0.5f;
+        AudioManager.Inst.PlaySound("별", effectPosition);
+        EffectManager.Inst.PlayEffect("별", effectPosition);
+        EffectManager.Inst.PlayEffect("피", effectPosition);
     }
 }    

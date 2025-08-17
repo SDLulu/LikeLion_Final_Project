@@ -27,6 +27,7 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
     // 데미지 받기
     public void TakeDamage(int damage)
     {
+        if (!HasStateAuthority) return;
         if (isDestroyed) return;
         
         currentHealth -= damage;
@@ -39,9 +40,10 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
     }
     
     // 상자 파괴 RPC
-    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    [Rpc(RpcSources.StateAuthority, RpcTargets.StateAuthority)]
     private void RPC_DestroyCrate()
     {
+        if (!HasStateAuthority) return;
         if (isDestroyed) return;
         isDestroyed = true;
         
@@ -52,8 +54,11 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
         }
         
         // 프리팹 스폰
-        SpawnRandomPrefab();
+        SpawnRandomPrefabs();
         
+        // 모든 클라이언트에 피드백 브로드캐스트
+        RPC_PlayBreakFeedback(transform.position);
+
         // 상자 오브젝트 제거
         if (Object != null)
         {
@@ -64,21 +69,55 @@ public class WoodenCrate : NetworkBehaviour, IDamageable, IItemInteraction
             Destroy(gameObject, destroyDelay);
         }
     }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayBreakFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("나무부서짐/돌부서짐", pos);
+        EffectManager.Inst.PlayEffect("나무상자깨짐", pos);
+    }
     
     // 랜덤 프리팹 스폰
-    private void SpawnRandomPrefab()
+    private void SpawnRandomPrefabs()
     {
-        if (spawnPool == null || !spawnPool.HasPrefabs) return;
+        if (!HasStateAuthority) return;
+        if (spawnPool == null)
+        {
+            Debug.LogError("[WoodenCrate] spawnPool is null");
+            return;
+        }
+        if (!spawnPool.HasPrefabs)
+        {
+            Debug.LogWarning("[WoodenCrate] spawnPool has no prefabs configured");
+            return;
+        }
         
-        // 스폰 풀에서 랜덤으로 프리팹 선택
-        GameObject randomPrefab = spawnPool.GetRandomPrefab();
-        if (randomPrefab == null) return;
+        // 단일 프리팹 스폰
+        NetworkObject randomPrefab = spawnPool.GetRandomPrefab();
+        if (randomPrefab != null)
+        {
+            SpawnPrefabAtPosition(randomPrefab);
+        }
+        else
+        {
+            Debug.LogWarning("[WoodenCrate] GetRandomPrefab returned null");
+        }
+    }
+    
+    // 특정 위치에 프리팹 스폰
+    private void SpawnPrefabAtPosition(NetworkObject prefab)
+    {
+        if (prefab == null) return;
         
         // 상자 위치에 스폰
         Vector3 spawnPosition = transform.position;
         spawnPosition.z = 0; // 2D 게임이므로 Z축 고정
         
-        Instantiate(randomPrefab, spawnPosition, Quaternion.identity);
+        var spawned = Runner.Spawn(prefab, spawnPosition, Quaternion.identity);
+        if (spawned == null)
+        {
+            Debug.LogError($"[WoodenCrate] Runner.Spawn failed. Is the prefab registered in NetworkProjectConfig? Prefab={prefab.name}");
+        }
     }
     
     // 손에서 놓기

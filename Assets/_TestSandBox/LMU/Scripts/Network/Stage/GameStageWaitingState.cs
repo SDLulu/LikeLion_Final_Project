@@ -56,9 +56,10 @@ public class GameStageWaitingState : BaseStateBehaviour
         if (Runner.IsServer)
         {
             await Awaitable.NextFrameAsync();
-            await Awaitable.WaitForSecondsAsync(1.5f);
             var firstStageData = DataManager.Inst.StageData.First().Value;
             NetEvent.TriggerStageLoadDoneEvent(firstStageData);
+
+            await Awaitable.WaitForSecondsAsync(5.0f);
             Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
         }
     }

@@ -48,6 +48,12 @@ public class UI_WorldPlayer : MonoBehaviour
 
     public async void OnSceneLoadDone(string sceneName)
     {
+        if (_ownerPlayerData == null || _ownerPlayerData.Object == null)
+            return;
+
+        if (_ownerPlayerData.Object.HasInputAuthority == false)
+            return;
+
         // 비동기로 로비버튼을 찾아서 초기화
         if (sceneName == GlobalSetting.Inst.LobbyScenePath)
         {
@@ -65,7 +71,25 @@ public class UI_WorldPlayer : MonoBehaviour
 
     public void OnReadyButtonClicked()
     {
-        _ownerPlayerData.RPC_ToggleReady(_ownerPlayerData.IsReady == false);
+        // 자신의 PlayerData만 찾아서 Ready 상태 변경
+        var myPlayerData = GetMyPlayerData();
+        if (myPlayerData != null && myPlayerData.Object.HasInputAuthority)
+        {
+            myPlayerData.RPC_ToggleReady(myPlayerData.IsReady == false);
+        }
+    }
+
+    private PlayerData GetMyPlayerData()
+    {
+        var allPlayers = PlayerManager.Inst.GetPlayerDatas();
+        foreach (var kvp in allPlayers)
+        {
+            if (kvp.Value.Object.HasInputAuthority)
+            {
+                return kvp.Value;
+            }
+        }
+        return null;
     }
 
     /// <summary>

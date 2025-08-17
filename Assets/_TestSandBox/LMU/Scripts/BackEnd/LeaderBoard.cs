@@ -11,8 +11,6 @@ public class LeaderBoard : BaseManager<LeaderBoard>
     {
         public int Rank;
         public string NickName;
-        public int SessionDurationSec;
-        public string Stage;
         public int TotalScore;
     }
 
@@ -97,16 +95,13 @@ public class LeaderBoard : BaseManager<LeaderBoard>
 
             // 내 정보는 첫 번째 항목
             var myInfo = userLeaderboardList[0];
-            var myEntry = ConvertToLeaderBoardEntry(myInfo);
+            var myEntry = ConvertToLeaderBoardEntry(myInfo, callback);
             
             Debug.Log($"<color=#00FF00>내 순위 조회 성공: {myEntry.Rank}등</color>");
             onCompleted?.Invoke(true, myEntry, callback);
         });
     }
 
-    /// <summary>
-    /// 1등부터 10등까지의 리더보드 순위를 조회
-    /// </summary>
     public void GetTop10RankingsAsync(string leaderboardUuid, Action<bool, List<LeaderBoardEntry>, BackendReturnObject> onCompleted)
     {
         if (string.IsNullOrEmpty(leaderboardUuid))
@@ -116,8 +111,9 @@ public class LeaderBoard : BaseManager<LeaderBoard>
             return;
         }
 
-        int limit = 10;  // 상위 10명
-        int offset = 0;  // 1등부터 시작
+        // 상위 10명 조회
+        int limit = 10;
+        int offset = 0;
 
         Backend.Leaderboard.User.GetLeaderboard(leaderboardUuid, limit, offset, callback =>
         {
@@ -139,7 +135,7 @@ public class LeaderBoard : BaseManager<LeaderBoard>
             List<LeaderBoardEntry> top10List = new List<LeaderBoardEntry>();
             foreach (var item in userLeaderboardList)
             {
-                var entry = ConvertToLeaderBoardEntry(item);
+                var entry = ConvertToLeaderBoardEntry(item, callback);
                 top10List.Add(entry);
             }
 
@@ -149,78 +145,57 @@ public class LeaderBoard : BaseManager<LeaderBoard>
     }
 
     /// <summary>
-    /// UserLeaderboardItem을 LeaderBoardEntry로 변환
+    /// UserLeaderboardItem을 LeaderBoardEntry로 변환하는 함수
     /// </summary>
-    private LeaderBoardEntry ConvertToLeaderBoardEntry(UserLeaderboardItem item)
+    private LeaderBoardEntry ConvertToLeaderBoardEntry(UserLeaderboardItem item, BackendReturnObject callback)
     {
         var entry = new LeaderBoardEntry();
         
-        // 기본 정보
         entry.Rank = int.Parse(item.rank);
-        entry.NickName = item.nickname;
+        
+        // 추가 정보에서 실제 클라이언트 닉네임을 가져오기
+        string actualNickName = GetActualNickNameFromExtra(item, callback);
+        entry.NickName = string.IsNullOrEmpty(actualNickName) ? item.nickname : actualNickName;
+        
         entry.TotalScore = int.Parse(item.score);
-        
-        // extraData 처리 - 뒤끝에서는 보통 JSON이 아닌 단순 값이 올 수 있음
-        if (string.IsNullOrEmpty(item.extraData) == false)
-        {
-            Debug.Log($"extraData 내용: '{item.extraData}'");
-            
-            // JSON 형태인지 확인 ('{' 로 시작하는지)
-            if (item.extraData.StartsWith("{"))
-            {
-                try
-                {
-                    var extraJson = LitJson.JsonMapper.ToObject(item.extraData);
-                    
-                    if (extraJson.ContainsKey("SessionDurationSec"))
-                    {
-                        entry.SessionDurationSec = int.Parse(extraJson["SessionDurationSec"].ToString());
-                    }
-                    
-                    if (extraJson.ContainsKey("Stage"))
-                    {
-                        entry.Stage = extraJson["Stage"].ToString();
-                    }
-                    else
-                    {
-                        entry.Stage = "Unknown";
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"extraData JSON 파싱 실패: {ex.Message}, 원본: '{item.extraData}'");
-                    SetDefaultExtraValues(entry);
-                }
-            }
-            else
-            {
-                // JSON이 아닌 경우 - extraData를 Stage로 사용하거나 기본값 설정
-                Debug.Log($"extraData가 JSON 형태가 아님: '{item.extraData}'");
-                entry.Stage = item.extraData; // extraData를 스테이지명으로 사용
-                entry.SessionDurationSec = 0;
-            }
-        }
-        else
-        {
-            SetDefaultExtraValues(entry);
-        }
-        
-        // extraName도 확인해보자 (추가 정보가 있을 수 있음)
-        if (string.IsNullOrEmpty(item.extraName) == false)
-        {
-            Debug.Log($"extraName 내용: '{item.extraName}'");
-        }
         
         return entry;
     }
-    
+
     /// <summary>
-    /// 기본 extraData 값 설정
+    /// 리더보드 아이템의 추가 정보에서 실제 닉네임을 추출
     /// </summary>
-    private void SetDefaultExtraValues(LeaderBoardEntry entry)
+    private string GetActualNickNameFromExtra(UserLeaderboardItem item, BackendReturnObject callback)
     {
-        entry.SessionDurationSec = 0;
-        entry.Stage = "Unknown";
+        try
+        {
+            var jsonData = callback.GetReturnValuetoJSON();
+            if (jsonData != null && jsonData["rows"] != null)
+            {
+                var rows = jsonData["rows"];
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var row = rows[i];
+                    // 같은 gamerInDate를 가진 항목 찾기 / 해당 행에서 NickName 필드 찾기
+                    if (row["gamerInDate"].ToString() == item.gamerInDate)
+                    {
+                        if (row.ContainsKey("NickName"))
+                        {
+                            string actualNickName = row["NickName"].ToString();
+                            return actualNickName;
+                        }
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"추가 정보에서 닉네임 추출 실패: {ex.Message}");
+        }
+
+        return string.Empty;
     }
+    
+
 
 }

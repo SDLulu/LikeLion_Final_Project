@@ -62,6 +62,9 @@ public class Gold : NetworkBehaviour
                 Destroy(effect, 2f); // 2초 후 효과 제거
             }
             
+            // 수집 소리와 이펙트 재생
+            RPC_PlayCollectFeedback(transform.position);
+            
             Debug.Log($"골드 {goldAmount}개를 수집했습니다! 현재 골드: {playerInventory.CurrentMoney}");
             var netObj = playerInventory.GetComponentInParent<NetworkObject>();
             if (netObj != null)
@@ -72,5 +75,13 @@ public class Gold : NetworkBehaviour
             // 골드 오브젝트 제거
             Runner.Despawn(Object);
         }
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayCollectFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("돈먹기", pos);
+        EffectManager.Inst.PlayEffect("돈이펙트", pos);
     }
 }
