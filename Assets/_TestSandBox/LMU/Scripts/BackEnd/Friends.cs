@@ -223,16 +223,62 @@ public class Friends : BaseManager<Friends>
     {
         try
         {
-            if (row != null && row[fieldName] != null && row[fieldName]["S"] != null)
+            if (row == null)
             {
-                return row[fieldName]["S"].ToString();
+                return defaultValue;
+            }
+
+            // row가 객체가 아닌 경우 직접 값을 문자열로 반환 시도
+            if (row.IsObject == false)
+            {
+                if (string.IsNullOrEmpty(fieldName))
+                {
+                    return row.ToString();
+                }
+                return defaultValue;
+            }
+
+            var valueNode = row[fieldName];
+            if (valueNode == null)
+            {
+                return defaultValue;
+            }
+
+            // 표준 문자열/숫자/불리언 형태 지원
+            if (valueNode.IsString || valueNode.IsInt || valueNode.IsLong || valueNode.IsDouble || valueNode.IsBoolean)
+            {
+                return valueNode.ToString();
+            }
+
+            // DynamoDB 스타일 { "S": "..." } 또는 { "N": "..." } 지원
+            if (valueNode.IsObject)
+            {
+                try
+                {
+                    var sNode = valueNode["S"];
+                    if (sNode != null)
+                    {
+                        return sNode.ToString();
+                    }
+                }
+                catch { }
+
+                try
+                {
+                    var nNode = valueNode["N"];
+                    if (nNode != null)
+                    {
+                        return nNode.ToString();
+                    }
+                }
+                catch { }
             }
         }
         catch (System.Exception ex)
         {
             Debug.LogWarning($"DynamoDB 필드 '{fieldName}' 파싱 실패: {ex.Message}");
         }
-        
+
         return defaultValue;
     }
 

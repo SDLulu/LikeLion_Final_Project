@@ -24,10 +24,10 @@ public class UI_StageProgress2 : MonoBehaviour
 
         if (_showSessionTime)
         {
-            _sessionTimeText.text = string.Format("{0:00}:{1:00}", sessionMinutes, sessionSeconds);
+            _sessionTimeText.text = "전체 플레이 타임 : " + string.Format("{0:00}:{1:00}", sessionMinutes, sessionSeconds);
         }
-        _stagePlayingTimeText.text = string.Format("{0:00}:{1:00}", stageMinutes, stageSeconds);
-        _curStageText.text = currentStageId;
+        _stagePlayingTimeText.text = "클리어 타임 : " + string.Format("{0:00}:{1:00}", stageMinutes, stageSeconds);
+        _curStageText.text = "스테이지 : " + currentStageId;
     }
 
     public void UpdateScoreData(int monsterKillCount, int itemCollectCount)
