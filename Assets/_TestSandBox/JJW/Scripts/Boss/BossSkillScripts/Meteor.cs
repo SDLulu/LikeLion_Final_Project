@@ -1,6 +1,6 @@
 using UnityEngine;
 using Fusion;
-public class Meteor : BossSkillBState
+public class Meteor : BossSkillBState, IAnimationTriggerReceiver
 {
     [Header("Animation")]
     [SerializeField] private string attackAnimStateName; // 메테오 시전 시 재생할 애니메이션
@@ -19,6 +19,9 @@ public class Meteor : BossSkillBState
     [Networked] private int meteorsSpawned { get; set; }
     [Networked] private TickTimer spawnTimer { get; set; }
 
+    [Networked] private bool startMeteor { get; set;}
+
+
     // 상태에 처음 진입했을 때
     protected override void OnEnterState()
     {
@@ -26,6 +29,7 @@ public class Meteor : BossSkillBState
         if (Object.HasStateAuthority)
         {
             meteorsSpawned = 0;
+            startMeteor = false;
             // 첫 메테오가 바로 떨어지도록 타이머를 즉시 만료시킵니다.
             spawnTimer = TickTimer.CreateFromSeconds(Runner, 0);
         }
@@ -36,11 +40,21 @@ public class Meteor : BossSkillBState
     {
         anim.CrossFadeInFixedTime(attackAnimStateName, animTransitionLength);
     }
-
+    public void OnAnimationEvent(string eventName)
+    {
+        if (!Object.HasStateAuthority) return;
+        switch (eventName)
+        {
+            case "MeteorSpawn":
+                startMeteor = true;
+                anim.CrossFadeInFixedTime("Idle", animTransitionLength);
+                break;
+        }
+    }
     // 물리 프레임마다 호출
     protected override void OnFixedUpdate()
     {
-        if (!Object.HasStateAuthority) return;
+        if (!Object.HasStateAuthority || startMeteor == false) return;
 
         // 정해진 수의 메테오를 모두 소환했다면, 스킬을 종료하고 Idle 상태로 돌아갑니다.
         if (meteorsSpawned >= numberOfMeteors)
