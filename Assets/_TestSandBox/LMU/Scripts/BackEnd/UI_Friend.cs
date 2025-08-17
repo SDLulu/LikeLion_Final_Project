@@ -10,6 +10,8 @@ public class UI_Friend : MonoBehaviour
     [SerializeField] private List<UI_PanelEdgeTransition> _panelTransitions;
     [SerializeField] private InputField _inputField;
     [SerializeField] private Button _sendButton;
+    [SerializeField] private UI_FriendSlotContainer _friendSlotContainer;
+    [SerializeField] private Button _allAcceptButton;
 
     private bool _isRequestInProgress = false;
 
@@ -25,6 +27,7 @@ public class UI_Friend : MonoBehaviour
 
         _inputField.onValueChanged.AddListener(OnInputValueChanged);
         _sendButton.onClick.AddListener(OnSendButtonClicked);
+        _allAcceptButton.onClick.AddListener(OnAllAcceptButtonClicked);
 
         // 초기 상태 설정
         _sendButton.interactable = false;
@@ -34,6 +37,7 @@ public class UI_Friend : MonoBehaviour
     {
         _inputField.onValueChanged.RemoveAllListeners();
         _sendButton.onClick.RemoveAllListeners();
+        _allAcceptButton.onClick.RemoveAllListeners();
     }
 
     /// <summary>
@@ -107,6 +111,32 @@ public class UI_Friend : MonoBehaviour
                 Debug.LogError($"친구 요청 실패: {error}");
                 _isRequestInProgress = false;
                 _sendButton.interactable = !string.IsNullOrEmpty(_inputField.text.Trim());
+            }
+        );
+    }
+
+    private void OnAllAcceptButtonClicked()
+    {
+        if (_isRequestInProgress)
+        {
+            Debug.Log("다른 요청이 진행 중입니다.");
+            return;
+        }
+
+        _isRequestInProgress = true;
+        Friends.Inst.AcceptAllFriendRequests(
+            onSuccess: (acceptedCount) =>
+            {
+                Debug.Log($"<color=green>친구 요청 수락 완료: {acceptedCount}명</color>");
+                _isRequestInProgress = false;
+                
+                _friendSlotContainer.UpdateFriendForm();
+                _friendSlotContainer.UpdateResponseForm();
+            },
+            onFail: (error) =>
+            {
+                Debug.LogError($"친구 요청 수락 실패: {error}");
+                _isRequestInProgress = false;
             }
         );
     }
