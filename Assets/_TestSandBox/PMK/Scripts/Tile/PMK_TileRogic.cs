@@ -337,6 +337,16 @@ public partial class PMK_TileRogic : NetworkBehaviour
             {
                 randomIndex = Random.Range(0, prefabs.Length);
             }
+            // 안전 가드: 프리팹 배열이 비었거나 인덱스가 범위를 벗어나면 처리
+            if (prefabs == null || prefabs.Length == 0)
+            {
+                Debug.LogWarning($"'{mapType}' 타입의 맵 프리팹이 없습니다.");
+                return;
+            }
+            if (randomIndex < 0 || randomIndex >= prefabs.Length)
+            {
+                randomIndex = Mathf.Clamp(randomIndex, 0, prefabs.Length - 1);
+            }
 
             // 바로 useMapXY를 먼저 true로 바꿔야 함 (설치 예정 상태로 표시)
             Vector2 pos = new Vector2(spawnXpos, spawnYpos);
@@ -371,6 +381,18 @@ public partial class PMK_TileRogic : NetworkBehaviour
 
         if (mapPrefabDict.TryGetValue(mapType, out GameObject[] prefabs))
         {
+            if (prefabs == null || prefabs.Length == 0)
+            {
+                Debug.LogWarning($"'{mapType}' 타입의 맵 프리팹이 없습니다.");
+                isCreatingMap = false;
+                yield break;
+            }
+            if (randomIndex < 0 || randomIndex >= prefabs.Length)
+            {
+                Debug.LogError($"맵 타입 '{mapType}' 인덱스 {randomIndex}가 범위를 벗어남 (0~{prefabs.Length - 1})");
+                isCreatingMap = false;
+                yield break;
+            }
             GameObject mapPrefab = prefabs[randomIndex];
             Transform[] children = mapPrefab.transform.Cast<Transform>().ToArray(); // 자식들 복사
 
@@ -724,7 +746,12 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #region 빈 공간에 특별한 맵 생성
     private void Create_Special_Map(int Percent)
     {
-        int Map_Number = Random.Range(0, mapPrefabDict["S"].Length); // 특별한 맵의 인덱스 
+        if (mapPrefabDict == null || !mapPrefabDict.TryGetValue("S", out var specialPrefabs) || specialPrefabs == null || specialPrefabs.Length == 0)
+        {
+            Debug.LogWarning("특별 맵('S') 프리팹이 없어서 생성하지 않습니다.");
+            return;
+        }
+        int Map_Number = Random.Range(0, specialPrefabs.Length); // 특별한 맵의 인덱스 
         if (Random.Range(0, 100) < Percent)
         {
             const int maxAttempts = 100; // 최대 시도 횟수 (무한 루프 방지용)
