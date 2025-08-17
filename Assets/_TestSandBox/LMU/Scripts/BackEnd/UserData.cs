@@ -5,14 +5,15 @@ using UnityEngine;
 
 public class PlayerSessionRecord
 {
-	public string NickName = Backend.UserNickName;
+	public string NickName = string.Empty; // 기본값을 빈 문자열로 변경
 	public int SessionDurationSec;
 	public string Stage;
 	public int TotalScore;
 	public string InDate; // 리더보드 업데이트에 필요한 inDate 정보
 
-	public PlayerSessionRecord()
+	public PlayerSessionRecord(string nickName)
 	{
+		NickName = nickName;
 	}
 
 	public PlayerSessionRecord(LitJson.JsonData json)

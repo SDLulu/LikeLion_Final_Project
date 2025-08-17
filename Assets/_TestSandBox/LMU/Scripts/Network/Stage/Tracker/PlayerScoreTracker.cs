@@ -109,7 +109,7 @@ public class PlayerScoreTracker : NetworkBehaviour
     {
 		AddMonsterScore(killer, 1);
         int currentKillScore = GetMonsterScore(killer);
-        Debug.Log($"<color=#FF6600>[PlayerScoreTracker] 적 처치 - Player: {killer}, 현재 킬 점수: {currentKillScore}</color>");
+        Debug.Log($"적 처치 - Player: {killer}, 현재 킬 점수: {currentKillScore}</color>");
         NetworkEventSystem.Inst.TriggerScoreChanged(killer);
     }
 
@@ -117,7 +117,7 @@ public class PlayerScoreTracker : NetworkBehaviour
     {
 		AddItemScore(player, 1);
         int currentItemScore = GetItemScore(player);
-        Debug.Log($"<color=#66FF00>[PlayerScoreTracker] 아이템 수집 - Player: {player}, 현재 아이템 점수: {currentItemScore}</color>");
+        Debug.Log($"아이템 수집 - Player: {player}, 현재 아이템 점수: {currentItemScore}");
         NetworkEventSystem.Inst.TriggerScoreChanged(player);
     }
 
