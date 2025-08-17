@@ -6,11 +6,6 @@ using UnityEngine;
 
 public class CutSceneController : MonoBehaviour
 {
-    private void OnValidate()
-    {
-        if (UICutSceneResult != null)
-            UICutSceneResult.gameObject.SetActive(false);
-    }
     [Header("인스펙터 참조")]
     [field: SerializeField] public UI_CutSceneResult UICutSceneResult { get; private set; }
     [field: SerializeField] public Transform StartPoint { get; private set; }
@@ -20,8 +15,8 @@ public class CutSceneController : MonoBehaviour
     public Vector3 GetStartPos() => StartPoint.position;
     public Vector3 GetEndPos() => EndPoint.position;
 
-    private List<Tween> cutTweens = new();
-    private List<GameObject> cutPlayers = new();
+    private List<Tween> _cutTweens = new();
+    private List<GameObject> _cutPlayers = new();
 
     private void Awake()
     {
@@ -32,7 +27,6 @@ public class CutSceneController : MonoBehaviour
 
     public void FocusCutSceneCamera()
     {
-        Debug.Log("FocusCutSceneCamera - FocusCutSceneCamera - FocusCutSceneCamera");
         CutSceneCamera.Priority = 100;
     }
 
@@ -62,26 +56,31 @@ public class CutSceneController : MonoBehaviour
         for(int i = 0; i < playerCount; i++)
         {
             var obj = Instantiate(cutsPlayerPrefab);
-            cutPlayers.Add(obj);
+            _cutPlayers.Add(obj);
             obj.transform.position = StartPoint.position;
             var tween = obj.transform.DOMove(EndPoint.position, cutDuration);
-            cutTweens.Add(tween);
+            _cutTweens.Add(tween);
             await Awaitable.WaitForSecondsAsync(intervalSeconds);
         }
 
         await Awaitable.WaitForSecondsAsync(cutDuration);
 
         CutTweenClear();
-        foreach (var player in cutPlayers)
+        foreach (var player in _cutPlayers)
             GameObject.Destroy(player);
 
         await Awaitable.NextFrameAsync();
 
         void CutTweenClear()
         {
-            foreach (var tween in cutTweens)
+            foreach (var tween in _cutTweens)
                 tween.Kill();
-            cutTweens.Clear();
+            _cutTweens.Clear();
         }
+    }
+
+    public async Awaitable WaitForInputResponse()
+    {
+        await UICutSceneResult.WaitForInputResponse(null);
     }
 }

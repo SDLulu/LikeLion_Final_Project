@@ -1,39 +1,19 @@
 using System;
-using System.Reflection;
 using BackEnd;
-using LitJson;
 using LMCore;
 using UnityEngine;
 
 public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
-
-
-
-    [field: SerializeField] public string LeaderboardUUID { get; private set; } = "0198a6bc-a05b-704f-ac2c-6aa44dbe42d3";
-
-    [ContextMenu("로컬 뒤끝 정보 삭제")]
-    public void DeleteLocalBackend()
-    {
-        bool ret = InitBackend();
-        if (ret == false)
-            return;
-
-        Backend.BMember.WithdrawAccount(callback =>
-        {
-            if (callback.IsSuccess())
-            {
-                Debug.Log("회원 탈퇴 성공! 모든 데이터가 삭제되었습니다.");
-                Debug.Log("로컬 뒤끝 정보 삭제");
-                Backend.BMember.DeleteGuestInfo();
-                Quit();
-            }
-            else
-            {
-                Debug.LogError($"회원 탈퇴 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
-            }
-        });
-    }
+    // 리더보드 식별 UUID, 공개용이라 여기 적어도 상관없음 
+    public string LeaderboardUUID { get; private set; } = "0198b525-b443-762b-9392-e9298dc577e3";
+    
+    // 유저 데이터가 기록되는 테이블 이름
+    public string TABLE_NAME { get; private set; } = "PlayerSession2";
+    public static string FakeNickName { get; set; }
+    public static bool IsFakeClient { get; private set; } = false;
+    public static string NickName { get; private set; } = "백앤드는 아직 테스트중";
+    private AwaitableCompletionSource<bool> _createNickNameTCS;
 
     public async void CompleteCreateNickName()
     {
@@ -50,6 +30,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             onSuccess: () =>
             {
                 Debug.Log("닉네임 업데이트 성공");
+                GameInviteManager.Inst.ConnectNotification();
                 CompleteCreateNickName();
             },
             onFail: () =>
@@ -57,11 +38,10 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             });
     }
 
-    public static FakeClient.Data FakeNickNameData { get; private set; }
-    public static bool IsFakeClient { get; private set; } = false;
-    public static string NickName { get; private set; } = "백앤드는 아직 테스트중";
 
-    private AwaitableCompletionSource<bool> _createNickNameTCS;
+    /// <summary>
+    /// 게스트 로그인을 시도하는 함수, 로컬 장치의 고유식별자가 id로 사용
+    /// </summary>
     public async Awaitable LoginGuest()
     {
         if (GlobalSetting.Inst.IsEnableBackend == false)
@@ -100,9 +80,10 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                 // 로그인후 닉네임을 로드
                 else if (callback.IsSuccess() && callback.GetStatusCode() == "200")
                 {
-                    Debug.Log("이미 회원가입된 게스트 로그인");
                     await Fader.Inst.HideLoadingAsync();
                     await LoadNickname();
+                    GameInviteManager.Inst.ConnectNotification();
+                    Debug.Log($"이미 회원가입된 게스트 로그인 - <color=green>{NickName}</color>");
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
                     return;
@@ -123,7 +104,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                     await Fader.Inst.HideLoadingAsync();
                     loginTCS.TrySetResult(false);
                     this._createNickNameTCS.TrySetResult(false);
-                    FakeNickNameData = DataManager.Inst.GetRandomFakeClientData();
+                    FakeNickName = DataManager.Inst.GetRandomFakeClientData().NickName;
                     IsFakeClient = true;
                     return;
                 }
@@ -166,36 +147,6 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
         }
     }
 
-    public void SubmitStageRunRecord(
-        string stageId,
-        double elapsedSeconds,
-        string endReason,
-        System.Action onSuccess = null,
-        System.Action<string, string> onFail = null)
-    {
-        if (GlobalSetting.Inst.IsEnableBackend == false)
-        {
-            onSuccess?.Invoke();
-            return;
-        }
-
-        bool initOk = InitBackend();
-        if (initOk == false)
-        {
-            onFail?.Invoke("InitFailed", "뒤끝 초기화 실패");
-            return;
-        }
-
-        try
-        {
-            onSuccess?.Invoke();
-        }
-        catch (System.Exception e)
-        {
-            onFail?.Invoke("Exception", e.Message);
-        }
-    }
-
     /// <summary>
     /// 뒤끝 닉네임 업데이트 함수
     /// </summary>
@@ -218,19 +169,32 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 
     public async Awaitable<bool> LoadNickname()
     {
+        bool ret = InitBackend();
+        if (ret == false)
+            return false;
+
         var loadNicknameTCS = new AwaitableCompletionSource<bool>();
         Backend.BMember.GetUserInfo(callback =>
         {
-            if (callback.IsSuccess())
+            try
             {
-                LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
-                string nickname = json["nickname"].ToString();
-                NickName = nickname;
-                loadNicknameTCS.TrySetResult(true);
+                if (callback.IsSuccess())
+                {
+                    Debug.Log("유저 정보 로드 성공");
+                    LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
+                    string nickname = json["nickname"].ToString();
+                    NickName = nickname;
+                    loadNicknameTCS.TrySetResult(true);
+                }
+                else
+                {
+                    Debug.LogError($"유저 정보 로드 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                    loadNicknameTCS.TrySetResult(false);
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                Debug.LogError($"유저 정보 로드 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                Debug.LogError($"유저 정보 로드 실패 : {ex.Message}");
                 loadNicknameTCS.TrySetResult(false);
             }
         });
@@ -238,6 +202,34 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
         bool result = await loadNicknameTCS.Awaitable;
         return result;
     }
+
+    
+    /// <summary>
+    /// 회원탈퇴 함수
+    /// </summary>
+    [ContextMenu("로컬 뒤끝 정보 삭제")]
+    public void DeleteLocalBackend()
+    {
+        bool ret = InitBackend();
+        if (ret == false)
+            return;
+
+        Backend.BMember.WithdrawAccount(callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                Debug.Log("회원 탈퇴 성공! 모든 데이터가 삭제되었습니다.");
+                Debug.Log("로컬 뒤끝 정보 삭제");
+                Backend.BMember.DeleteGuestInfo();
+                Quit();
+            }
+            else
+            {
+                Debug.LogError($"회원 탈퇴 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+            }
+        });
+    }
+
 
 
     private void Quit()

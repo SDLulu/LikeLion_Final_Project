@@ -7,7 +7,7 @@ using UnityEngine;
 public class ExplosionCollisionHandler : NetworkBehaviour
 {
 	[Header("Explosion Attack Settings")]
-	[SerializeField] private int explosionDamage = 2;
+	[SerializeField] private int explosionDamage = 5;
 	[SerializeField] private float explosionKnockbackForce = 8f;
 	[SerializeField] private float explosionKnockbackDuration = 0.4f;
 	[SerializeField] private float activeWindowSeconds = 0.05f; // 한 틱~두 틱 정도
@@ -88,6 +88,12 @@ public class ExplosionCollisionHandler : NetworkBehaviour
 		if (itemInteraction != null)
 		{
 			ApplyKnockbackOnly(other, itemInteraction);
+            // 아이템도 데미지를 받을 수 있다면 체력 감소 처리 (폭발 데미지)
+            var damageable = target.GetComponentInParent<IDamageable>();
+            if (damageable != null)
+            {
+                damageable.TakeDamage(explosionDamage);
+            }
 		}
 	}
 

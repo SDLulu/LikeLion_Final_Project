@@ -23,6 +23,8 @@ public class GhostBreathController : NetworkBehaviour
     
     public override void Spawned()
     {
+        // 네트워크 시뮬레이션 활성화
+        Runner.SetIsSimulated(Object, true);
         breathTransform = transform;
         initialScale = breathTransform.localScale;
         breathRigidbody = GetComponent<Rigidbody2D>();
@@ -41,6 +43,9 @@ public class GhostBreathController : NetworkBehaviour
         lifeTimer = TickTimer.CreateFromSeconds(Runner, lifeDuration);
         
         // 회전은 PlayerGhostController에서 이미 설정됨
+        
+        // 유령 입김 소리 재생
+        RPC_PlayBreathSound();
         
         Debug.Log($"[{name}] 입김 초기화: 방향={direction}, 속도={speed}, 지속시간={lifeDuration}");
     }
@@ -101,6 +106,8 @@ public class GhostBreathController : NetworkBehaviour
         {
             // 넉백 적용 (데미지는 없음)
             playerInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
+            // 타격 소리 재생
+            RPC_PlayHitSound(other.transform.position);
             Debug.Log($"[{name}] {other.name}에게 넉백 적용: {knockbackForceVector}, 지속시간: {knockbackDuration}");
         }
         
@@ -109,7 +116,24 @@ public class GhostBreathController : NetworkBehaviour
         if (itemInteraction != null)
         {
             itemInteraction.ApplyKnockback(knockbackForceVector, knockbackDuration);
+            // 타격 소리 재생
+            RPC_PlayHitSound(other.transform.position);
             Debug.Log($"[{name}] {other.name} 아이템에게 넉백 적용: {knockbackForceVector}, 지속시간: {knockbackDuration}");
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayBreathSound()
+    {
+        // 유령 입김 소리 재생
+        AudioManager.Inst.PlaySound("유령입김", transform.position);
+    }
+    
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayHitSound(Vector3 hitPosition)
+    {
+        // 타격 소리 재생
+        AudioManager.Inst.PlaySound("충돌", hitPosition);
     }
 } 

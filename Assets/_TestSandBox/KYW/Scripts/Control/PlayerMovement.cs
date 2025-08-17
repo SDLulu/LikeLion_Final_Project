@@ -3,7 +3,7 @@ using UnityEngine;
 
 // 🏃 플레이어 이동 컴포넌트
 // 좌우 이동, 덕킹 담당 (순수 로직만)
-public class PlayerMovement : NetworkBehaviour
+public class PlayerMovement : NetworkBehaviour, ISoftReset
 {
     [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
@@ -158,6 +158,24 @@ public class PlayerMovement : NetworkBehaviour
         if (input.HorizontalInput != 0)
         {
             IsFacingLeft = input.HorizontalInput < 0;
+        }
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 이동/방향/입력 상태 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        IsDucking = false;
+        IsLookingUp = false;
+        NormalizedSpeed = 0f;
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
         }
     }
 } 

@@ -2,12 +2,14 @@ using Fusion;
 using UnityEngine;
 
 // 🛑 플레이어 스턴, 무적, 들림 상태 관리 컴포넌트
-public class PlayerStunInvincibleDie : NetworkBehaviour
+public class PlayerStunInvincibleDie : NetworkBehaviour, ISoftReset
 {
     // 🕐 타이머들 (실제 로직 처리용)
     [Networked] private TickTimer StunTimer { get; set; }
     [Networked] private TickTimer InvincibleTimer { get; set; }
     [Networked] private TickTimer ThrownTimer { get; set; }
+    [Networked] private TickTimer StunNoAnimationTimer { get; set; } // 애니메이션 없는 스턴 타이머
+    [Networked] private TickTimer StunDeadAnimationTimer { get; set; } // 죽음 애니메이션 스턴 타이머
     
     // 🛑 상태 관련 네트워크 프로퍼티들
     [Networked] public bool IsStunned { get; private set; }
@@ -15,10 +17,31 @@ public class PlayerStunInvincibleDie : NetworkBehaviour
     [Networked] public bool IsHeld { get; private set; } // 들림 상태 추가
     [Networked] public bool IsThrown { get; private set; } // 던진 상태 추가
     [Networked] public bool IsDead { get; private set; } // 죽음 상태 (외부 참조용)
+    [Networked] public bool IsStunnedNoAnimation { get; private set; } // 애니메이션 없는 스턴
+    [Networked] public bool IsStunnedDeadAnimation { get; private set; } // 죽음 애니메이션 스턴
 
     public override void Spawned()
     {
         Debug.Log($"🛑 PlayerStunInvincibleDie 초기화 완료!");
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 스턴/무적/들림/던짐/죽음 상태 및 타이머 초기화
+    /// </summary>
+    public void SoftReset()
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        IsStunned = false;
+        IsInvincible = false;
+        IsHeld = false;
+        IsThrown = false;
+        IsDead = false;
+        StunTimer = TickTimer.None;
+        InvincibleTimer = TickTimer.None;
+        ThrownTimer = TickTimer.None;
     }
 
     public override void FixedUpdateNetwork()

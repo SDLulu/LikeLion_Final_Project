@@ -47,7 +47,14 @@ public class UI_Title : MonoBehaviour
 
     public void ActiveBackButton(bool active)
     {
-        _backButton.gameObject.SetActive(active);
+        if (active)
+        {
+            _backButton.gameObject.SetActive(true);
+        }
+        else
+        {
+            _backButton.Hide();
+        }
     }
 
     public void ShowTitle()
@@ -72,11 +79,12 @@ public class UI_Title : MonoBehaviour
     private async void OnClickSoloPlayBtn()
     {
         UIGlobalSetting?.ActiveUI(false);
+        string roomName = $"SoloTestMode - {BackEndWorkFlow.NickName}";
         _preventPanel.gameObject.SetActive(true);
         await LobbyManager.Inst.JoinOrCreateLobby(
             isSoloPlay: true,
             mode: GameMode.AutoHostOrClient,
-            roomName: "TestRoom",
+            roomName: roomName,
             OnEnterLobby: () =>
             {
                 LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();

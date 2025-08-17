@@ -6,7 +6,7 @@ using System.Collections;
 // 아이템 감지 및 줍기 담당 컴포넌트
 // 📍 위치: Hand 하위 오브젝트 (Player > Hand > PlayerItemPickup)
 // 🎯 목적: CircleCollider2D로 주변 아이템 감지 + Space+웅크리기로 픽업
-public class PlayerObjectPickup : NetworkBehaviour
+public class PlayerObjectPickup : NetworkBehaviour, ISoftReset
 {
     [Header("Pickup Settings")]
     [SerializeField] private LayerMask pickupLayerMask = -1;      // 🎛️ 인식할 레이어들
@@ -187,6 +187,10 @@ public class PlayerObjectPickup : NetworkBehaviour
         }
 
         DisableItemPhysics(obj);
+        
+        // 아이템 들기 소리 재생
+        RPC_PlayPickupSound();
+        
         Debug.Log($"[PlayerObjectPickup] FinalizePickup 완료: {obj.name} (isCharacter:{isCharacter})");
         return true;
     }
@@ -272,5 +276,22 @@ public class PlayerObjectPickup : NetworkBehaviour
             nearbyObjects.Remove(other.gameObject);
             Debug.Log($"[PlayerObjectPickup] 트리거 이탈: {other.gameObject.name} 제거됨");
         }
+    }
+
+    /// <summary>
+    /// ISoftReset 구현: 입력/근접 목록 초기화 및 손에 든 오브젝트는 유지(인벤토리 리셋이 담당)
+    /// </summary>
+    public void SoftReset()
+    {
+        ButtonsPrevious = default;
+        nearbyObjects.Clear();
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayPickupSound()
+    {
+        // 아이템 들기 소리 재생
+        AudioManager.Inst.PlaySound("들기", transform.position);
     }
 }
