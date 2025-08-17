@@ -8,10 +8,8 @@ public class PlayerSessionRecord
 	public string NickName = Backend.UserNickName;
 	public int SessionDurationSec;
 	public string Stage;
-	public int ItemScore;
-	public int KillScore;
-
-	public int TotalScore => ItemScore + KillScore;
+	public int TotalScore;
+	public string InDate; // 리더보드 업데이트에 필요한 inDate 정보
 
 	public PlayerSessionRecord()
 	{
@@ -22,8 +20,7 @@ public class PlayerSessionRecord
 		NickName = json["NickName"].ToString();
 		SessionDurationSec = int.Parse(json["SessionDurationSec"].ToString());
 		Stage = json["Stage"].ToString();
-		ItemScore = int.Parse(json["ItemScore"].ToString());
-		KillScore = int.Parse(json["KillScore"].ToString());
+		TotalScore = int.Parse(json["TotalScore"].ToString());
 	}
 
 	/// <summary>
@@ -36,8 +33,6 @@ public class PlayerSessionRecord
 		param.Add("NickName", NickName);
 		param.Add("SessionDurationSec", SessionDurationSec);
 		param.Add("Stage", Stage);
-		param.Add("ItemScore", ItemScore);
-		param.Add("KillScore", KillScore);
 		param.Add("TotalScore", TotalScore);
 
 		return param;
@@ -48,8 +43,6 @@ public class PlayerSessionRecord
 		return $"NickName : {NickName}\n" +
 			$"SessionDurationSec : {SessionDurationSec}\n" +
 			$"Stage : {Stage}\n" +
-			$"ItemScore : {ItemScore}\n" +
-			$"KillScore : {KillScore}\n" +
 			$"TotalScore : {TotalScore}";
 	}
 }
@@ -155,8 +148,6 @@ public static class UserData
 		Param param = new Param();
 		param.Add("SessionDurationSec", record.SessionDurationSec);
 		param.Add("Stage", record.Stage);
-		param.Add("ItemScore", record.ItemScore);
-		param.Add("KillScore", record.KillScore);
 		param.Add("TotalScore", record.TotalScore);
 		return param;
 	}
@@ -226,6 +217,72 @@ public static class UserData
 			}
 
 			onCompleted?.Invoke(callback);
+		});
+	}
+
+	/// <summary>
+	/// 특정 닉네임의 최고 점수 기록을 조회합니다.
+	/// </summary>
+	public static void GetBestScoreByNickNameAsync(string tableName, string nickName, Action<bool, PlayerSessionRecord, BackendReturnObject> onCompleted)
+	{
+		if (string.IsNullOrEmpty(tableName))
+		{
+			onCompleted?.Invoke(false, null, null);
+			return;
+		}
+
+		if (string.IsNullOrEmpty(nickName))
+		{
+			onCompleted?.Invoke(false, null, null);
+			return;
+		}
+
+		// 닉네임으로 필터링하여 전체 기록을 가져온 후 클라이언트에서 최고점수 선택
+		Where where = new Where();
+		where.Equal("NickName", nickName);
+
+		Backend.GameData.Get(tableName, where, callback =>
+		{
+			if (callback.IsSuccess() == false)
+			{
+				Debug.LogError($"닉네임별 최고 점수 조회 실패: {callback}");
+				onCompleted?.Invoke(false, null, callback);
+				return;
+			}
+
+			LitJson.JsonData rows = callback.GetFlattenJSON()["rows"];
+			if (rows == null || rows.Count == 0)
+			{
+				Debug.Log($"닉네임 '{nickName}'의 기록이 존재하지 않습니다.");
+				onCompleted?.Invoke(false, null, callback);
+				return;
+			}
+
+			// 클라이언트에서 최고 점수 찾기
+			PlayerSessionRecord bestRecord = null;
+			int maxScore = -1;
+			
+			for (int i = 0; i < rows.Count; i++)
+			{
+				PlayerSessionRecord currentRecord = new PlayerSessionRecord(rows[i]);
+				if (currentRecord.TotalScore > maxScore)
+				{
+					maxScore = currentRecord.TotalScore;
+					bestRecord = currentRecord;
+					bestRecord.InDate = rows[i]["inDate"]?.ToString();
+				}
+			}
+
+			if (bestRecord != null)
+			{
+				Debug.Log($"{nickName}의 최고 점수: {bestRecord.TotalScore} (총 {rows.Count}개 기록 중)");
+				onCompleted?.Invoke(true, bestRecord, callback);
+			}
+			else
+			{
+				Debug.LogError($"{nickName}의 최고 점수를 찾을 수 없습니다.");
+				onCompleted?.Invoke(false, null, callback);
+			}
 		});
 	}
 }

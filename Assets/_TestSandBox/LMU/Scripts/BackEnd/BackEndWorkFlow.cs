@@ -6,10 +6,10 @@ using UnityEngine;
 public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
     // 리더보드 식별 UUID, 공개용이라 여기 적어도 상관없음 
-    public string LeaderboardUUID { get; private set; } = "0198a6e4-2200-78b8-8076-c8328bad9975";
+    public string LeaderboardUUID { get; private set; } = "0198b525-b443-762b-9392-e9298dc577e3";
     
     // 유저 데이터가 기록되는 테이블 이름
-    public string TABLE_NAME { get; private set; } = "PlayerSession";
+    public string TABLE_NAME { get; private set; } = "PlayerSession2";
     public static FakeClient.Data FakeNickNameData { get; private set; }
     public static bool IsFakeClient { get; private set; } = false;
     public static string NickName { get; private set; } = "백앤드는 아직 테스트중";

@@ -3,13 +3,11 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UI_LeaderBoardSlot : MonoBehaviour
+public class UI_RankSlot : MonoBehaviour
 {
 	[Header("인스펙터 참조")]
 	[SerializeField] private TMP_Text _rankText;
 	[SerializeField] private TMP_Text _nickNameText;
-	[SerializeField] private TMP_Text _sessionSecText;
-	[SerializeField] private TMP_Text _stageText;
 	[SerializeField] private TMP_Text _totalScoreText;
 	[SerializeField] private Image _rankImage;
 
@@ -18,12 +16,10 @@ public class UI_LeaderBoardSlot : MonoBehaviour
 		SetColorByRank(4);
 	}
 
-	public void UpdateSlot(int rank, string nickName, int sessionDurationSec, string stage, int totalScore)
+	public void UpdateSlot(int rank, string nickName, int totalScore)
 	{
 		SetText(_rankText, rank.ToString());
 		SetText(_nickNameText, nickName);
-		SetText(_sessionSecText, sessionDurationSec.ToString());
-		SetText(_stageText, stage);
 		SetText(_totalScoreText, totalScore.ToString());
 		
 		// 랭킹에 따라 색상 자동 설정
@@ -34,8 +30,6 @@ public class UI_LeaderBoardSlot : MonoBehaviour
 	{
 		SetText(_rankText, string.Empty);
 		SetText(_nickNameText, string.Empty);
-		SetText(_sessionSecText, string.Empty);
-		SetText(_stageText, string.Empty);
 		SetText(_totalScoreText, string.Empty);
 	}
 
