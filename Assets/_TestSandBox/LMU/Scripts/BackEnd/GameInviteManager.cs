@@ -37,12 +37,10 @@ public class GameInviteManager : BaseManager<GameInviteManager>
 			return;
 		}
 		
-		Debug.Log("<color=yellow>뒤끝 메시지 확인 시작...</color>");
-		
 		_isNotificationConnected = true;
 		
 		_ = CheckMessagesRoutine();
-		Debug.Log("<color=green>뒤끝 메시지 확인 시작 완료!</color>");
+		Debug.Log($"뒤끝 메시지 확인 시작 완료 - {_messageCheckInterval}초 마다 확인");
 	}
 	
 	/// <summary>
