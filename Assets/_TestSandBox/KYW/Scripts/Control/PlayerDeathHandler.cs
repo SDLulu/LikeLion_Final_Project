@@ -11,14 +11,14 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
     [SerializeField] public Vector3 deathPosition = new Vector3(0, 10, 0); // 플레이어가 이동할 죽음 위치
     [SerializeField] public NetworkPrefabRef corpsePrefabRef = NetworkPrefabRef.Empty; // 시체 프리팹 참조
     [SerializeField] public NetworkPrefabRef ghostPrefabRef = NetworkPrefabRef.Empty; // 유령 프리팹 참조
-    
+
     [Header("💰 아이템 드롭 설정")]
     [SerializeField] public float dropForce = 5f; // 아이템 드롭 시 힘
     [SerializeField] public float dropRadius = 2f; // 드롭 반경
-    
+
     [Header("🛡️ 부활 무적 설정")]
     [SerializeField] public float respawnInvincibleSeconds = 0.5f; // 부활 직후 무적 시간
-    
+
     [Header("🧩 패시브 아이템 드롭 프리팹")]
     [SerializeField] private NetworkPrefabRef rocketPrefabRef = NetworkPrefabRef.Empty;
     [SerializeField] private NetworkPrefabRef wingsPrefabRef = NetworkPrefabRef.Empty;
@@ -32,24 +32,24 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
     [SerializeField] private NetworkPrefabRef coin1000PrefabRef = NetworkPrefabRef.Empty;
     [SerializeField] private NetworkPrefabRef coin500PrefabRef = NetworkPrefabRef.Empty;
     [SerializeField] private NetworkPrefabRef coin100PrefabRef = NetworkPrefabRef.Empty;
-    
+
     // 💀 죽음 처리 관련 변수들
     [Networked] public bool IsDead { get; private set; } // 죽음 상태
     [Networked] public Vector3 DeathSpawnPosition { get; set; } // 시체/유령이 스폰될 원래 위치
     [Networked] public bool HasSpawnedDeathObjects { get; set; } // 죽음 오브젝트 스폰 여부
     [Networked] public NetworkObject GhostObject { get; set; } // 스폰된 유령 오브젝트 참조
-    
+
     // 📎 참조할 다른 컴포넌트들
     private PlayerInventory playerInventory;
     private PlayerObjectThrower playerThrower;
     private PlayerStunInvincibleDie stunInvincibleDie;
-    
+
     // DeadPos 태그 지점 캐시
     private Transform _deadPos;
     // 플레이어 루트 캐시
     private Transform _playerRoot;
     private Rigidbody2D _playerRootRb;
-    
+
     public override void Spawned()
     {
         // 컴포넌트 참조 찾기
@@ -61,25 +61,48 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
         // 플레이어 루트/리짓바디 캐시
         _playerRoot = transform.root;
         _playerRootRb = _playerRoot != null ? _playerRoot.GetComponent<Rigidbody2D>() : null;
-        
+
         if (playerInventory == null)
         {
             Debug.LogError($"[{name}] PlayerInventory 컴포넌트를 찾을 수 없습니다!");
         }
-        
+
         if (playerThrower == null)
         {
             Debug.LogError($"[{name}] PlayerObjectThrower 컴포넌트를 찾을 수 없습니다!");
         }
-        
+
         if (stunInvincibleDie == null)
         {
             Debug.LogError($"[{name}] PlayerStunInvincibleDie 컴포넌트를 찾을 수 없습니다!");
         }
-        
+
         Debug.Log($"[{name}] PlayerDeathHandler 초기화 완료!");
     }
 
+    public void SoftReset(bool isDrop = true)
+    {
+        if (HasStateAuthority == false)
+        {
+            return;
+        }
+        // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
+        if (isDrop)
+        {
+            DropHandObject();
+            DropPassiveItems();
+            DropMoney();
+        }
+
+        if (IsDead)
+        {
+            ResurrectAt(GlobalSetting.Inst.LobbySpawnPos);
+        }
+        else
+        {
+            RPC_TransferCameraToPlayer();
+        }
+    }
     /// <summary>
     /// ISoftReset 구현: 사망 상태면 허브 위치에서 부활 처리, 아니면 카메라만 원복 보장.
     /// </summary>
@@ -103,19 +126,19 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             RPC_TransferCameraToPlayer();
         }
     }
-    
+
     // 💀 죽음 처리 (외부에서 호출)
     public void Die()
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
-        
+
         // 이미 사망 상태라면 중복 처리 방지
         if (IsDead) return;
-        
+
         // 죽음 상태 설정
         IsDead = true;
-        
+
         // 다른 상태들 초기화
         if (stunInvincibleDie != null)
         {
@@ -123,35 +146,35 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             stunInvincibleDie.SetInvincible(false, 0f); // 무적 상태 해제
             stunInvincibleDie.SetDead(true); // 죽음 상태 설정 (외부 참조용)
         }
-        
+
         // 원래 위치 저장 (플레이어 루트 기준)
         DeathSpawnPosition = _playerRoot != null ? _playerRoot.position : transform.position;
-        
+
         // 💰 죽을 때 아이템/패시브/돈 드롭 처리 (원래 위치에서)
         DropHandObject();
         DropPassiveItems();
         DropMoney();
-        
+
         // 시체 프리팹 스폰 (원래 위치에서, 스킨별로)
         SpawnCorpse();
-        
+
         // 유령 플레이어 스폰 (원래 위치에서, 입력권한과 함께)
         SpawnGhostPlayer();
-        
+
         // 카메라 전환 (RPC로 클라이언트에 알림)
         RPC_TransferCameraToGhost(GhostObject);
-        
+
         // 플레이어를 DeadPos(허브)로 이동 (마지막에)
         Vector3 hubPos = GetDeadPosOrFallback();
         TeleportPlayer(hubPos);
         RPC_TeleportPlayer(hubPos);
-        
+
         // 처리 완료 표시
         HasSpawnedDeathObjects = true;
-        
+
         Debug.Log($"[{name}] 플레이어 죽음 처리 완료! 위치: {DeathSpawnPosition}");
     }
-    
+
     // 🔄 부활 처리 (외부에서 호출)
     public void Resurrect()
     {
@@ -164,14 +187,14 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
-        
+
         // 사망 상태가 아니라면 처리 불필요
         if (!IsDead) return;
-        
+
         // 전달받은 위치로 부활 (유령 위치로 강제 덮어쓰지 않음)
         TeleportPlayer(respawnPosition);
         RPC_TeleportPlayer(respawnPosition);
-        
+
         // 유령 제거(이동 후)
         if (GhostObject != null)
         {
@@ -186,14 +209,14 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             }
             GhostObject = null;
         }
-        
+
         // 카메라를 원래 플레이어로 복귀
         RPC_TransferCameraToPlayer();
-        
+
         // 상태 초기화
         HasSpawnedDeathObjects = false;
         IsDead = false;
-        
+
         // PlayerStunInvincibleDie의 죽음 상태도 해제 + 부활 무적 부여
         if (stunInvincibleDie != null)
         {
@@ -212,15 +235,15 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             int diff = Mathf.Max(0, target - health.Health);
             if (diff > 0) health.Heal(diff);
         }
-        
+
         Debug.Log($"[{name}] 플레이어 부활 처리 완료! 위치: {respawnPosition}");
     }
-    
+
     // 💰 손에 든것 드롭
     private void DropHandObject()
     {
         if (playerInventory == null) return;
-        
+
         // 들고 있는 아이템 드롭
         var heldObject = playerInventory.CurrentHeldObject;
         if (heldObject != null)
@@ -240,15 +263,15 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
                 Debug.Log($"[{name}] 들고 있던 아이템 드롭(원반경): {heldObject.name} at {spawnPos}");
             }
         }
-        
+
     }
-    
+
     // 💀 시체 프리팹 스폰 (스킨별로)
     private void SpawnCorpse()
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
-        
+
         // PlayerAppearance 컴포넌트 찾기
         var playerAppearance = GetComponentInChildren<PlayerAppearance>();
         if (playerAppearance == null)
@@ -259,7 +282,7 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
 
         // 현재 스킨 키 가져오기
         string currentSkinKey = playerAppearance.SkinKey.ToString();
-        
+
         // 해당 스킨의 시체 프리팹 가져오기
         GameObject corpsePrefab = playerAppearance.GetCorpsePrefab(currentSkinKey);
         if (corpsePrefab == null)
@@ -283,22 +306,22 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             Debug.LogError($"[{name}] 시체 소환 실패! 프리팹: {corpsePrefab.name}");
         }
     }
-    
+
     // 👻 유령 플레이어 스폰
     private void SpawnGhostPlayer()
     {
         // 권한 확인 (호스트/서버에서만 실행)
         if (!HasStateAuthority) return;
-        
+
         // 유령 플레이어 스폰 (입력권한과 함께)
         if (ghostPrefabRef != NetworkPrefabRef.Empty)
         {
             Vector3 ghostPosition = DeathSpawnPosition + Vector3.up * 0.5f; // 시체 위 0.5f 높이
-            
+
             // PlayerRef를 직접 전달 (DevAutoStarter와 동일한 방식)
             var ghost = Runner.Spawn(ghostPrefabRef, ghostPosition, Quaternion.identity, Object.InputAuthority);
             GhostObject = ghost;
-            
+
             // 유령에 원래 플레이어 참조 전달
             var ghostController = ghost.GetComponent<PlayerGhostController>();
             if (ghostController != null)
@@ -313,7 +336,7 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             {
                 ghostAppearance.SkinKey = playerAppearance.SkinKey;
             }
-            
+
             Debug.Log($"[{name}] 유령 플레이어 스폰됨: {ghost?.name ?? "null"} (PlayerRef: {Object.InputAuthority})");
         }
         else
@@ -321,7 +344,7 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             Debug.LogWarning($"[{name}] 유령 프리팹이 설정되지 않았습니다!");
         }
     }
-    
+
     // 📷 카메라를 유령으로 전환
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_TransferCameraToGhost(NetworkObject ghost)
@@ -347,7 +370,7 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             }
         }
     }
-    
+
     // 📷 카메라를 원래 플레이어로 복귀
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     private void RPC_TransferCameraToPlayer()
@@ -374,14 +397,14 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
             }
         }
     }
-    
+
     // 🔄 부활 시 정리 작업 (외부에서 호출 가능한 메서드 - 호환성용)
     public void OnResurrect()
     {
         // Resurrect() 메서드를 호출
         Resurrect();
     }
-    
+
     // 🧩 패시브 아이템 드롭
     private void DropPassiveItems()
     {
@@ -524,4 +547,4 @@ public class PlayerDeathHandler : NetworkBehaviour, ISoftReset
         var target = _playerRoot != null ? _playerRoot : transform;
         NetworkMoveUtil.Teleport(this, target, targetPosition);
     }
-} 
+}
