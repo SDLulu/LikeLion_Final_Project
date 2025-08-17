@@ -13,6 +13,7 @@ public class UI_GameStateTest : MonoBehaviour
     [SerializeField] private float _keyCooldownTime = 5.0f;
     private float _nextStageLastTime;
     private float _failLastTime;
+    private float _emptyLastTime;
 
 
     private void Awake()
@@ -51,6 +52,11 @@ public class UI_GameStateTest : MonoBehaviour
         GameStates.Inst.DelayForceActiveState<GameStageFailedState>();
     }
 
+    private void OnClickEmptyButton()
+    {
+        GameStates.Inst.DelayForceActiveState<EmptyState>();
+    }
+
     private E_StateName _curState;
     private void OnGameStateChangedEvent(Fusion.NetworkRunner runner, E_StateName prevState, E_StateName state)
     {
@@ -72,5 +78,12 @@ public class UI_GameStateTest : MonoBehaviour
             _failLastTime = Time.time;
             OnClickFailButton();
         }
+
+        if (Input.GetKeyDown(KeyCode.L) && Time.time >= _emptyLastTime + _keyCooldownTime)
+        {
+            _emptyLastTime = Time.time;
+            OnClickEmptyButton();
+        }
+
     }
 }
