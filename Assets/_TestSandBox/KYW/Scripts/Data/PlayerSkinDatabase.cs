@@ -12,8 +12,8 @@ public class PlayerSkinDatabase : ScriptableObject
         public string SkinKey;
         public RuntimeAnimatorController AnimatorController; // 플레이어용
         public RuntimeAnimatorController GhostAnimatorController; // 유령용
-        // 필요 시 2D Animation 사용 시 SpriteLibraryAsset 등도 추가
-        // public SpriteLibraryAsset SpriteLibrary;
+        [Tooltip("UI에 표시할 스킨 스프라이트")]
+        public Sprite SkinSprite; // UI용 스킨 스프라이트 추가
     }
 
     [SerializeField]
@@ -64,6 +64,27 @@ public class PlayerSkinDatabase : ScriptableObject
         if (keyToGhostAnimator == null) OnEnable();
         keyToGhostAnimator.TryGetValue(skinKey, out var controller);
         return controller;
+    }
+    
+    /// <summary>
+    /// 스킨 키에 해당하는 스프라이트를 가져옵니다.
+    /// </summary>
+    /// <param name="skinKey">스킨 키</param>
+    /// <returns>해당하는 스프라이트, 없으면 null</returns>
+    public Sprite GetSpriteByKey(string skinKey)
+    {
+        if (string.IsNullOrEmpty(skinKey)) return null;
+        
+        // skins 리스트에서 직접 찾기
+        foreach (var skin in skins)
+        {
+            if (skin != null && skin.SkinKey.Equals(skinKey, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return skin.SkinSprite;
+            }
+        }
+        
+        return null;
     }
 }
 
