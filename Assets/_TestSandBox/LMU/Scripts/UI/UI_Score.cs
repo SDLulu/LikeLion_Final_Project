@@ -11,9 +11,9 @@ public class UI_Score : MonoBehaviour
 
     public void UpdateData(string nick, int kill, int item, int total, int health)
     {
-        _nickText.text = nick;
-        _killText.text = kill.ToString();
-        _itemText.text = item.ToString();
-        _hpText.text = health.ToString();
+        _nickText.text = "닉네임 : " + nick;
+        _killText.text = "킬 점수 : " + kill.ToString();
+        _itemText.text = "아이템 : " + item.ToString();
+        _hpText.text = "체력 : " + health.ToString();
     }
 }

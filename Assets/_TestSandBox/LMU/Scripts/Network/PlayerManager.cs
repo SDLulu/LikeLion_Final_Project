@@ -169,6 +169,16 @@ public class PlayerManager : NetworkBehaviour
         return Players;
     }
 
+    public List<PlayerRef> GetPlayerRefs()
+    {
+        var list = new List<PlayerRef>();
+        foreach (var player in Players)
+        {
+            list.Add(player.Key);
+        }
+        return list;
+    }
+
     public List<InputBlocker> GetPlayerInputBlockers()
     {
         _cacheBlockers.Clear();

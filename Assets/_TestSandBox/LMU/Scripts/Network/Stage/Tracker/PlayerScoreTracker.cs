@@ -43,7 +43,7 @@ public class PlayerScoreTracker : NetworkBehaviour
 		MonsterScores.Clear();
 	}
 
-	private int GetMonsterScore(PlayerRef player)
+	public int GetMonsterScore(PlayerRef player)
 	{
 		if (MonsterScores.ContainsKey(player) == false)
 			MonsterScores.Set(player, 0);
@@ -65,7 +65,7 @@ public class PlayerScoreTracker : NetworkBehaviour
 		SetMonsterScore(player, current + delta);
 	}
 
-	private int GetItemScore(PlayerRef player)
+	public int GetItemScore(PlayerRef player)
 	{
 		if (ItemScores.ContainsKey(player) == false)
 			ItemScores.Set(player, 0);
