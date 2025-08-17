@@ -247,6 +247,7 @@ public class LobbyManager : BaseManager<LobbyManager>
             _isLeaveGame = false;
             CameraMover.Inst.SetSkyBoxEnv();
             LobbyUI_Manager.Inst.ActiveEnterOnlinePanel(true);
+            BGMManager.Inst.PlayBGM("Title");
         }
 
     }

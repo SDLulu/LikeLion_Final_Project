@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Fusion;
 using Fusion.Addons.FSM;
 using UnityEngine;
 
@@ -13,15 +14,25 @@ public class GameStageWaitingState : BaseStateBehaviour
     
     [Header("디버그용")]
     private bool _isMapLoadCompleted = false;
-
-    protected override async void OnEnterState()
+    private TickTimer _mapLoadTimer = TickTimer.None;
+    private const float _mapLoadTime = 5.0f;
+    protected override void OnEnterState()
     {
         if (Runner.IsServer)
         {
             try
             {
+                GameStates.RPC_FadeOutBGM(this.Runner, false);
                 PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
-                await LoadFirstMapAsync();
+
+                // 첫번째 스테이지 로딩
+                if (Runner.IsServer)
+                {
+                    var firstStageData = DataManager.Inst.StageData.First().Value;
+                    NetEvent.TriggerStageLoadDoneEvent(firstStageData);
+                    _mapLoadTimer = TickTimer.CreateFromSeconds(Runner, _mapLoadTime);
+                    Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
+                }
                 _isMapLoadCompleted = true;
             }
             catch (Exception e)
@@ -35,11 +46,11 @@ public class GameStageWaitingState : BaseStateBehaviour
 
     protected override void OnFixedUpdate()
     {
-        if (Runner.IsServer && _isMapLoadCompleted)
+        if (Runner.IsServer && _mapLoadTimer.ExpiredOrNotRunning(Runner) && _isMapLoadCompleted)
         {
             Debug.Log("맵 로딩이 완료되어 GameStagePlayingState로 전환합니다.");
             Machine.ForceActivateState(Machine.GetState<GameStagePlayingState>());
-        }    
+        }
     }
 
     /// <summary>
@@ -49,18 +60,5 @@ public class GameStageWaitingState : BaseStateBehaviour
     {
         _isMapLoadCompleted = false;
         base.OnExitState();
-    }
-
-    private async Awaitable LoadFirstMapAsync()
-    {
-        if (Runner.IsServer)
-        {
-            await Awaitable.NextFrameAsync();
-            var firstStageData = DataManager.Inst.StageData.First().Value;
-            NetEvent.TriggerStageLoadDoneEvent(firstStageData);
-
-            await Awaitable.WaitForSecondsAsync(5.0f);
-            Debug.Log("첫 번째 스테이지 로딩이 완료되었습니다.");
-        }
     }
 } 

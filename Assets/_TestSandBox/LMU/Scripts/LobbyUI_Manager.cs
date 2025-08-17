@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Fusion;
 using LMCore;
 using TMPro;
@@ -16,14 +17,17 @@ public class LobbyUI_Manager : BaseManager<LobbyUI_Manager>
 
     [Header("인스펙터 참조")]
     [SerializeField] private TMP_Text _curSceneNameText;
+    [SerializeField] private List<RectTransform> _buildNoneRects;
     protected override void Awake()
     {
 #if UNITY_EDITOR
         _curSceneNameText.text = "현재 씬 : " + SceneManager.GetActiveScene().name + "\n" +
         "백엔드 활성화 여부 : " + GlobalSetting.Inst.IsEnableBackend + "\n" +
         "보이스 활성화 여부 : " + GlobalSetting.Inst.IsEnableVoice;
+        _buildNoneRects.ForEach(rect => rect.gameObject.SetActive(true));
 #else
         _curSceneNameText.gameObject.SetActive(false);
+        _buildNoneRects.ForEach(rect => rect.gameObject.SetActive(false));
 #endif
     }
     
