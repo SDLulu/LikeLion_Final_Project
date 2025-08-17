@@ -126,7 +126,7 @@ public class Friends : BaseManager<Friends>
                         }
                     }
 
-                    Debug.Log($"<color=green>받은 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청</color>");
+                    Debug.Log($"받은 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청");
                     onSuccess?.Invoke(requestDataList.ToArray());
                 }
                 catch (Exception ex)
@@ -192,7 +192,7 @@ public class Friends : BaseManager<Friends>
                         Debug.LogWarning("JSON 응답에 rows 데이터가 없습니다.");
                     }
 
-                    Debug.Log($"<color=green>보낸 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청</color>");
+                    Debug.Log($"보낸 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청");
                     onSuccess?.Invoke(requestDataList.ToArray());
                 }
                 catch (Exception ex)
@@ -406,62 +406,195 @@ public class Friends : BaseManager<Friends>
         });
     }
 
-    /// <summary>
-    /// 친구에게 게임 초대를 보내는 함수
-    /// </summary>
-    public void SendGameInvite(string friendInDate, string friendNickname, Action onSuccess = null, Action<string> onFail = null)
-    {
-        if (string.IsNullOrEmpty(friendInDate))
-        {
-            Debug.LogError("친구 inDate가 비어있습니다.");
-            onFail?.Invoke("친구 정보가 유효하지 않습니다.");
-            return;
-        }
+	/// <summary>
+	/// 닉네임으로 사용자 inDate를 조회
+	/// </summary>
+	private void ResolveUserInDateByNickname(string nickname, Action<string> onSuccess, Action<string> onFail)
+	{
+		if (string.IsNullOrEmpty(nickname))
+		{
+			onFail?.Invoke("닉네임이 비어있습니다.");
+			return;
+		}
 
-        if (BackEndWorkFlow.IsFakeClient)
-        {
-            Debug.Log("페이크 클라이언트 모드에서는 게임 초대를 보낼 수 없습니다.");
-            onFail?.Invoke("오프라인 모드에서는 게임 초대를 보낼 수 없습니다.");
-            return;
-        }
+		Backend.Social.GetUserInfoByNickNameV2(nickname, callback =>
+		{
+			if (callback.IsSuccess())
+			{
+				try
+				{
+					var json = callback.GetReturnValuetoJSON()["row"];
+					string resolvedInDate = GetDynamoDBStringValue(json, "inDate", "");
+					if (string.IsNullOrEmpty(resolvedInDate))
+					{
+						onFail?.Invoke("대상 inDate를 찾을 수 없습니다.");
+						return;
+					}
+					onSuccess?.Invoke(resolvedInDate);
+				}
+				catch (System.Exception ex)
+				{
+					Debug.LogError($"inDate 조회 파싱 오류: {ex.Message}");
+					onFail?.Invoke("대상 정보를 처리하는 중 오류가 발생했습니다.");
+				}
+			}
+			else
+			{
+				onFail?.Invoke($"대상 유저 정보를 찾을 수 없습니다. 코드:{callback.GetStatusCode()}");
+			}
+		});
+	}
 
-        // 현재 Photon Fusion 룸 정보 가져오기
-        var lobbyManager = LobbyManager.Inst;
-        if (lobbyManager?.NetRunner == null || lobbyManager.NetRunner.IsRunning == false)
-        {
-            Debug.LogError("현재 게임 룸에 접속되어 있지 않습니다.");
-            onFail?.Invoke("게임 룸에 접속된 상태에서만 초대할 수 있습니다.");
-            return;
-        }
+	/// <summary>
+	/// 현재 룸 ID를 얻습니다.
+	/// </summary>
+	private bool TryGetCurrentRoomId(out string roomId)
+	{
+		roomId = null;
+		var lobbyM = LobbyManager.Inst;
+		if (lobbyM == null)
+		{
+			return false;
+		}
+		if (lobbyM.NetRunner == null)
+		{
+			return false;
+		}
+		if (lobbyM.NetRunner.IsRunning == false)
+		{
+			return false;
+		}
+		roomId = lobbyM.NetRunner.SessionInfo?.Name;
+		if (string.IsNullOrEmpty(roomId))
+		{
+			return false;
+		}
+		return true;
+	}
 
-        string currentRoomID = lobbyManager.NetRunner.SessionInfo?.Name;
-        if (string.IsNullOrEmpty(currentRoomID))
-        {
-            Debug.LogError("현재 룸 ID를 가져올 수 없습니다.");
-            onFail?.Invoke("룸 정보를 가져올 수 없습니다.");
-            return;
-        }
+	/// <summary>
+	/// 초대 페이로드를 200바이트 이하가 되도록 축약 JSON으로 생성합니다.
+	/// </summary>
+	private bool TryBuildInvitePayloadJson(string roomId, string inviterName, out string jsonPayload, int maxBytes = 200)
+	{
+		var payload = new GameInvitePayload(roomId, inviterName);
+		jsonPayload = payload.ToCompactJson(includeInviterName: true, inviterNameMaxLen: 20);
+		int byteLen = System.Text.Encoding.UTF8.GetByteCount(jsonPayload);
+		if (byteLen > maxBytes)
+		{
+			jsonPayload = payload.ToCompactJson(includeInviterName: false);
+			byteLen = System.Text.Encoding.UTF8.GetByteCount(jsonPayload);
+			if (byteLen > maxBytes)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
 
-        string inviterName = BackEndWorkFlow.NickName ?? "알 수 없음";
+	/// <summary>
+	/// 쪽지 전송 호출
+	/// </summary>
+	private void SendInviteMessage(string targetInDate, string jsonPayload, string friendNickname, Action onSuccess, Action<string> onFail)
+	{
+		Backend.Message.SendMessage(targetInDate, jsonPayload, callback =>
+		{
+			if (callback.IsSuccess())
+			{
+				Debug.Log($"<color=green>'{friendNickname}' 님에게 게임 초대를 성공적으로 보냈습니다!</color>");
+				onSuccess?.Invoke();
+			}
+			else
+			{
+				string status = callback.GetStatusCode();
+				string serverMsg = callback.GetErrorMessage();
+				Debug.LogError($"게임 초대 전송 실패: {status} - {serverMsg}");
+				if (status == "412")
+				{
+					onFail?.Invoke("초대 전송 조건을 만족하지 않습니다. (상대 유효성/친구 여부/차단 여부/본문 제한)");
+				}
+				else
+				{
+					onFail?.Invoke("게임 초대를 보내는 중 오류가 발생했습니다.");
+				}
+			}
+		});
+	}
 
-        Debug.Log($"<color=yellow>'{friendNickname}' 님에게 게임 초대를 보냅니다... (룸: {currentRoomID})</color>");
+	/// <summary>
+	/// 닉네임으로 inDate를 검증 후 초대를 전송
+	/// </summary>
+	public void SendGameInviteByNickname(string friendNickname, Action onSuccess = null, Action<string> onFail = null)
+	{
+		if (string.IsNullOrEmpty(friendNickname))
+		{
+			onFail?.Invoke("닉네임이 비어있습니다.");
+			return;
+		}
+		if (BackEndWorkFlow.IsFakeClient)
+		{
+			onFail?.Invoke("오프라인 모드에서는 게임 초대를 보낼 수 없습니다.");
+			return;
+		}
+		if (TryGetCurrentRoomId(out string roomId) == false)
+		{
+			Debug.LogError("현재 게임 룸에 접속되어 있지 않습니다.");
+			onFail?.Invoke("게임 룸에 접속된 상태에서만 초대할 수 있습니다.");
+			return;
+		}
+		string inviterName = BackEndWorkFlow.NickName ?? "";
+		ResolveUserInDateByNickname(friendNickname,
+			onSuccess: targetInDate =>
+			{
+				if (TryBuildInvitePayloadJson(roomId, inviterName, out string jsonPayload) == false)
+				{
+					onFail?.Invoke("초대 본문이 너무 깁니다. 콘솔 설정을 늘리거나 내용을 줄여주세요.");
+					return;
+				}
+				SendInviteMessage(targetInDate, jsonPayload, friendNickname, onSuccess, onFail);
+			},
+			onFail: err =>
+			{
+				Debug.LogError(err);
+				onFail?.Invoke("대상 유저 정보를 찾을 수 없습니다.");
+			});
+	}
 
-        // 초대 페이로드 생성 및 메시지 전송
-        var invitePayload = new GameInvitePayload(currentRoomID, inviterName);
-        string jsonPayload = invitePayload.ToJson();
-        Backend.Message.SendMessage(friendInDate, jsonPayload, callback =>
-        {
-            if (callback.IsSuccess())
-            {
-                Debug.Log($"<color=green>'{friendNickname}' 님에게 게임 초대를 성공적으로 보냈습니다!</color>");
-                onSuccess?.Invoke();
-            }
-            else
-            {
-                string errorMessage = $"게임 초대 전송 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}";
-                Debug.LogError(errorMessage);
-                onFail?.Invoke("게임 초대를 보내는 중 오류가 발생했습니다.");
-            }
-        });
-    }
+	/// <summary>
+	/// inDate가 이미 있는 경우 바로 초대를 보냅니다.
+	/// </summary>
+	public void SendGameInviteWithInDate(string friendInDate, string friendNickname, Action onSuccess = null, Action<string> onFail = null)
+	{
+		if (string.IsNullOrEmpty(friendInDate))
+		{
+			onFail?.Invoke("친구 정보가 유효하지 않습니다.");
+			return;
+		}
+		if (BackEndWorkFlow.IsFakeClient)
+		{
+			onFail?.Invoke("오프라인 모드에서는 게임 초대를 보낼 수 없습니다.");
+			return;
+		}
+		if (TryGetCurrentRoomId(out string roomId) == false)
+		{
+			Debug.LogError("현재 게임 룸에 접속되어 있지 않습니다.");
+			onFail?.Invoke("게임 룸에 접속된 상태에서만 초대할 수 있습니다.");
+			return;
+		}
+		string inviterName = BackEndWorkFlow.NickName ?? "";
+		if (TryBuildInvitePayloadJson(roomId, inviterName, out string jsonPayload) == false)
+		{
+			onFail?.Invoke("초대 본문이 너무 깁니다. 콘솔 설정을 늘리거나 내용을 줄여주세요.");
+			return;
+		}
+		SendInviteMessage(friendInDate, jsonPayload, friendNickname, onSuccess, onFail);
+	}
+
+	/// <summary>
+	/// [호환] 기존 시그니처. 내부적으로 WithInDate로 위임합니다.
+	/// </summary>
+	public void SendGameInvite(string friendInDate, string friendNickname, Action onSuccess = null, Action<string> onFail = null)
+	{
+		SendGameInviteWithInDate(friendInDate, friendNickname, onSuccess, onFail);
+	}
 }
