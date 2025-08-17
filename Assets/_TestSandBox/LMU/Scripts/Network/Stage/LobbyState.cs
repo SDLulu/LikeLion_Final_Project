@@ -73,7 +73,7 @@ public class LobbyState : BaseStateBehaviour, IPlayerJoined
         // 일정주기마다 플레이어 스탯정보 초기화
         if (_isIntervalSoftReset && _playerSoftResetTimer.ExpiredOrNotRunning(Runner))
         {
-            PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos);
+            PlayerM.SoftResetAllPlayers(GlobalSetting.Inst.LobbySpawnPos, false);
             _playerSoftResetTimer = TickTimer.CreateFromSeconds(Runner, _playerSoftResetInterval);
         }
     }
