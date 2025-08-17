@@ -2,32 +2,44 @@ using UnityEngine;
 using System.Collections.Generic;
 using Fusion;
 
-public class PMK_DeathTrap : MonoBehaviour
+public class PMK_DeathTrap : NetworkBehaviour, IItemInteraction
 {
-    private PMK_TileRPC_Manager tileRPC_Manager => PMK_TileRPC_Manager.Instance;
+    public bool IsHeld => throw new System.NotImplementedException();
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private Rigidbody2D rb;
+
+    public override void Spawned()
     {
-        Debug.Log("들어옴");
-        if (!tileRPC_Manager.HasStateAuthority) return;
-
-        // 또는 collision.collider.gameObject 사용해도 됨
-        if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) return;
-
-        NetworkObject netObj = collision.gameObject.GetComponentInParent<NetworkObject>();
-        if (netObj == null) return;
-        tileRPC_Manager.RPC_SetPlayerGravity(netObj.InputAuthority, 0.1f);
+        rb = GetComponent<Rigidbody2D>();
     }
 
-    private void OnTriggerExit2D(Collider2D collision)
+    public void ApplyKnockback(Vector2 force, float duration = 0)
     {
-        if (!tileRPC_Manager.HasStateAuthority) return;
+        if (!HasStateAuthority) return;
 
-        if (collision.gameObject.layer != LayerMask.NameToLayer("Player")) return;
+        if (rb != null)
+        {
+            rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
 
-        NetworkObject netObj = collision.gameObject.GetComponentInParent<NetworkObject>();
-        if (netObj == null) return;
+    public void OnPickedUp()
+    {
+    }
 
-        tileRPC_Manager.RPC_SetPlayerGravity(netObj.InputAuthority, 1.0f);
+    public void OnReleased()
+    {
+    }
+
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+    }
+
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
     }
 }
