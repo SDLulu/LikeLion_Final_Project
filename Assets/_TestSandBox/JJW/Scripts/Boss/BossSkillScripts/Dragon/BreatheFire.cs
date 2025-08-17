@@ -45,7 +45,9 @@ public class BreatheFire : BossSkillAState, IAnimationTriggerReceiver
             startPosition = transform.position;
             currentSubState = SubState.Jumping; // 첫 단계는 'Jumping'
             burstsFired = 0;
-            UnityEngine.Debug.Log("현재 보스몬스터 위치 : " + startPosition.ToString() );
+            UnityEngine.Debug.Log("현재 보스몬스터 위치 : " + startPosition.ToString());
+            UnityEngine.Debug.Log("상단 경계 위치 : " + topBoundary.position.ToString());
+            UnityEngine.Debug.Log("하단 경계 위치 : " + bottomBoundary.position.ToString() );
         }
     }
 
@@ -63,10 +65,12 @@ public class BreatheFire : BossSkillAState, IAnimationTriggerReceiver
         switch (currentSubState)
         {
             case SubState.Attacking:
+                Debug.Log("현재 SubState.Attacking 으로 전환");
                 HandleFlyingMovement();
                 break;
 
             case SubState.Returning:
+            Debug.Log("현재 SubState.Returning 으로 전환");
                 HandleReturnMovement();
                 break;
         }
@@ -77,10 +81,15 @@ public class BreatheFire : BossSkillAState, IAnimationTriggerReceiver
     private void HandleFlyingMovement()
     {
         Vector2 direction = (currentTargetPosition - (Vector2)transform.position).normalized;
+        Debug.Log("현재 HandleFlyingMovement의  direction  : " + direction.ToString());
+        Debug.Log("현재 HandleFlyingMovement의  direction 크기 : " + direction.magnitude);
+        Debug.Log("현재 HandleFlyingMovement의  FlyingSpeed : " + flyingSpeed);
         boss.nrb.Rigidbody.linearVelocity = direction * flyingSpeed;
-
+        Debug.Log("보스 강체 속도 : " + boss.nrb.Rigidbody.linearVelocity.ToString());
+        Debug.Log("현재 HandleFlyingMovement 실행중");
         if (Vector2.Distance(transform.position, currentTargetPosition) < 0.5f)
         {
+            Debug.Log("방향 전환!!!");
             currentTargetPosition = (currentTargetPosition.y == topBoundary.position.y)
                 ? bottomBoundary.position : topBoundary.position;
         }
@@ -90,9 +99,10 @@ public class BreatheFire : BossSkillAState, IAnimationTriggerReceiver
     {
         Vector2 direction = (startPosition - (Vector2)transform.position).normalized;
         boss.nrb.Rigidbody.linearVelocity = direction * flyingSpeed;
-
+        Debug.Log("현재 HandleReturnMovement 실행중");
         if (Vector2.Distance(transform.position, startPosition) < 0.5f)
         {
+            Debug.Log("시작지점으로 이동중");
             boss.nrb.transform.position = startPosition; // 시작 지점으로 이동
             boss.nrb.Rigidbody.linearVelocity = Vector2.zero;
             fsmRef.BossNetworkBehaviour.CurrentState = BossStateName.Idle;

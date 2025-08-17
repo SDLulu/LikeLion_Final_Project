@@ -204,7 +204,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         {
             // 검은 화면 페이드 및 CutScene 화면 준비
             await Awaitable.NextFrameAsync();
-            await Fader.FadeOutExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
+            await Fader.FadeOutAsync(Color.black, 1.0f);
 
             CutSceneC.FocusCutSceneCamera();
             CutSceneC.ActiveCutSceneResult(true);
@@ -254,12 +254,12 @@ public class GameStageCompletedState : BaseStateBehaviour
         try
         {
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
-            CutSceneC.UpdateStageUI();
-            CutSceneC.UpdateScoreUI(PlayerM.GetPlayerRefs()[0]);
-            await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
+            CutSceneC.RPC_UpdateStageUI();
+            CutSceneC.RPC_UpdateScoreUI(PlayerM.GetPlayerRefs()[0]);
+            await Fader.FadeInAsync(Color.black, 1.0f);
             await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
             await CutSceneC.WaitForNext(PlayerM.GetPlayerRefs());
-            await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
+            await Fader.FadeOutAsync(Color.black, 1.0f);
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -279,7 +279,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     {
         try
         {
-            await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
+            await Fader.FadeInAsync(Color.black, 1.0f);
             await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
             
             // 클라이언트는 UI를 보여주고 서버의 신호를 대기
@@ -287,7 +287,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             await _clientFadeOutTCS.Awaitable;
             
             // 서버 신호가 오면 FadeOut 진행
-            await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
+            await Fader.FadeOutAsync(Color.black, 1.0f);
             onCompleted?.Invoke();
         }
         catch (System.Exception e)
@@ -344,7 +344,7 @@ public class GameStageCompletedState : BaseStateBehaviour
     public async void RPC_FadeInUI()
     {
         NetEvent.TriggerCutSceneActiveEvent(false);
-        await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos());
+        await Fader.FadeInExpandAsync(Color.black, 1.0f, GetLocalPlayerWorldPos(), CutSceneC.CutSceneCanvas);
     }
 
     /// <summary>
