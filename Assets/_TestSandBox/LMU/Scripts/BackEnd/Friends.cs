@@ -32,8 +32,6 @@ public class Friends : BaseManager<Friends>
             return;
         }
 
-        Debug.Log("<color=yellow>친구 목록을 조회합니다...</color>");
-
         Backend.Friend.GetFriendList(callback =>
         {
             if (callback.IsSuccess())
@@ -342,5 +340,75 @@ public class Friends : BaseManager<Friends>
             "400" => "잘못된 요청입니다.",
             _ => "친구신청 중 오류가 발생했습니다."
         };
+    }
+
+    /// <summary>
+    /// 받은 모든 친구 요청을 수락하는 함수
+    /// </summary>
+    public void AcceptAllFriendRequests(Action<int> onSuccess = null, Action<string> onFail = null)
+    {
+        if (BackEndWorkFlow.IsFakeClient)
+        {
+            Debug.Log("페이크 클라이언트 모드에서는 친구 요청을 수락할 수 없습니다.");
+            onFail?.Invoke("오프라인 모드에서는 친구 요청을 수락할 수 없습니다.");
+            return;
+        }
+
+        Debug.Log("<color=yellow>받은 친구 요청 목록을 조회하여 모두 수락합니다...</color>");
+
+        // 1. 먼저 받은 친구 요청 목록을 조회
+        GetReceivedFriendRequests(
+            onSuccess: (requestData) =>
+            {
+                if (requestData.Length == 0)
+                {
+                    Debug.Log("수락할 친구 요청이 없습니다.");
+                    onSuccess?.Invoke(0);
+                    return;
+                }
+
+                Debug.Log($"총 {requestData.Length}개의 친구 요청을 수락 처리 시작");
+                
+                // 2. 각 요청을 순차적으로 수락
+                AcceptFriendRequestsSequentially(requestData, 0, 0, onSuccess, onFail);
+            },
+            onFail: onFail
+        );
+    }
+
+    /// <summary>
+    /// 친구 요청을 순차적으로 수락하는 내부 함수 (재귀 호출)
+    /// </summary>
+    private void AcceptFriendRequestsSequentially(FriendData[] requests, int currentIndex, int successCount, Action<int> onSuccess, Action<string> onFail)
+    {
+        if (currentIndex >= requests.Length)
+        {
+            // 모든 요청 처리 완료
+            Debug.Log($"<color=green>친구 요청 처리 완료! 총 {successCount}개 수락 성공</color>");
+            onSuccess?.Invoke(successCount);
+            return;
+        }
+
+        var request = requests[currentIndex];
+        Debug.Log($"친구 요청 수락 중: {request.NickName} ({currentIndex + 1}/{requests.Length})");
+
+        // Backend.Friend.AcceptFriend API 호출 (inDate 사용)
+        Backend.Friend.AcceptFriend(request.InDate, callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                Debug.Log($"<color=green>'{request.NickName}' 님의 친구 요청 수락 성공!</color>");
+                
+                // 다음 요청 처리 (성공 카운트 증가)
+                AcceptFriendRequestsSequentially(requests, currentIndex + 1, successCount + 1, onSuccess, onFail);
+            }
+            else
+            {
+                Debug.LogWarning($"'{request.NickName}' 님의 친구 요청 수락 실패: {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                
+                // 실패해도 다음 요청 계속 처리 (성공 카운트 증가하지 않음)
+                AcceptFriendRequestsSequentially(requests, currentIndex + 1, successCount, onSuccess, onFail);
+            }
+        });
     }
 }
