@@ -14,6 +14,10 @@ public class UI_PlayerSlot : MonoBehaviour
     [SerializeField] private Sprite _normalHealthIcon; // 일반 체력 아이콘
     [SerializeField] private Sprite _deadHealthIcon;   // 사망 시 체력 아이콘
     
+    [Header("플레이어 스킨 UI")]
+    [SerializeField] private Image _playerSkinImage; // 플레이어 스킨 이미지
+    [SerializeField] private Sprite _defaultSkinSprite; // 기본 스킨 스프라이트 (스킨 로드 실패 시 사용)
+    
     [Header("패시브 아이템 아이콘들")]
     [SerializeField] private GameObject _rocketIcon;
     [SerializeField] private GameObject _wingsIcon;
@@ -26,6 +30,7 @@ public class UI_PlayerSlot : MonoBehaviour
     // 같은 부모(플레이어 프리팹) 아래의 컴포넌트들
     private PlayerInventory _playerInventory;
     private PlayerHealth _playerHealth;
+    private PlayerAppearance _playerAppearance; // 플레이어 외형 컴포넌트 추가
     private bool _isInitialized = false;
 
     private void Awake()
@@ -47,7 +52,7 @@ public class UI_PlayerSlot : MonoBehaviour
         }
 
         // 컴포넌트들이 모두 있는지 확인
-        if (_playerInventory == null || _playerHealth == null)
+        if (_playerInventory == null || _playerHealth == null || _playerAppearance == null)
         {
             Debug.LogWarning("📱 UI_PlayerSlot: 필요한 컴포넌트가 없습니다!");
             return;
@@ -85,8 +90,9 @@ public class UI_PlayerSlot : MonoBehaviour
 
         _playerInventory = ownerRoot.GetComponentInChildren<PlayerInventory>();
         _playerHealth = ownerRoot.GetComponentInChildren<PlayerHealth>();
+        _playerAppearance = ownerRoot.GetComponentInChildren<PlayerAppearance>(); // 플레이어 외형 컴포넌트 바인딩
 
-        if (_playerInventory == null || _playerHealth == null)
+        if (_playerInventory == null || _playerHealth == null || _playerAppearance == null)
         {
             Debug.LogWarning("📱 UI_PlayerSlot: 필요한 컴포넌트를 ownerRoot 에서 찾지 못했습니다.");
             return;
@@ -120,6 +126,11 @@ public class UI_PlayerSlot : MonoBehaviour
             return false;
         }
 
+        if (_playerAppearance == null)
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -134,6 +145,12 @@ public class UI_PlayerSlot : MonoBehaviour
         {
             _playerHealth.OnHealthChangedEvent += OnHealthChanged;
         }
+        
+        // 플레이어 외형 변경 이벤트 구독
+        if (_playerAppearance != null)
+        {
+            _playerAppearance.OnSkinChanged += OnSkinChanged;
+        }
     }
 
 
@@ -146,6 +163,7 @@ public class UI_PlayerSlot : MonoBehaviour
     {
         UpdateMoneyUI();
         UpdateHealthUI();
+        UpdateSkinUI(); // 스킨 UI 업데이트 추가
         UpdateItemIcons();
     }
 
@@ -203,6 +221,49 @@ public class UI_PlayerSlot : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 플레이어 스킨 UI를 업데이트합니다.
+    /// </summary>
+    private void UpdateSkinUI()
+    {
+        if (_playerAppearance == null) return;
+
+        string skinKey = _playerAppearance.SkinKey.ToString();
+        
+        // 스킨 이미지 업데이트
+        if (_playerSkinImage != null)
+        {
+            Sprite skinSprite = GetSkinSprite(skinKey);
+            if (skinSprite != null)
+            {
+                _playerSkinImage.sprite = skinSprite;
+            }
+            else if (_defaultSkinSprite != null)
+            {
+                _playerSkinImage.sprite = _defaultSkinSprite;
+                Debug.LogWarning($"📱 UI_PlayerSlot: 스킨 '{skinKey}'의 이미지를 찾을 수 없어 기본 이미지를 사용합니다.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 스킨 키에 해당하는 스프라이트를 가져옵니다.
+    /// </summary>
+    /// <param name="skinKey">스킨 키 (예: "Penguin", "Rabbit")</param>
+    /// <returns>해당하는 스프라이트, 없으면 null</returns>
+    private Sprite GetSkinSprite(string skinKey)
+    {
+        if (string.IsNullOrEmpty(skinKey)) return null;
+
+        // PlayerAppearance를 통해 스프라이트 가져오기
+        if (_playerAppearance != null)
+        {
+            return _playerAppearance.GetSkinSprite(skinKey);
+        }
+
+        return null;
+    }
+
     private void UpdateItemIcons()
     {
         if (_playerInventory == null)
@@ -252,6 +313,11 @@ public class UI_PlayerSlot : MonoBehaviour
     {
         UpdateHealthUI();
     }
+    
+    private void OnSkinChanged(string newSkinKey)
+    {
+        UpdateSkinUI();
+    }
 
     // --- Unity Lifecycle ---
     private void OnDestroy()
@@ -269,11 +335,16 @@ public class UI_PlayerSlot : MonoBehaviour
         {
             _playerHealth.OnHealthChangedEvent -= OnHealthChanged;
         }
+        
+        if (_playerAppearance != null)
+        {
+            _playerAppearance.OnSkinChanged -= OnSkinChanged;
+        }
 
         // 참조 정리
         _playerInventory = null;
         _playerHealth = null;
+        _playerAppearance = null;
         _isInitialized = false;
     }
-
 }
