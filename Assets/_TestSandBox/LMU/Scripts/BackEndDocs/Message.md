@@ -110,3 +110,15 @@ Backend.Message.GetSentMessageList(callback =>
 
     Debug.Log(messageItem.ToString());
 }
+
+//삭제하고자 하는 쪽지의 inDate를 얻습니다.  
+Backend.Message.GetReceivedMessageList(callback =>
+{
+      string messageIndate = callback.Rows()[0]["inDate"]["S"].ToString();
+
+      Backend.Message.DeleteReceivedMessage(messageIndate, callback2 =>
+      {
+        //이후 처리
+      });
+
+});
