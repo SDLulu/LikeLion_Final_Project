@@ -54,6 +54,7 @@ public class GameStageCompletedState : BaseStateBehaviour
         if (Runner.IsServer)
         {
             GameStates.RPC_FadeOutBGM(this.Runner, false);
+            PlayerM.SetPlayerPositions(new Vector3(-100.0f, -100.0f, 0.0f));
             var players = PlayerM.GetPlayers();
             InitTCS(players);
             _minWaitingTimer = TickTimer.CreateFromSeconds(Runner, _minWaitingTime);
@@ -163,7 +164,6 @@ public class GameStageCompletedState : BaseStateBehaviour
         CutSceneC.ActiveCutSceneResult(false);
         UIController.DeactiveAllLobbyUI();
         NetEvent.TriggerCutSceneActiveEvent(false);
-
         UIEventSystem.Inst.TriggerCutSceneActive(false);
     }
 
@@ -256,7 +256,7 @@ public class GameStageCompletedState : BaseStateBehaviour
             // Note - 혹시라도 살아있는 플레이어가 없는 경우에 대한 예외처리를 하지않음.
             await Fader.FadeInExpandAsync(Color.black, 1.0f, CutSceneC.GetStartPos());
             await CutSceneC.PlayCutScene(PlayerM.GetAlivePlayers().Count, _cutDuration);
-            await CutSceneC.WaitForInputResponse();
+            await CutSceneC.WaitForNext(PlayerM.GetPlayers().Count);
             await Fader.FadeOutExpandAsync(Color.black, 1.0f, CutSceneC.GetEndPos());
             onCompleted?.Invoke();
         }
