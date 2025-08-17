@@ -1,76 +1,65 @@
 using Fusion;
 using UnityEngine;
 
-// 💀 플레이어 시체 프리팹 컴포넌트
-public class PlayerCorpse : NetworkBehaviour
+// 💀 플레이어 시체 프리팹 컴포넌트 - 아이템으로 처리
+public class PlayerCorpse : NetworkBehaviour, IItemInteraction
 {
-    [Header("시체 설정")]
-    [SerializeField] private float fadeOutDuration = 5f; // 페이드아웃 지속 시간
-    [SerializeField] private float fadeOutDelay = 2f; // 페이드아웃 시작 전 대기 시간
     
-    private SpriteRenderer spriteRenderer;
-    private float fadeTimer = 0f;
-    private bool isFading = false;
+    // 🌐 네트워크 동기화
+    [Networked] private NetworkBool IsHeld { get; set; }
+    bool IItemInteraction.IsHeld => IsHeld;
     
     public override void Spawned()
     {
-        // 스프라이트 렌더러 찾기
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer == null)
-        {
-            spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        }
-        
-        if (spriteRenderer == null)
-        {
-            Debug.LogError($"[{name}] SpriteRenderer를 찾을 수 없습니다!");
-            return;
-        }
-        
-        // 초기 알파값 설정
-        Color color = spriteRenderer.color;
-        color.a = 1f;
-        spriteRenderer.color = color;
-        
-        Debug.Log($"[{name}] 플레이어 시체 스폰됨!");
+        Runner.SetIsSimulated(Object, true);
+        Debug.Log($"💀 시체 스폰 완료!");
     }
     
-    public override void FixedUpdateNetwork()
+    // 🎯 IItemInteraction 인터페이스 구현 - 클릭 시 아무 동작 안함 (포션 먹기 제외)
+    public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
-        // 권한 확인 (호스트/서버에서만 실행)
+        // 시체는 클릭해도 아무 동작 안함 (포션 먹기 기능 제외)
+        Debug.Log($"[PlayerCorpse] 시체는 사용할 수 없습니다.");
+    }
+    
+    public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+        // 홀드 기능 없음
+    }
+    
+    public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
+    {
+        // 릴리즈 기능 없음
+    }
+    
+    public void OnPickedUp()
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = true;
+        Debug.Log($"[PlayerCorpse] 시체 픽업됨");
+    }
+    
+    public void OnReleased()
+    {
+        if (!Object.HasStateAuthority) return;
+        
+        IsHeld = false;
+        Debug.Log($"[PlayerCorpse] 시체 해제됨");
+    }
+    
+    public void ApplyKnockback(Vector2 force, float duration = 0f)
+    {
         if (!HasStateAuthority) return;
         
-        // 페이드아웃 타이머 업데이트
-        if (!isFading)
+        var rb = GetComponent<Rigidbody2D>();
+        if (rb != null)
         {
-            fadeTimer += Runner.DeltaTime;
-            
-            // 페이드아웃 시작
-            if (fadeTimer >= fadeOutDelay)
-            {
-                isFading = true;
-                fadeTimer = 0f;
-            }
-        }
-        else
-        {
-            fadeTimer += Runner.DeltaTime;
-            
-            // 페이드아웃 진행
-            float alpha = Mathf.Lerp(1f, 0f, fadeTimer / fadeOutDuration);
-            
-            if (spriteRenderer != null)
-            {
-                Color color = spriteRenderer.color;
-                color.a = alpha;
-                spriteRenderer.color = color;
-            }
-            
-            // 완전히 투명해지면 제거
-            if (fadeTimer >= fadeOutDuration)
-            {
-                Runner.Despawn(Object);
-            }
+            rb.AddForce(force, ForceMode2D.Impulse);
         }
     }
+    
+    // 🎮 IItemInteraction 인터페이스 구현
+    public bool CanBeHeld => true;
+    public bool CanBeThrown => true;
 } 
