@@ -32,8 +32,6 @@ public class Friends : BaseManager<Friends>
             return;
         }
 
-        Debug.Log("<color=yellow>친구 목록을 조회합니다...</color>");
-
         Backend.Friend.GetFriendList(callback =>
         {
             if (callback.IsSuccess())
@@ -65,7 +63,7 @@ public class Friends : BaseManager<Friends>
                         }
                     }
 
-                    Debug.Log($"친구 목록 조회 성공 - 총 {friendDataList.Count}명의 친구</color>");
+                    Debug.Log($"친구 목록 조회 성공 - <color=green>총 {friendDataList.Count}명의 친구</color>");
                     onSuccess?.Invoke(friendDataList.ToArray());
                 }
                 catch (Exception ex)
@@ -126,7 +124,7 @@ public class Friends : BaseManager<Friends>
                         }
                     }
 
-                    Debug.Log($"받은 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청");
+                    Debug.Log($"받은 친구 요청 조회 성공! <color=green>총 {requestDataList.Count}개의 요청</color>");
                     onSuccess?.Invoke(requestDataList.ToArray());
                 }
                 catch (Exception ex)
@@ -192,7 +190,7 @@ public class Friends : BaseManager<Friends>
                         Debug.LogWarning("JSON 응답에 rows 데이터가 없습니다.");
                     }
 
-                    Debug.Log($"보낸 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청");
+                    Debug.Log($"보낸 친구 요청 조회 성공! <color=green>총 {requestDataList.Count}개의 요청</color>");
                     onSuccess?.Invoke(requestDataList.ToArray());
                 }
                 catch (Exception ex)
