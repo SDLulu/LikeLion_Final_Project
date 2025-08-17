@@ -428,6 +428,8 @@ namespace LMCore
             if (_testPanel == null || _startPoint == null || _centerPoint == null)
                 return;
 
+            SoundManager.Inst.PlaySFX("WideFade");
+
             _testPanel.gameObject.SetActive(true);
 
             float elapsedTime = 0f;
@@ -454,6 +456,7 @@ namespace LMCore
             if (_testPanel == null || _centerPoint == null || _endPoint == null)
                 return;
 
+            SoundManager.Inst.PlaySFX("WideFade");
             _testPanel.gameObject.SetActive(true);
 
             float elapsedTime = 0f;
