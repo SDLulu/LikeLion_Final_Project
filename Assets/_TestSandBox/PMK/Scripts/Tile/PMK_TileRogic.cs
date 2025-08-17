@@ -110,7 +110,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     {
         RunTestMode();
 
-        if (HasStateAuthority)
+        if (HasStateAuthority && !IsStageTestNetwork)
         {
             Debug.Log("구독수행됨");
             NetworkEventSystem.Inst.OnStageLoadDoneEvent += (stageInfo) =>
