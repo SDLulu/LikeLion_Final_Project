@@ -85,13 +85,19 @@ MonoBehaviour:
   stateDuration: 30
   summonAnimStateName: Attacking
   monsterPrefabs:
-  - RawGuidValue: 90721c6b3afbfbc4f9c9b79cd924694e
+  - RawGuidValue: 744b80171870e654bbdd581fb66777f7
   - RawGuidValue: 4c9d2db9c1525874d98fa57c1cf6fc16
-  - RawGuidValue: b9b3cb38849219d4199f7e2749a1a39b
+  - RawGuidValue: 93d0a457b3873d8499ca996ad13b1eb0
+  - RawGuidValue: 00000000000000000000000000000000
+  - RawGuidValue: 00000000000000000000000000000000
+  - RawGuidValue: 00000000000000000000000000000000
   spawnPoints:
   - {fileID: 1150817999739731545}
   - {fileID: 4647024205079874500}
   - {fileID: 5671850399013270618}
+  - {fileID: 4551858323494047106}
+  - {fileID: 4986635880190917456}
+  - {fileID: 986366047953799660}
   exitDelay: 1.5
 --- !u!1 &760322958884831829
 GameObject:
@@ -148,11 +154,42 @@ MonoBehaviour:
   attackAnimStateName: Spawning
   meteorPrefab:
     RawGuidValue: 8f4b981f12ef9df4988610f42823fd74
-  numberOfMeteors: 10
-  spawnInterval: 0.3
+  numberOfMeteors: 15
+  spawnInterval: 0.5
   spawnHeight: 15
   leftBoundary: {fileID: 2276554659708324570}
   rightBoundary: {fileID: 778346928477491185}
+--- !u!1 &919621360960019154
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4551858323494047106}
+  m_Layer: 0
+  m_Name: SpawnPoint3 (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4551858323494047106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919621360960019154}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -9.11, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6858296634887461152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1156596890612792268
 GameObject:
   m_ObjectHideFlags: 0
@@ -562,6 +599,68 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bossFsm: {fileID: 5314955116061278242}
+--- !u!1 &5918959804875008649
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4986635880190917456}
+  m_Layer: 0
+  m_Name: SpawnPoint3 (2)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4986635880190917456
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5918959804875008649}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -29.78, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6858296634887461152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6223704123164231180
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 986366047953799660}
+  m_Layer: 0
+  m_Name: SpawnPoint3 (3)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &986366047953799660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6223704123164231180}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -25.03, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6858296634887461152}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6344747910420773509
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,7 +686,7 @@ Transform:
   m_GameObject: {fileID: 6344747910420773509}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 3.26, z: 0}
+  m_LocalPosition: {x: 0, y: -10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -618,7 +717,7 @@ Transform:
   m_GameObject: {fileID: 6418627479829927999}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 14.69, z: 0}
+  m_LocalPosition: {x: 0, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -656,6 +755,9 @@ Transform:
   - {fileID: 1150817999739731545}
   - {fileID: 4647024205079874500}
   - {fileID: 5671850399013270618}
+  - {fileID: 4551858323494047106}
+  - {fileID: 4986635880190917456}
+  - {fileID: 986366047953799660}
   m_Father: {fileID: 1262362947180942204}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6589034654538199802
@@ -805,7 +907,7 @@ Transform:
   m_GameObject: {fileID: 7286117402954821009}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -3.35, y: 5.81, z: 0}
+  m_LocalPosition: {x: -3.11, y: 5.81, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1096,7 +1198,7 @@ MonoBehaviour:
   topBoundary: {fileID: 3990848788343729271}
   bottomBoundary: {fileID: 7778007273195758714}
   flyingSpeed: 8
-  numberOfBursts: 3
+  numberOfBursts: 8
   numberOfProjectiles: 4
   totalAngle: 60
   FirePrefab:
@@ -1127,7 +1229,7 @@ Transform:
   m_GameObject: {fileID: 8292727034057486265}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -16.73, y: 5.91, z: 0}
+  m_LocalPosition: {x: -31.44, y: 4.95, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
