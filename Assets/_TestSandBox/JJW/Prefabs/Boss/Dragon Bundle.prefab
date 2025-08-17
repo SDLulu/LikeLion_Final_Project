@@ -162,6 +162,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6684309370511423202}
+  - component: {fileID: 7806589401205050994}
   m_Layer: 0
   m_Name: Dragon Bundle
   m_TagString: Untagged
@@ -178,7 +179,7 @@ Transform:
   m_GameObject: {fileID: 1156596890612792268}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 17.6, y: 25.05, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -186,6 +187,25 @@ Transform:
   - {fileID: 1262362947180942204}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7806589401205050994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1156596890612792268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2699889562
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects:
+  - {fileID: 2195906319343988800}
+  NetworkedBehaviours: []
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &1637756682946301117
 GameObject:
   m_ObjectHideFlags: 0
@@ -800,7 +820,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 281759018774062636}
-  - component: {fileID: 9203542620204390043}
   - component: {fileID: 7152563287532069672}
   - component: {fileID: 3546934069986882188}
   - component: {fileID: 8712038509460753610}
@@ -808,6 +827,7 @@ GameObject:
   - component: {fileID: 7662941046696146197}
   - component: {fileID: 8256802153987221744}
   - component: {fileID: 2488080355576122238}
+  - component: {fileID: 2195906319343988800}
   m_Layer: 9
   m_Name: Dragon
   m_TagString: Untagged
@@ -831,34 +851,6 @@ Transform:
   - {fileID: 4722203466590299580}
   m_Father: {fileID: 6684309370511423202}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &9203542620204390043
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7360416049081250293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SortKey: 4287782868
-  ObjectInterest: 1
-  Flags: 262145
-  NestedObjects: []
-  NetworkedBehaviours:
-  - {fileID: 3546934069986882188}
-  - {fileID: 8712038509460753610}
-  - {fileID: 5314955116061278242}
-  - {fileID: 7662941046696146197}
-  - {fileID: 2488080355576122238}
-  - {fileID: 2658804196659265938}
-  - {fileID: 186996097690406526}
-  - {fileID: 8378362354884446407}
-  - {fileID: 2307829435785074139}
-  - {fileID: 3144534816467932656}
-  ForceRemoteRenderTimeframe: 0
 --- !u!50 &7152563287532069672
 Rigidbody2D:
   serializedVersion: 5
@@ -1018,6 +1010,34 @@ MonoBehaviour:
   GizmosColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
   Hitboxes:
   - {fileID: 9206081421842572845}
+--- !u!114 &2195906319343988800
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7360416049081250293}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SortKey: 2903909783
+  ObjectInterest: 1
+  Flags: 262145
+  NestedObjects: []
+  NetworkedBehaviours:
+  - {fileID: 3546934069986882188}
+  - {fileID: 8712038509460753610}
+  - {fileID: 5314955116061278242}
+  - {fileID: 7662941046696146197}
+  - {fileID: 2488080355576122238}
+  - {fileID: 2658804196659265938}
+  - {fileID: 186996097690406526}
+  - {fileID: 8378362354884446407}
+  - {fileID: 2307829435785074139}
+  - {fileID: 3144534816467932656}
+  ForceRemoteRenderTimeframe: 0
 --- !u!1 &7676478405166497041
 GameObject:
   m_ObjectHideFlags: 0
