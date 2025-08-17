@@ -1,13 +1,21 @@
 using System.Linq;
 using UnityEngine;
 using Fusion.Addons.FSM;
+using Fusion;
 
 public class GameStagePlayingState : BaseStateBehaviour
 {
     public override E_StateName StateName => E_StateName.PlayingState;
 
-    protected override void OnEnterState()
+    private TickTimer _deadStageTimer = TickTimer.None;
+    private const float _deadStageTime = 2.0f;
+
+    private bool _fadeInUI = false;
+    protected override async void OnEnterState()
     {
+        _isNextDeadStage = false;
+        _deadStageTimer = TickTimer.None;
+        _fadeInUI = true;
         if (Runner.IsServer)
         {
             PlayBGM();
@@ -19,8 +27,10 @@ public class GameStagePlayingState : BaseStateBehaviour
                 return;
             }
             PlayerM.SetPlayerPositions(startPos[0].transform.position);
-
-
+            await Awaitable.WaitForSecondsAsync(2.0f);
+            GameStates.RPC_FadeInUI(Runner, 1.0f);
+            await Awaitable.WaitForSecondsAsync(1.0f);
+            _fadeInUI = false;
         }
     }
 
@@ -40,20 +50,31 @@ public class GameStagePlayingState : BaseStateBehaviour
             GameStates.RPC_PlayBGM(Runner, "3-1");
         else if (completedState.StageDataIndex - 1 == 20005)
             GameStates.RPC_PlayBGM(Runner, "3-2");
-        GameStates.RPC_FadeInUI(Runner, 1.0f);
     }
 
     protected override void OnExitState()
     {
+        _isNextDeadStage = false;
+        _deadStageTimer = TickTimer.None;
     }
 
+    private bool _isNextDeadStage = false;
     protected override void OnFixedUpdate()
     {
+        if (_fadeInUI)
+            return;
         // Note - 플레이어가 탈출문을 트리거를 하는경우 외부에서 강제로 상태가 변경
 
         // 모든 플레이어가 죽었을경우 실패상태로 전환
-        if (Runner.IsServer && PlayerM.IsAllPlayerDead())
+        if (Runner.IsServer && PlayerM.IsAllPlayerDead() && _isNextDeadStage == false)
         {
+            _isNextDeadStage  = true;
+            _deadStageTimer = TickTimer.CreateFromSeconds(Runner, _deadStageTime);
+        }
+
+        if (Runner.IsServer &&_isNextDeadStage && _deadStageTimer.ExpiredOrNotRunning(Runner))
+        {
+            _isNextDeadStage = false;
             Machine.ForceActivateState(Machine.GetState<GameStageFailedState>());
         }
     }
