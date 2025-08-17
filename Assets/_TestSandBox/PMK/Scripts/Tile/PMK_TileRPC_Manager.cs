@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Fusion;
 using UnityEngine;
+using UnityEngine.Splines.ExtrusionShapes;
 using UnityEngine.Tilemaps;
 
 public class PMK_TileRPC_Manager : NetworkBehaviour
@@ -101,7 +102,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         {
             tileRogic.mainTilemap.SetTile(cellPos, null);
             tileRogic.mainTilemap.RefreshTile(cellPos);
-            Instantiate(tileRogic.trap[1], worldPos, Quaternion.identity, tileRogic.parentTrans);
+            Instantiate(tileRogic.trap[3], worldPos, Quaternion.identity, tileRogic.parentTrans);
         }
         else
         {
@@ -174,7 +175,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
             Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
 
-            RPC_SpawnTrap(worldPos, 0);
+            RPC_SpawnStageTrap(cellPos);
         }
         else
         {
@@ -202,7 +203,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
         if (isThreeAboveEmpty && HasStateAuthority)
         {
-            RPC_SpawnTrap(worldPos, 1);
+            RPC_SpawnTrap(cellPos, 4);
             Rpc_DestroyItem(cellPos);
         }
         else
@@ -251,12 +252,52 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
 
     #region Trap 관련 RPC 메서드
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    void RPC_SpawnTrap(Vector3Int cellPos, int trapIndex)
+    {
+        Runner.Spawn(tileRogic.trap[trapIndex], tileRogic.mainTilemap.GetCellCenterWorld(cellPos), Quaternion.identity, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(tileRogic.parentTrans);
+            obj.name = tileRogic.trap[trapIndex].name;
+
+            var netObj = obj.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                Runner.SetIsSimulated(netObj, true);
+            }
+        });
+    }
 
     // 함정 생성
+    private int stagetrap = 0; // 함정 인덱스 (0: 화살, 1: 돌, 2: 즉사 트랩 등)
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
-    void RPC_SpawnTrap(Vector3 worldPos, int trapIndex)
+    void RPC_SpawnStageTrap(Vector3Int cellPos)
     {
-        Instantiate(tileRogic.trap[trapIndex], worldPos, Quaternion.identity, tileRogic.parentTrans);
+        if (tileRogic.currentStage == "1-1")
+        {
+            stagetrap = 0;
+        }
+        else if (tileRogic.currentStage == "2-1")
+        {
+            stagetrap = 1;
+        }
+        else if (tileRogic.currentStage == "3-1")
+        {
+            stagetrap = 2;
+        }
+
+        if (!HasStateAuthority) return; // 클라이언트는 함정 생성 못 함
+        Runner.Spawn(tileRogic.trap[0], tileRogic.mainTilemap.GetCellCenterWorld(cellPos), Quaternion.identity, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(tileRogic.parentTrans);
+            obj.name = tileRogic.trap[0].name;
+
+            var netObj = obj.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                Runner.SetIsSimulated(netObj, true);
+            }
+        });
     }
 
 
@@ -265,7 +306,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     {
         if (!Object.HasStateAuthority) return; // 클라이언트는 스폰 못 함
 
-        var arrowInstance = Runner.Spawn(tileRogic.launchTrapPrefab, position, Quaternion.identity);
+        var arrowInstance = Runner.Spawn(tileRogic.launchTrapPrefab[stagetrap], position, Quaternion.identity);
         spawnedArrows.Add(arrowInstance);
 
         var rb = arrowInstance.GetComponent<Rigidbody2D>();
