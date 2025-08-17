@@ -9,6 +9,7 @@ public class TitleScene : MonoBehaviour
             return;
         _inited = true;
 
+        UI_Setting.ApplyResolution();
         await BackEndWorkFlow.Inst.LoginGuest();
         LobbyUI_Manager.Inst.ActiveTitlePanel(true);
     }
