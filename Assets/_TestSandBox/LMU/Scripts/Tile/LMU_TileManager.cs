@@ -38,7 +38,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 if (stageInfo.IsBossStage == 1)
                 {
                    Debug.Log("보스 스테이지 로드");
-                   ResetBoosMap();
+                    RPC_ResetBoosMap();
                    Create_Map("B", bossStage, 0, 0);
                    bossStage++;
                    return;

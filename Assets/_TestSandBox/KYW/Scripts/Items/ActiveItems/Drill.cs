@@ -16,6 +16,7 @@ public class Drill : NetworkBehaviour, IItemInteraction
     [Networked] private TickTimer AttackTimer { get; set; }
     [Networked] private NetworkBool IsHeld { get; set; }
     [Networked] private NetworkBool IsDrilling { get; set; }
+    [Networked] private NetworkBool IsDrillSoundPlaying { get; set; }
     
     bool IItemInteraction.IsHeld => IsHeld;
     
@@ -60,11 +61,19 @@ public class Drill : NetworkBehaviour, IItemInteraction
             attackHandler.AttackCollider = attackCollider;
             attackCollider.enabled = false;
         }
+        
+        IsDrillSoundPlaying = false;
     }
     
     public void OnUsePress(Vector2 mouseWorldPosition, Vector2 playerPosition)
     {
         StartDrilling();
+        
+        // 클릭 시 루프 사운드 시작 (드릴링 시작 시점과 동일하게 처리)
+        if (!IsDrillSoundPlaying)
+        {
+            RPC_StartDrillSound();
+        }
     }
     
     public void OnUseHold(Vector2 mouseWorldPosition, Vector2 playerPosition)
@@ -74,6 +83,7 @@ public class Drill : NetworkBehaviour, IItemInteraction
         {
             StartDrilling();
         }
+        // 사운드 시작 로직은 OnUsePress에서만 처리
     }
     
     public void OnUseRelease(Vector2 mouseWorldPosition, Vector2 playerPosition)
@@ -91,6 +101,12 @@ public class Drill : NetworkBehaviour, IItemInteraction
         // 콜라이더 활성화
         if (attackCollider != null)
             attackCollider.enabled = true;
+            
+        // 드릴링 소리 시작 (중복 가드)
+        if (!IsDrillSoundPlaying)
+        {
+            RPC_StartDrillSound();
+        }
     }
     
     private void StopDrilling()
@@ -107,6 +123,9 @@ public class Drill : NetworkBehaviour, IItemInteraction
             drillSprite.localRotation = originalSpriteRotation;
             currentRotation = 0f;
         }
+        
+        // 드릴링 소리 중지
+        RPC_StopDrillSound();
     }
     
     public override void FixedUpdateNetwork()
@@ -173,6 +192,39 @@ public class Drill : NetworkBehaviour, IItemInteraction
         if (rb != null)
         {
             rb.AddForce(force, ForceMode2D.Impulse);
+        }
+    }
+    
+    private void OnDisable()
+    {
+        // 오브젝트가 비활성화/제거될 때 안전하게 루프 사운드 정지
+        if (IsDrillSoundPlaying)
+        {
+            AudioManager.Inst.StopLoopingSound("드릴지속소리");
+            IsDrillSoundPlaying = false;
+        }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_StartDrillSound()
+    {
+        // 드릴링 소리 시작 (지속 재생)
+        if (!IsDrillSoundPlaying)
+        {
+            AudioManager.Inst.PlayLoopingSound("드릴지속소리", transform.position);
+            IsDrillSoundPlaying = true;
+        }
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_StopDrillSound()
+    {
+        // 드릴링 소리 중지
+        if (IsDrillSoundPlaying)
+        {
+            AudioManager.Inst.StopLoopingSound("드릴지속소리");
+            IsDrillSoundPlaying = false;
         }
     }
 } 

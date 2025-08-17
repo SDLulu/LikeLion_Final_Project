@@ -36,7 +36,6 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         tileRogic.Create_TileItem(cellPos);
     }
 
-
     // 타일 파괴
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void Rpc_DestroyTile(Vector3Int Pos)
@@ -155,6 +154,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
     private IEnumerator DelayedTrapSpawn(Vector3Int cellPos)
     {
         yield return null;
+        if (!HasStateAuthority) yield break;
 
         bool isThreeAboveEmpty =
         tileRogic.mainTilemap.GetTile(cellPos + new Vector3Int(0, 1, 0)) == null &&
@@ -178,7 +178,7 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
         else
         {
-            RPC_Create_Tile(cellPos);
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
 
@@ -200,14 +200,15 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
 
         Vector3 worldPos = tileRogic.mainTilemap.GetCellCenterWorld(cellPos);
 
-        if (isThreeAboveEmpty)
+        if (isThreeAboveEmpty && HasStateAuthority)
         {
             RPC_SpawnTrap(worldPos, 1);
             Rpc_DestroyItem(cellPos);
         }
         else
         {
-            RPC_Create_Tile(cellPos);
+            if (!HasStateAuthority) return; // 클라이언트는 타일 생성 못 함
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
 
@@ -241,9 +242,9 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
                                                 colUp == null && tileDown != null && tileCenter == null ||
                                                             colUp == null && tileUp != null && tileCenter == null;
 
-        if (isTileEmpty)
+        if (isTileEmpty && HasStateAuthority)
         {
-            RPC_Create_Tile(cellPos);
+            RPC_Create_Tile(cellPos); // 기본 타일 생성
         }
     }
     #endregion

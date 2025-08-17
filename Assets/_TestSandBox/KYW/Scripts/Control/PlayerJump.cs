@@ -26,13 +26,16 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
     [Networked] public bool IsJumping { get; private set; }
     [Networked] public float JumpTime { get; private set; }
     [Networked] public int CurrentJumpCount { get; private set; } // 현재 점프 횟수
-    [Networked] public float RocketFuel { get; private set; } // 로켓 연료량
-    [Networked] public bool IsRocketThrusting { get; private set; } // 로켓 추진 중인지
+    [Networked] public float RocketFuel { get; set; } // 로켓 연료량
+    [Networked] public bool IsRocketThrusting { get; set; } // 로켓 추진 중인지
     
     // 🦘 밑점프 상태 추적 (로컬에서만)
     private bool isDownJumping = false;
     private float downJumpTimer = 0f;
     [SerializeField] private float downJumpIgnoreTime = 0.5f;  // 플랫폼 무시 시간
+    
+    // 🦘 착지 상태 추적 (로컬에서만)
+    private bool wasGrounded = false;
     
     // 🦘 비활성화된 플랫폼 컴포넌트들 저장
     private List<BoxCollider2D> disabledBoxColliders = new List<BoxCollider2D>();
@@ -78,9 +81,14 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
         // 상태 확인 - 점프 불가능한 상태면 처리하지 않음
         if (playerController.IsDead || playerController.IsStunned || playerController.IsHeld || playerController.IsThrown)
         {
+
             return;
         }
-        
+                // 사망 상태일 때 로켓 소리 정리
+        if (playerController.IsDead && IsRocketThrusting)
+        {
+            RPC_StopRocketSound();
+        }
         HandleJump(input);
         HandleRocketThrust(input); // 로켓 추진 처리
         UpdateDownJump();  // 밑점프 타이머 처리
@@ -142,6 +150,12 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
             IsJumping = true;
             JumpTime = 0f;
             CurrentJumpCount = 1; // 첫 번째 점프
+            
+            // 날개가 있으면 날개 소리 재생
+            if (playerInventory.hasWings)
+            {
+                RPC_PlayWingsSound();
+            }
         }
         
         // 🎮 공중 점프 (날개가 있을 때)
@@ -151,6 +165,10 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
             IsJumping = true;
             JumpTime = 0f;
             CurrentJumpCount++;
+            
+            // 공중 점프 시 날개 소리 재생
+            RPC_PlayWingsSound();
+            
             Debug.Log($"[{name}] 공중 점프! ({CurrentJumpCount}/{GetMaxJumpCount()})");
             
             // 날개 펄럭임 애니메이션은 PlayerPassiveItemVisual에서 처리
@@ -179,6 +197,12 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
         // 땅에 닿으면 점프 상태 초기화 및 연료 충전
         if (groundCheck.IsGrounded && rb.linearVelocity.y <= 0)
         {
+            // 착지 소리 재생 (이전에 공중에 있었다면)
+            if (!wasGrounded)
+            {
+                RPC_PlayLandingSound();
+            }
+            
             IsJumping = false;
             JumpTime = 0f;
             CurrentJumpCount = 0; // 점프 횟수 초기화
@@ -190,6 +214,9 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
                 Debug.Log($"[{name}] 로켓 연료 충전됨: {RocketFuel}");
             }
         }
+        
+        // 착지 상태 업데이트
+        wasGrounded = groundCheck.IsGrounded;
     }
     
     private void ApplyGravity()
@@ -215,7 +242,12 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
         // 로켓이 없거나 연료가 없으면 처리하지 않음
         if (!playerInventory.hasRocket || RocketFuel <= 0)
         {
-            IsRocketThrusting = false;
+            if (IsRocketThrusting)
+            {
+                IsRocketThrusting = false;
+                // 로켓 소리 중지
+                RPC_StopRocketSound();
+            }
             return;
         }
         
@@ -233,19 +265,31 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
             RocketFuel = Mathf.Max(0, RocketFuel);
             
             // 로켓 추진 상태 설정
-            IsRocketThrusting = true;
+            if (!IsRocketThrusting)
+            {
+                IsRocketThrusting = true;
+                // 로켓 소리 시작
+                RPC_StartRocketSound();
+            }
             
             // 연료 소진 시 로그
             if (RocketFuel <= 0)
             {
                 Debug.Log($"[{name}] 로켓 연료 소진!");
                 IsRocketThrusting = false;
+                // 로켓 소리 중지
+                RPC_StopRocketSound();
             }
         }
         else
         {
             // 로켓 추진 중이 아니면 상태 해제
-            IsRocketThrusting = false;
+            if (IsRocketThrusting)
+            {
+                IsRocketThrusting = false;
+                // 로켓 소리 중지
+                RPC_StopRocketSound();
+            }
         }
     }
     
@@ -423,6 +467,42 @@ public class PlayerJump : NetworkBehaviour, ISoftReset
         ButtonsPrevious = default;
         isDownJumping = false;
         downJumpTimer = 0f;
+        wasGrounded = false;
+        
+        // 로켓 소리 정리
+        RPC_StopRocketSound();
+        
         RestorePlatformCollisions();
+    }
+
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_PlayLandingSound()
+    {
+        // 착지 소리 재생
+        // AudioManager.Inst.PlaySound("땅착지1", transform.position);
+    }
+    
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_PlayWingsSound()
+    {
+        // 날개 소리 재생
+        AudioManager.Inst.PlaySound("날개", transform.position);
+    }
+    
+    // 로켓 소리 시작 RPC
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_StartRocketSound()
+    {
+        // 로켓 소리 시작
+        AudioManager.Inst.PlayLoopingSound("제트팩", transform.position);
+    }
+    
+    // 로켓 소리 중지 RPC
+    [Rpc(RpcSources.InputAuthority, RpcTargets.All)]
+    private void RPC_StopRocketSound()
+    {
+        // 로켓 소리 중지
+        AudioManager.Inst.StopLoopingSound("제트팩");
     }
 } 

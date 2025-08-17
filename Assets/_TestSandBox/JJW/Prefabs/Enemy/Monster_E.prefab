@@ -963,7 +963,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3572938310878210545}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3.55, y: 1.77, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1151,6 +1151,10 @@ MonoBehaviour:
   wallCheckDistance: 0.7
   groundCheckDistance: 0.2
   attackCheckRadius: 0.3
+  detectionBoxSize: {x: 10, y: 2}
+  detectionBoxOffset: {x: 0, y: 1}
+  attackBoxSize: {x: 1.8, y: 1}
+  attackBoxOffset: {x: 0, y: 0.5}
   enemyData: {fileID: 11400000, guid: 76c180c0ae7bd6045a1b3e840880c50e, type: 2}
   fsm: {fileID: 1101023161831609057}
   _CurrentHealth: 0
