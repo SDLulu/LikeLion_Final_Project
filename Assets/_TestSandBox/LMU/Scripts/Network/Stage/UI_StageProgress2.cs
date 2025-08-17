@@ -1,7 +1,7 @@
 using TMPro;
 using UnityEngine;
 
-public class UI_StageProgress : MonoBehaviour
+public class UI_StageProgress2 : MonoBehaviour
 {
     [Header("인스펙터 참조")]
     [SerializeField] private TMP_Text _sessionTimeText;
@@ -11,22 +11,6 @@ public class UI_StageProgress : MonoBehaviour
     [SerializeField] private TMP_Text _itemCollectCountText;
     [SerializeField] private bool _showSessionTime = true;
 
-    private void Awake()
-    {
-        NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
-        NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
-    }
-
-    private void Onable()
-    {
-        NetworkEventSystem.Inst.OnCutSceneActiveEvent -= OnCutSceneActive;
-        NetworkEventSystem.Inst.OnCutSceneActiveEvent += OnCutSceneActive;
-    }
-    
-    private void OnCutSceneActive(bool isActive)
-    {
-        this.gameObject.SetActive(isActive == false);
-    }
 
     public void UpdateTimeData(double sessionElapsedSeconds, double stageElapsedSeconds, double totalSeconds, string currentStageId)
     {

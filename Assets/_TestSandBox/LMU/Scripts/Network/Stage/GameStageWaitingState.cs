@@ -28,6 +28,7 @@ public class GameStageWaitingState : BaseStateBehaviour
                 // 첫번째 스테이지 로딩
                 if (Runner.IsServer)
                 {
+                    PlayerM.SetPlayerPositions(new Vector3(-100.0f, -100.0f, 0.0f));
                     var firstStageData = DataManager.Inst.StageData.First().Value;
                     NetEvent.TriggerStageLoadDoneEvent(firstStageData);
                     _mapLoadTimer = TickTimer.CreateFromSeconds(Runner, _mapLoadTime);
