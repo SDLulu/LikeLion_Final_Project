@@ -294,7 +294,7 @@ MonoBehaviour:
   m_Script: {fileID: -1552182283, guid: e725a070cec140c4caffb81624c8c787, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SortKey: 3094599390
+  SortKey: 730423437
   ObjectInterest: 1
   Flags: 262145
   NestedObjects: []
@@ -637,14 +637,14 @@ MonoBehaviour:
   stateDuration: 30
   summonAnimStateName: Idle
   monsterPrefabs:
-  - RawGuidValue: e45a23ccb74bf704e9bca11e6b863d09
-  - RawGuidValue: 748563cf9ee096042a3f92ca2c751213
-  - RawGuidValue: e78c11ca0a2cdd546b4e4595fa79b70e
+  - RawGuidValue: dccd0fc9bc15be443bcd58545d439279
+  - RawGuidValue: 3289cb0e9b24ac24a9191177f32237c4
+  - RawGuidValue: c45baf00b7d9f6a41b1e142ef51a6d79
   spawnPoints:
   - {fileID: 5504277712248447779}
   - {fileID: 4031771337068324173}
   - {fileID: 8827406980124821680}
-  exitDelay: 1.5
+  exitDelay: 1
 --- !u!1 &5063797708191327158
 GameObject:
   m_ObjectHideFlags: 0
@@ -780,11 +780,11 @@ MonoBehaviour:
   animState: 
   animTransitionLength: 0.06666667
   stateDuration: 30
-  attackAnimStateName: Jump
+  attackAnimStateName: Attacking
   meteorPrefab:
     RawGuidValue: 300af8f73271e8943887cb13e8fc4540
-  numberOfMeteors: 10
-  spawnInterval: 0.3
+  numberOfMeteors: 15
+  spawnInterval: 0.2
   spawnHeight: 15
   leftBoundary: {fileID: 4383607626395347200}
   rightBoundary: {fileID: 4656016147746073598}
@@ -994,8 +994,8 @@ MonoBehaviour:
   stateDuration: 30
   superJumpAnimName: Jump
   landingAnimName: Landing
-  jumpHeight: 10
-  jumpSpeed: 12
+  jumpHeight: 24
+  jumpSpeed: 16
   landingEffectPrefab:
     RawGuidValue: fa371a89afd82fd40982518507cbc2c1
   EffectPos: {fileID: 5359839033317109362}
