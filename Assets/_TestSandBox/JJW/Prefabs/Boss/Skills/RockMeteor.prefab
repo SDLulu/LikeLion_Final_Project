@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 5798330854722723726}
   - component: {fileID: 832895811079520270}
   - component: {fileID: 2643067835491952645}
-  - component: {fileID: 2912822616137537423}
+  - component: {fileID: 3313923028003709541}
   m_Layer: 0
   m_Name: RockMeteor
   m_TagString: Untagged
@@ -31,7 +31,7 @@ Transform:
   m_GameObject: {fileID: 3545848478004590249}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.08, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -81,12 +81,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 47a97e72cf645934bb7037a09465f5e9, type: 3}
+  m_Sprite: {fileID: 6199390641189054351, guid: 47a97e72cf645934bb7037a09465f5e9, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 9.09, y: 23.990103}
+  m_Size: {x: 3.125, y: 3.1263165}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -165,17 +165,17 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.97438884, y: -0.07495284}
+  m_Offset: {x: 0.033602715, y: 0.044803143}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.68125, y: 14.993814}
-    newSize: {x: 9.09, y: 23.990103}
+    oldSize: {x: 3.125, y: 3.1263165}
+    newSize: {x: 3.125, y: 3.1263165}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 3.3327231, y: 3.4510536}
+  m_Size: {x: 3.2551856, y: 3.6734405}
   m_EdgeRadius: 0
 --- !u!114 &2643067835491952645
 MonoBehaviour:
@@ -195,9 +195,9 @@ MonoBehaviour:
   NestedObjects: []
   NetworkedBehaviours:
   - {fileID: 5798330854722723726}
-  - {fileID: 2912822616137537423}
+  - {fileID: 3313923028003709541}
   ForceRemoteRenderTimeframe: 0
---- !u!114 &2912822616137537423
+--- !u!114 &3313923028003709541
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -206,15 +206,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 3545848478004590249}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fd8180790cc9fd4fb8775c2a09af804, type: 3}
+  m_Script: {fileID: 11500000, guid: ce0012e593328a54a83d2bc4c5fa39ad, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   projectileDmg: 1
-  fallSpeed: 20
-  lifeTime: 5
+  moveSpeed: -15
+  lifeTime: 10
+  vanishAnimName: Vanish
   playerLayerMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 2097152
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 65536
