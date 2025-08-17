@@ -50,12 +50,16 @@ public class Friends : BaseManager<Friends>
                         for (int i = 0; i < json["rows"].Count; i++)
                         {
                             var row = json["rows"][i];
+                            // DynamoDB 형태의 JSON 파싱
+                            string nickname = GetDynamoDBStringValue(row, "nickname", "알 수 없음");
+                            string inDate = GetDynamoDBStringValue(row, "inDate", "");
+                            
                             var friendData = new FriendData
                             {
                                 ProfileImageID = UnityEngine.Random.Range(0, 5), // 임시로 랜덤 프로필 이미지
-                                NickName = row["nickname"].ToString(),
-                                GameStates = _DetermineGameState(row),
-                                InDate = row["inDate"].ToString()
+                                NickName = nickname,
+                                GameStates = DetermineGameState(row),
+                                InDate = inDate
                             };
                             friendDataList.Add(friendData);
                         }
@@ -91,8 +95,6 @@ public class Friends : BaseManager<Friends>
             return;
         }
 
-        Debug.Log("<color=yellow>받은 친구 요청 목록을 조회합니다...</color>");
-
         Backend.Friend.GetReceivedRequestList(callback =>
         {
             if (callback.IsSuccess())
@@ -108,12 +110,17 @@ public class Friends : BaseManager<Friends>
                         for (int i = 0; i < json["rows"].Count; i++)
                         {
                             var row = json["rows"][i];
+                            
+                            // DynamoDB 형태의 JSON 파싱
+                            string nickname = GetDynamoDBStringValue(row, "nickname", "알 수 없음");
+                            string inDate = GetDynamoDBStringValue(row, "inDate", "");
+                            
                             var requestData = new FriendData
                             {
                                 ProfileImageID = UnityEngine.Random.Range(0, 5),
-                                NickName = row["nickname"].ToString(),
+                                NickName = nickname,
                                 GameStates = "요청 대기중",
-                                InDate = row["inDate"].ToString()
+                                InDate = inDate
                             };
                             requestDataList.Add(requestData);
                         }
@@ -149,8 +156,6 @@ public class Friends : BaseManager<Friends>
             return;
         }
 
-        Debug.Log("<color=yellow>보낸 친구 요청 목록을 조회합니다...</color>");
-
         Backend.Friend.GetSentRequestList(callback =>
         {
             if (callback.IsSuccess())
@@ -161,20 +166,30 @@ public class Friends : BaseManager<Friends>
                     
                     LitJson.JsonData json = callback.GetReturnValuetoJSON();
                     
-                    if (json["rows"] != null)
+                    
+                    if (json != null && json["rows"] != null)
                     {
                         for (int i = 0; i < json["rows"].Count; i++)
                         {
                             var row = json["rows"][i];
+                            
+                            // DynamoDB 형태의 JSON 파싱
+                            string nickname = GetDynamoDBStringValue(row, "nickname", "알 수 없음");
+                            string inDate = GetDynamoDBStringValue(row, "inDate", "");
+                            
                             var requestData = new FriendData
                             {
                                 ProfileImageID = UnityEngine.Random.Range(0, 5),
-                                NickName = row["nickname"].ToString(),
+                                NickName = nickname,
                                 GameStates = "요청 전송됨",
-                                InDate = row["inDate"].ToString()
+                                InDate = inDate
                             };
                             requestDataList.Add(requestData);
                         }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("JSON 응답에 rows 데이터가 없습니다.");
                     }
 
                     Debug.Log($"<color=green>보낸 친구 요청 조회 성공! 총 {requestDataList.Count}개의 요청</color>");
@@ -198,9 +213,29 @@ public class Friends : BaseManager<Friends>
     /// <summary>
     /// 친구의 게임 상태를 결정하는 내부 함수
     /// </summary>
-    private string _DetermineGameState(LitJson.JsonData friendRow)
+    private string DetermineGameState(LitJson.JsonData friendRow)
     {
         return "Offline";
+    }
+
+    /// <summary>
+    /// DynamoDB 형태의 JSON에서 문자열 값을 안전하게 추출
+    /// </summary>
+    private string GetDynamoDBStringValue(LitJson.JsonData row, string fieldName, string defaultValue = "")
+    {
+        try
+        {
+            if (row != null && row[fieldName] != null && row[fieldName]["S"] != null)
+            {
+                return row[fieldName]["S"].ToString();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"DynamoDB 필드 '{fieldName}' 파싱 실패: {ex.Message}");
+        }
+        
+        return defaultValue;
     }
 
     /// <summary>
@@ -233,7 +268,23 @@ public class Friends : BaseManager<Friends>
                 {
                     // JSON에서 inDate 추출
                     LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
-                    string targetInDate = json["inDate"].ToString();
+                    
+                    if (json == null)
+                    {
+                        Debug.LogError("유저 정보를 찾을 수 없습니다.");
+                        onFail?.Invoke("유저 정보를 찾을 수 없습니다.");
+                        return;
+                    }
+                    
+                    // DynamoDB 형태의 JSON 파싱
+                    string targetInDate = GetDynamoDBStringValue(json, "inDate", "");
+                    
+                    if (string.IsNullOrEmpty(targetInDate))
+                    {
+                        Debug.LogError("유저 정보에서 inDate를 찾을 수 없습니다.");
+                        onFail?.Invoke("유저 정보를 찾을 수 없습니다.");
+                        return;
+                    }
 
                     Debug.Log($"<color=green>유저 '{targetNickname}'를 찾았습니다. 친구신청을 보냅니다...</color>");
 
