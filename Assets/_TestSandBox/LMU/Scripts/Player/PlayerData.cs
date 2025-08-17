@@ -83,7 +83,10 @@ public class PlayerData : NetworkBehaviour
                 RPC_SetNickName(randomFake.NickName);
             }
             else
+            {
+                BackEndWorkFlow.FakeNickName = BackEndWorkFlow.NickName;
                 RPC_SetNickName(BackEndWorkFlow.NickName);
+            }
         }
         else
         {
