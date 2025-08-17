@@ -11,8 +11,6 @@ public class LeaderBoard : BaseManager<LeaderBoard>
     {
         public int Rank;
         public string NickName;
-        public int SessionDurationSec;
-        public string Stage;
         public int TotalScore;
     }
 
@@ -104,9 +102,6 @@ public class LeaderBoard : BaseManager<LeaderBoard>
         });
     }
 
-    /// <summary>
-    /// 1등부터 10등까지의 리더보드 순위를 조회
-    /// </summary>
     public void GetTop10RankingsAsync(string leaderboardUuid, Action<bool, List<LeaderBoardEntry>, BackendReturnObject> onCompleted)
     {
         if (string.IsNullOrEmpty(leaderboardUuid))
@@ -116,8 +111,9 @@ public class LeaderBoard : BaseManager<LeaderBoard>
             return;
         }
 
-        int limit = 10;  // 상위 10명
-        int offset = 0;  // 1등부터 시작
+        // 상위 10명 조회
+        int limit = 10;
+        int offset = 0;
 
         Backend.Leaderboard.User.GetLeaderboard(leaderboardUuid, limit, offset, callback =>
         {
@@ -149,78 +145,19 @@ public class LeaderBoard : BaseManager<LeaderBoard>
     }
 
     /// <summary>
-    /// UserLeaderboardItem을 LeaderBoardEntry로 변환
+    /// UserLeaderboardItem을 LeaderBoardEntry로 변환하는 함수
     /// </summary>
     private LeaderBoardEntry ConvertToLeaderBoardEntry(UserLeaderboardItem item)
     {
         var entry = new LeaderBoardEntry();
         
-        // 기본 정보
         entry.Rank = int.Parse(item.rank);
         entry.NickName = item.nickname;
         entry.TotalScore = int.Parse(item.score);
         
-        // extraData 처리 - 뒤끝에서는 보통 JSON이 아닌 단순 값이 올 수 있음
-        if (string.IsNullOrEmpty(item.extraData) == false)
-        {
-            Debug.Log($"extraData 내용: '{item.extraData}'");
-            
-            // JSON 형태인지 확인 ('{' 로 시작하는지)
-            if (item.extraData.StartsWith("{"))
-            {
-                try
-                {
-                    var extraJson = LitJson.JsonMapper.ToObject(item.extraData);
-                    
-                    if (extraJson.ContainsKey("SessionDurationSec"))
-                    {
-                        entry.SessionDurationSec = int.Parse(extraJson["SessionDurationSec"].ToString());
-                    }
-                    
-                    if (extraJson.ContainsKey("Stage"))
-                    {
-                        entry.Stage = extraJson["Stage"].ToString();
-                    }
-                    else
-                    {
-                        entry.Stage = "Unknown";
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"extraData JSON 파싱 실패: {ex.Message}, 원본: '{item.extraData}'");
-                    SetDefaultExtraValues(entry);
-                }
-            }
-            else
-            {
-                // JSON이 아닌 경우 - extraData를 Stage로 사용하거나 기본값 설정
-                Debug.Log($"extraData가 JSON 형태가 아님: '{item.extraData}'");
-                entry.Stage = item.extraData; // extraData를 스테이지명으로 사용
-                entry.SessionDurationSec = 0;
-            }
-        }
-        else
-        {
-            SetDefaultExtraValues(entry);
-        }
-        
-        // extraName도 확인해보자 (추가 정보가 있을 수 있음)
-        if (string.IsNullOrEmpty(item.extraName) == false)
-        {
-            Debug.Log($"extraName 내용: '{item.extraName}'");
-        }
-        
         return entry;
     }
     
-    /// <summary>
-    /// 기본 extraData 값 설정
-    /// </summary>
-    private void SetDefaultExtraValues(LeaderBoardEntry entry)
-    {
-        entry.SessionDurationSec = 0;
-        entry.Stage = "Unknown";
-    }
+
 
 }

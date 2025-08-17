@@ -285,7 +285,7 @@ public class PlayerManager : NetworkBehaviour
         if (Runner.IsServer == false)
             return;
 
-        Debug.Log("<color=green>모든 플레이어를 소프트 리셋</color>");
+        Debug.Log("모든 플레이어를 소프트 리셋");
 
         // var players = GetPlayerDatas();
         // foreach (var player in players)
@@ -333,7 +333,7 @@ public class PlayerManager : NetworkBehaviour
         await WaitForScene("GameScene");
         Internal_MoveToScene("GameScene");
 
-        Debug.Log("<color=green>게임씬 이동</color>");
+        Debug.Log("게임씬 이동");
 
         // 게임씬 UI
         LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
@@ -348,7 +348,7 @@ public class PlayerManager : NetworkBehaviour
         await WaitForScene("GameScene");
         Internal_MovePlayerToScene("GameScene", targetPlayer);
 
-        Debug.Log("<color=green>게임씬 이동 (타깃)</color>");
+        Debug.Log("게임씬 이동 (타깃)");
 
         // 게임씬 UI (타깃 클라이언트 전용)
         LobbyUI_Manager.Inst.DeactiveAllLobbyUI();
@@ -360,7 +360,7 @@ public class PlayerManager : NetworkBehaviour
         await WaitForScene("LobbyScene");
         Internal_MoveToScene("LobbyScene");
 
-        Debug.Log("<color=green>로비씬 이동</color>");
+        Debug.Log("로비씬 이동");
 
         // 로비씬 UI
         LobbyUI_Manager.Inst.ActiveLobbyOnLineUI();
