@@ -19,6 +19,7 @@ public class UI_Continue : MonoBehaviour
     {
         this.transform.localScale = Vector3.zero;
         this.gameObject.SetActive(true);
+        UpdateContinueText(UI_CreateNickName.InputFieldStr);
 
         _scaleTween?.Kill();
 

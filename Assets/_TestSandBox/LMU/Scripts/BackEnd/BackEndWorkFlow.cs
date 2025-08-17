@@ -6,11 +6,11 @@ using UnityEngine;
 public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
     // 리더보드 식별 UUID, 공개용이라 여기 적어도 상관없음 
-    public string LeaderboardUUID { get; private set; } = "0198a6e4-2200-78b8-8076-c8328bad9975";
+    public string LeaderboardUUID { get; private set; } = "0198b525-b443-762b-9392-e9298dc577e3";
     
     // 유저 데이터가 기록되는 테이블 이름
-    public string TABLE_NAME { get; private set; } = "PlayerSession";
-    public static FakeClient.Data FakeNickNameData { get; private set; }
+    public string TABLE_NAME { get; private set; } = "PlayerSession2";
+    public static string FakeNickName { get; set; }
     public static bool IsFakeClient { get; private set; } = false;
     public static string NickName { get; private set; } = "백앤드는 아직 테스트중";
     private AwaitableCompletionSource<bool> _createNickNameTCS;
@@ -30,6 +30,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
             onSuccess: () =>
             {
                 Debug.Log("닉네임 업데이트 성공");
+                GameInviteManager.Inst.ConnectNotification();
                 CompleteCreateNickName();
             },
             onFail: () =>
@@ -79,9 +80,10 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                 // 로그인후 닉네임을 로드
                 else if (callback.IsSuccess() && callback.GetStatusCode() == "200")
                 {
-                    Debug.Log("이미 회원가입된 게스트 로그인");
                     await Fader.Inst.HideLoadingAsync();
                     await LoadNickname();
+                    GameInviteManager.Inst.ConnectNotification();
+                    Debug.Log($"이미 회원가입된 게스트 로그인 - <color=green>{NickName}</color>");
                     loginTCS.TrySetResult(true);
                     this._createNickNameTCS.TrySetResult(true);
                     return;
@@ -102,7 +104,7 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
                     await Fader.Inst.HideLoadingAsync();
                     loginTCS.TrySetResult(false);
                     this._createNickNameTCS.TrySetResult(false);
-                    FakeNickNameData = DataManager.Inst.GetRandomFakeClientData();
+                    FakeNickName = DataManager.Inst.GetRandomFakeClientData().NickName;
                     IsFakeClient = true;
                     return;
                 }
@@ -167,19 +169,32 @@ public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 
     public async Awaitable<bool> LoadNickname()
     {
+        bool ret = InitBackend();
+        if (ret == false)
+            return false;
+
         var loadNicknameTCS = new AwaitableCompletionSource<bool>();
         Backend.BMember.GetUserInfo(callback =>
         {
-            if (callback.IsSuccess())
+            try
             {
-                LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
-                string nickname = json["nickname"].ToString();
-                NickName = nickname;
-                loadNicknameTCS.TrySetResult(true);
+                if (callback.IsSuccess())
+                {
+                    Debug.Log("유저 정보 로드 성공");
+                    LitJson.JsonData json = callback.GetReturnValuetoJSON()["row"];
+                    string nickname = json["nickname"].ToString();
+                    NickName = nickname;
+                    loadNicknameTCS.TrySetResult(true);
+                }
+                else
+                {
+                    Debug.LogError($"유저 정보 로드 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                    loadNicknameTCS.TrySetResult(false);
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                Debug.LogError($"유저 정보 로드 실패 : {callback.GetStatusCode()} - {callback.GetErrorMessage()}");
+                Debug.LogError($"유저 정보 로드 실패 : {ex.Message}");
                 loadNicknameTCS.TrySetResult(false);
             }
         });

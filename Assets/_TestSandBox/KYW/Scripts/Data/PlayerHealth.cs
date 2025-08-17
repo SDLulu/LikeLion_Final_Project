@@ -3,13 +3,13 @@ using Fusion;
 using UnityEngine;
 
 // 플레이어 체력 관리 컴포넌트 (Fusion 네트워크 동기화)
-public class PlayerHealth : NetworkBehaviour, ISoftReset
+public class PlayerHealth : NetworkBehaviour
 {
     [Networked, OnChangedRender(nameof(OnHealthChanged))]
     public int Health { get; private set; } = 5;
 
     public int MaxHealth => 99;
-    public int StartHealth { get; private set; } = 5;
+    public int StartHealth { get; private set; } = 10;
 
     public event Action OnHealthChangedEvent; // 인자 없는 알림 (인벤토리 방식과 통일)
 
@@ -23,31 +23,15 @@ public class PlayerHealth : NetworkBehaviour, ISoftReset
         playerDeathHandler = GetComponentInParent<PlayerDeathHandler>();
     }
 
-    /// <summary>
-    /// 소프트 리셋: 체력을 시작 체력으로 되돌립니다.
-    /// </summary>
-    public void SoftResetStats()
-    {
-        if (HasStateAuthority == false)
-        {
-            return;
-        }
-        Health = StartHealth;
-    }
-
-    /// <summary>
-    /// ISoftReset 구현: 체력을 시작 체력으로 복원합니다.
-    /// </summary>
-    public void SoftReset()
-    {
-        SoftResetStats();
-    }
-
     // 데미지 처리
     public void TakeDamage(int amount)
     {
         if (!HasStateAuthority) return;
         Health = Mathf.Max(Health - amount, 0);
+        
+        // 별 이펙트와 피 이펙트 재생
+        RPC_PlayDamageEffects();
+        
         if (Health == 0)
         {
             Death();
@@ -77,5 +61,16 @@ public class PlayerHealth : NetworkBehaviour, ISoftReset
         {
             playerDeathHandler.Die();
         }
+    }
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayDamageEffects()
+    {
+        // 별 이펙트와 피 이펙트 재생 (+0.5y 높이에서 스폰)
+        Vector3 effectPosition = transform.position + Vector3.up * 0.5f;
+        AudioManager.Inst.PlaySound("별", effectPosition);
+        EffectManager.Inst.PlayEffect("별", effectPosition);
+        EffectManager.Inst.PlayEffect("피", effectPosition);
     }
 } 

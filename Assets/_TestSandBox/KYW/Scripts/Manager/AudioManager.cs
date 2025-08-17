@@ -77,11 +77,31 @@ public class AudioManager : MonoBehaviour
     {
         foreach (var sound in sounds)
         {
-            if (!string.IsNullOrEmpty(sound.soundName) && sound.audioClip != null)
+            if (sound == null || sound.audioClip == null) continue;
+
+            string keyByFileName = sound.audioClip.name;
+            string configuredKey = sound.soundName;
+
+            string primaryKey = !string.IsNullOrEmpty(configuredKey) ? configuredKey : keyByFileName;
+
+            // 비어있는 경우 자동으로 파일명으로 키를 설정
+            sound.soundName = primaryKey;
+
+            // 기본 키로 매핑
+            AddOrReplaceSoundMapping(primaryKey, sound);
+
+            // 파일명으로도 매핑하여 파일명 호출 지원
+            if (primaryKey != keyByFileName)
             {
-                soundDictionary[sound.soundName] = sound;
+                AddOrReplaceSoundMapping(keyByFileName, sound);
             }
         }
+    }
+
+    private void AddOrReplaceSoundMapping(string key, SoundData data)
+    {
+        if (string.IsNullOrEmpty(key) || data == null) return;
+        soundDictionary[key] = data;
     }
     
     private void InitializeAudioSourcePool()
@@ -145,6 +165,7 @@ public class AudioManager : MonoBehaviour
     // 🆕 지속 사운드 중지
     public void StopLoopingSound(string soundName)
     {
+        // 먼저 전달된 키로 직접 중지 시도
         if (loopingAudioSources.TryGetValue(soundName, out var audioSource))
         {
             audioSource.Stop();
@@ -157,7 +178,30 @@ public class AudioManager : MonoBehaviour
                 activeAudioSources.Remove(audioSource);
             }
             audioSourcePool.Enqueue(audioSource);
+            return;
         }
+
+        // 전달된 키가 파일명 별칭일 수 있으므로, 사운드 데이터 조회 후 기본 키로 재시도
+        if (soundDictionary != null && soundDictionary.TryGetValue(soundName, out var soundData))
+        {
+            string canonicalKey = soundData.soundName; // AddSoundsToDictionary에서 설정된 기본 키
+            if (loopingAudioSources.TryGetValue(canonicalKey, out var src))
+            {
+                src.Stop();
+                src.loop = false;
+                loopingAudioSources.Remove(canonicalKey);
+                
+                if (activeAudioSources.Contains(src))
+                {
+                    activeAudioSources.Remove(src);
+                }
+                audioSourcePool.Enqueue(src);
+                return;
+            }
+        }
+#if UNITY_EDITOR
+        Debug.LogWarning($"[AudioManager] 루프 사운드 중지 실패: '{soundName}' (사운드 데이터/루프 목록에서 찾지 못함)");
+#endif
     }
     
     // 🆕 모든 지속 사운드 중지

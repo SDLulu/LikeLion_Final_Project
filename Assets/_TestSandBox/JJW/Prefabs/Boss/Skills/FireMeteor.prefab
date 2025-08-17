@@ -11,10 +11,10 @@ GameObject:
   - component: {fileID: 986508496493441314}
   - component: {fileID: 7854988741125929776}
   - component: {fileID: 8573109903324568980}
-  - component: {fileID: 1244631322457465332}
   - component: {fileID: 6041573533044374285}
   - component: {fileID: 6842190228950705320}
   - component: {fileID: 7936012099167102127}
+  - component: {fileID: 8594015761840876375}
   m_Layer: 0
   m_Name: FireMeteor
   m_TagString: Untagged
@@ -114,27 +114,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &1244631322457465332
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2254314277358031574}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4fd8180790cc9fd4fb8775c2a09af804, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  projectileDmg: 1
-  fallSpeed: 20
-  lifeTime: 5
-  playerLayerMask:
-    serializedVersion: 2
-    m_Bits: 2097152
-  groundLayerMask:
-    serializedVersion: 2
-    m_Bits: 0
 --- !u!114 &6041573533044374285
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -152,8 +131,8 @@ MonoBehaviour:
   Flags: 262145
   NestedObjects: []
   NetworkedBehaviours:
-  - {fileID: 1244631322457465332}
   - {fileID: 6842190228950705320}
+  - {fileID: 8594015761840876375}
   ForceRemoteRenderTimeframe: 0
 --- !u!114 &6842190228950705320
 MonoBehaviour:
@@ -206,15 +185,37 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: -0.091112375, y: 2.3136687}
+  m_Offset: {x: -0.091112375, y: -0.0364092}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.3}
+    pivot: {x: 0.5, y: 0.5}
     oldSize: {x: 7.75, y: 7.7833333}
     newSize: {x: 9.3, y: 9.34}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 2.5175357, y: 1.8959267}
+  m_Size: {x: 2.5175357, y: 3.703679}
   m_EdgeRadius: 0
+--- !u!114 &8594015761840876375
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2254314277358031574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce0012e593328a54a83d2bc4c5fa39ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectileDmg: 1
+  moveSpeed: -15
+  lifeTime: 10
+  vanishAnimName: Vanish
+  playerLayerMask:
+    serializedVersion: 2
+    m_Bits: 2097152
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 65536

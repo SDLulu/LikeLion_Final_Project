@@ -36,6 +36,9 @@ public class Potion : NetworkBehaviour, IItemInteraction
             // 체력 회복
             playerHealth.Heal(healAmount);
             Debug.Log($"[Potion] 체력 {healAmount} 회복! 현재 체력: {playerHealth.Health}/{playerHealth.MaxHealth}");
+            
+            // 수집 소리와 이펙트 재생
+            RPC_PlayCollectFeedback(transform.position);
         }
         else
         {
@@ -116,4 +119,12 @@ public class Potion : NetworkBehaviour, IItemInteraction
     // 🎮 IItemInteraction 인터페이스 구현
     public bool CanBeHeld => true;
     public bool CanBeThrown => true;
+    
+    // --- RPC 메서드들 ---
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayCollectFeedback(Vector3 pos)
+    {
+        AudioManager.Inst.PlaySound("힐", pos);
+        EffectManager.Inst.PlayEffect("힐하트", pos);
+    }
 }
