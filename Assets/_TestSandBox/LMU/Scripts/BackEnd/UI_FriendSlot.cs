@@ -17,19 +17,11 @@ public class UI_FriendSlot : MonoBehaviour
     private void Awake()
     {
         _inviteButton.onClick.AddListener(OnInviteButtonClicked);
-        NetworkEventSystem.Inst.OnGameStateChangedEvent += OnGameStateChanged;
     }
 
     private void OnDestroy()
     {
         _inviteButton.onClick.RemoveAllListeners();
-    }
-
-    private E_StateName _curState;
-    private void OnGameStateChanged(Fusion.NetworkRunner runner, E_StateName prevState, E_StateName nextState)
-    {
-        if (nextState == E_StateName.LobbyState)
-            _curState = nextState;
     }
 
     private void OnInviteButtonClicked()
@@ -40,21 +32,16 @@ public class UI_FriendSlot : MonoBehaviour
             return;
         }
 
-        Debug.Log($"<color=yellow>{_currentFriendData.NickName} 님에게 게임 초대를 보냅니다...</color>");
-
-        // Friends 매니저를 통해 게임 초대 전송
         Friends.Inst.SendGameInvite(
             _currentFriendData.InDate,
             _currentFriendData.NickName,
             onSuccess: () =>
             {
                 Debug.Log($"<color=green>{_currentFriendData.NickName} 님에게 초대를 보냈습니다!</color>");
-                // TODO: UI 피드백 (토스트 메시지 등)
             },
             onFail: (errorMessage) =>
             {
                 Debug.LogError($"초대 전송 실패: {errorMessage}");
-                // TODO: UI 피드백 (에러 메시지 등)
             }
         );
     }
@@ -75,14 +62,6 @@ public class UI_FriendSlot : MonoBehaviour
                 UpdateRequestForm(data);
                 break;
         }
-    }
-
-    private void Update()
-    {
-        if (_curState == E_StateName.LobbyState)
-            _inviteButton.gameObject.SetActive(true);
-        else
-            _inviteButton.gameObject.SetActive(false);
     }
 
     public void UpdateFriendForm(FriendData data)
