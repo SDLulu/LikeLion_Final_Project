@@ -27,6 +27,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     private List<MapPrefabSet> mapPrefabSets = new List<MapPrefabSet>();
     public Dictionary<string, GameObject[]> mapPrefabDict { get; private set; }
 
+    public string currentStage = "1-1"; // 현재 스테이지 이름 (예: "1-1", "2-1", "3-1" 등)
     private int bossStage = 0;
 
     [field: SerializeField] public Transform parentTrans { get; private set; } // 부모 오브젝트 (맵 생성시 자식으로 추가됨)
@@ -50,18 +51,23 @@ public partial class PMK_TileRogic : NetworkBehaviour
     [SerializeField] private int special_Map_Chance = 20; // 특별한 맵 생성 확률 (0~100 사이의 값, 0은 생성 안함, 100은 항상 생성됨)
 
 
-    [Header("생성될 몬스터 설정")]
-    public GameObject objectToSpawnIfTileExists; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [Header("타일 위에 오브젝트 스폰 설정")]
+    [SerializeField] private GameObject[] stage1EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private GameObject[] stage2EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private GameObject[] stage3EnemySpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+    [SerializeField] private GameObject[] objSpawn; // 타일이 존재하는 위치 위에 생성할 오브젝트 (예: 몬스터, NPC 등)
+
+    private Dictionary<string, GameObject[]> enemySpawnsByStage;
 
     [Header("TileZoneSpawner 설정")]
     [SerializeField] public TileBase[] setRuleTile; // 룰 타일 (PMK_TileZoneSpawner에서 사용되는 룰 타일)
     public TileBase _setRuleTile;
-    [field: SerializeField] public GameObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
+    [field: SerializeField] public NetworkObject[] trap { get; private set; } // 함정 타일 (PMK_TileZoneSpawner에서 사용되는 함정 타일) 0. 즉사함정, 1. 돌함정
 
 
     [Header("PMK_ArrowTrap 설정")]
-    [SerializeField] private NetworkObject LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
-    public NetworkObject launchTrapPrefab => LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨, 네트워크 오브젝트)
+    [SerializeField] private NetworkObject[] LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨)
+    public NetworkObject[] launchTrapPrefab => LaunchTrapPrefab; // 발사할 함정 프리팹 (PMK_ArrowTrap에서 사용됨, 네트워크 오브젝트)
 
 
     [Header("PMK_NextStageDoor 설정")]
@@ -87,7 +93,14 @@ public partial class PMK_TileRogic : NetworkBehaviour
             Destroy(gameObject); // 싱글톤 패턴을 위해 중복 생성 방지
         }
 
-        if (HasStateAuthority) return;
+        enemySpawnsByStage = new Dictionary<string, GameObject[]>
+        {
+            { "1-1", stage1EnemySpawn },
+            { "2-1", stage2EnemySpawn },
+            { "3-1", stage3EnemySpawn }
+        };
+
+        if (!HasStateAuthority) return;
         LoadMapPrefabsAutomatically("1-1"); // 초기 맵 프리팹 자동 로드
     }
 
@@ -104,7 +117,9 @@ public partial class PMK_TileRogic : NetworkBehaviour
             {
                 Debug.Log($"스테이지 정보: {stageInfo.CurrentStage} | {stageInfo.CurrentStageName} | {stageInfo.IsBossStage}");
 
-                LoadMapPrefabsAutomatically(stageInfo.CurrentStage);
+                currentStage = stageInfo.CurrentStage; // 현재 스테이지 이름 업데이트
+
+                LoadMapPrefabsAutomatically(currentStage);
                 SaveMapPos();
                 if (mapPrefabDict == null)
                 {
@@ -328,6 +343,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
                 }
             }
 
+            if (!HasStateAuthority) return;
             RPC_Create_Map(mapType, randomIndex, spawnXpos, spawnYpos);
         }
     }
@@ -414,6 +430,8 @@ public partial class PMK_TileRogic : NetworkBehaviour
                                 StartCoroutine(DelayedCreateEnemy(targetPos));
                             }
 
+                            StartCoroutine(DelayedCreateObj(targetPos));
+
                             yield return null; // 한 프레임 대기
                         }
                     }
@@ -481,7 +499,7 @@ public partial class PMK_TileRogic : NetworkBehaviour
     #region 타일 위에 적 생성
     IEnumerator DelayedCreateEnemy(Vector3Int targetPos)
     {
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(3f);
 
         if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
 
@@ -507,20 +525,90 @@ public partial class PMK_TileRogic : NetworkBehaviour
             yield break; // 위에 게임 오브젝트가 있음
         }
 
-        if (objectToSpawnIfTileExists != null)
-        {
-            Runner.Spawn(objectToSpawnIfTileExists, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
-            {
-                obj.transform.SetParent(parentTrans);
-                obj.name = objectToSpawnIfTileExists.name;
 
-                var netObj = obj.GetComponent<NetworkObject>();
-                if (netObj != null)
-                {
-                    Runner.SetIsSimulated(netObj, true); // ← 반드시 추가
-                }
-            });
+        SpawnRandomEnemy(currentStage, targetPos);
+    }
+
+    public void SpawnRandomEnemy(string stageName, Vector3Int targetPos)
+    {
+        if (!HasInputAuthority) return;
+
+        GameObject[] enemyArray = GetEnemiesForStage(stageName);
+
+        if (enemyArray == null || enemyArray.Length == 0)
+        {
+            Debug.LogWarning($"'{stageName}'의 적 배열이 비어있음");
+            return;
         }
+
+        int rand = Random.Range(0, enemyArray.Length);
+        GameObject enemyPrefab = enemyArray[rand];
+
+        Runner.Spawn(enemyPrefab, mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(parentTrans);
+            obj.name = enemyPrefab.name;
+
+            var netObj = obj.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                Runner.SetIsSimulated(netObj, true);
+            }
+        });
+    }
+
+    private GameObject[] GetEnemiesForStage(string stageName)
+    {
+        if (enemySpawnsByStage.TryGetValue(stageName, out var enemies))
+        {
+            return enemies;
+        }
+
+        Debug.LogWarning($"스테이지 '{stageName}'에 대한 적 정보가 없습니다.");
+        return null;
+    }
+
+    IEnumerator DelayedCreateObj(Vector3Int targetPos)
+    {
+        yield return new WaitForSeconds(3f);
+
+        if (!HasStateAuthority) yield break; // 권한이 없는 경우 중단
+
+        if (Random.value > 0.1f) yield break;
+
+        int topY = mainTilemap.cellBounds.yMax - 1;
+        int leftX = mainTilemap.cellBounds.xMin;
+        int rightX = mainTilemap.cellBounds.xMax - 1;
+
+        // 위, 왼쪽, 오른쪽 경계 체크
+        if (targetPos.y == topY || targetPos.x == leftX || targetPos.x == rightX)
+            yield break;
+
+        bool isBlockedAbove = mainTilemap.GetTile(targetPos + Vector3Int.up) != null;
+        if (isBlockedAbove) yield break;
+
+        Vector3 worldPos = mainTilemap.CellToWorld(targetPos + Vector3Int.up);
+        float checkRadius = 0.4f;
+
+        Collider2D col = Physics2D.OverlapCircle(worldPos + new Vector3(0.5f, 0.5f), checkRadius);
+        if (col != null)
+        {
+            yield break; // 위에 게임 오브젝트가 있음
+        }
+
+        int rad = Random.Range(0, objSpawn.Length);
+
+        Runner.Spawn(objSpawn[rad], mainTilemap.GetCellCenterWorld(targetPos), Quaternion.identity, null, (runner, obj) =>
+        {
+            obj.transform.SetParent(parentTrans);
+            obj.name = objSpawn[rad].name;
+
+            var netObj = obj.GetComponent<NetworkObject>();
+            if (netObj != null)
+            {
+                Runner.SetIsSimulated(netObj, true);
+            }
+        });
 
 
     }
