@@ -5,7 +5,7 @@ using UnityEngine.UI; // UnityEngine.UI는 더 이상 필요 없을 수 있지�
 public class ShopItemVisual : MonoBehaviour // ⭐️ NetworkBehaviour 대신 MonoBehaviour 상속
 {
     [SerializeField] private GameObject priceTag;
-    [SerializeField] private TextMeshProUGUI priceText;
+    [SerializeField] public TextMeshProUGUI priceText;
     // ⭐️ purchaseText 필드는 ShopItem에서 관리하는 _spawnedPurchaseUI와 겹치므로 제거
     // [SerializeField] private GameObject purchaseText; // 이 필드는 제거됩니다.
 
