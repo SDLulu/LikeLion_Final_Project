@@ -4,6 +4,8 @@ using UnityEngine;
 // 아이템 속도 기반 공격판정 컨트롤러 (던지기/떨어지기만)
 public class SpeedCollisionHandler : NetworkBehaviour
 {
+    [Header("Settings (SO 우선)")]
+    [SerializeField] private SpeedCollisionSettingsSO settings; // Inspector 비우면 Provider → Resources 순으로 자동 로드
     [Header("Speed Attack Settings")]
     [SerializeField] private float attackSpeedThreshold = 3f;  // 공격 콜라이더 활성화 속도 임계값 (더 낮춤)
     [SerializeField] private float normalSpeedThreshold = 1f;  // 일반 콜라이더로 되돌릴 속도 임계값 (더 낮춤)
@@ -29,6 +31,12 @@ public class SpeedCollisionHandler : NetworkBehaviour
         
         Runner.SetIsSimulated(Object, true);
         InitializeColliders();
+
+        // 설정 자동 로드 (Inspector 비어있을 때)
+        if (settings == null)
+        {
+            settings = Resources.Load<SpeedCollisionSettingsSO>("SpeedCollisionSettingsSO");
+        }
     }
     
     private void InitializeColliders()
@@ -61,8 +69,11 @@ public class SpeedCollisionHandler : NetworkBehaviour
     {
         float currentSpeed = rb.linearVelocity.magnitude;
         
-        bool shouldBeSpeedAttackMode = currentSpeed >= attackSpeedThreshold;
-        bool shouldBeNormalMode = currentSpeed <= normalSpeedThreshold;
+        float attackThreshold = settings != null ? settings.AttackSpeedThreshold : attackSpeedThreshold;
+        float normalThreshold = settings != null ? settings.NormalSpeedThreshold : normalSpeedThreshold;
+
+        bool shouldBeSpeedAttackMode = currentSpeed >= attackThreshold;
+        bool shouldBeNormalMode = currentSpeed <= normalThreshold;
         
         if (shouldBeSpeedAttackMode && !IsInSpeedAttackMode)
         {
