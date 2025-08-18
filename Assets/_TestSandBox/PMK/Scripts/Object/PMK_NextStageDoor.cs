@@ -29,24 +29,7 @@ public class PMK_NextStageDoor : MonoBehaviour
     // 플레이어가 문을 통과했을 때 호출되는 함수
     public void MarkPlayerCleared(PlayerRef player)
     {
-        if (clearedPlayers.Contains(player)) return;
-
-        clearedPlayers.Add(player);
-        tileRogic.ClearCount++;
-
-        int totalPlayers = PlayerManager.Inst.Players.Count;
-
-        Debug.Log($"[서버] ClearCount: {tileRogic.ClearCount} / Total: {totalPlayers}");
-
-        if (tileRogic.ClearCount >= totalPlayers)
-        {
-            StartCoroutine(DelayedNextStage());
-        }
-        else
-        {
-            Debug.Log("아직 모두 도달하지 않았습니다.");
-        }
-
+        StartCoroutine(DelayedNextStage());
     }
 
     private IEnumerator DelayedNextStage()
@@ -57,12 +40,5 @@ public class PMK_NextStageDoor : MonoBehaviour
 
         yield return new WaitForSeconds(5f);
         clearedPlayers.Clear(); // 모든 플레이어 문 통과 상태 초기화
-        tileRogic.ClearCount = 0; // 문 카운트 초기화
-    }
-
-    // 플레이어가 문을 통과했는지 확인하는 함수
-    public bool HasPlayerCleared(PlayerRef player)
-    {
-        return clearedPlayers.Contains(player);
     }
 }
