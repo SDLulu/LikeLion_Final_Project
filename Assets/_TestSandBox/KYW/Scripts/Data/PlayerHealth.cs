@@ -9,7 +9,7 @@ public class PlayerHealth : NetworkBehaviour
     public int Health { get; private set; } = 5;
 
     public int MaxHealth => 99;
-    public int StartHealth { get; private set; } = 10;
+    public int StartHealth { get; private set; } = 30;
 
     public event Action OnHealthChangedEvent; // 인자 없는 알림 (인벤토리 방식과 통일)
 
