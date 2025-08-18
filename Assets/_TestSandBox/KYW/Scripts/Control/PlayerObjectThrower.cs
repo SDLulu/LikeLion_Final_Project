@@ -174,28 +174,13 @@ public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
         
-        // 🎯 Player/Enemy만 로테이션 초기화 + 부모 해제 지연 적용, 그 외(Npc/아이템)는 기존 로직 유지
-        bool isPlayer = layer == LayerMask.NameToLayer("Player");
-        bool isEnemy = layer == LayerMask.NameToLayer("Enemy");
-
-        if (isPlayer || isEnemy)
+// 🎯 캐릭터인 경우 로테이션만 초기화, 아이템은 부모만 해제
+        if (layer == LayerMask.NameToLayer("Player") || 
+            layer == LayerMask.NameToLayer("Enemy") || 
+            layer == LayerMask.NameToLayer("Npc"))
         {
-            // 로테이션만 0으로 초기화는 즉시 수행
+            obj.transform.SetParent(null);
             obj.transform.rotation = Quaternion.identity;
-            Debug.Log($"[PlayerObjectThrower] 캐릭터 로테이션 초기화: {obj.name}");
-
-            // 부모 해제는 던지기 상황에서만 지연 가능
-            if (applyForce && !immediateParentRelease)
-            {
-                delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.1f);
-                            obj.transform.rotation = Quaternion.identity;
-                delayedParentReleaseObject = obj;
-            }
-            else
-            {
-                obj.transform.SetParent(null);
-                            obj.transform.rotation = Quaternion.identity;
-            }
         }
         else
         {
