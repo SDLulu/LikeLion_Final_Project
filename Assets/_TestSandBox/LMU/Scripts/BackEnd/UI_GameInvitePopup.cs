@@ -51,6 +51,8 @@ public class UI_GameInvitePopup : MonoBehaviour
         _currentInvite = null;
     }
     
+      private UI_GlobalSetting _uiGlobalSetting = null;
+    public UI_GlobalSetting UIGlobalSetting => _uiGlobalSetting ??= FindAnyObjectByType<UI_GlobalSetting>();
     private void OnAcceptButtonClicked()
     {
         if (_currentInvite == null)
@@ -62,6 +64,7 @@ public class UI_GameInvitePopup : MonoBehaviour
         Debug.Log($"<color=green>게임 초대 수락: {_currentInvite.InviterName}</color>");
         
         // 초대 수락 처리
+        UIGlobalSetting?.ActiveUI(false);
         GameInviteManager.Inst.AcceptGameInvite(_currentInvite);
         HidePopup();
     }
