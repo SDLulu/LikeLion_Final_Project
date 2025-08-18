@@ -287,10 +287,10 @@ public class PMK_TileRPC_Manager : NetworkBehaviour
         }
 
         if (!HasStateAuthority) return; // 클라이언트는 함정 생성 못 함
-        Runner.Spawn(tileRogic.trap[0], tileRogic.mainTilemap.GetCellCenterWorld(cellPos), Quaternion.identity, null, (runner, obj) =>
+        Runner.Spawn(tileRogic.trap[stagetrap], tileRogic.mainTilemap.GetCellCenterWorld(cellPos), Quaternion.identity, null, (runner, obj) =>
         {
             obj.transform.SetParent(tileRogic.parentTrans);
-            obj.name = tileRogic.trap[0].name;
+            obj.name = tileRogic.trap[stagetrap].name;
 
             var netObj = obj.GetComponent<NetworkObject>();
             if (netObj != null)
