@@ -250,14 +250,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e138c2aca925e0b40a6f1b77a641c90c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  showItemInfo: 1
-  showMovementInfo: 1
-  showJumpInfo: 1
-  showClimbingInfo: 1
-  showAnimationInfo: 1
-  showPassiveItemInfo: 1
-  showInteractionInfo: 1
-  showRespawnControls: 1
+  showItemInfo: 0
+  showMovementInfo: 0
+  showJumpInfo: 0
+  showClimbingInfo: 0
+  showAnimationInfo: 0
+  showPassiveItemInfo: 0
+  showInteractionInfo: 0
+  showRespawnControls: 0
   debugRespawnPoint: {fileID: 0}
 --- !u!114 &6207183941582798706
 MonoBehaviour:
@@ -278,7 +278,7 @@ MonoBehaviour:
   testStunDuration: 2
   testInvincibleDuration: 3
   testKnockbackForce: 10
-  showDebugInfo: 1
+  showDebugInfo: 0
   testRespawnPoint: {fileID: 0}
 --- !u!114 &8184683026101553609
 MonoBehaviour:
@@ -523,6 +523,8 @@ MonoBehaviour:
   _IsHeld: 0
   _IsThrown: 0
   _IsDead: 0
+  _IsStunnedNoAnimation: 0
+  _IsStunnedDeadAnimation: 0
 --- !u!114 &254836847344143782
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1705,7 +1707,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1920
   pickupTrigger: {fileID: 2162887977885498126}
-  playerHoldOffset: {x: 0, y: 0.25, z: 0}
+  playerHoldOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &1019999502762045486
 MonoBehaviour:
   m_ObjectHideFlags: 0

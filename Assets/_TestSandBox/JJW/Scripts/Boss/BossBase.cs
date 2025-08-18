@@ -124,6 +124,9 @@ public class BossBase : NetworkBehaviour
         CurrentHealth -= damage;
         UnityEngine.Debug.Log($"보스 체력 : {CurrentHealth}");
 
+        // 적과 동일한 사운드/이펙트 재생
+        RPC_PlayDamageEffects();
+
         if (CurrentHealth <= 0)
         {
             CurrentHealth = 0;
@@ -141,5 +144,16 @@ public class BossBase : NetworkBehaviour
     public void OnCurrentHealthChanged()
     {
         //필요하다면 보스 체력 UI 업데아트가 실행될 곳 
+    }
+
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_PlayDamageEffects()
+    {
+        // 별 이펙트와 피 이펙트 재생 (+0.5y 높이에서 스폰)
+        Vector3 effectPosition = transform.position + Vector3.up * 0.5f;
+        AudioManager.Inst.PlaySound("별", effectPosition);
+        EffectManager.Inst.PlayEffect("별", effectPosition);
+        EffectManager.Inst.PlayEffect("피", effectPosition);
+        AudioManager.Inst.PlaySound("피폭발", effectPosition);
     }
 }
