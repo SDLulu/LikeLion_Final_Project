@@ -4,6 +4,7 @@ using Fusion;
 using LMCore;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CutSceneController : NetworkBehaviour
 {
@@ -15,6 +16,7 @@ public class CutSceneController : NetworkBehaviour
     [field: SerializeField] public UI_Score UIScore { get; private set; }
     [field: SerializeField] public Canvas CutSceneCanvas { get; private set; }
     [SerializeField] private RectTransform _cutResultRect;
+    [SerializeField] private Image _pointImage;
 
 
     public Vector3 GetStartPos() => StartPoint.position;
@@ -22,6 +24,8 @@ public class CutSceneController : NetworkBehaviour
 
     private List<Tween> _cutTweens = new();
     private List<GameObject> _cutPlayers = new();
+    private Tween _cutResultTween;
+    private Tween _pointImageTween;
 
     private GameProgressTracker _progressTracker;
     private void Awake()
@@ -32,6 +36,8 @@ public class CutSceneController : NetworkBehaviour
     private void OnDestroy()
     {
         _progressTracker = null;
+        _cutResultTween?.Kill();
+        _pointImageTween?.Kill();
     }
 
     public void FocusCutSceneCamera()
@@ -119,8 +125,33 @@ public class CutSceneController : NetworkBehaviour
     [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
     public void RPC_TweenCutResult()
     {
+        _cutResultTween?.Kill();
+        _pointImageTween?.Kill();
+
+        // 배경 스케일 트윈
         _cutResultRect.localScale = Vector3.one * 0.8f;
-        _cutResultRect.DOScale(1.1f, 0.2f).SetLoops(2, LoopType.Yoyo);
+        Sequence scaleSequence = DOTween.Sequence();
+        scaleSequence.Append(_cutResultRect.DOScale(1.1f, 0.2f));
+        scaleSequence.Append(_cutResultRect.DOScale(0.9f, 0.2f));
+        scaleSequence.Append(_cutResultRect.DOScale(1.05f, 0.15f));
+        scaleSequence.Append(_cutResultRect.DOScale(1.0f, 0.1f));
+        _cutResultTween = scaleSequence;
+
+        // UI 강조표시 영역 트윈        
+        Color originalColor = new Color(0f, 0f, 0f, 0.5f);
+        Color highlightColor = new Color(1f, 1f, 1f, 127.5f / 255f);
+        _pointImage.color = originalColor;
+        _pointImageTween = _pointImage.DOColor(highlightColor, 0.1f)
+            .SetLoops(4, LoopType.Yoyo)
+            .OnComplete(() => _pointImage.color = originalColor);
+        
+        SoundManager.Inst.PlaySFX("Cuts");
+    }
+
+    
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    public void RPC_OnlySFX()
+    {
         SoundManager.Inst.PlaySFX("Cuts");
     }
 
@@ -139,7 +170,10 @@ public class CutSceneController : NetworkBehaviour
                 RPC_TweenCutResult();
                 await Awaitable.NextFrameAsync();
             }
-            await Awaitable.NextFrameAsync();
+
+            await WaitForResponse();
+            RPC_OnlySFX();
+            await Awaitable.WaitForSecondsAsync(1.0f);
             _isWaiting = false;
         }
         catch (System.Exception e)
