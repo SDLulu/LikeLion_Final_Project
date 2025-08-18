@@ -13,8 +13,8 @@ public class GameStageCompletedState : BaseStateBehaviour
     [Networked] public bool IsCutSceneActive { get; set; } = false;
 
     [Header("설정")]
-    [SerializeField, Range(10.0f, 15.0f)] private float _minWaitingTime = 15.0f;
     [SerializeField] private float _cutDuration = 2.0f;
+    private float _minWaitingTime = 20.0f;
 
     // 서버 - 백그라운드 작업진행 - 컷신 재생과 맵 로딩을 병렬실행 - 0: 컷신, 1: 맵 로딩
     private Dictionary<PlayerRef, List<Tuple<int, AwaitableCompletionSource>>> _bgTaskTCS;

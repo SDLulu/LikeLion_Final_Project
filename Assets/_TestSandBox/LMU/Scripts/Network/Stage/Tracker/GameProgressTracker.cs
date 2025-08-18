@@ -202,8 +202,16 @@ public class GameProgressTracker : NetworkBehaviour
     {
         foreach (var (player, record) in playerRecords)
         {
-            await ProcessSinglePlayerRecordAsync(player, record);
-            await Awaitable.WaitForSecondsAsync(2.0f);
+            // 각 클라이언트가 자신의 계정으로 직접 제출하도록 요청
+            RPC_RequestClientSubmitRecord(
+                player,
+                record.NickName,
+                record.SessionDurationSec,
+                record.Stage,
+                record.TotalScore
+            );
+
+            await Awaitable.WaitForSecondsAsync(0.25f);
         }
     }
 
@@ -252,6 +260,64 @@ public class GameProgressTracker : NetworkBehaviour
     }
 
 
+
+    /// <summary>
+    /// 서버가 각 클라이언트에게 자신의 기록 제출을 요청 (Target: All, 클라에서 필터)
+    /// </summary>
+    [Rpc(RpcSources.StateAuthority, RpcTargets.All)]
+    private void RPC_RequestClientSubmitRecord(
+        PlayerRef targetPlayer,
+        string nickName,
+        int sessionDurationSec,
+        string stageId,
+        int totalScore
+    )
+    {
+        // 요청 대상이 아닌 클라에서는 무시
+        if (Runner.LocalPlayer == targetPlayer)
+        {
+            var record = new PlayerSessionRecord(nickName);
+            record.SessionDurationSec = sessionDurationSec;
+            record.Stage = stageId;
+            record.TotalScore = totalScore;
+
+            _ = ClientInsertAndUpdateLeaderboardAsync(record);
+        }
+    }
+
+    /// <summary>
+    /// 클라이언트에서 자신의 계정으로 기록 저장 및 리더보드 업데이트
+    /// </summary>
+    private async Awaitable ClientInsertAndUpdateLeaderboardAsync(PlayerSessionRecord record)
+    {
+        if (GlobalSetting.Inst.IsEnableBackend == false)
+        {
+            return;
+        }
+
+        var saveCompleted = new AwaitableCompletionSource<bool>();
+        string tableName = BackEndWorkFlow.Inst.TABLE_NAME;
+
+        UserData.InsertSessionAsync(tableName, record, callback =>
+        {
+            if (callback.IsSuccess())
+            {
+                saveCompleted.TrySetResult(true);
+            }
+            else
+            {
+                Debug.LogError($"[GameProgressTracker] 클라이언트 기록 저장 실패 - Error: {callback}");
+                saveCompleted.TrySetResult(false);
+            }
+        });
+
+        bool saveSuccess = await saveCompleted.Awaitable;
+
+        if (saveSuccess)
+        {
+            await UpdateLeaderboardWithBestScoreAsync(record.NickName);
+        }
+    }
 
     /// <summary>
     /// 닉네임의 데이터베이스 전체 기록 중 최고 점수로 리더보드 업데이트
