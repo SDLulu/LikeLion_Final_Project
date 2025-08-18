@@ -174,27 +174,39 @@ public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
         // 손에서 해제 (데이터만 관리)
         inventory.DropHeldObject();
         
-        // 🎯 캐릭터인 경우 로테이션만 초기화, 아이템은 부모만 해제
-        if (layer == LayerMask.NameToLayer("Player") || 
-            layer == LayerMask.NameToLayer("Enemy") || 
-            layer == LayerMask.NameToLayer("Npc"))
+        // 🎯 Player/Enemy만 로테이션 초기화 + 부모 해제 지연 적용, 그 외(Npc/아이템)는 기존 로직 유지
+        bool isPlayer = layer == LayerMask.NameToLayer("Player");
+        bool isEnemy = layer == LayerMask.NameToLayer("Enemy");
+
+        if (isPlayer || isEnemy)
         {
-            obj.transform.SetParent(null);
-            obj.transform.rotation = Quaternion.identity; // 🔄 로테이션만 0으로 초기화
+            // 로테이션만 0으로 초기화는 즉시 수행
+            obj.transform.rotation = Quaternion.identity;
             Debug.Log($"[PlayerObjectThrower] 캐릭터 로테이션 초기화: {obj.name}");
-        }
-        else
-        {
-            // 아이템의 경우 기본은 부모 해제를 살짝 늦춤, 하지만 즉시 해제가 요구되면 예외 처리
+
+            // 부모 해제는 던지기 상황에서만 지연 가능
             if (applyForce && !immediateParentRelease)
             {
-                // 던지기인 경우 TickTimer로 부모 해제를 지연
-                delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.05f);
+                delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.1f);
+                            obj.transform.rotation = Quaternion.identity;
                 delayedParentReleaseObject = obj;
             }
             else
             {
-                // 즉시 해제 (사망 드롭 등 위치 이동 전에 해제 필요할 때)
+                obj.transform.SetParent(null);
+                            obj.transform.rotation = Quaternion.identity;
+            }
+        }
+        else
+        {
+            // 아이템/NPC: 기존과 동일 (필요 시 지연 지원)
+            if (applyForce && !immediateParentRelease)
+            {
+                delayedParentReleaseTimer = TickTimer.CreateFromSeconds(Runner, 0.1f);
+                delayedParentReleaseObject = obj;
+            }
+            else
+            {
                 obj.transform.SetParent(null);
             }
         }
@@ -236,6 +248,6 @@ public class PlayerObjectThrower : NetworkBehaviour, ISoftReset
     private void RPC_PlayThrowSound()
     {
         // 던지기 소리 재생
-        AudioManager.Inst.PlaySound("던지기", transform.position);
+        AudioManager.Inst.PlaySound("던지기1", transform.position);
     }
 } 

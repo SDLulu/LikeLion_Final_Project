@@ -29,8 +29,9 @@ public class BossDeadState : BossStateBase
     {
         // 호스트가 아니거나 소멸 타이머가 끝나지 않았으면 return
         if (!boss.Object.HasStateAuthority || !boss.DespawnTimer.Expired(Runner)) return;
-        
+
         // 타이머가 만료되면 보스 객체를 네트워크에서 소멸시킵니다.
+        GameStates.Inst.DelayForceActiveState<GameStageCompletedState>();
         Runner.Despawn(boss.Object);
     }
 }

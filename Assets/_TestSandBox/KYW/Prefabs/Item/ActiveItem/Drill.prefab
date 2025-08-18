@@ -469,12 +469,12 @@ MonoBehaviour:
   knockbackForce: 5
   knockbackDuration: 0.5
   AttackCollider: {fileID: 7118312988402447923}
-  tileLayerMask:
+  enableTileDestruction: 1
+  destroyLayer:
     serializedVersion: 2
-    m_Bits: 64
-  breakGroundTile: 1
-  tileHitCooldownSeconds: 0.1
-  itemCleanupRadius: 0.25
+    m_Bits: 0
+  gridSampleStep: 0.5
+  fallbackRadius: 0
   tileItemTag: Tileitem
   destroyObjectTag: BoobDestoryObj
   statueSwapCooldownSeconds: 0.15
@@ -569,6 +569,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 037622f1f1de6f741ac7c0078c1f86e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  settings: {fileID: 0}
   attackSpeedThreshold: 3
   normalSpeedThreshold: 1
   speedAttackDamage: 1
