@@ -106,7 +106,7 @@ public class GameProgressTracker : NetworkBehaviour
         {
             _curState = current;
             // 게임을 실패하면 현재 기록에 대한 정보를 넘기고 데이터 초기화
-            if (current == E_StateName.FailedState)
+            if (current == E_StateName.FailedState || current == E_StateName.EmptyState)
             {
                 TrySubmitAllPlayers(runner);
                 await Awaitable.WaitForSecondsAsync(5.0f);
