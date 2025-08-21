@@ -6,7 +6,7 @@ using UnityEngine;
 public class BackEndWorkFlow : BaseManager<BackEndWorkFlow>
 {
     // 리더보드 식별 UUID, 공개용이라 여기 적어도 상관없음 
-    public string LeaderboardUUID { get; private set; } = "0198b525-b443-762b-9392-e9298dc577e3";
+    public string LeaderboardUUID { get; private set; } = "0198ca41-b90c-7c5c-8eb9-d48864e23626";
     
     // 유저 데이터가 기록되는 테이블 이름
     public string TABLE_NAME { get; private set; } = "PlayerSession2";
